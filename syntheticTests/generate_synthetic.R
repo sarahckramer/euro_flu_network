@@ -29,20 +29,20 @@ tm_strt <- 270; tm_end <- 570; tm_step <- 1#; t <- 1 # 270 is early September
 tm.range <- tm_strt:tm_end
 
 ### Parameter boundaries
-D_low <- 1.5; L_low <- 1*365; Rmx_low <- 1.3; Rmn_low <- 0.8;
+D_low <- 1.5; L_low <- 1*365; Rmx_low <- 1.5; Rmn_low <- 0.8;
 D_up <- 7; L_up <- 10*365; Rmx_up <- 4; Rmn_up <- 1.2;
 theta_low <- c(L_low, D_low, Rmx_low, Rmn_low)
 theta_up <- c(L_up, D_up, Rmx_up, Rmn_up)
 S0_low <- 0.55; S0_up <- 0.80
-I0_low <- 0.08 / 100000; I0_up <- 250 / 100000
+I0_low <- 1.0; I0_up <- 50.0
 
 ### Specify the country for which we are performing a forecast
 countries <- c('BE', 'HR', 'CZ', 'DK', 'FR', 'DE', 'HU', 'IE', 'IS', 'IT',
                'LU', 'NL', 'PL', 'PT', 'SK', 'SI', 'ES', 'SE', 'UK')
 count.indices <- c(1:19) # just those countries w/ train data, too
 
-countries <- c('BE', 'FR')
-count.indices <- c(1, 5) # just those countries w/ train data, too
+# countries <- c('BE', 'FR')
+# count.indices <- c(1, 5) # just those countries w/ train data, too
 
 ### Set population sizes and # of countries used
 pop.size <- read.csv('data/popcounts_02-07.csv')
@@ -226,6 +226,31 @@ for (ix in 1:num_ens) {
 # Anything else shown tomorrow is VERY preliminary; need to add IS and AT, for example
 # Also using yearly average commuting; but could use by year
 # Ensemble members with outbreaks in all/most countries had S0 > 55% and R0mx > 1.6, but otherwise spanned full ranges
+
+# Assess: Relative AR; relative PT; relative PI; synchrony; spatial patterns;
+    # By:
+    # Different param ranges; travel inclusion; travel multipliers; random seeds; seed locations
+
+
+
+### TO-DO ###
+# Dump train data for now - use commuting and plane
+# Multiplier for plane data? Fit that using filter (~0.8-1.2)
+# Include AT and RO? (check that these are flagged as x; recheck the commuting data)
+# Doc about choices/SA
+# Prescribe several (~20) sets of params/initial conditions, get synthetic free simulations
+      # Criteria for inclusion: certain AR, PT; at least 90% have onset
+# Analyze patterns based on seeding: everywhere; each country; vary # seeded in each country
+      # Also look first few countries with outbreaks; or else countries with onset within a certain time period
+      # Seed a whole number (1-10? Distributed based on pop sizes in different compartments)
+# Random draw of S0 for each country, allow deviation for each compartment
+# Check inferred parameters for Aim 1
+# 
+
+
+
+
+
 
 
 

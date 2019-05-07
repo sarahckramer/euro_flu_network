@@ -1,7 +1,7 @@
 
 # Load commuting data and determine which countries to remove:
 load('formatTravelData/formattedData/comm_mat_by_year_05-07.RData') # note: includes non-adjacent
-to.remove <- which(((rowSums(comm.by.year[[1]]) == 0 | colSums(comm.by.year[[1]]) == 0) & rownames(comm.by.year[[1]]) != 'IS') | rownames(comm.by.year[[1]]) == 'RO')
+to.remove <- which(((rowSums(comm.by.year[[1]]) == 0 | colSums(comm.by.year[[1]]) == 0) & rownames(comm.by.year[[1]]) != 'IS'))# | rownames(comm.by.year[[1]]) == 'RO')
 # artificially added RO to to.remove - little data on inbound commuting
 to.remove.NAMES <- names(to.remove)
 
