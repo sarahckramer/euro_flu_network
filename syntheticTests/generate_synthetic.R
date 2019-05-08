@@ -24,25 +24,23 @@ tmstep <- 7 #data is weekly
 wk_start <- 40
 
 ### Set parameters
-num_ens <- 100
-tm_strt <- 270; tm_end <- 570; tm_step <- 1#; t <- 1 # 270 is early September
+num_ens <- 500
+tm_strt <- 273; tm_end <- 573; tm_step <- 1#; t <- 1 # 273 is first of October
 tm.range <- tm_strt:tm_end
 
 ### Parameter boundaries
-D_low <- 1.5; L_low <- 1*365; Rmx_low <- 1.5; Rmn_low <- 0.8;
-D_up <- 7; L_up <- 10*365; Rmx_up <- 4; Rmn_up <- 1.2;
-theta_low <- c(L_low, D_low, Rmx_low, Rmn_low)
-theta_up <- c(L_up, D_up, Rmx_up, Rmn_up)
-S0_low <- 0.55; S0_up <- 0.80
-I0_low <- 1.0; I0_up <- 50.0
+D_low <- 2; L_low <- 1*365; Rmx_low <- 1.5; Rmn_low <- 0.8; airScale_low <- 0.75
+D_up <- 7; L_up <- 10*365; Rmx_up <- 3.5; Rmn_up <- 1.2; airScale_up <- 1.25
+theta_low <- c(L_low, D_low, Rmx_low, Rmn_low, airScale_low)
+theta_up <- c(L_up, D_up, Rmx_up, Rmn_up, airScale_up)
+S0_low <- 0.55; S0_up <- 0.90 # proportion of population
+I0_low <- 1.0; I0_up <- 50.0 # raw number
 
 ### Specify the country for which we are performing a forecast
-countries <- c('BE', 'HR', 'CZ', 'DK', 'FR', 'DE', 'HU', 'IE', 'IS', 'IT',
-               'LU', 'NL', 'PL', 'PT', 'SK', 'SI', 'ES', 'SE', 'UK')
-count.indices <- c(1:19) # just those countries w/ train data, too
-
-# countries <- c('BE', 'FR')
-# count.indices <- c(1, 5) # just those countries w/ train data, too
+countries <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'FR', 'DE', 'HU', 'IS', 'IE', 'IT',
+               'LU', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'UK')
+count.indices <- c(1:21)
+# countries <- c('AT', 'BE', 'HR'); count.indices <- 1:3 # for code writing purposes
 
 ### Set population sizes and # of countries used
 pop.size <- read.csv('data/popcounts_02-07.csv')
@@ -60,71 +58,61 @@ diag(N) <- unlist(lapply(1:n, function(ix) {
   pop.size$pop[ix] - rowSums(N)[ix]
 }))
 
-### Read in random train data
-load('formatTravelData/formattedData/train_05-07.RData')
-t.rand <- t.rand[countries, countries]
-
 ### Read in humidity data
 ah <- read.csv('data/ah_05-07_formatted.csv')
 AH <- rbind(ah[, count.indices], ah[, count.indices])
 
 ### Set initial conditions based on input parameters
-param.bound <- cbind(c(rep(S0_low, n ** 2), rep(I0_low, n ** 2), theta_low),
-                     c(rep(S0_up, n ** 2), rep(I0_up, n ** 2), theta_up))
-So <- t(lhs(num_ens, param.bound))
+param.bound <- cbind(c(rep(S0_low, n), rep(I0_low, n), theta_low),
+                     c(rep(S0_up, n), rep(I0_up, n), theta_up))
+parms <- t(lhs(num_ens, param.bound))
 
-S0.indices <- (1:((dim(So)[1] - 4) / 2)) # where S0 are stored
-I0.indices <- S0.indices + S0.indices[length(S0.indices)] # where I0 are stored
-param.indices <- (dim(So)[1] - 3):(dim(So)[1]) # where the epi parameters are stored
+S0.temp = I0.temp = vector('list', num_ens)
+for (i in 1:num_ens) {
+  # S0.temp[[i]] = I0.temp[[i]] = matrix(0, nrow = n, ncol = n)
+  # diag(S0.temp[[i]]) <- parms[1:n, i]
+  # print(S0.temp[[i]])
+  # set.seed(904)
+  # for (j in 1:n) {
+  #   S0.temp[[i]][j, (1:n)[-j]] <- rnorm(n - 1, mean = S0.temp[[i]][j, j], sd = 0.05)
+  # }
+  # print(S0.temp[[i]])
+  
+  S0.temp[[i]] = I0.temp[[i]] = matrix(0, nrow = n, ncol = n)
+  
+  diag(S0.temp[[i]]) <- parms[1:n, i]
+  S0.temp[[i]][S0.temp[[i]] == 0] <- sapply(1:n, function(jx) {
+     rnorm(n - 1, mean = S0.temp[[i]][jx, jx], sd = 0.05)
+  })
+  S0.temp[[i]] <- t(S0.temp[[i]])
+  S0.temp[[i]] <- S0.temp[[i]] * N
+  
+  diag(I0.temp[[i]]) <- parms[(1:n) + n, i]
+  # for (j in 1:n) {
+  #   I0.temp[[i]][j, ] <- I0.temp[[i]][j, j] * N[j, ] / sum(N[j, ])
+  # }
+  I0.temp[[i]] <- sweep(N / rowSums(N), 1, diag(I0.temp[[i]]), '*')
+}
 
-# ### Draw initial parameters from phi
-# # if(!exists("phi")) {
-# #   phi <- read.csv('/Users/sarahkramer/Desktop/Lab/spatial_transmission/forecasts/data/phi.csv', header=F)
-# #   params <- phi[,1:4]
-# #   susceps = infects = NULL
-# #   for(i in 5:31) {
-# #     susceps <- append(susceps, phi[,i])
-# #     infects <- append(infects, phi[,27+i])
-# #   }
-# # }
-# 
-# So <- matrix(0, n ** 2 * 2 + 4, num_ens) # last 4 rows are parameters
-#
-# rnd.S <- ceiling(1e4 * runif(num_ens))
-# rnd <- cbind(t(do.call('rbind', replicate(n ** 2, rnd.S, simplify = FALSE))),
-#              t(do.call('rbind', replicate(n ** 2, ceiling(27 * 1e4 * runif(num_ens)),
-#                                           simplify = FALSE))),
-#              ceiling(1e4 * runif(num_ens))) # determines which values to choose from phi
-# # rnd[, S0.indices] <- rnd[, 1] # same S0 in all places
-# 
-# So[S0.indices, ] <- unlist(lapply(1:(length(S0.indices) * num_ens), function(ix) {
-#   rnorm(1, mean = (susceps[t(rnd[, S0.indices])] / 5)[ix], sd = 5000)
-#   })) # goes through columns, then rows; but so does the place it's being assigned to
-# So[I0.indices, ] <- infects[t(rnd[, I0.indices])] / 5
-# So[param.indices, ] <- t(params[t(rnd[, dim(rnd)[2]]), 1:4])
-# So[param.indices[1:2], ] <- So[param.indices[1:2], ] * 365 # these should stay the same
-# # Note: These aren't yet standardized by population size; these need to be turned into percentages of population in each compartment
-# # So: (x / 100000) * N[i, j]
+### Store initial S0/I0 conditions:
+init.states.S <- parms[1:n, ]; init.states.I  <- parms[(n + 1):(2 * n), ]
+
+### Reduce parms to hold just the parameters now:
+parms <- parms[(dim(parms)[1] - 4):(dim(parms)[1]), ]
 
 ### Calculate betas
 beta.range <- tm.range[1]:(tail(tm.range, 1) + 2 * tmstep)
 AHpt <- AH[beta.range, ]
 AHpt <- as.matrix(AHpt, length(AHpt), n)
-b <- log(So[param.indices[3], ] - So[param.indices[4], ])
+b <- log(parms[3, ] - parms[4, ])
 a <- -180
 
 beta <- lapply(1:num_ens, function(ix) {
-  (exp(a * AHpt + b[ix]) + So[param.indices[4], ix]) / So[param.indices[2], ix]
+  (exp(a * AHpt + b[ix]) + parms[4, ix]) / parms[2, ix]
 })
 
-### Draw S0 and I0 from So
-S0.temp <- lapply(1:num_ens, function(ix) {
-  N * (matrix(So[S0.indices, ix], ncol = n, byrow = TRUE))# / 100000) # % of population susceptible, times # in population
-})
-I0.temp <- lapply(1:num_ens, function(ix) {
-  N * (matrix(So[I0.indices, ix], ncol = n, byrow = TRUE))# / 100000)
-})
-D.temp <- So[param.indices[2], ]; L.temp <- So[param.indices[1], ]
+### Create vectors of initial parameters:
+D.temp <- parms[2, ]; L.temp <- parms[1, ]; airScale.temp <- parms[5, ]
 
 # ### Run manually ###
 # ens.mem <- 3
@@ -145,15 +133,8 @@ m <- sapply(1:num_ens, function(ix) {
   propagateToySIRS(tm_strt = tm_strt, tm_end = tm_end, dt,
                    S0 = S0.temp[[ix]], I0 = I0.temp[[ix]], N,
                    D = D.temp[ix], L = L.temp[ix], beta[[ix]],
-                   realdata = TRUE)
+                   airScale = airScale.temp[ix], realdata = TRUE)
 })
-# save(m, file = '/Users/sarahkramer/Desktop/Lab/spatial_transmission/forecastsE/synthetic/04-30-19/synthetic_full_100ens_04-30.RData')
-
-# ### Save parameter ensembles
-# save(S0.temp, file = '/Users/sarahkramer/Desktop/Lab/spatial_transmission/forecastsE/synthetic/04-30-19/all_S0.RData')
-# save(I0.temp, file = '/Users/sarahkramer/Desktop/Lab/spatial_transmission/forecastsE/synthetic/04-30-19/all_I0.RData')
-# all.params <- list(So[param.indices[3], ], So[param.indices[4], ], D.temp, L.temp)#, So[1, ] / 1000)
-# save(all.params, file = '/Users/sarahkramer/Desktop/Lab/spatial_transmission/forecastsE/synthetic/04-30-19/all_params.RData')
 
 ### Calculate weekly incidence by compartment:
 nt <- floor((length(tm_strt:tm_end) + 1) / 7)
@@ -168,64 +149,116 @@ newI.c <- vector('list', n)
 for (i in 1:n) {
   newI.c[[i]] <- Reduce('+', newI[(i * n - n + 1):(i * n)])
 }
-# save(newI.c, file = '/Users/sarahkramer/Desktop/Lab/spatial_transmission/forecastsE/synthetic/04-30-19/by_country_COUNTS.RData')
+newI.c.COUNT <- newI.c
 
 ### Standardize results to per 100,000 population:
 for (i in 1:n) {
   newI.c[[i]] <- (newI.c[[i]] / pop.size$pop[i]) * 100000
 }
-# save(newI.c, file = '/Users/sarahkramer/Desktop/Lab/spatial_transmission/forecastsE/synthetic/04-30-19/by_country_RATES.RData')
 
-# pdf('/Users/sarahkramer/Desktop/Lab/spatial_transmission/forecastsE/synthetic/results_04-30-19.pdf',
-#     width = 10, height = 10)
-par(mfrow = c(5, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-for (ix in 1:num_ens) {
-  newI.ens <- NULL
-  for (i in 1:n) {
-    newI.ens <- rbind(newI.ens, newI.c[[i]][ix, ])
-  }
-  newI.ens <- newI.ens[, 2:(dim(newI.ens)[2])]
-  matplot(t(newI.ens), type = 'b', pch = 20, cex = 0.7, col = viridis(n), main = ix, ylab = 'Cases / 100,000 Pop.')
-}
-# dev.off()
-
-# print(summary(So[S0.indices, ]))
-# print(So[param.indices, ])
-
-# to.keep <- c(2, 4, 9:11, 16:17, 19, 23, 27, 30, 38:40, 45, 51, 54:55, 57:58, 61, 64, 66, 71, 78:80, 88:89, 93, 98)
-# print(summary(So[S0.indices, to.keep]))
-# print(So[param.indices, to.keep])
-# 
-# # to.keep <- c(10, 27, 30, 38, 40, 78, 80, 88)
-# to.keep <- c(10, 38, 40, 88)
-# par(mfrow = c(2, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-# for (ix in to.keep) {
+### Plot results:
+# par(mfrow = c(5, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+# for (ix in 1:num_ens) {
 #   newI.ens <- NULL
 #   for (i in 1:n) {
 #     newI.ens <- rbind(newI.ens, newI.c[[i]][ix, ])
 #   }
-#   newI.ens <- newI.ens[, 2:(dim(newI.ens)[2])]
+#   # newI.ens <- newI.ens[, 2:(dim(newI.ens)[2])]
 #   matplot(t(newI.ens), type = 'b', pch = 20, cex = 0.7, col = viridis(n), main = ix, ylab = 'Cases / 100,000 Pop.')
 # }
-# print(summary(So[S0.indices, to.keep])) # 76.095%, 87.951%, 74.703%, 72.173%
-# print(So[param.indices, to.keep])
-# # [1,] 3279.281923 2630.340714 1940.392595 2847.1341948
-# # [2,]    4.462900    6.385129    4.275509    3.8597335
-# # [3,]    3.174249    2.005894    2.846134    3.5250545
-# # [4,]    1.291414    1.196737    1.112553    0.9070985
+
+### Run through free simulations and check:
+      # at least 19 countries/21 have 500+ cases in 3+ weeks (alt: all countries exceed 500/100,000 (onset))
+      # 88% of peaks (18 countries) occur between weeks 13 and 25 (inclusive)
+      # at least 75% of countries (15) have AR between 15-50% of 100,000
+source('code/functions/Util.R')
+ens.of.interest <- c()
+for (ix in 1:num_ens) {
+  newI.ens <- NULL
+  for (country in 1:n) {
+    newI.ens <- rbind(newI.ens, newI.c[[country]][ix, ])
+  }
+  newI.ens <- t(newI.ens)#[, 2:(dim(newI.ens)[2])])
+  
+  # First: at least 19 countries have onset
+  no.onset.count <- 0
+  for (country in 1:n) {
+    if (is.na(findOnset(newI.ens[, country], 500)$onset)) {
+      no.onset.count <- no.onset.count + 1
+    }
+  }
+  
+  # Continue searching if enough outbreaks:
+  if (no.onset.count <= 2) {
+    # Get vectors of attack rates and peak timings:
+    pts = ars = c()
+    for (country in 1:n) {
+      pts <- c(pts, which.max(newI.ens[, country]))
+      ars <- c(ars, sum(newI.ens[, country]))
+    }
+    
+    num.real.pt <- length(which(pts %in% c(13:25)))
+    num.real.ar <- length(which(ars >= 15000 & ars <= 50000))
+    
+    if (num.real.pt >= 18 & num.real.ar >= 15) {
+      ens.of.interest <- c(ens.of.interest, ix)
+    }
+  }
+  
+}
+
+# What are the parameters for these?
+summary(D.temp[ens.of.interest]) # 1.8-6.3
+summary(L.temp[ens.of.interest] / 365) # 1.75-10 years
+summary(airScale.temp[ens.of.interest]) # 0.75-1.25 (so full range)
+summary(parms[3, ens.of.interest]) # 2.0 - 3.4
+summary(parms[4, ens.of.interest]) # 0.83 - 1.18
+summary(init.states.S[, ens.of.interest])
+select.parms <- as.data.frame(cbind(D.temp[ens.of.interest],
+                                    L.temp[ens.of.interest] / 365,
+                                    airScale.temp[ens.of.interest],
+                                    parms[3, ens.of.interest],
+                                    parms[4, ens.of.interest]))
+plot(select.parms, pch = 20, cex = 1.2) # good! don't seem to be strong correlations
+
+# Save these initial conditions so that sensitivity to I0 can be assessed:
+# (Remember that this is an initial pass - might decide to do I0 in some other way)
+
+
+# plot; try restricting start vars?; check correlations for real
+
+
+
+
+
+
+
+
+# save(m, file = '/Users/sarahkramer/Desktop/Lab/spatial_transmission/forecastsE/synthetic/04-30-19/synthetic_full_100ens_04-30.RData')
+
+# ### Save parameter ensembles
+# save(S0.temp, file = '/Users/sarahkramer/Desktop/Lab/spatial_transmission/forecastsE/synthetic/04-30-19/all_S0.RData')
+# save(I0.temp, file = '/Users/sarahkramer/Desktop/Lab/spatial_transmission/forecastsE/synthetic/04-30-19/all_I0.RData')
+# all.params <- list(So[param.indices[3], ], So[param.indices[4], ], D.temp, L.temp)#, So[1, ] / 1000)
+# save(all.params, file = '/Users/sarahkramer/Desktop/Lab/spatial_transmission/forecastsE/synthetic/04-30-19/all_params.RData')
+
+# pdf('/Users/sarahkramer/Desktop/Lab/spatial_transmission/forecastsE/synthetic/results_04-30-19.pdf',
+#     width = 10, height = 10)
+# dev.off()
+
+
+
+
+
+
 
 ### Notes:
 # low: PT, IT; high: SE, LU
-# PT has early rise in humidity
-# low AR in PT until S0 >~65000; 
-# random I0 seeding seems okay, but AR highly dependent on S0
-# usually 0.5-0.75, and highly sig
-# and <40% usually doesn't lead to much (except in SE/LU)
-# so do same S0 % in all places
-# should I0 at least be the same in all compartments within a country? I don't think so, b/c travelers could have higher rates
-# Anything else shown tomorrow is VERY preliminary; need to add IS and AT, for example
-# Also using yearly average commuting; but could use by year
 # Ensemble members with outbreaks in all/most countries had S0 > 55% and R0mx > 1.6, but otherwise spanned full ranges
+
+
+
+
 
 # Assess: Relative AR; relative PT; relative PI; synchrony; spatial patterns;
     # By:
@@ -234,19 +267,11 @@ for (ix in 1:num_ens) {
 
 
 ### TO-DO ###
-# Dump train data for now - use commuting and plane
-# Multiplier for plane data? Fit that using filter (~0.8-1.2)
-# Include AT and RO? (check that these are flagged as x; recheck the commuting data)
-# Doc about choices/SA
-# Prescribe several (~20) sets of params/initial conditions, get synthetic free simulations
-      # Criteria for inclusion: certain AR, PT; at least 90% have onset
-# Analyze patterns based on seeding: everywhere; each country; vary # seeded in each country
+# [] Prescribe several (~20) sets of params/initial conditions, get synthetic free simulations
+# [] Analyze patterns based on seeding: everywhere; each country; vary # seeded in each country
       # Also look first few countries with outbreaks; or else countries with onset within a certain time period
-      # Seed a whole number (1-10? Distributed based on pop sizes in different compartments)
-# Random draw of S0 for each country, allow deviation for each compartment
-# Check inferred parameters for Aim 1
-# 
-
+# [] Assess patterns in free simulations - countries with consistently high/low AR? early/late onset/peak? selected params/states
+# [] Compare spatial patterns and synchrony to synthetic
 
 
 

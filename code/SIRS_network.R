@@ -2,7 +2,7 @@
 # Note: During day, we care about where people work (columns). During night, we care
 # about where they live (rows).
 
-propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, realdata = FALSE) {
+propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, airScale, realdata = FALSE) {
   cnt <- 1
   
   tm_strt <- tm_strt - tm.range[1] + 1 # adjust the index to match beta
@@ -72,14 +72,11 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, re
       print('ERROR: Out of seasonal range!')
     }
     
-    # # Artifically inflate air travel?
+    # # Remove air travel:
     # a.temp <- a.temp * 0
     
-    # # Artificially inflate (or remove) train data:
-    # t.rand <- t.rand * 0
-    
     # Add "random" travel data:
-    all.rand <- a.temp + t.rand
+    all.rand <- airScale * a.temp
     
     # Run model forward:
     cnt <- cnt + 1
