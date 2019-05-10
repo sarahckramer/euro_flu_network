@@ -112,7 +112,7 @@ print(p)
 ### HEAT MAPS ###
 air.by.month <- vector('list', 12)
 for (i in 1:12) {
-  load(paste0('/Users/sarahkramer/Desktop/Lab/spatial_transmission/forecastsE/travel_data/air_', i, '_04-16.RData'))
+  load(paste0('formatTravelData/formattedData/air_', i, '_05-07.RData'))
   air.by.month[[i]] <- a.temp.sym
 }; rm(a.temp.sym)
 a.mean <- apply(simplify2array(air.by.month), 1:2, mean); rm(air.by.month)

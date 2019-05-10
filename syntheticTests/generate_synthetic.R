@@ -36,6 +36,14 @@ theta_up <- c(L_up, D_up, Rmx_up, Rmn_up, airScale_up)
 S0_low <- 0.55; S0_up <- 0.90 # proportion of population
 I0_low <- 1.0; I0_up <- 50.0 # raw number
 
+# ### Restricted parameter boundaries - try?
+# D_low <- 2; L_low <- 1*365; Rmx_low <- 2.0; Rmn_low <- 0.8; airScale_low <- 0.75
+# D_up <- 6; L_up <- 10*365; Rmx_up <- 3.5; Rmn_up <- 1.2; airScale_up <- 1.25
+# theta_low <- c(L_low, D_low, Rmx_low, Rmn_low, airScale_low)
+# theta_up <- c(L_up, D_up, Rmx_up, Rmn_up, airScale_up)
+# S0_low <- 0.55; S0_up <- 0.90 # proportion of population
+# I0_low <- 1.0; I0_up <- 50.0 # raw number
+
 ### Specify the country for which we are performing a forecast
 countries <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'FR', 'DE', 'HU', 'IS', 'IE', 'IT',
                'LU', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'UK')
@@ -156,17 +164,6 @@ for (i in 1:n) {
   newI.c[[i]] <- (newI.c[[i]] / pop.size$pop[i]) * 100000
 }
 
-### Plot results:
-# par(mfrow = c(5, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-# for (ix in 1:num_ens) {
-#   newI.ens <- NULL
-#   for (i in 1:n) {
-#     newI.ens <- rbind(newI.ens, newI.c[[i]][ix, ])
-#   }
-#   # newI.ens <- newI.ens[, 2:(dim(newI.ens)[2])]
-#   matplot(t(newI.ens), type = 'b', pch = 20, cex = 0.7, col = viridis(n), main = ix, ylab = 'Cases / 100,000 Pop.')
-# }
-
 ### Run through free simulations and check:
       # at least 19 countries/21 have 500+ cases in 3+ weeks (alt: all countries exceed 500/100,000 (onset))
       # 88% of peaks (18 countries) occur between weeks 13 and 25 (inclusive)
@@ -206,6 +203,7 @@ for (ix in 1:num_ens) {
   }
   
 }
+print(length(ens.of.interest))
 
 # What are the parameters for these?
 summary(D.temp[ens.of.interest]) # 1.8-6.3
@@ -219,32 +217,68 @@ select.parms <- as.data.frame(cbind(D.temp[ens.of.interest],
                                     airScale.temp[ens.of.interest],
                                     parms[3, ens.of.interest],
                                     parms[4, ens.of.interest]))
-plot(select.parms, pch = 20, cex = 1.2) # good! don't seem to be strong correlations
+names(select.parms) <- c('D', 'L', 'airScale', 'R0mx', 'R0mn')
+
+plot(select.parms, pch = 20, cex = 1.2)
+for (i in 1:4) {
+  for (j in (i + 1):5) {
+    print(names(select.parms)[c(i, j)])
+    print(cor.test(select.parms[, i], select.parms[, j]))
+  }
+} # only D/R0mx sig
+cor.test(select.parms$R0mx, select.parms$D) # p = 0.00055, cor = 0.6891197
+
+# Plot chosen simulations:
+par(mfrow = c(5, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+for (ix in ens.of.interest) {
+  newI.ens <- NULL
+  for (i in 1:n) {
+    newI.ens <- rbind(newI.ens, newI.c[[i]][ix, ])
+  }
+  # newI.ens <- newI.ens[, 2:(dim(newI.ens)[2])]
+  matplot(t(newI.ens), type = 'b', pch = 20, cex = 0.7, col = viridis(n), main = ix, ylab = 'Cases / 100,000 Pop.')
+}
+
+# # Plot ALL simulations:
+# par(mfrow = c(5, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+# for (ix in 1:num_ens) {
+#   newI.ens <- NULL
+#   for (i in 1:n) {
+#     newI.ens <- rbind(newI.ens, newI.c[[i]][ix, ])
+#   }
+#   # newI.ens <- newI.ens[, 2:(dim(newI.ens)[2])]
+#   matplot(t(newI.ens), type = 'b', pch = 20, cex = 0.7, col = viridis(n), main = ix, ylab = 'Cases / 100,000 Pop.')
+# }
+
+# Save these synthetic sets:
+synth.runs.RATES = synth.runs.COUNTS = vector('list', length(ens.of.interest))
+for (i in 1:length(synth.runs.RATES)) {
+  ix <- ens.of.interest[i]
+  
+  newI.ens = newI.ens.count = NULL
+  for (country in 1:n) {
+    newI.ens <- rbind(newI.ens, newI.c[[country]][ix, ])
+    newI.ens.count <- rbind(newI.ens.count, newI.c.COUNT[[country]][ix, ])
+  }
+  
+  synth.runs.RATES[[i]] <- newI.ens
+  synth.runs.COUNTS[[i]] <- newI.ens.count
+}
+save(synth.runs.RATES, file = 'syntheticTests/syntheticData/synth_05-09_RATES1.RData')
+save(synth.runs.COUNTS, file = 'syntheticTests/syntheticData/synth_05-09_COUNTS1.RData')
 
 # Save these initial conditions so that sensitivity to I0 can be assessed:
 # (Remember that this is an initial pass - might decide to do I0 in some other way)
+init.states.SEL <- rbind(init.states.S[, ens.of.interest],
+                         init.states.I[, ens.of.interest])
+# each column is a run
+
+save(init.states.SEL, file = 'syntheticTests/syntheticData/initStates_05-09_1.RData')
+save(select.parms, file = 'syntheticTests/syntheticData/params_05-09_1.RData')
 
 
-# plot; try restricting start vars?; check correlations for real
 
 
-
-
-
-
-
-
-# save(m, file = '/Users/sarahkramer/Desktop/Lab/spatial_transmission/forecastsE/synthetic/04-30-19/synthetic_full_100ens_04-30.RData')
-
-# ### Save parameter ensembles
-# save(S0.temp, file = '/Users/sarahkramer/Desktop/Lab/spatial_transmission/forecastsE/synthetic/04-30-19/all_S0.RData')
-# save(I0.temp, file = '/Users/sarahkramer/Desktop/Lab/spatial_transmission/forecastsE/synthetic/04-30-19/all_I0.RData')
-# all.params <- list(So[param.indices[3], ], So[param.indices[4], ], D.temp, L.temp)#, So[1, ] / 1000)
-# save(all.params, file = '/Users/sarahkramer/Desktop/Lab/spatial_transmission/forecastsE/synthetic/04-30-19/all_params.RData')
-
-# pdf('/Users/sarahkramer/Desktop/Lab/spatial_transmission/forecastsE/synthetic/results_04-30-19.pdf',
-#     width = 10, height = 10)
-# dev.off()
 
 
 
@@ -254,28 +288,23 @@ plot(select.parms, pch = 20, cex = 1.2) # good! don't seem to be strong correlat
 
 ### Notes:
 # low: PT, IT; high: SE, LU
-# Ensemble members with outbreaks in all/most countries had S0 > 55% and R0mx > 1.6, but otherwise spanned full ranges
 
-
-
-
-
-# Assess: Relative AR; relative PT; relative PI; synchrony; spatial patterns;
-    # By:
+# Assess by:
     # Different param ranges; travel inclusion; travel multipliers; random seeds; seed locations
-
-
 
 ### TO-DO ###
 # [] Prescribe several (~20) sets of params/initial conditions, get synthetic free simulations
+# [] Assess patterns in free simulations; compare with observed data
 # [] Analyze patterns based on seeding: everywhere; each country; vary # seeded in each country
-      # Also look first few countries with outbreaks; or else countries with onset within a certain time period
-# [] Assess patterns in free simulations - countries with consistently high/low AR? early/late onset/peak? selected params/states
 # [] Compare spatial patterns and synchrony to synthetic
 
 
 
 
+
+# pdf('/Users/sarahkramer/Desktop/Lab/spatial_transmission/forecastsE/synthetic/results_04-30-19.pdf',
+#     width = 10, height = 10)
+# dev.off()
 
 
 
