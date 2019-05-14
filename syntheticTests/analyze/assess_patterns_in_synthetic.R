@@ -1,6 +1,9 @@
 
 ### Assess patterns in synthetic "data" and compare to observed data
 
+### Save all plots:
+pdf('syntheticTests/outputs/synthetic_runs1.pdf', width = 16, height = 10)
+
 ### Read in synthetic "data" ###
 countries <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'FR', 'DE', 'HU', 'IS', 'IE', 'IT',
                'LU', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'UK')
@@ -464,47 +467,25 @@ levels(m$country) <- c('Austria', 'Belgium', 'Czech Republic', 'Germany', 'Denma
                        'Luxembourg', 'Netherlands', 'Poland', 'Portugal', 'Romania', 'Sweden',
                        'Slovenia', 'Slovakia', 'UK')
 
-# Store onset week for each season:
+# Store onset week for each run:
 library(dplyr)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-### Look at parameters and initial states for allOn vs. anyNoOn ###
-
-
-
-
-
-
-for (season in levels(m$season)) {
-  m.temp <- m[m$season == season, c('country', 'onsetObs')]
+for (run in levels(m$run)) {
+  m.temp <- m[m$run == run, c('country', 'ot')]
   names(m.temp)[1] <- 'region'
   m.temp$region <- as.character(m.temp$region)
   eur <- full_join(eur, m.temp, by = 'region')
-  names(eur)[length(names(eur))] <- season
+  names(eur)[length(names(eur))] <- run
 }
 
 # Loop through weeks and plot when country has onset:
-for (season in levels(m$season)) {
-  on.min <- min(eur[, season], na.rm = TRUE)
-  on.max <- max(eur[, season], na.rm = TRUE)
+for (run in levels(m$run)) {
+  on.min <- min(eur[, names(eur) == run], na.rm = TRUE)
+  on.max <- max(eur[, names(eur) == run], na.rm = TRUE)
   
   p = vector('list', length(on.min:on.max))
   for (wk in on.min:on.max) {
-    eur.curr <- eur[eur[, season] == wk & !is.na(eur[, season]), ]
-    eur.past <- eur[eur[, season] < wk & !is.na(eur[, season]), ]
+    eur.curr <- eur[eur[, names(eur) == run] == wk & !is.na(eur[, names(eur) == run]), ]
+    eur.past <- eur[eur[, names(eur) == run] < wk & !is.na(eur[, names(eur) == run]), ]
     
     p[[wk - on.min + 1]] <- ggplot() + geom_polygon(data = eur, aes(x = long, y = lat, group = group),
                                                     fill = 'gray95', colour = 'black', size = 1.0) +
@@ -517,8 +498,50 @@ for (season in levels(m$season)) {
   do.call('grid.arrange', c(p, nrow = 3))
 }
 
+### Look at parameters and initial states for allOn vs. anyNoOn ###
+load('syntheticTests/syntheticData/params_05-09_1.RData')
+load('syntheticTests/syntheticData/initStates_05-09_1.RData')
+
+parms.allOn <- select.parms[allOn, ]
+parms.anyNo <- select.parms[noOn, ]
+
+par(mfrow = c(1, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+boxplot(parms.allOn$D, parms.anyNo$D, xlab = '', ylab = 'D', names = c('All Onset', 'Any No Onset'))
+boxplot(parms.allOn$L, parms.anyNo$L, xlab = '', ylab = 'L', names = c('All Onset', 'Any No Onset'))
+boxplot(parms.allOn$airScale, parms.anyNo$airScale, xlab = '', ylab = 'airScale', names = c('All Onset', 'Any No Onset'))
+boxplot(parms.allOn$R0mx, parms.anyNo$R0mx, xlab = '', ylab = 'R0mx', names = c('All Onset', 'Any No Onset'))
+boxplot(parms.allOn$R0mn, parms.anyNo$R0mn, xlab = '', ylab = 'R0mn', names = c('All Onset', 'Any No Onset'))
+
+t.test(parms.allOn$D, parms.anyNo$D) # <0.1
+t.test(parms.allOn$L, parms.anyNo$L) # not sig
+t.test(parms.allOn$airScale, parms.anyNo$airScale) # notsig
+t.test(parms.allOn$R0mx, parms.anyNo$R0mx) # <0.1
+t.test(parms.allOn$R0mn, parms.anyNo$R0mn) # not sig
+# trend toward lower R0mx and lower D when any w/o onset, but nothing sig.
+
+# for init.states.SEL, rows are countries and columns are runs
+init.S <- init.states.SEL[1:21, ]; init.I <- init.states.SEL[22:42, ]
+rownames(init.S) = rownames(init.I) = countries
+
+boxplot(init.S) # by run (note: 11 higher than 10 or 12)
+boxplot(t(init.S)) # by country (note: 20 much lower than 21)
+# looks like SE has particularly low S0
+
+init.S.df <- melt(init.S)
+kruskal.test(value ~ Var1, data = init.S.df) # not sig
+
+boxplot(init.I)
+boxplot(t(init.I))
+
+par(mfrow = c(1, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+boxplot(init.S[, allOn], xlab = 'Run #', ylab = 'S0', ylim = c(0.55, 0.90),
+        names = allOn, main = 'All Onset')
+boxplot(init.S[, noOn], xlab = 'Run #', ylab = 'S0', ylim = c(0.55, 0.90),
+        names = noOn, main = 'Any No Onset')
+boxplot(init.I[, allOn], xlab = 'Run #', ylab = 'S0', ylim = c(1, 50),
+        names = allOn, main = 'All Onset')
+boxplot(init.I[, noOn], xlab = 'Run #', ylab = 'S0', ylim = c(1, 50),
+        names = noOn, main = 'Any No Onset')
+# don't look to be substantial differences
+
 dev.off()
-
-
-
-
