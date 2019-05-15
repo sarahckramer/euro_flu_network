@@ -291,10 +291,10 @@ save(select.parms, file = 'syntheticTests/syntheticData/params_05-09_1.RData')
 ### TO-DO ###
 # [] Prescribe several (~20) sets of params/initial conditions, get synthetic free simulations
 # [x] Assess patterns in free simulations; compare with observed data
-# [] Analyze patterns based on seeding:
+# [x] Analyze patterns based on seeding:
     # [x] Everywhere
     # [x] Each country
-    # [] 2-5 initial countries
+    # [-] 2-5 initial countries
     # [x] Vary # seeded in each country
 # [x] Compare spatial patterns and synchrony to synthetic
 # [-] Test impact of net inflow/outflow on synthetic AR/PT/OT?
@@ -305,6 +305,5 @@ save(select.parms, file = 'syntheticTests/syntheticData/params_05-09_1.RData')
 # [] Assess model sensitivity to different params by holding other 4 constant, then changing param of interest?
     # (At the very least, do this for airScale)
 # [] Assess synthetic patterns when including/excluding different travel types (after getting more solid model)
-
 
 

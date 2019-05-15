@@ -404,14 +404,13 @@ dev.off()
 # countries[which(!(countries %in% onset.counts.firstWaves))] # BE, HR, CZ, HU, RO, SK, SE
 # # may also want to eliminate IS from consideration...
 
-
 # Try:
 # [x] Seed only one random country (or, same random pull of init conditions, run with each country as a start location)
     # [x] Seed 1, 10, 50
     # [x] Seed based on pop dist, or in home-home compartment only
-    # [] Seed only 1, but look at only those in onset.counts.firstWk
-# [] Select 2, 3, 5 countries to randomly seed
-    # [] Narrow range of choices to those with early onsets in observed data
+    # [-] Seed only 1, but look at only those in onset.counts.firstWk
+# [-] Select 2, 3, 5 countries to randomly seed
+    # [-] Narrow range of choices to those with early onsets in observed data
 
 # Evaluate based on:
 # [x] Number of countries w/ no onset
@@ -421,12 +420,9 @@ dev.off()
 # [x] Synchrony
 
 # [] Turn evaluation into function
-# [] QUESTION: To better explore, should I be setting all countries to have equal S0?
-# [] QUESTION: Better ways to assess sensitivity?
-# [] QUESTION: Better ways to assess synchrony?
-# [] Choose countries where onset SHOULDN'T be "allowed?"
-      # [] Which countries never within first 5 or so to be infected?
-      # [] Choose probabilistically (based on how many seasons first)?
+# [-] Choose countries where onset SHOULDN'T be "allowed?"
+      # [-] Which countries never within first 5 or so to be infected?
+      # [-] Choose probabilistically (based on how many seasons first)?
 # [x] Which countries are most impacted by differences in initally-seeded country? - RO, IT, ES, SI, LU, NL, PL, HR, AT, BE, DE
 # [x] Did Aim1 models fit differences in S0 by country?
       # [] How to incorporate this? (PT sig higher than IS, RO, DE, DK, CZ) - 10% boost or something? (but only for generating runs; filter should be agnostic)
