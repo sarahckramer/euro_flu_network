@@ -55,6 +55,18 @@ for (season in seasons) {
 }
 # mostly 60-75%; extend down to 55% and up to 90%; not normally distributed, but certainly a narrow range we could start with
 
+# Look at distribution for each COUNTRY:
+p1 <- ggplot(data = res) + geom_boxplot(aes(x = counts, y = s0s), fill = 'lightblue2') +
+  theme_classic() + labs(x = 'Country', y = 'S0')
+print(p1)
+# okay, so there look to be some differences here
+# note that we're not including 17-18 or 18-19 here
+
+kruskal.test(s0s ~ counts, data = res) # sig
+posthoc.kruskal.nemenyi.test(s0s ~ counts, data = res) # PT vs. (RO, IS, DE, DK, CZ)
+
+
+
 # Look at fitted values of L, D, R0mx, R0mn at end of season:
 o$group <- paste(o$country, o$run, sep = '_')
 ggplot(data = o) + geom_line(aes(x = week, y = L, group = group, col = country)) +
