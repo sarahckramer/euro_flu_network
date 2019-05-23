@@ -6,7 +6,14 @@ calc_obsvars <- function(obs, oev_denom) {
       tmp[j, i] <- mean(obs[(j - 3):(j - 1), i], na.rm = TRUE)
     }
   }
-  vars.temp <- (1e5 + (tmp ** 2) / 5) / oev_denom
+  
+  vars.temp <- tmp
+  for (i in 1:dim(obs)[2]) {
+    # vars.temp[, i] <- (pop.size$pop[i] + (tmp[, i] ** 2) / 5) / oev_denom
+    vars.temp[, i] <- (1e5 + (tmp[, i] ** 2) / 5) / oev_denom
+  }
+  
+  # vars.temp <- (1e5 + (tmp ** 2) / 5) / oev_denom
   
   # check for NAs
   for (i in 1:dim(obs)[2]) {

@@ -24,7 +24,7 @@ tmstep <- 7 #data is weekly
 wk_start <- 40
 
 ### Set parameters
-num_ens <- 500
+num_ens <- 1000
 tm_strt <- 273; tm_end <- 573; tm_step <- 1#; t <- 1 # 273 is first of October
 tm.range <- tm_strt:tm_end
 
@@ -34,7 +34,7 @@ D_up <- 7; L_up <- 10*365; Rmx_up <- 3.5; Rmn_up <- 1.2; airScale_up <- 1.25
 theta_low <- c(L_low, D_low, Rmx_low, Rmn_low, airScale_low)
 theta_up <- c(L_up, D_up, Rmx_up, Rmn_up, airScale_up)
 S0_low <- 0.55; S0_up <- 0.90 # proportion of population
-I0_low <- 1.0; I0_up <- 50.0 # raw number
+I0_low <- 0.1; I0_up <- 10.0 # raw number
 
 # ### Restricted parameter boundaries - try?
 # D_low <- 2; L_low <- 1*365; Rmx_low <- 2.0; Rmn_low <- 0.8; airScale_low <- 0.75
@@ -203,14 +203,15 @@ for (ix in 1:num_ens) {
   }
   
 }
-print(length(ens.of.interest))
+print(length(ens.of.interest)) # so consistently 4.2% are "realistic"
+# WOULD CHANGING ONE OF THESE METRICS LEAVE OUT SOME OF THE IS ONES?
 
 # What are the parameters for these?
-summary(D.temp[ens.of.interest]) # 1.8-6.3
-summary(L.temp[ens.of.interest] / 365) # 1.75-10 years
+summary(D.temp[ens.of.interest]) # 2.0-5.6
+summary(L.temp[ens.of.interest] / 365) # 1-10 years
 summary(airScale.temp[ens.of.interest]) # 0.75-1.25 (so full range)
-summary(parms[3, ens.of.interest]) # 2.0 - 3.4
-summary(parms[4, ens.of.interest]) # 0.83 - 1.18
+summary(parms[3, ens.of.interest]) # 2.26 - 3.38
+summary(parms[4, ens.of.interest]) # 0.8 - 1.2
 summary(init.states.S[, ens.of.interest])
 select.parms <- as.data.frame(cbind(D.temp[ens.of.interest],
                                     L.temp[ens.of.interest] / 365,
@@ -225,8 +226,9 @@ for (i in 1:4) {
     print(names(select.parms)[c(i, j)])
     print(cor.test(select.parms[, i], select.parms[, j]))
   }
-} # only D/R0mx sig
-cor.test(select.parms$R0mx, select.parms$D) # p = 0.00055, cor = 0.6891197
+} # only D/R0mx, D/R0mn sig (both pos)
+cor.test(select.parms$R0mx, select.parms$D) # 500 runs: p = 0.00055, cor = 0.6891197
+cor.test(select.parms$R0mn, select.parms$D)
 
 # Plot chosen simulations:
 par(mfrow = c(5, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
@@ -264,8 +266,8 @@ for (i in 1:length(synth.runs.RATES)) {
   synth.runs.RATES[[i]] <- newI.ens
   synth.runs.COUNTS[[i]] <- newI.ens.count
 }
-save(synth.runs.RATES, file = 'syntheticTests/syntheticData/synth_05-09_RATES1.RData')
-save(synth.runs.COUNTS, file = 'syntheticTests/syntheticData/synth_05-09_COUNTS1.RData')
+save(synth.runs.RATES, file = 'syntheticTests/syntheticData/synth_05-16_RATES2.RData')
+save(synth.runs.COUNTS, file = 'syntheticTests/syntheticData/synth_05-16_COUNTS2.RData')
 
 # Save these initial conditions so that sensitivity to I0 can be assessed:
 # (Remember that this is an initial pass - might decide to do I0 in some other way)
@@ -273,8 +275,8 @@ init.states.SEL <- rbind(init.states.S[, ens.of.interest],
                          init.states.I[, ens.of.interest])
 # each column is a run
 
-save(init.states.SEL, file = 'syntheticTests/syntheticData/initStates_05-09_1.RData')
-save(select.parms, file = 'syntheticTests/syntheticData/params_05-09_1.RData')
+save(init.states.SEL, file = 'syntheticTests/syntheticData/initStates_05-16_2.RData')
+save(select.parms, file = 'syntheticTests/syntheticData/params_05-16_2.RData')
 
 
 
