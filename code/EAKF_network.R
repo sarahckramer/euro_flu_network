@@ -70,6 +70,7 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     
     diag(I0.temp[[i]]) <- parms[(1:n) + n, i]
     I0.temp[[i]] <- sweep(N / rowSums(N), 1, diag(I0.temp[[i]]), '*')
+    I0.temp[[i]] <- I0.temp[[i]] * N
   }
   parms <- parms[(dim(parms)[1] - 4):(dim(parms)[1]), ]
   

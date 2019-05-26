@@ -46,7 +46,8 @@ param.bound <- cbind(theta_low, theta_up)
 
 ### Initial state variable values
 S0_low <- 0.30; S0_up <- 1.00 # proportion of population
-I0_low <- 0.1; I0_up <- 10.0 # raw number
+I0_low <- 0; I0_up <- 0.0001 # proportion of population
+# QUESTION: upper bound of 0.001 instead?
 
 ### Parameters for the filters
 discrete <- FALSE # run the SIRS model continuously

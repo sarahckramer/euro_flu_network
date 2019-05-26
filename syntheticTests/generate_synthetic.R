@@ -34,7 +34,7 @@ D_up <- 7; L_up <- 10*365; Rmx_up <- 3.5; Rmn_up <- 1.2; airScale_up <- 1.25
 theta_low <- c(L_low, D_low, Rmx_low, Rmn_low, airScale_low)
 theta_up <- c(L_up, D_up, Rmx_up, Rmn_up, airScale_up)
 S0_low <- 0.55; S0_up <- 0.90 # proportion of population
-I0_low <- 0.1; I0_up <- 10.0 # raw number
+I0_low <- 0; I0_up <- 0.0001 # proportion of population
 
 # ### Restricted parameter boundaries - try?
 # D_low <- 2; L_low <- 1*365; Rmx_low <- 2.0; Rmn_low <- 0.8; airScale_low <- 0.75
@@ -96,10 +96,8 @@ for (i in 1:num_ens) {
   S0.temp[[i]] <- S0.temp[[i]] * N
   
   diag(I0.temp[[i]]) <- parms[(1:n) + n, i]
-  # for (j in 1:n) {
-  #   I0.temp[[i]][j, ] <- I0.temp[[i]][j, j] * N[j, ] / sum(N[j, ])
-  # }
   I0.temp[[i]] <- sweep(N / rowSums(N), 1, diag(I0.temp[[i]]), '*')
+  I0.temp[[i]] <- I0.temp[[i]] * N
 }
 
 ### Store initial S0/I0 conditions:
@@ -121,20 +119,6 @@ beta <- lapply(1:num_ens, function(ix) {
 
 ### Create vectors of initial parameters:
 D.temp <- parms[2, ]; L.temp <- parms[1, ]; airScale.temp <- parms[5, ]
-
-# ### Run manually ###
-# ens.mem <- 3
-# S0 <- S0.temp[[ens.mem]]; I0 <- I0.temp[[ens.mem]]
-# D <- D.temp[ens.mem]; L <- L.temp[ens.mem]; beta <- beta[[ens.mem]]
-# 
-# res <- propagateToySIRS(tm_strt = tm_strt, tm_end = tm_end, dt,
-#                         S0 = S0, I0 = I0, N, D = D, L = L, beta,
-#                         realdata = TRUE)
-# # matplot(res$newI, type = 'b', pch = 20, cex = 0.25, lty = 1, col = viridis(3))
-# 
-# # newI <- cbind(rowSums(res$newI[, 1:3]), rowSums(res$newI[, 4:6]), rowSums(res$newI[, 7:9]))
-# # matplot(newI, type = 'b', pch = 20, cex = 0.25, lty = 1, col = viridis(3))
-# ####################
 
 ### Run!
 m <- sapply(1:num_ens, function(ix) {
@@ -164,10 +148,14 @@ for (i in 1:n) {
   newI.c[[i]] <- (newI.c[[i]] / pop.size$pop[i]) * 100000
 }
 
+### Save FULL results:
+save(newI.c.COUNT, file = 'syntheticTests/syntheticData/allRunsCOUNTS_1000_0523.RData')
+save(newI.c, file = 'syntheticTests/syntheticData/allRunsRATES_1000_0523.RData')
+
 ### Run through free simulations and check:
       # at least 19 countries/21 have 500+ cases in 3+ weeks (alt: all countries exceed 500/100,000 (onset))
-      # 88% of peaks (18 countries) occur between weeks 13 and 25 (inclusive)
-      # at least 75% of countries (15) have AR between 15-50% of 100,000
+      # 88% of peaks (18 countries) occur between weeks 13 and 25 (inclusive) (OR: 95% of peaks?)
+      # at least 75% of countries (15) have AR between 15-50% of 100,000 (OR: 5-50%?)
 source('code/functions/Util.R')
 ens.of.interest <- c()
 for (ix in 1:num_ens) {
@@ -195,16 +183,218 @@ for (ix in 1:num_ens) {
     }
     
     num.real.pt <- length(which(pts %in% c(13:25)))
-    num.real.ar <- length(which(ars >= 15000 & ars <= 50000))
+    num.real.ar <- length(which(ars >= 10000 & ars <= 50000))
     
-    if (num.real.pt >= 18 & num.real.ar >= 15) {
+    if (num.real.pt >= 21 & num.real.ar >= 15) {
       ens.of.interest <- c(ens.of.interest, ix)
     }
   }
   
 }
 print(length(ens.of.interest)) # so consistently 4.2% are "realistic"
+# bumping lower S0 bound down makes it so that 0 / 1000 are "realistic!"
 # WOULD CHANGING ONE OF THESE METRICS LEAVE OUT SOME OF THE IS ONES?
+
+ens.orig <- ens.of.interest # 49
+# ens.lowerAR <- ens.of.interest # 96
+ens.narrowPT <- ens.of.interest # 26
+ens.comb <- ens.of.interest # 47 # 95% in PT range # 41 if AR only widened to 10%
+ens.comb.narrow <- ens.of.interest # 16 # 100% in PT range # 14 if AR only widened to 10%
+
+# ens.list <- list(ens.orig, ens.lowerAR, ens.narrowPT, ens.comb, ens.comb.narrow)
+ens.list <- list(ens.orig, ens.narrowPT, ens.comb, ens.comb.narrow)
+
+### Any overlap?:
+ens.all <- c()
+for (val in ens.list[[1]]) {
+  if (val %in% ens.list[[4]] & val %in% ens.list[[3]] &
+      val %in% ens.list[[2]]) {# & val %in% ens.list[[5]]) {
+    ens.all <- c(ens.all, val)
+  }
+}
+print(length(ens.all)) # 7
+ens.list <- list(ens.orig, ens.narrowPT, ens.comb, ens.comb.narrow, ens.all)
+
+### How often early IS? / Plot:
+which.is <- vector('list', 5)
+
+par(mfrow = c(3, 3), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+count.is <- 0
+which.is.temp <- c()
+for (val in ens.list[[5]]) {
+  newI.ens <- NULL
+  for (i in 1:n) {
+    newI.ens <- rbind(newI.ens, newI.c[[i]][val, ])
+  }
+  ot.temp <- c()
+  for (i in 1:n) {
+    ot.temp <- c(ot.temp, findOnset(newI.ens[i, ], baseline = 500)$onset)
+  }
+  # print(countries[which(ot.temp == min(ot.temp, na.rm = TRUE))])
+  
+  if ('IS' %in% countries[which(ot.temp == min(ot.temp, na.rm = TRUE))]) {
+    count.is <- count.is + 1
+    which.is.temp <- c(which.is.temp, val)
+  }
+  
+  matplot(t(newI.ens), pch = 20, col = viridis(n), type = 'b', xlab = 'Weeks Since Outbreak Start',
+          ylab = 'Syndromic+ (per 100,000)', main = val)
+  lines(newI.ens[9, ]) # Where is Iceland?
+}
+print(count.is)
+which.is[[5]] <- which.is.temp
+
+# with proportional starts, definitely not as bad
+# !1: 14 / 49 (28.571%)
+### 2: 34 / 96 (35.417%)
+# !3: 6 / 26 (23.077%)
+# !4: 13 / __ (___) # 15 / 47 (31.915%) # so narrowing PT but widening AR has little impact on IS starts
+# !5: 3 / 14 (___) # 4 / 16 (25.0%) # probably too narrow for PT, though
+# !6: 0 / 7
+
+### Potential criteria:
+save(ens.list, file = 'syntheticTests/syntheticData/ensList_0523.RData')
+# 1. Original
+# 2. Narrow PT (20+ weeks in range)
+# 3. Narrow PT and wider AR (10-50%)
+# 4. Extra narrow PT (21 weeks in range) and wider AR
+# 5. In all other 4
+
+### Choose criteria to continue with:
+# Or, for now, look at differences in params, S0, and I0 between selected and not selected
+for (i in 1:5) {
+  print(i)
+  ens.temp <- ens.list[[i]]
+  ens.notSelected <- c(1:num_ens)[!(c(1:num_ens) %in% ens.temp)]
+  
+  # par(mfrow = c(1, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+  # boxplot(D.temp[ens.temp], D.temp[ens.notSelected], names = c('Incl.', 'Excl.'), ylab = 'D')
+  # boxplot(L.temp[ens.temp], L.temp[ens.notSelected], names = c('Incl.', 'Excl.'), ylab = 'L')
+  # boxplot(parms[3, ens.temp], parms[3, ens.notSelected], names = c('Incl.', 'Excl.'), ylab = 'R0mx')
+  # boxplot(parms[4, ens.temp], parms[4, ens.notSelected], names = c('Incl.', 'Excl.'), ylab = 'R0mn')
+  # boxplot(airScale.temp[ens.temp], airScale.temp[ens.notSelected], names = c('Incl.', 'Excl.'), ylab = 'airScale')
+  
+  par(mfrow = c(5, 1), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+  hist(D.temp[ens.temp], breaks = 25, xlab = 'D', xlim = c(2, 7))
+  # hist(D.temp[ens.notSelected], breaks = 50, xlab = 'D (excluded)', xlim = c(2, 7))
+  hist(L.temp[ens.temp], breaks = 25, xlab = 'L', xlim = c(365, 10 * 365))
+  # hist(L.temp[ens.notSelected], breaks = 50, xlab = 'L (excluded)', xlim = c(365, 10 * 365))
+  hist(parms[3, ens.temp], breaks = 25, xlab = 'R0mx', xlim = c(1.5, 3.5))
+  # hist(parms[3, ens.notSelected], breaks = 50, xlab = 'R0mx (excluded)', xlim = c(1.5, 3.5))
+  hist(parms[4, ens.temp], breaks = 25, xlab = 'R0mn', xlim = c(0.8, 1.2))
+  # hist(parms[4, ens.notSelected], breaks = 50, xlab = 'R0mn (excluded)', xlim = c(0.8, 1.2))
+  hist(airScale.temp[ens.temp], breaks = 25, xlab = 'airScale', xlim = c(0.75, 1.25))
+  # hist(airScale.temp[ens.notSelected], breaks = 50, xlab = 'airScale (excluded)', xlim = c(0.75, 1.25))
+  
+  par(mfrow = c(2, 1), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+  hist(parms[3, ens.temp] - parms[4, ens.temp], breaks = 25, xlab = 'R0diff', xlim = c(0.3, 2.7))
+  hist(parms[3, ens.notSelected] - parms[4, ens.notSelected], breaks = 50, xlab = 'R0diff', xlim = c(0.3, 2.7))
+  
+  parms.df <- as.data.frame(t(parms))
+  names(parms.df) <- c('L', 'D', 'R0mx', 'R0mn', 'airScale')
+  parms.df$R0diff <- parms.df$R0mx - parms.df$R0mn
+  parms.df$sel <- 'No'
+  parms.df$sel[ens.temp] <- 'Yes'
+  parms.df$sel <- factor(parms.df$sel)
+  
+  print(kruskal.test(L ~ sel, data = parms.df))
+  print(kruskal.test(D ~ sel, data = parms.df))
+  print(kruskal.test(R0mx ~ sel, data = parms.df))
+  print(kruskal.test(R0mn ~ sel, data = parms.df))
+  print(kruskal.test(R0diff ~ sel, data = parms.df))
+  print(kruskal.test(airScale ~ sel, data = parms.df))
+  
+  initS.sel <- init.states.S[, ens.temp]; initS.notSel <- init.states.S[, ens.notSelected]
+  initI.sel <- init.states.I[, ens.temp]; initI.notSel <- init.states.I[, ens.notSelected]
+  
+  initS <- melt(init.states.S); initI <- melt(init.states.I)
+  names(initS) = names(initI) = c('country', 'run', 'value')
+  initS$country <- factor(initS$country); initI$country <- factor(initI$country)
+  levels(initS$country) = levels(initI$country) = countries
+  initS$sel = initI$sel = 'No'
+  initS$sel[initS$run %in% ens.temp] <- 'Yes'; initI$sel[initI$run %in% ens.temp] <- 'Yes'
+  initS$sel <- factor(initS$sel); initI$sel <- factor(initI$sel)
+  
+  # p1 <- ggplot(data = initS) + geom_jitter(aes(x = country, y = value, col = sel, alpha = sel, size = sel)) +
+  #   theme_classic() + theme(legend.position = 'bottom') +
+  #   labs(x = '', y = 'S0 Prop.', fill = 'Realistic Outbreak?') +
+  #   scale_size_discrete(range = c(0.5, 1.0))
+  p1 <- ggplot(data = initS[initS$sel == 'Yes', ]) +
+    geom_boxplot(aes(x = country, y = value), fill = 'lightblue2') +
+    theme_classic() + labs(x = '', y = 'S0 Prop.')
+  p2 <- ggplot(data = initI[initI$sel == 'Yes', ]) +
+    geom_boxplot(aes(x = country, y = value), fill = 'lightblue2') +
+    theme_classic() + theme(axis.text.y = element_text(angle = 90, hjust = 0.5)) +
+    labs(x = '', y = 'I0 Prop.')
+  grid.arrange(p1, p2, ncol = 1)
+  
+  s0.ps = i0.ps <- c()
+  for (j in countries) {
+    initS.temp <- initS[initS$country == j, ]; initI.temp <- initI[initI$country == j, ]
+    s0.ps <- c(s0.ps, kruskal.test(value ~ sel, data = initS.temp)$p.value)
+    i0.ps <- c(i0.ps, kruskal.test(value ~ sel, data = initI.temp)$p.value)
+  }
+  print(countries[which(s0.ps < 0.05)])
+  print(countries[which(i0.ps < 0.05)])
+  
+  meanS = varS = meanS.notSel = varS.notSel = c()
+  for (j in 1:num_ens) {
+    if (j %in% ens.temp) {
+      meanS <- c(meanS, mean(init.states.S[, j]))
+      varS <- c(varS, var(init.states.S[, j]))
+    } else {
+      meanS.notSel <- c(meanS.notSel, mean(init.states.S[, j]))
+      varS.notSel <- c(varS.notSel, var(init.states.S[, j]))
+    }
+  }
+  hist(meanS, breaks = 25, xlab = 'Mean S0 (by run)', main = '')
+  hist(meanS.notSel, breaks = 50, xlab = 'Mean S0 (by run)', main = '')
+  hist(varS, breaks = 25, xlab = 'Variance of S0 (by run)', main = '')
+  hist(varS.notSel, breaks = 50, xlab = 'Variance of S0 (by run)', main = '')
+  
+  meanI = varI = meanI.notSel = varI.notSel = c()
+  for (j in 1:num_ens) {
+    if (j %in% ens.temp) {
+      meanI <- c(meanI, mean(init.states.I[, j]))
+      varI <- c(varI, var(init.states.I[, j]))
+    } else {
+      meanI.notSel <- c(meanI.notSel, mean(init.states.I[, j]))
+      varI.notSel <- c(varI.notSel, var(init.states.I[, j]))
+    }
+  }
+  hist(meanI, breaks = 25, xlab = 'Mean I0 (by run)', main = '')
+  hist(meanI.notSel, breaks = 50, xlab = 'Mean I0 (by run)', main = '')
+  hist(varI, breaks = 25, xlab = 'Variance of I0 (by run)', main = '')
+  hist(varI.notSel, breaks = 50, xlab = 'Variance of I0 (by run)', main = '')
+  
+  si.df <- as.data.frame(cbind(c(meanS, meanS.notSel), c(varS, varS.notSel),
+                               c(meanI, meanI.notSel), c(varI, varI.notSel),
+                               c(rep('Yes', length(ens.temp)), rep('No', length(ens.notSelected)))))
+  names(si.df) <- c('meanS', 'varS', 'meanI', 'varI', 'sel')
+  print(kruskal.test(meanS ~ sel, data = si.df))
+  print(kruskal.test(varS ~ sel, data = si.df))
+  print(kruskal.test(meanI ~ sel, data = si.df))
+  print(kruskal.test(varI ~ sel, data = si.df))
+}
+# patterns:
+# R0mx and R0mn sig higher in selected [1, 2, 3, 5 (R0mn only)]
+# R0diff tends toward mid-range values (1.5-2ish) [1], higher [3]
+# airScale sig but barely higher in selected [1, 2, 3]
+# S0: sig lower than expected in IS [1, 2, 3], CZ [2, 3], HR [5]; sig higher in FR [2, 3], UK [3, 5], IT [5]
+      # lower Var in selected [1, tend2, tend5]
+# I0: sig lower than expected in IT [1], IS [3]; sig higher in SI [4, 5]
+      # lower(?) mean in selected [3]
+
+### Let's choose a way of selecting "realistic" runs before continuing
+# 
+
+
+
+### Run through selected and separate beginning in IS from not beginning in IS:
+
+
+
+
 
 # What are the parameters for these?
 summary(D.temp[ens.of.interest]) # 2.0-5.6
