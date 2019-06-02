@@ -90,7 +90,7 @@ for (i in 1:num_ens) {
   
   diag(S0.temp[[i]]) <- parms[1:n, i]
   S0.temp[[i]][S0.temp[[i]] == 0] <- sapply(1:n, function(jx) {
-     rnorm(n - 1, mean = S0.temp[[i]][jx, jx], sd = 0.05)
+    rnorm(n - 1, mean = S0.temp[[i]][jx, jx], sd = 0.05)
   })
   S0.temp[[i]] <- t(S0.temp[[i]])
   S0.temp[[i]] <- S0.temp[[i]] * N
@@ -153,9 +153,9 @@ save(newI.c.COUNT, file = 'syntheticTests/syntheticData/allRunsCOUNTS_1000_0523.
 save(newI.c, file = 'syntheticTests/syntheticData/allRunsRATES_1000_0523.RData')
 
 ### Run through free simulations and check:
-      # at least 19 countries/21 have 500+ cases in 3+ weeks (alt: all countries exceed 500/100,000 (onset))
-      # 88% of peaks (18 countries) occur between weeks 13 and 25 (inclusive) (OR: 95% of peaks?)
-      # at least 75% of countries (15) have AR between 15-50% of 100,000 (OR: 5-50%?)
+# at least 19 countries/21 have 500+ cases in 3+ weeks (alt: all countries exceed 500/100,000 (onset))
+# 88% of peaks (18 countries) occur between weeks 13 and 25 (inclusive) (OR: 95% of peaks?)
+# at least 75% of countries (15) have AR between 15-50% of 100,000 (OR: 5-50%?)
 source('code/functions/Util.R')
 ens.of.interest <- c()
 for (ix in 1:num_ens) {
@@ -182,10 +182,11 @@ for (ix in 1:num_ens) {
       ars <- c(ars, sum(newI.ens[, country]))
     }
     
-    num.real.pt <- length(which(pts %in% c(13:25)))
-    num.real.ar <- length(which(ars >= 10000 & ars <= 50000))
+    # num.real.pt <- length(which(pts %in% c(13:25))) # rounding down
+    num.real.pt <- length(which(pts %in% c(14:25))) # 95% CI (obs_pkwk - 39)
+    num.real.ar <- length(which(ars >= 15000 & ars <= 50000))
     
-    if (num.real.pt >= 21 & num.real.ar >= 15) {
+    if (num.real.pt >= 18 & num.real.ar >= 15) {
       ens.of.interest <- c(ens.of.interest, ix)
     }
   }
@@ -195,33 +196,11 @@ print(length(ens.of.interest)) # so consistently 4.2% are "realistic"
 # bumping lower S0 bound down makes it so that 0 / 1000 are "realistic!"
 # WOULD CHANGING ONE OF THESE METRICS LEAVE OUT SOME OF THE IS ONES?
 
-ens.orig <- ens.of.interest # 49
-# ens.lowerAR <- ens.of.interest # 96
-ens.narrowPT <- ens.of.interest # 26
-ens.comb <- ens.of.interest # 47 # 95% in PT range # 41 if AR only widened to 10%
-ens.comb.narrow <- ens.of.interest # 16 # 100% in PT range # 14 if AR only widened to 10%
-
-# ens.list <- list(ens.orig, ens.lowerAR, ens.narrowPT, ens.comb, ens.comb.narrow)
-ens.list <- list(ens.orig, ens.narrowPT, ens.comb, ens.comb.narrow)
-
-### Any overlap?:
-ens.all <- c()
-for (val in ens.list[[1]]) {
-  if (val %in% ens.list[[4]] & val %in% ens.list[[3]] &
-      val %in% ens.list[[2]]) {# & val %in% ens.list[[5]]) {
-    ens.all <- c(ens.all, val)
-  }
-}
-print(length(ens.all)) # 7
-ens.list <- list(ens.orig, ens.narrowPT, ens.comb, ens.comb.narrow, ens.all)
-
 ### How often early IS? / Plot:
-which.is <- vector('list', 5)
-
 par(mfrow = c(3, 3), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 count.is <- 0
 which.is.temp <- c()
-for (val in ens.list[[5]]) {
+for (val in ens.of.interest) {
   newI.ens <- NULL
   for (i in 1:n) {
     newI.ens <- rbind(newI.ens, newI.c[[i]][val, ])
@@ -242,165 +221,205 @@ for (val in ens.list[[5]]) {
   lines(newI.ens[9, ]) # Where is Iceland?
 }
 print(count.is)
-which.is[[5]] <- which.is.temp
-
+# 9 / 36 (25%)
 # with proportional starts, definitely not as bad
-# !1: 14 / 49 (28.571%)
-### 2: 34 / 96 (35.417%)
-# !3: 6 / 26 (23.077%)
-# !4: 13 / __ (___) # 15 / 47 (31.915%) # so narrowing PT but widening AR has little impact on IS starts
-# !5: 3 / 14 (___) # 4 / 16 (25.0%) # probably too narrow for PT, though
-# !6: 0 / 7
 
-### Potential criteria:
-save(ens.list, file = 'syntheticTests/syntheticData/ensList_0523.RData')
-# 1. Original
-# 2. Narrow PT (20+ weeks in range)
-# 3. Narrow PT and wider AR (10-50%)
-# 4. Extra narrow PT (21 weeks in range) and wider AR
-# 5. In all other 4
+### Look at differences in params, S0, and I0 between selected and not selected
+ens.temp <- ens.of.interest
+ens.notSelected <- c(1:num_ens)[!(c(1:num_ens) %in% ens.temp)]
 
-### Choose criteria to continue with:
-# Or, for now, look at differences in params, S0, and I0 between selected and not selected
-for (i in 1:5) {
-  print(i)
-  ens.temp <- ens.list[[i]]
-  ens.notSelected <- c(1:num_ens)[!(c(1:num_ens) %in% ens.temp)]
-  
-  # par(mfrow = c(1, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-  # boxplot(D.temp[ens.temp], D.temp[ens.notSelected], names = c('Incl.', 'Excl.'), ylab = 'D')
-  # boxplot(L.temp[ens.temp], L.temp[ens.notSelected], names = c('Incl.', 'Excl.'), ylab = 'L')
-  # boxplot(parms[3, ens.temp], parms[3, ens.notSelected], names = c('Incl.', 'Excl.'), ylab = 'R0mx')
-  # boxplot(parms[4, ens.temp], parms[4, ens.notSelected], names = c('Incl.', 'Excl.'), ylab = 'R0mn')
-  # boxplot(airScale.temp[ens.temp], airScale.temp[ens.notSelected], names = c('Incl.', 'Excl.'), ylab = 'airScale')
-  
-  par(mfrow = c(5, 1), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-  hist(D.temp[ens.temp], breaks = 25, xlab = 'D', xlim = c(2, 7))
-  # hist(D.temp[ens.notSelected], breaks = 50, xlab = 'D (excluded)', xlim = c(2, 7))
-  hist(L.temp[ens.temp], breaks = 25, xlab = 'L', xlim = c(365, 10 * 365))
-  # hist(L.temp[ens.notSelected], breaks = 50, xlab = 'L (excluded)', xlim = c(365, 10 * 365))
-  hist(parms[3, ens.temp], breaks = 25, xlab = 'R0mx', xlim = c(1.5, 3.5))
-  # hist(parms[3, ens.notSelected], breaks = 50, xlab = 'R0mx (excluded)', xlim = c(1.5, 3.5))
-  hist(parms[4, ens.temp], breaks = 25, xlab = 'R0mn', xlim = c(0.8, 1.2))
-  # hist(parms[4, ens.notSelected], breaks = 50, xlab = 'R0mn (excluded)', xlim = c(0.8, 1.2))
-  hist(airScale.temp[ens.temp], breaks = 25, xlab = 'airScale', xlim = c(0.75, 1.25))
-  # hist(airScale.temp[ens.notSelected], breaks = 50, xlab = 'airScale (excluded)', xlim = c(0.75, 1.25))
-  
-  par(mfrow = c(2, 1), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-  hist(parms[3, ens.temp] - parms[4, ens.temp], breaks = 25, xlab = 'R0diff', xlim = c(0.3, 2.7))
-  hist(parms[3, ens.notSelected] - parms[4, ens.notSelected], breaks = 50, xlab = 'R0diff', xlim = c(0.3, 2.7))
-  
-  parms.df <- as.data.frame(t(parms))
-  names(parms.df) <- c('L', 'D', 'R0mx', 'R0mn', 'airScale')
-  parms.df$R0diff <- parms.df$R0mx - parms.df$R0mn
-  parms.df$sel <- 'No'
-  parms.df$sel[ens.temp] <- 'Yes'
-  parms.df$sel <- factor(parms.df$sel)
-  
-  print(kruskal.test(L ~ sel, data = parms.df))
-  print(kruskal.test(D ~ sel, data = parms.df))
-  print(kruskal.test(R0mx ~ sel, data = parms.df))
-  print(kruskal.test(R0mn ~ sel, data = parms.df))
-  print(kruskal.test(R0diff ~ sel, data = parms.df))
-  print(kruskal.test(airScale ~ sel, data = parms.df))
-  
-  initS.sel <- init.states.S[, ens.temp]; initS.notSel <- init.states.S[, ens.notSelected]
-  initI.sel <- init.states.I[, ens.temp]; initI.notSel <- init.states.I[, ens.notSelected]
-  
-  initS <- melt(init.states.S); initI <- melt(init.states.I)
-  names(initS) = names(initI) = c('country', 'run', 'value')
-  initS$country <- factor(initS$country); initI$country <- factor(initI$country)
-  levels(initS$country) = levels(initI$country) = countries
-  initS$sel = initI$sel = 'No'
-  initS$sel[initS$run %in% ens.temp] <- 'Yes'; initI$sel[initI$run %in% ens.temp] <- 'Yes'
-  initS$sel <- factor(initS$sel); initI$sel <- factor(initI$sel)
-  
-  # p1 <- ggplot(data = initS) + geom_jitter(aes(x = country, y = value, col = sel, alpha = sel, size = sel)) +
-  #   theme_classic() + theme(legend.position = 'bottom') +
-  #   labs(x = '', y = 'S0 Prop.', fill = 'Realistic Outbreak?') +
-  #   scale_size_discrete(range = c(0.5, 1.0))
-  p1 <- ggplot(data = initS[initS$sel == 'Yes', ]) +
-    geom_boxplot(aes(x = country, y = value), fill = 'lightblue2') +
-    theme_classic() + labs(x = '', y = 'S0 Prop.')
-  p2 <- ggplot(data = initI[initI$sel == 'Yes', ]) +
-    geom_boxplot(aes(x = country, y = value), fill = 'lightblue2') +
-    theme_classic() + theme(axis.text.y = element_text(angle = 90, hjust = 0.5)) +
-    labs(x = '', y = 'I0 Prop.')
-  grid.arrange(p1, p2, ncol = 1)
-  
-  s0.ps = i0.ps <- c()
-  for (j in countries) {
-    initS.temp <- initS[initS$country == j, ]; initI.temp <- initI[initI$country == j, ]
-    s0.ps <- c(s0.ps, kruskal.test(value ~ sel, data = initS.temp)$p.value)
-    i0.ps <- c(i0.ps, kruskal.test(value ~ sel, data = initI.temp)$p.value)
-  }
-  print(countries[which(s0.ps < 0.05)])
-  print(countries[which(i0.ps < 0.05)])
-  
-  meanS = varS = meanS.notSel = varS.notSel = c()
-  for (j in 1:num_ens) {
-    if (j %in% ens.temp) {
-      meanS <- c(meanS, mean(init.states.S[, j]))
-      varS <- c(varS, var(init.states.S[, j]))
-    } else {
-      meanS.notSel <- c(meanS.notSel, mean(init.states.S[, j]))
-      varS.notSel <- c(varS.notSel, var(init.states.S[, j]))
-    }
-  }
-  hist(meanS, breaks = 25, xlab = 'Mean S0 (by run)', main = '')
-  hist(meanS.notSel, breaks = 50, xlab = 'Mean S0 (by run)', main = '')
-  hist(varS, breaks = 25, xlab = 'Variance of S0 (by run)', main = '')
-  hist(varS.notSel, breaks = 50, xlab = 'Variance of S0 (by run)', main = '')
-  
-  meanI = varI = meanI.notSel = varI.notSel = c()
-  for (j in 1:num_ens) {
-    if (j %in% ens.temp) {
-      meanI <- c(meanI, mean(init.states.I[, j]))
-      varI <- c(varI, var(init.states.I[, j]))
-    } else {
-      meanI.notSel <- c(meanI.notSel, mean(init.states.I[, j]))
-      varI.notSel <- c(varI.notSel, var(init.states.I[, j]))
-    }
-  }
-  hist(meanI, breaks = 25, xlab = 'Mean I0 (by run)', main = '')
-  hist(meanI.notSel, breaks = 50, xlab = 'Mean I0 (by run)', main = '')
-  hist(varI, breaks = 25, xlab = 'Variance of I0 (by run)', main = '')
-  hist(varI.notSel, breaks = 50, xlab = 'Variance of I0 (by run)', main = '')
-  
-  si.df <- as.data.frame(cbind(c(meanS, meanS.notSel), c(varS, varS.notSel),
-                               c(meanI, meanI.notSel), c(varI, varI.notSel),
-                               c(rep('Yes', length(ens.temp)), rep('No', length(ens.notSelected)))))
-  names(si.df) <- c('meanS', 'varS', 'meanI', 'varI', 'sel')
-  print(kruskal.test(meanS ~ sel, data = si.df))
-  print(kruskal.test(varS ~ sel, data = si.df))
-  print(kruskal.test(meanI ~ sel, data = si.df))
-  print(kruskal.test(varI ~ sel, data = si.df))
+pdf('syntheticTests/outputs/selected_v_not.pdf', width = 14, height = 7)
+par(mfrow = c(1, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+boxplot(D.temp[ens.temp], D.temp[ens.notSelected], names = c('Incl.', 'Excl.'), ylab = 'D')
+boxplot(L.temp[ens.temp], L.temp[ens.notSelected], names = c('Incl.', 'Excl.'), ylab = 'L')
+boxplot(parms[3, ens.temp], parms[3, ens.notSelected], names = c('Incl.', 'Excl.'), ylab = 'R0mx')
+boxplot(parms[4, ens.temp], parms[4, ens.notSelected], names = c('Incl.', 'Excl.'), ylab = 'R0mn')
+boxplot(airScale.temp[ens.temp], airScale.temp[ens.notSelected], names = c('Incl.', 'Excl.'), ylab = 'airScale')
+
+par(mfrow = c(3, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+hist(D.temp[ens.temp], breaks = 25, xlab = 'D', xlim = c(2, 7))
+hist(L.temp[ens.temp], breaks = 25, xlab = 'L', xlim = c(365, 10 * 365))
+hist(parms[3, ens.temp], breaks = 25, xlab = 'R0mx', xlim = c(1.5, 3.5))
+hist(parms[4, ens.temp], breaks = 25, xlab = 'R0mn', xlim = c(0.8, 1.2))
+hist(airScale.temp[ens.temp], breaks = 25, xlab = 'airScale', xlim = c(0.75, 1.25))
+
+par(mfrow = c(2, 1), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+hist(parms[3, ens.temp] - parms[4, ens.temp], breaks = 25, xlab = 'R0diff', xlim = c(0.3, 2.7))
+hist(parms[3, ens.notSelected] - parms[4, ens.notSelected], breaks = 50, xlab = 'R0diff', xlim = c(0.3, 2.7))
+
+parms.df <- as.data.frame(t(parms))
+names(parms.df) <- c('L', 'D', 'R0mx', 'R0mn', 'airScale')
+parms.df$R0diff <- parms.df$R0mx - parms.df$R0mn
+parms.df$sel <- 'No'
+parms.df$sel[ens.temp] <- 'Yes'
+parms.df$sel <- factor(parms.df$sel)
+
+print(kruskal.test(L ~ sel, data = parms.df))
+print(kruskal.test(D ~ sel, data = parms.df))
+print(kruskal.test(R0mx ~ sel, data = parms.df)) # sig
+print(kruskal.test(R0mn ~ sel, data = parms.df)) # sig
+print(kruskal.test(R0diff ~ sel, data = parms.df))
+print(kruskal.test(airScale ~ sel, data = parms.df)) # sig
+# R0mx, R0mn, airScale higher than in not selected
+
+initS.sel <- init.states.S[, ens.temp]; initS.notSel <- init.states.S[, ens.notSelected]
+initI.sel <- init.states.I[, ens.temp]; initI.notSel <- init.states.I[, ens.notSelected]
+
+initS <- melt(init.states.S); initI <- melt(init.states.I)
+names(initS) = names(initI) = c('country', 'run', 'value')
+initS$country <- factor(initS$country); initI$country <- factor(initI$country)
+levels(initS$country) = levels(initI$country) = countries
+initS$sel = initI$sel = 'No'
+initS$sel[initS$run %in% ens.temp] <- 'Yes'; initI$sel[initI$run %in% ens.temp] <- 'Yes'
+initS$sel <- factor(initS$sel); initI$sel <- factor(initI$sel)
+
+p1 <- ggplot(data = initS[initS$sel == 'Yes', ]) +
+  geom_boxplot(aes(x = country, y = value), fill = 'lightblue2') +
+  theme_classic() + labs(x = '', y = 'S0 Prop.')
+p2 <- ggplot(data = initI[initI$sel == 'Yes', ]) +
+  geom_boxplot(aes(x = country, y = value), fill = 'lightblue2') +
+  theme_classic() + theme(axis.text.y = element_text(angle = 90, hjust = 0.5)) +
+  labs(x = '', y = 'I0 Prop.')
+grid.arrange(p1, p2, ncol = 1)
+
+s0.ps = i0.ps <- c()
+for (j in countries) {
+  initS.temp <- initS[initS$country == j, ]; initI.temp <- initI[initI$country == j, ]
+  s0.ps <- c(s0.ps, kruskal.test(value ~ sel, data = initS.temp)$p.value)
+  i0.ps <- c(i0.ps, kruskal.test(value ~ sel, data = initI.temp)$p.value)
 }
+print(countries[which(s0.ps < 0.05)]) # IS and SE have lower S0 than in unselected
+print(countries[which(i0.ps < 0.05)]) # CZ has lower I0 than in unselected
+
+meanS = varS = meanS.notSel = varS.notSel = c()
+for (j in 1:num_ens) {
+  if (j %in% ens.temp) {
+    meanS <- c(meanS, mean(init.states.S[, j]))
+    varS <- c(varS, var(init.states.S[, j]))
+  } else {
+    meanS.notSel <- c(meanS.notSel, mean(init.states.S[, j]))
+    varS.notSel <- c(varS.notSel, var(init.states.S[, j]))
+  }
+}
+hist(meanS, breaks = 25, xlab = 'Mean S0 (by run)', main = '')
+hist(meanS.notSel, breaks = 50, xlab = 'Mean S0 (by run)', main = '')
+hist(varS, breaks = 25, xlab = 'Variance of S0 (by run)', main = '')
+hist(varS.notSel, breaks = 50, xlab = 'Variance of S0 (by run)', main = '')
+
+meanI = varI = meanI.notSel = varI.notSel = c()
+for (j in 1:num_ens) {
+  if (j %in% ens.temp) {
+    meanI <- c(meanI, mean(init.states.I[, j]))
+    varI <- c(varI, var(init.states.I[, j]))
+  } else {
+    meanI.notSel <- c(meanI.notSel, mean(init.states.I[, j]))
+    varI.notSel <- c(varI.notSel, var(init.states.I[, j]))
+  }
+}
+hist(meanI, breaks = 25, xlab = 'Mean I0 (by run)', main = '')
+hist(meanI.notSel, breaks = 50, xlab = 'Mean I0 (by run)', main = '')
+hist(varI, breaks = 25, xlab = 'Variance of I0 (by run)', main = '')
+hist(varI.notSel, breaks = 50, xlab = 'Variance of I0 (by run)', main = '')
+
+si.df <- as.data.frame(cbind(c(meanS, meanS.notSel), c(varS, varS.notSel),
+                             c(meanI, meanI.notSel), c(varI, varI.notSel),
+                             c(rep('Yes', length(ens.temp)), rep('No', length(ens.notSelected)))))
+names(si.df) <- c('meanS', 'varS', 'meanI', 'varI', 'sel')
+print(kruskal.test(meanS ~ sel, data = si.df))
+print(kruskal.test(varS ~ sel, data = si.df)) # sig - lower variance in S0 than in unselected
+print(kruskal.test(meanI ~ sel, data = si.df))
+print(kruskal.test(varI ~ sel, data = si.df))
+dev.off()
+
 # patterns:
-# R0mx and R0mn sig higher in selected [1, 2, 3, 5 (R0mn only)]
-# R0diff tends toward mid-range values (1.5-2ish) [1], higher [3]
-# airScale sig but barely higher in selected [1, 2, 3]
-# S0: sig lower than expected in IS [1, 2, 3], CZ [2, 3], HR [5]; sig higher in FR [2, 3], UK [3, 5], IT [5]
-      # lower Var in selected [1, tend2, tend5]
-# I0: sig lower than expected in IT [1], IS [3]; sig higher in SI [4, 5]
-      # lower(?) mean in selected [3]
+# R0mx, R0mn, airScale sig higher in selected
+# S0: sig lower than expected in IS and SE
+    # lower Var in selected
+# I0: sig lower than expected in CZ
 
 ### Let's choose a way of selecting "realistic" runs before continuing
-# 
+# Honestly, even 1 looks to have higher than observed synchrony, so I don't think we need to go narrower
+# Although 3 and 4 allow for a more w-to-e pattern to happen - allow AR range to be a bit wider?
+# What if do this, but don't force PT range to be so narrow?
+# Also not: except for 4 (where PT range very narrow), still neg corr between obs and synth PT
+# Doesn't seem super worth trying to capture these patterns in synthetic runs - esp. since
+# probably depends more on S0/I0
+# Ranges of PT are a bit wide for some included in 1 compared to 2, but selection criteria for 1
+# are based on observations, so I think it's okay
 
+### Compare runs beginning in IS with those not beginning in IS:
+not.is <- ens.of.interest[!(ens.of.interest %in% which.is.temp)]
 
+pdf('syntheticTests/outputs/IS_v_not.pdf', width = 14, height = 7)
+par(mfrow = c(1, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+boxplot(D.temp[not.is], D.temp[which.is.temp], names = c('Other Start', 'IS Start'), ylab = 'D')
+boxplot(L.temp[not.is], L.temp[which.is.temp], names = c('Other Start', 'IS Start'), ylab = 'L')
+boxplot(parms[3, not.is], parms[3, which.is.temp], names = c('Other Start', 'IS Start'), ylab = 'R0mx')
+boxplot(parms[4, not.is], parms[4, which.is.temp], names = c('Other Start', 'IS Start'), ylab = 'R0mn')
+boxplot(airScale.temp[not.is], airScale.temp[which.is.temp], names = c('Other Start', 'IS Start'), ylab = 'airScale')
 
-### Run through selected and separate beginning in IS from not beginning in IS:
+parms.df <- as.data.frame(t(parms))
+names(parms.df) <- c('L', 'D', 'R0mx', 'R0mn', 'airScale')
+parms.df$R0diff <- parms.df$R0mx - parms.df$R0mn
+parms.df$is.start <- NA
+parms.df$is.start[which.is.temp] <- 'Yes'
+parms.df$is.start[not.is] <- 'No'
+parms.df$is.start <- factor(parms.df$is.start)
+parms.df <- parms.df[!is.na(parms.df$is.start), ]
 
+print(kruskal.test(L ~ is.start, data = parms.df))
+print(kruskal.test(D ~ is.start, data = parms.df))
+print(kruskal.test(R0mx ~ is.start, data = parms.df)) # sig
+print(kruskal.test(R0mn ~ is.start, data = parms.df)) # sig
+print(kruskal.test(R0diff ~ is.start, data = parms.df))
+print(kruskal.test(airScale ~ is.start, data = parms.df)) # sig
+# small "sample size," but still none sig
 
+initS.IS <- init.states.S[, not.is]; initS.notSel <- init.states.S[, which.is.temp]
+initI.IS <- init.states.I[, not.is]; initI.notSel <- init.states.I[, which.is.temp]
 
+initS <- melt(init.states.S); initI <- melt(init.states.I)
+names(initS) = names(initI) = c('country', 'run', 'value')
+initS$country <- factor(initS$country); initI$country <- factor(initI$country)
+levels(initS$country) = levels(initI$country) = countries
+initS$is.start = initI$is.start = NA
+initS$is.start[initS$run %in% which.is.temp] <- 'Yes'; initI$is.start[initI$run %in% which.is.temp] <- 'Yes'
+initS$is.start[initS$run %in% not.is] <- 'No'; initI$is.start[initI$run %in% not.is] <- 'No'
+initS$is.start <- factor(initS$is.start); initI$is.start <- factor(initI$is.start)
+initS <- initS[!is.na(initS$is.start), ]; initI <- initI[!is.na(initI$is.start), ]
 
+p1 <- ggplot(data = initS[initS$is.start == 'No', ]) +
+  geom_boxplot(aes(x = country, y = value), fill = 'lightblue2') +
+  theme_classic() + labs(x = '', y = 'S0 Prop.', title = 'Other Start')
+p2 <- ggplot(data = initS[initS$is.start == 'Yes', ]) +
+  geom_boxplot(aes(x = country, y = value), fill = 'lightblue2') +
+  theme_classic() + labs(x = '', y = 'S0 Prop.', title = 'IS Start')
+p3 <- ggplot(data = initI[initI$is.start == 'No', ]) +
+  geom_boxplot(aes(x = country, y = value), fill = 'lightblue2') +
+  theme_classic() + theme(axis.text.y = element_text(angle = 90, hjust = 0.5)) +
+  labs(x = '', y = 'I0 Prop.', title = 'Other Start')
+p4 <- ggplot(data = initI[initI$is.start == 'Yes', ]) +
+  geom_boxplot(aes(x = country, y = value), fill = 'lightblue2') +
+  theme_classic() + theme(axis.text.y = element_text(angle = 90, hjust = 0.5)) +
+  labs(x = '', y = 'I0 Prop.', title = 'IS Start')
+grid.arrange(p1, p2, ncol = 1)
+grid.arrange(p3, p4, ncol = 1)
 
-# What are the parameters for these?
-summary(D.temp[ens.of.interest]) # 2.0-5.6
+s0.ps = i0.ps <- c()
+for (j in countries) {
+  initS.temp <- initS[initS$country == j, ]; initI.temp <- initI[initI$country == j, ]
+  s0.ps <- c(s0.ps, kruskal.test(value ~ is.start, data = initS.temp)$p.value)
+  i0.ps <- c(i0.ps, kruskal.test(value ~ is.start, data = initI.temp)$p.value)
+}
+print(countries[which(s0.ps < 0.05)]) # IS sig higher S0 when IS is the first to peak
+print(countries[which(i0.ps < 0.05)]) # none
+dev.off()
+
+### Look at parameters for chosen runs:
+summary(D.temp[ens.of.interest]) # 3-7
 summary(L.temp[ens.of.interest] / 365) # 1-10 years
 summary(airScale.temp[ens.of.interest]) # 0.75-1.25 (so full range)
-summary(parms[3, ens.of.interest]) # 2.26 - 3.38
+summary(parms[3, ens.of.interest]) # 2.172 - 3.386
 summary(parms[4, ens.of.interest]) # 0.8 - 1.2
 summary(init.states.S[, ens.of.interest])
 select.parms <- as.data.frame(cbind(D.temp[ens.of.interest],
@@ -416,19 +435,51 @@ for (i in 1:4) {
     print(names(select.parms)[c(i, j)])
     print(cor.test(select.parms[, i], select.parms[, j]))
   }
-} # only D/R0mx, D/R0mn sig (both pos)
-cor.test(select.parms$R0mx, select.parms$D) # 500 runs: p = 0.00055, cor = 0.6891197
-cor.test(select.parms$R0mn, select.parms$D)
+} # D/L, D/R0mx, L/R0mx, L/R0mn (all pos)
 
-# Plot chosen simulations:
-par(mfrow = c(5, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-for (ix in ens.of.interest) {
+cor.test(select.parms$R0mx, select.parms$D) # p = 5.474e-06, cor = 0.6782753
+cor.test(select.parms$R0mx, select.parms$L) # p = 0.002593, cor = 0.4870138
+cor.test(select.parms$L, select.parms$D) # p = 0.01745, cor = 0.3939188
+cor.test(select.parms$R0mn, select.parms$L) # p = 0.03127, cor = 0.3595276
+# Bonferroni: 0.005 - only first 2 are sig
+
+### And for just those that don't start in IS:
+summary(D.temp[not.is]) # 3-7
+summary(L.temp[not.is] / 365) # 1-10 years
+summary(airScale.temp[not.is]) # 0.8-1.25 (so almost full range)
+summary(parms[3, not.is]) # 2.172 - 3.241
+summary(parms[4, not.is]) # 0.8 - 1.2
+summary(init.states.S[, not.is])
+select.parms <- as.data.frame(cbind(D.temp[not.is],
+                                    L.temp[not.is] / 365,
+                                    airScale.temp[not.is],
+                                    parms[3, not.is],
+                                    parms[4, not.is]))
+names(select.parms) <- c('D', 'L', 'airScale', 'R0mx', 'R0mn')
+
+plot(select.parms, pch = 20, cex = 1.2)
+for (i in 1:4) {
+  for (j in (i + 1):5) {
+    print(names(select.parms)[c(i, j)])
+    print(cor.test(select.parms[, i], select.parms[, j]))
+  }
+} # D/L, D/R0mx, L/R0mx (all pos)
+
+cor.test(select.parms$R0mx, select.parms$D) # p = 5.484e-05, cor = 0.6963224
+cor.test(select.parms$R0mx, select.parms$L) # p = 0.01552, cor = 0.4609851
+cor.test(select.parms$L, select.parms$D) # p = 0.04821, cor = 0.3836551
+# Bonferroni: 0.005 - only first is sig
+
+### Plot chosen simulations:
+par(mfrow = c(3, 3), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+for (ix in not.is) {
   newI.ens <- NULL
   for (i in 1:n) {
     newI.ens <- rbind(newI.ens, newI.c[[i]][ix, ])
   }
   # newI.ens <- newI.ens[, 2:(dim(newI.ens)[2])]
   matplot(t(newI.ens), type = 'b', pch = 20, cex = 0.7, col = viridis(n), main = ix, ylab = 'Cases / 100,000 Pop.')
+  lines(newI.ens[9, ])
 }
 
 # # Plot ALL simulations:
@@ -443,9 +494,9 @@ for (ix in ens.of.interest) {
 # }
 
 # Save these synthetic sets:
-synth.runs.RATES = synth.runs.COUNTS = vector('list', length(ens.of.interest))
+synth.runs.RATES = synth.runs.COUNTS = vector('list', length(not.is))
 for (i in 1:length(synth.runs.RATES)) {
-  ix <- ens.of.interest[i]
+  ix <- not.is[i]
   
   newI.ens = newI.ens.count = NULL
   for (country in 1:n) {
@@ -456,18 +507,18 @@ for (i in 1:length(synth.runs.RATES)) {
   synth.runs.RATES[[i]] <- newI.ens
   synth.runs.COUNTS[[i]] <- newI.ens.count
 }
-save(synth.runs.RATES, file = 'syntheticTests/syntheticData/synth_05-16_RATES2.RData')
-save(synth.runs.COUNTS, file = 'syntheticTests/syntheticData/synth_05-16_COUNTS2.RData')
+save(synth.runs.RATES, file = 'syntheticTests/syntheticData/synth_05-27_RATES.RData')
+save(synth.runs.COUNTS, file = 'syntheticTests/syntheticData/synth_05-27_COUNTS.RData')
 
 # Save these initial conditions so that sensitivity to I0 can be assessed:
 # (Remember that this is an initial pass - might decide to do I0 in some other way)
-init.states.SEL <- rbind(init.states.S[, ens.of.interest],
-                         init.states.I[, ens.of.interest])
+init.states.SEL <- rbind(init.states.S[, not.is],
+                         init.states.I[, not.is])
 # each column is a run
 
-save(init.states.SEL, file = 'syntheticTests/syntheticData/initStates_05-16_2.RData')
-save(select.parms, file = 'syntheticTests/syntheticData/params_05-16_2.RData')
-
+save(init.states.SEL, file = 'syntheticTests/syntheticData/initStates_05-27.RData')
+save(select.parms, file = 'syntheticTests/syntheticData/params_05-27.RData')
+# 5, 14, 24 (108, 467, 931) all seem to have later IS outbreaks and may be good candidates for fitting
 
 
 
@@ -484,18 +535,18 @@ save(select.parms, file = 'syntheticTests/syntheticData/params_05-16_2.RData')
 # [] Prescribe several (~20) sets of params/initial conditions, get synthetic free simulations
 # [x] Assess patterns in free simulations; compare with observed data
 # [x] Analyze patterns based on seeding:
-    # [x] Everywhere
-    # [x] Each country
-    # [-] 2-5 initial countries
-    # [x] Vary # seeded in each country
+# [x] Everywhere
+# [x] Each country
+# [-] 2-5 initial countries
+# [x] Vary # seeded in each country
 # [x] Compare spatial patterns and synchrony to synthetic
 # [-] Test impact of net inflow/outflow on synthetic AR/PT/OT?
-    # [-] Control for S0? Set all S0 equal? (or not - could look at it over multiple runs and see if consistent)
-    # [-] Look at this for observed, too? (Controlling for S0?)
+# [-] Control for S0? Set all S0 equal? (or not - could look at it over multiple runs and see if consistent)
+# [-] Look at this for observed, too? (Controlling for S0?)
 # [] Also set S0 equal to see what spatial patterns look like then?
-    # [x] Param/S0 differences between runs with w-e vs. e-w spread?
+# [x] Param/S0 differences between runs with w-e vs. e-w spread?
 # [] Assess model sensitivity to different params by holding other 4 constant, then changing param of interest?
-    # (At the very least, do this for airScale)
+# (At the very least, do this for airScale)
 # [] Assess synthetic patterns when including/excluding different travel types (after getting more solid model)
 
 

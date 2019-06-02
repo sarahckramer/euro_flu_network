@@ -1,4 +1,4 @@
-calc_obsvars <- function(obs, oev_denom) {
+calc_obsvars <- function(obs, oev_denom, oev_denom_tmp) {
   
   tmp <- matrix(0, nrow = nrow(obs), ncol = ncol(obs))
   for (i in 1:dim(obs)[2]) {
@@ -10,7 +10,7 @@ calc_obsvars <- function(obs, oev_denom) {
   vars.temp <- tmp
   for (i in 1:dim(obs)[2]) {
     # vars.temp[, i] <- (pop.size$pop[i] + (tmp[, i] ** 2) / 5) / oev_denom
-    vars.temp[, i] <- (1e5 + (tmp[, i] ** 2) / 5) / oev_denom
+    vars.temp[, i] <- (1e5 + (tmp[, i] ** 2) / oev_denom_tmp) / oev_denom
   }
   
   # vars.temp <- (1e5 + (tmp ** 2) / 5) / oev_denom
@@ -38,7 +38,7 @@ calc_obsvars <- function(obs, oev_denom) {
           }
           
           art.mean <- mean(c(obs_before, obs_after))
-          vars.temp[j, i] <- (1e5 + (art.mean ** 2) / 5) / oev_denom
+          vars.temp[j, i] <- (1e5 + (art.mean ** 2) / oev_denom_tmp) / oev_denom
         }
       }
     } else {
