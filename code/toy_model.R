@@ -53,8 +53,11 @@ I0_low <- 0; I0_up <- 0.0001 # proportion of population
 discrete <- FALSE # run the SIRS model continuously
 metricsonly <- FALSE # save all outputs
 lambda <- 1.03 # inflation factor for the ensemble filters c(1.00, 1.01, 1.02, 1.03, 1.05)
-oev_denom <- 1.5 # denominator for observation error variance c(1, 5, 10, 50) (less for old scalings?: c(0.25, 0.5, 1, 5))
+
+oev_base <- 1e5
 oev_denom_tmp <- 1
+oev_denom <- 1.5 # denominator for observation error variance c(1, 5, 10, 50) (less for old scalings?: c(0.25, 0.5, 1, 5))
+
 num_ens <- 300 # use 300 for ensemble filters, 10000 for particle filters
 num_runs <- 1
 # a little too high starting around time 19 (2010-11)
@@ -208,7 +211,18 @@ s.index <- 1
   
   ### Fit to data:
   for (run in 1:num_runs) {
-    res <- EAKF_rFC(num_ens, tmstep, param.bound, obs_i, ntrn, obs_vars, tm.ini, tm.range)
+    res <- EAKF_rFC(num_ens, tmstep, param.bound, obs_i, ntrn, obs_vars, tm.ini, tm.range,
+                    updates = FALSE)
+    print(table(res[[1]][, 8]))
+    print(table(res[[1]][, 9]))
+    # print(res)
+    print('')
+    par(mfrow = c(3, 2), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+    for (param.index in 1:5) {
+      plot(res[[3]][, param.index], pch = 20, type = 'b',
+           xlab = 'Time Since Outbreak Start', ylab = names(res[[3]])[param.index])
+    }
+    
   }
   
   
