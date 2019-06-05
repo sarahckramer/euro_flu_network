@@ -136,6 +136,8 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
   #### Begin looping through observations
   #### Training process
   # par(mfrow = c(6, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+  to.adjust <- c(pos.in.vector, pos.in.vector + n ** 2, pos.in.vector + n ** 2 * 2, param.indices)
+  
   for (tt in 1:22) {
     if (any(!is.na(obs_i[tt, ]))) {
       # Update state variables and parameters, then integrate forward
@@ -151,6 +153,7 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
       # so we subtract the mean from the prior, inflate, then add the mean back in?
       # QUESTION: This step makes it so that some obsprior are < 0 - is this plausible? Return to 0?
       # QUESTION: All xprior with no people in compartment are still zero, right?
+      not.to.adjust <- (1:dim(xprior)[1])[!((1:dim(xprior)[1]) %in% to.adjust)]
       print(which(xprior[not.to.adjust,, 1] != 0))
       # CHECK: No obsprior should be <0, right??
       
@@ -170,6 +173,9 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
       # ranges from 0 to prior_var
       
       print(prior_var); print(''); print(post_var); print('')
+      if (any(prior_var == 0)) {
+        print('!!!')
+      }
       
       print('Calculating prior/post means...')
       prior_mean <- unlist(lapply(1:n, function(ix) {
@@ -230,24 +236,49 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
       # print(which(is.na(dx), arr.ind = TRUE))
       # print('')
       
+      
+      
+      # only one to.adjust line before loop
+      # obs_ens vs. obsprior
+      # to.adjust or loop through all
+      # 
+      
+      # Based on Sen's code:
+      rownames(rr) <- NULL
+      dx.temp.ALL <- matrix(0, dim(xprior)[1], num_ens)
+      for (i in (1:n)[!is.na(obs_i[tt, ])]) { # loop through all locations (countries)
+        dy.temp <- as.numeric(post_mean[i]) + alp[i] * (obs_ens[i, ] - prior_mean[i]) - obs_ens[i, ]
+        
+        rr.temp <- matrix(0, dim(xprior)[1], 1)
+        for (j in 1:(dim(rr.temp)[1])) {
+          A <- cov(xprior[j,, tt], obs_ens[i, ])
+          rr.temp[j, ] <- A / prior_var[i]
+        }
+        
+        dx.temp <- rr.temp %*% dy.temp
+        dx.temp.ALL <- dx.temp.ALL + dx.temp
+        
+        if (i > 6) {
+          i <- i - 1
+        }
+        print(all.equal(dy.temp, dy[i, ]))
+        print(all.equal(rr.temp[to.adjust, ], rr[, i]))
+        # print(all.equal(dx.temp[to.adjust, ], dx))
+        print('')
+      }
+      dx.temp.ALL <- dx.temp.ALL[to.adjust, ]
+      rownames(dx) <- NULL
+      print(all.equal(dx.temp.ALL, dx))
+      # These seem to all be the same!
+      
       print('Updating states/params...')
       ###  Get the new ensemble and save prior and posterior
       xnew <- xprior[,, tt] # QUESTION: again, why <0??
       xnew[to.adjust, ] <- xprior[to.adjust,, tt] + dx
       obs_ens <- obs_ens + dy.full
       
-      xnew[xnew < 0] <- 0 # QUESTION (can also reinit as shown later)
-      obs_ens[obs_ens < 0] <- 0 # QUESTION
-      
-      # Based on Sen's code:
-      
-      
-      
-      
-      
-      
-      
-      
+      xnew[xnew < 0] <- 0 # QUESTION (can also reinit as shown later) - might be redundant with checkbounds lower
+      obs_ens[obs_ens < 0] <- 0 # QUESTION (This is in Sen's code, too; what about previous line?)
       
       # print(xnew[1324:1328, 1:5])
       # print(obs_ens[to.check, 1:8])
