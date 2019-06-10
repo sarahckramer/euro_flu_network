@@ -95,9 +95,29 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
     Einf[is.na(Einf)] <- 0
     Erecov <- (tm_step * (1 / 3)) * (1 / D * I)
     
+    # Einf.check <- matrix(0, 3, 3)
+    # for (i in 1:3) {
+    #   for (j in 1:3) {
+    #     # i is home, j is work
+    #     Einf.check[i, j] <- (tm_step * (1 / 3)) * (beta[t, j] * S[i, j] * sum(I[, j])) / sum(N[, j])
+    #   }
+    # }
+    # colnames(Einf.check) = rownames(Einf.check) = countries
+    # print(all.equal(Einf, Einf.check))
+    
     # Now incorporate travel:
     s.out <- sweep(sweep(S, 2, 1 / colSums(N), '*'), 2, rowSums(all.rand), '*')
     i.out <- sweep(sweep(I, 2, 1 / colSums(N), '*'), 2, rowSums(all.rand), '*')
+    
+    # s.out.check <- matrix(0, 3, 3)
+    # for (i in 1:3) {
+    #   for (j in 1:3) {
+    #     # i is home, j is work
+    #     s.out.check[i, j] <- (S[i, j] / sum(N[, j])) * sum(all.rand[j, ])
+    #   }
+    # }
+    # colnames(s.out.check) = rownames(s.out.check) = countries
+    # print(all.equal(s.out, s.out.check))
     
     s.in <- matrix((colSums(S) / colSums(N)) %*% all.rand, nrow = n, ncol = n, byrow = T) *
       (N / matrix(colSums(N), nrow = n, ncol = n, byrow = T))
@@ -105,6 +125,23 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
       (N / matrix(colSums(N), nrow = n, ncol = n, byrow = T))
     # QUESTION: Is it a problem to do the infection and travel steps separately? Should they be sequential or something?
     # QUESTION: "all.equal" is true, but "==" is false?
+    
+    # s.in.check <- matrix(0, 3, 3)
+    # for (i in 1:3) {
+    #   for (j in 1:3) {
+    #     # i is home, j is work
+    #     s.in.temp = 0
+    #     for (k in 1:3) { # country people are flying in FROM
+    #       for (h in 1:3) { # home (day) / work (night) place of those in country being traveled from
+    #         s.in.temp <- s.in.temp + (N[i, j] / sum(N[, j])) * all.rand[k, j] * S[h, k] / sum(N[, k])
+    #         # s.in.temp <- s.in.temp + (N[i, j] / sum(N[i, ])) * all.rand[k, i] * S[k, h] / sum(N[k, ])
+    #       }
+    #     }
+    #     s.in.check[i, j] <- s.in.temp
+    #   }
+    # }
+    # colnames(s.in.check) = rownames(s.in.check) = countries
+    # print(all.equal(s.in, s.in.check))
     
     Estrav <- (tm_step * (1 / 3)) * (s.in - s.out)
     Eitrav <- (tm_step * (1 / 3)) * (i.in - i.out)
@@ -229,14 +266,51 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
     Einf[is.na(Einf)] <- 0
     Erecov <- (tm_step * (2 / 3)) * (1 / D * I)
     
+    # Einf.check <- matrix(0, 3, 3)
+    # for (i in 1:3) {
+    #   for (j in 1:3) {
+    #     # i is home, j is work
+    #     Einf.check[i, j] <- (tm_step * (2 / 3)) * (beta[t, i] * S[i, j] * sum(I[i, ])) / sum(N[i, ])
+    #   }
+    # }
+    # colnames(Einf.check) = rownames(Einf.check) = countries
+    # print(all.equal(Einf, Einf.check))
+    
     # Now incorporate travel:
-    s.out <- sweep(sweep(S, 2, 1 / rowSums(N), '*'), 1, rowSums(all.rand), '*')
-    i.out <- sweep(sweep(I, 2, 1 / rowSums(N), '*'), 1, rowSums(all.rand), '*')
+    s.out <- sweep(sweep(S, 1, 1 / rowSums(N), '*'), 1, rowSums(all.rand), '*')
+    i.out <- sweep(sweep(I, 1, 1 / rowSums(N), '*'), 1, rowSums(all.rand), '*')
+    
+    # s.out.check <- matrix(0, 3, 3)
+    # for (i in 1:3) {
+    #   for (j in 1:3) {
+    #     # i is home, j is work
+    #     s.out.check[i, j] <- (S[i, j] / sum(N[i, ])) * sum(all.rand[i, ])
+    #   }
+    # }
+    # colnames(s.out.check) = rownames(s.out.check) = countries
+    # print(all.equal(s.out, s.out.check))
     
     s.in <- matrix((rowSums(S) / rowSums(N)) %*% all.rand, nrow = n, ncol = n, byrow = F) *
-      (N / matrix(rowSums(N), nrow = n, ncol = n, byrow = T))
+      (N / matrix(rowSums(N), nrow = n, ncol = n, byrow = F))
     i.in <- matrix((rowSums(I) / rowSums(N)) %*% all.rand, nrow = n, ncol = n, byrow = F) *
-      (N / matrix(rowSums(N), nrow = n, ncol = n, byrow = T))
+      (N / matrix(rowSums(N), nrow = n, ncol = n, byrow = F))
+    
+    # s.in.check <- matrix(0, 3, 3)
+    # for (i in 1:3) {
+    #   for (j in 1:3) {
+    #     # i is home, j is work
+    #     s.in.temp = 0
+    #     for (k in 1:3) { # country people are flying in FROM
+    #       for (h in 1:3) { # home (day) / work (night) place of those in country being traveled from
+    #         # s.in.temp <- s.in.temp + (N[i, j] / sum(N[, j])) * all.rand[k, j] * S[h, k] / sum(N[, k])
+    #         s.in.temp <- s.in.temp + (N[i, j] / sum(N[i, ])) * all.rand[k, i] * S[k, h] / sum(N[k, ])
+    #       }
+    #     }
+    #     s.in.check[i, j] <- s.in.temp
+    #   }
+    # }
+    # colnames(s.in.check) = rownames(s.in.check) = countries
+    # print(all.equal(s.in, s.in.check))
     
     Estrav <- (tm_step * (2 / 3)) * (s.in - s.out)
     Eitrav <- (tm_step * (2 / 3)) * (i.in - i.out)
@@ -263,12 +337,12 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
     Einf[is.na(Einf)] <- 0
     Erecov <- (tm_step * (2 / 3)) * (1 / D * Ti1)
     
-    s.out <- sweep(sweep(Ts1, 2, 1 / rowSums(N), '*'), 1, rowSums(all.rand), '*')
-    i.out <- sweep(sweep(Ti1, 2, 1 / rowSums(N), '*'), 1, rowSums(all.rand), '*')
+    s.out <- sweep(sweep(Ts1, 1, 1 / rowSums(N), '*'), 1, rowSums(all.rand), '*')
+    i.out <- sweep(sweep(Ti1, 1, 1 / rowSums(N), '*'), 1, rowSums(all.rand), '*')
     s.in <- matrix((rowSums(Ts1) / rowSums(N)) %*% all.rand, nrow = n, ncol = n, byrow = F) *
-      (N / matrix(rowSums(N), nrow = n, ncol = n, byrow = T))
+      (N / matrix(rowSums(N), nrow = n, ncol = n, byrow = F))
     i.in <- matrix((rowSums(Ti1) / rowSums(N)) %*% all.rand, nrow = n, ncol = n, byrow = F) *
-      (N / matrix(rowSums(N), nrow = n, ncol = n, byrow = T))
+      (N / matrix(rowSums(N), nrow = n, ncol = n, byrow = F))
     
     Estrav <- (tm_step * (2 / 3)) * (s.in - s.out)
     Eitrav <- (tm_step * (2 / 3)) * (i.in - i.out)
@@ -295,12 +369,12 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
     Einf[is.na(Einf)] <- 0
     Erecov <- (tm_step * (2 / 3)) * (1 / D * Ti2)
     
-    s.out <- sweep(sweep(Ts2, 2, 1 / rowSums(N), '*'), 1, rowSums(all.rand), '*')
-    i.out <- sweep(sweep(Ti2, 2, 1 / rowSums(N), '*'), 1, rowSums(all.rand), '*')
+    s.out <- sweep(sweep(Ts2, 1, 1 / rowSums(N), '*'), 1, rowSums(all.rand), '*')
+    i.out <- sweep(sweep(Ti2, 1, 1 / rowSums(N), '*'), 1, rowSums(all.rand), '*')
     s.in <- matrix((rowSums(Ts2) / rowSums(N)) %*% all.rand, nrow = n, ncol = n, byrow = F) *
-      (N / matrix(rowSums(N), nrow = n, ncol = n, byrow = T))
+      (N / matrix(rowSums(N), nrow = n, ncol = n, byrow = F))
     i.in <- matrix((rowSums(Ti2) / rowSums(N)) %*% all.rand, nrow = n, ncol = n, byrow = F) *
-      (N / matrix(rowSums(N), nrow = n, ncol = n, byrow = T))
+      (N / matrix(rowSums(N), nrow = n, ncol = n, byrow = F))
     
     Estrav <- (tm_step * (2 / 3)) * (s.in - s.out)
     Eitrav <- (tm_step * (2 / 3)) * (i.in - i.out)
@@ -327,12 +401,12 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
     Einf[is.na(Einf)] <- 0
     Erecov <- (tm_step * (2 / 3)) * (1 / D * Ti3)
     
-    s.out <- sweep(sweep(Ts3, 2, 1 / rowSums(N), '*'), 1, rowSums(all.rand), '*')
-    i.out <- sweep(sweep(Ti3, 2, 1 / rowSums(N), '*'), 1, rowSums(all.rand), '*')
+    s.out <- sweep(sweep(Ts3, 1, 1 / rowSums(N), '*'), 1, rowSums(all.rand), '*')
+    i.out <- sweep(sweep(Ti3, 1, 1 / rowSums(N), '*'), 1, rowSums(all.rand), '*')
     s.in <- matrix((rowSums(Ts3) / rowSums(N)) %*% all.rand, nrow = n, ncol = n, byrow = F) *
-      (N / matrix(rowSums(N), nrow = n, ncol = n, byrow = T))
+      (N / matrix(rowSums(N), nrow = n, ncol = n, byrow = F))
     i.in <- matrix((rowSums(Ti3) / rowSums(N)) %*% all.rand, nrow = n, ncol = n, byrow = F) *
-      (N / matrix(rowSums(N), nrow = n, ncol = n, byrow = T))
+      (N / matrix(rowSums(N), nrow = n, ncol = n, byrow = F))
     
     Estrav <- (tm_step * (2 / 3)) * (s.in - s.out)
     Eitrav <- (tm_step * (2 / 3)) * (i.in - i.out)

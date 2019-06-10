@@ -5,12 +5,16 @@
 library("truncnorm"); library("tgp"); library("MASS"); library(reshape2); require(plyr)
 library(viridis)
 
+# ### Set directory (if necessary):
+# setwd('/Users/sarahkramer/Desktop/Lab/spatial_transmission/EuropeanNetwork/')
+
 ### Read in model functions
 source('code/SIRS_network.R')
 
 source('code/functions/Fn_initializations.R')
 source('code/functions/Fn_checkxnobounds.R')
 source('code/functions/Util.R')
+source('code/functions/replaceLeadingLaggingNAs.R')
 source('code/functions/calc_obsvars.R')
 
 ### Read in filter function
@@ -54,9 +58,10 @@ discrete <- FALSE # run the SIRS model continuously
 metricsonly <- FALSE # save all outputs
 lambda <- 1.03 # inflation factor for the ensemble filters c(1.00, 1.01, 1.02, 1.03, 1.05)
 
-oev_base <- 1e5
-oev_denom_tmp <- 1
-oev_denom <- 1.5 # denominator for observation error variance c(1, 5, 10, 50) (less for old scalings?: c(0.25, 0.5, 1, 5))
+oev_base <- 1e5#1e5
+oev_fact <- 0.2
+oev_denom <- 1.0 # denominator for observation error variance c(1, 5, 10, 50) (less for old scalings?: c(0.25, 0.5, 1, 5))
+tmp_exp <- 1.5
 
 num_ens <- 300 # use 300 for ensemble filters, 10000 for particle filters
 num_runs <- 1
@@ -99,19 +104,33 @@ AH <- rbind(ah[, count.indices], ah[, count.indices])
 iliiso <- read.csv('data/WHO_data_05-09-19.csv') # in same order as "countries" vector
 iliiso.raw <- iliiso
 
+### Read in syndromic/virologic counts:
+test.dat <- read.csv('data/testCounts_052719.csv')
+syn.dat <- read.csv('data/synDatCounts_060519.csv')
+pos.dat <- read.csv('data/posProp_060519.csv')
+
+syn.dat.raw <- syn.dat
+
 ### Scale data:
 scalings <- read.csv('data/scalings_frame_05-09-19.csv') # 1.3 for France in early seasons
 for (i in 2:22) {
   if (names(iliiso)[i] == 'France') {
     iliiso[1:283, i] <- iliiso[1:283, i] * 1.3
     iliiso[284:495, i] <- iliiso[284:495, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
+    syn.dat[1:283, i] <- syn.dat[1:283, i] * 1.3
+    syn.dat[284:495, i] <- syn.dat[284:495, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
   } else {
     iliiso[, i] <- iliiso[, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
+    syn.dat[, i] <- syn.dat[, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
   }
   
   iliiso[, i][iliiso[, i] < 0] <- NA # replace negatives with NAs
+  syn.dat[, i][syn.dat[, i] < 0] <- NA
+  pos.dat[, i][pos.dat[, i] < 0] <- NA
+  test.dat[, i][test.dat[, i] < 0] <- NA
 }
 iliiso.scale <- iliiso
+syn.dat.scale <- syn.dat
 
 # ### Initialize output data frame
 # outputMetrics <- NULL
@@ -144,45 +163,38 @@ s.index <- 1
   end_date <- tmp$end_date
   nsn <- tmp$nsn
   obs_i <- iliiso[weeks, (1:length(countries) + 1)] # extract relevant data for all countries
+  syn_i <- syn.dat[weeks, (1:length(countries) + 1)]
+  pos_i <- pos.dat[weeks, (1:length(countries) + 1)]
+  test_i <- test.dat[weeks, (1:length(countries) + 1)]
   
-  matplot(obs_i, pch = 20, col = viridis(n), type = 'b', lty = 1, cex = 0.75)
-  
-  ### Option to loop through different values of OEV_denom/lambda:
-  #for(oev_denom in oev_denoms) {
-  #  for(lambda in lambdas) {
-  # print(paste0(oev_denom, ', ', lambda))
+  # par(mfrow = c(2, 2), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+  # matplot(obs_i, pch = 20, col = viridis(n), type = 'b', lty = 1, cex = 0.75)
+  # matplot(syn_i, pch = 20, col = viridis(n), type = 'b', lty = 1, cex = 0.75)
+  # matplot(pos_i, pch = 20, col = viridis(n), type = 'b', lty = 1, cex = 0.75)
+  # matplot(test_i, pch = 20, col = viridis(n), type = 'b', lty = 1, cex = 0.75)
   
   ### Replace any leading or lagging NAs:
   for (count.index in count.indices) {
-    
-    if (any(!is.na(obs_i[, count.index]))) {
-      start.index <- 1
-      while (obs_i[start.index, count.index] < 1 | is.na(obs_i[start.index, count.index])) {
-        start.index <- start.index + 1
-      }
-      start.index <- start.index - 1
-      
-      end.index <- dim(obs_i)[1]
-      while (obs_i[end.index, count.index] < 1 | is.na(obs_i[end.index, count.index])) {
-        end.index <- end.index - 1
-      }
-      end.index <- end.index + 1
-      
-      if (start.index > 0) {
-        obs_i[1:start.index, count.index] <- 0
-      }
-      if (end.index < (dim(obs_i)[1] + 1)) {
-        obs_i[end.index:(dim(obs_i)[1]), count.index] <- 0
-      }
-    }
-    
+    obs_i[, count.index] <- replaceLeadLag(obs_i[, count.index])
+    syn_i[, count.index] <- replaceLeadLag(syn_i[, count.index])
+    pos_i[, count.index] <- replaceLeadLag(pos_i[, count.index])
+    # test_i[, count.index] <- replaceLeadLag(test_i[, count.index])
   }
   
+  ### Replace 0s in test_i w/ NA (b/c can't divide by 0!):
+  test_i[test_i == 0 & !is.na(test_i)] <- NA
+  
+  ### Plot:
+  par(mfrow = c(2, 2), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
   matplot(obs_i, pch = 20, col = viridis(n), type = 'b', lty = 1, cex = 0.75)
+  matplot(syn_i, pch = 20, col = viridis(n), type = 'b', lty = 1, cex = 0.75)
+  matplot(pos_i, pch = 20, col = viridis(n), type = 'b', lty = 1, cex = 0.75)
+  matplot(test_i, pch = 20, col = viridis(n), type = 'b', lty = 1, cex = 0.75)
+  par(mfrow = c(1, 1), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
   
   ### Variance of syndromic+ data:
-  obs_vars <- calc_obsvars(obs_i, oev_base, oev_denom, oev_denom_tmp)
-  # ???
+  obs_vars <- calc_obsvars_nTest(syn_i, test_i, pos_i, oev_base, oev_fact, oev_denom, tmp_exp)
+  # obs_vars <- calc_obsvars(obs_i, oev_base, oev_denom, oev_denom_tmp)
   matplot(obs_vars, pch = 20, col = viridis(n), type = 'b', lty = 1, cex = 0.75)
   
   ### Get the first and last date of the simulation:
@@ -205,7 +217,7 @@ s.index <- 1
   ### Fit to data:
   for (run in 1:num_runs) {
     res <- EAKF_rFC(num_ens, tmstep, param.bound, obs_i, ntrn, obs_vars, tm.ini, tm.range,
-                    updates = FALSE)
+                    updates = TRUE)
     print(table(res[[1]][, 8]))
     print(table(res[[1]][, 9]))
     # print(res)

@@ -137,8 +137,9 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
   #### Training process
   # par(mfrow = c(6, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
   to.adjust <- c(pos.in.vector, pos.in.vector + n ** 2, pos.in.vector + n ** 2 * 2, param.indices)
+  # par(mfrow = c(5, 4), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
   
-  for (tt in 1:22) {
+  for (tt in 1:ntrn) {
     # Update state variables and parameters, then integrate forward
     print(tt)
     
@@ -170,6 +171,8 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     }
     ####  Get the variance of the ensemble
     obs_var <- obs_vars[tt, ];
+    # QUESTION:
+    obs_var[obs_var == 0 & !is.na(obs_var)] <- NA
     prior_var <- unlist(lapply(1:n, function(ix) { # for each country (ix)
       var(obsprior[ix,, tt])
     }))
@@ -184,6 +187,8 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     }
     if (any(prior_var == 0)) {
       print('prior_var = 0!')
+      post_var[prior_var == 0] <- 0
+      prior_var[prior_var == 0] <- 1e-3
     }
     
     prior_mean <- unlist(lapply(1:n, function(ix) {
@@ -223,7 +228,8 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     # dy.check <- t(matrix(unlist(dy.check), ncol = n))
     # print(all.equal(dy, dy.check))
     
-    dy.full <- dy; dy <- dy[!is.na(obs_i[tt, ]), ]
+    dy.full <- dy; #dy <- dy[!is.na(obs_i[tt, ]), ]
+    dy <- dy[-which(is.na(post_mean)), ]
     # QUESTION: Is this correct?
     
     # print(dy.full[to.check, 1:8])
@@ -233,7 +239,10 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     
     # QUESTION: some in xprior (say, j = 7) have higher values than allowed (so more S then N) - change now, or after updating?
     for (j in to.adjust) {
-      C <- unlist(lapply((1:n)[!is.na(obs_i[tt, ])], function(ix) {
+      # C <- unlist(lapply((1:n)[!is.na(obs_i[tt, ])], function(ix) {
+      #   cov(xprior[j,, tt], obsprior[ix,, tt]) / prior_var[ix]
+      # }))
+      C <- unlist(lapply((1:n)[-which(is.na(post_mean))], function(ix) {
         cov(xprior[j,, tt], obsprior[ix,, tt]) / prior_var[ix]
       }))
       rr <- rbind(rr, C)
@@ -404,6 +413,7 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
       
       # print(obs.post.toPlot[, to.check])
       # print(obs_i[1:tt, to.check])
+      # Failure might occur sometimes b/c model cases go to infinity
       
       if (tt == 22) {
         par(mfrow = c(4, 5), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))

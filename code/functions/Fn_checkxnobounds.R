@@ -16,7 +16,7 @@ Fn_checkxnobounds<-function(xnew, S.rows, I.rows, param.rows){
       }
     }
   }
-  
+
   for (ii in I.rows) { # corrects if I > N
     ug <- max(xnew[ii, ])
     if (ug > N[ceiling(ii / n) - n, (ii - 1) %% n + 1]) {
