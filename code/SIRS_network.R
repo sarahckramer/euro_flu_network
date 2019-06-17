@@ -161,6 +161,12 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
     Ts1 <- S.list[[cnt - 1]] + sk1 / 2
     Ti1 <- I.list[[cnt - 1]] + ik1 / 2
     
+    # print(Eimmloss)
+    # print(Einf)
+    # print(Estrav)
+    # print(Ts1)
+    # print('')
+    
     # STEP 2
     Eimmloss <- (tm_step * (1 / 3)) * (1 / L * (N - Ts1 - Ti1))
     Einf <- sweep(sweep(sweep(Ts1, 2, colSums(Ti1), '*') * (tm_step * (1 / 3)), 2, beta[t, ], '*'),
@@ -259,6 +265,12 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
     I <- I + ik1/6 + ik2/3 + ik3/3 + ik4/6# + seed
     newI <- newI + ik1a/6 + ik2a/3 + ik3a/3 + ik4a/6# + seed
     
+    # print(Eimmloss)
+    # print(Einf)
+    # print(Estrav)
+    # print(S)
+    # print(''); print(''); print('')
+    
     ### Nighttime ###
     Eimmloss <- (tm_step * (2 / 3)) * (1 / L * (N - S - I))
     Einf <- sweep(sweep(sweep(S, 1, rowSums(I), '*') * (tm_step * (2 / 3)), 1, beta[t, ], '*'),
@@ -312,6 +324,8 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
     # colnames(s.in.check) = rownames(s.in.check) = countries
     # print(all.equal(s.in, s.in.check))
     
+    # print(s.in); print(''); print(''); print('')
+    
     Estrav <- (tm_step * (2 / 3)) * (s.in - s.out)
     Eitrav <- (tm_step * (2 / 3)) * (i.in - i.out)
     
@@ -329,6 +343,12 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
     
     Ts1 <- S + sk1 / 2
     Ti1 <- I + ik1 / 2
+    
+    # print(Eimmloss)
+    # print(Einf)
+    # print(Estrav)
+    # print(Ts1)
+    # print(''); print(''); print('')
     
     # STEP 2
     Eimmloss <- (tm_step * (2 / 3)) * (1 / L * (N - Ts1 - Ti1))

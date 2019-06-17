@@ -25,7 +25,7 @@ wk_start <- 40
 
 ### Set parameters
 num_ens <- 5
-tm_strt <- 273; tm_end <- 573; tm_step <- 1#; t <- 1 # 273 is first of October
+tm_strt <- 273; tm_end <- 573; tm_step <- 1#; t <- 1 # 273 is first of October #573
 tm.range <- tm_strt:tm_end
 
 ### Parameter boundaries
@@ -151,15 +151,24 @@ m <- sapply(1:num_ens, function(ix) {
                    airScale = airScale.temp[ix], realdata = TRUE)
 })
 
-### Calculate weekly incidence by compartment:
-nt <- floor((length(tm_strt:tm_end) + 1) / 7)
-newI <- lapply(1:(n ** 2), function(ix) {
-  matrix(unlist(lapply(1:num_ens, function(jx) {
-    m[3, jx]$newI[tmstep * (1:nt) + 1, ix] - m[3, jx]$newI[tmstep * (0:(nt - 1)) + 1, ix]
-  })), nrow = num_ens, byrow = TRUE)
-}) # each ensemble member has its own row
+# ### Calculate weekly incidence by compartment:
+# nt <- floor((length(tm_strt:tm_end) + 1) / 7)
+# newI <- lapply(1:(n ** 2), function(ix) {
+#   matrix(unlist(lapply(1:num_ens, function(jx) {
+#     m[3, jx]$newI[tmstep * (1:nt) + 1, ix] - m[3, jx]$newI[tmstep * (0:(nt - 1)) + 1, ix]
+#   })), nrow = num_ens, byrow = TRUE)
+# }) # each ensemble member has its own row
 
 ### Aggregate to the country level:
+newI <- vector('list', n ** 2)
+for (i in 1:length(newI)) {
+  newI[[i]] <- matrix(0, nrow = num_ens, ncol = length(tm_strt:tm_end) + 1)
+  
+  for (j in 1:num_ens) {
+    newI[[i]][j, ] <- m[3, ][[j]][, i]
+  }
+  
+}
 newI.c <- vector('list', n)
 for (i in 1:n) {
   newI.c[[i]] <- Reduce('+', newI[(i * n - n + 1):(i * n)])
@@ -167,15 +176,16 @@ for (i in 1:n) {
 newI.c.COUNT <- newI.c
 
 ### Standardize results to per 100,000 population:
-for (i in 1:n) {
-  newI.c[[i]] <- (newI.c[[i]] / pop.size$pop[i]) * 100000
-}
+# for (i in 1:n) {
+#   newI.c[[i]] <- (newI.c[[i]] / pop.size$pop[i]) * 100000
+# }
 
 # ### Save FULL results:
 # save(newI.c.COUNT, file = 'syntheticTests/syntheticData/allRunsCOUNTS_1000_0523.RData')
 # save(newI.c, file = 'syntheticTests/syntheticData/allRunsRATES_1000_0523.RData')
 
-# Plot ALL simulations:
+# Plot ALL simulations (and store matrices of country-level incidence):
+newI.list <- vector('list', num_ens)
 par(mfrow = c(3, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 for (ix in 1:num_ens) {
   newI.ens <- NULL
@@ -183,6 +193,26 @@ for (ix in 1:num_ens) {
     newI.ens <- rbind(newI.ens, newI.c[[i]][ix, ])
   }
   # newI.ens <- newI.ens[, 2:(dim(newI.ens)[2])]
+  newI.list[[ix]] <- t(newI.ens)
   matplot(t(newI.ens), type = 'b', pch = 20, cex = 0.7, col = viridis(n), main = ix, ylab = 'Cases / 100,000 Pop.')
 }
+# Idea is to make it as simple as possible to compare the two...
+
+### Read in python results and compare:
+res.py <- read.csv('/Users/sarahkramer/Desktop/Lab/spatial_transmission/forecastsE/synthetic/python_comp/results/resAll_1.txt', header = FALSE)
+
+print(all.equal(res.py[, 1], newI.list[[1]][, 1]))
+print(all.equal(res.py[, 2], newI.list[[1]][, 2]))
+print(all.equal(res.py[, 3], newI.list[[1]][, 3]))
+
+
+
+
+
+
+
+
+
+
+
 
