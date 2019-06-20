@@ -1,6 +1,13 @@
 
 EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_vars,
-                     tm.ini = 273, tm.range = 273:500, updates = FALSE){
+                     tm.ini = 273, tm.range = 273:500, updates = FALSE, do.reprobing = TRUE){
+  
+  if (!exists('updates')) {
+    updates <- FALSE
+  }
+  if (!exists('do.reprobing')) {
+    do.reprobing <- TRUE
+  }
   
   to.check <- c(7, 9, 11, 19, 21) # difficult to look at 21 countries at once - assess visually for these 5
   
@@ -153,7 +160,6 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     xprior[,, tt] <- inflat %*% (xprior[,, tt] - xmn %*% matrix(1, 1, num_ens)) + xmn %*% matrix(1, 1, num_ens)
     obs_ens <- inflat.obs %*% (obsprior[,, tt] - obs_ens.mn %*% matrix(1, 1, num_ens)) + obs_ens.mn %*% matrix(1, 1, num_ens)
     # so we subtract the mean from the prior, inflate, then add the mean back in?
-    # QUESTION: This step makes it so that some obsprior are < 0 - is this plausible? Return to 0?
     # QUESTION: All xprior with no people in compartment are still zero, right?
     
     # CHECK: No obsprior should be <0, right??
@@ -261,8 +267,6 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     # obs_ens vs. obsprior
     ######################################
     
-    # QUESTION: to.adjust or loop through all - this shouldn't make a difference, right?
-    
     # # Based on Sen's code:
     # rownames(rr) <- NULL
     # dx.temp.ALL <- matrix(0, dim(xprior)[1], num_ens)
@@ -333,6 +337,73 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     }
     
     ### REPROBING HERE ###
+    # print(alp) # will be very high (~= 1) if prior_var negligible/obs_var >> prior_var
+    # print(prior_var) # looking for when this gets very small
+    # print(post_var) # if obs_var >> prior_var, this will be similar to prior_var (or if prior_var negligible)
+    # Although I think we should do this regardless of divergence - alp doesn't get near one until time 25-26ish, but model isn't fitting DE/IS/etc. already by time 18 or so (2010-11)
+    
+    # # if(abs(obs_i[tt] - mean(xpost[H,,tt])) > 0.2*obs_i[tt]) {} # divergence; from Wan's HK fitting code; if mean of ensembles differing from obs by >20%
+    # print('')
+    # # print(obs_i[tt, ])
+    # # print(dim(obs_ens))
+    # # print(rowMeans(obs_ens))
+    # div.df <- as.data.frame(t(rbind(abs(obs_i[tt, ] - rowMeans(obs_ens)),
+    #             0.2 * obs_i[tt, ],
+    #             abs(obs_i[tt, ] - rowMeans(obs_ens)) > (0.2 * obs_i[tt, ]) & obs_i[tt, ] > 0 & !is.na(obs_i[tt, ]))))
+    # names(div.df) <- c('Obs', 'Mean Fit', 'Divergence')
+    # div.df$Divergence <- div.df$Divergence == 1
+    # # print(div.df)
+    # print(div.df[div.df$Divergence, ])
+    # print('')
+    # # Reprobe just for certain countries? But that's only if we're basing when to reprobe on divergence, and not just doing it all the time
+    # # Seems many countries are "diverging" after the peak
+    
+    # %%%%reprobing
+    # rpnum=round(rp*num_ens);
+    # r=randperm(num_ens);
+    # rpid=r(1:rpnum);
+    # xnew(:,rpid)=initialization_m(Nij,xmin,xmax,rpnum);
+    # xnew = checkbound(xnew,Nij);
+    # %%%%%%%%%%%%%
+    
+    if (do.reprobing) {
+      rpnum <- ceiling(0.01 * num_ens) # 2%? 5%?
+      rpid <- sample(1:num_ens, rpnum)
+      
+      parms.reprobe <- t(lhs(rpnum, param.bound))
+      S0.reprobe = I0.reprobe = vector('list', rpnum)
+      for (ir in 1:rpnum) {
+        S0.reprobe[[ir]] = I0.reprobe[[ir]] = matrix(0, nrow = n, ncol = n)
+        
+        diag(S0.reprobe[[ir]]) <- parms.reprobe[1:n, ir]
+        S0.reprobe[[ir]][S0.reprobe[[ir]] == 0] <- sapply(1:n, function(jx) {
+          rnorm(n - 1, mean = S0.reprobe[[ir]][jx, jx], sd = 0.05)
+        })
+        S0.reprobe[[ir]] <- t(S0.reprobe[[ir]])
+        S0.reprobe[[ir]] <- S0.reprobe[[ir]] * N
+        S0.reprobe[[ir]] <- as.vector(t(S0.reprobe[[ir]]))
+        
+        diag(I0.reprobe[[ir]]) <- parms.reprobe[(1:n) + n, ir]
+        I0.reprobe[[ir]] <- sweep(N / rowSums(N), 1, diag(I0.reprobe[[ir]]), '*')
+        I0.reprobe[[ir]] <- I0.reprobe[[ir]] * N
+        I0.reprobe[[ir]] <- as.vector(t(I0.reprobe[[ir]]))
+      }
+      S0.reprobe <- matrix(unlist(S0.reprobe), ncol = rpnum, byrow = F)
+      I0.reprobe <- matrix(unlist(I0.reprobe), ncol = rpnum, byrow = F)
+      parms.reprobe <- parms.reprobe[(dim(parms.reprobe)[1] - 4):(dim(parms.reprobe)[1]), ]
+      
+      # S0.indices go row by row - so full first row, then on to second row, etc.
+      
+      xnew[S0.indices, rpid] <- S0.reprobe # dim 441 6
+      xnew[I0.indices, rpid] <- I0.reprobe
+      # xnew[newI.indices, rpid] # could draw from normal dist. around observations, but then that shouldn't be in the posterior, right?
+      # and it doesn't matter what's here, b/c model will just get run forward using S/I/params
+      # QUESTION: Should this be done at the beginning of the loop instead?
+      xnew[param.indices, rpid] <- parms.reprobe
+      
+      xnew[xnew < 0] <- 0
+      xnew <- Fn_checkxnobounds(xnew, S0.indices, I0.indices, param.indices)
+    }
     
     # Store posteriors:
     xpost[,, tt] <- xnew
@@ -402,7 +473,7 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     
     # Plot training progress:
     if (tt > 1) {
-      par(mfrow = c(1, 1), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+      # par(mfrow = c(4, 4), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
       obs.red.toPlot <- obs_i[, c(7, 9, 11, 19, 21)] # DE, IS, IT, ES, UK
       obs.post.toPlot <- t(apply(obspost[,, 1:tt], c(1, 3), mean))
       matplot(obs.red.toPlot, type = 'b', pch = 4, lty = 2,
@@ -415,7 +486,7 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
       # print(obs_i[1:tt, to.check])
       # Failure might occur sometimes b/c model cases go to infinity
       
-      if (tt == 22) {
+      if (tt == ntrn) {
         par(mfrow = c(4, 5), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
         for (i in (1:n)[!is.na(obs_i[tt, ])]) {
           obs.post.toPlot.ind <- colMeans(obspost[i,, 1:tt])

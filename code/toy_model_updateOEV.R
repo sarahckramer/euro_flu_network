@@ -50,18 +50,18 @@ param.bound <- cbind(theta_low, theta_up)
 
 ### Initial state variable values
 S0_low <- 0.30; S0_up <- 1.00 # proportion of population
-I0_low <- 0; I0_up <- 0.0001 # proportion of population
+I0_low <- 0; I0_up <- 0.001 # proportion of population
 # QUESTION: upper bound of 0.001 instead?
 
 ### Parameters for the filters
 discrete <- FALSE # run the SIRS model continuously
 metricsonly <- FALSE # save all outputs
-lambda <- 1.03 # inflation factor for the ensemble filters c(1.00, 1.01, 1.02, 1.03, 1.05)
+lambda <- 1.0 # inflation factor for the ensemble filters c(1.00, 1.01, 1.02, 1.03, 1.05)
 
-oev_base <- 1e5#1e5
-oev_fact <- 0.2
+oev_base <- 1e5
+oev_fact <- 10.0
 oev_denom <- 1.0 # denominator for observation error variance c(1, 5, 10, 50) (less for old scalings?: c(0.25, 0.5, 1, 5))
-tmp_exp <- 1.5
+tmp_exp <- 3.0
 
 num_ens <- 300 # use 300 for ensemble filters, 10000 for particle filters
 num_runs <- 1
@@ -212,12 +212,13 @@ s.index <- 1
   tm.range <- clim_start:clim_end
   
   ### Set ntrn:
-  ntrn <- 40
+  ntrn <- 31
   
   ### Fit to data:
   for (run in 1:num_runs) {
+    par(mfrow = c(4, 4), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
     res <- EAKF_rFC(num_ens, tmstep, param.bound, obs_i, ntrn, obs_vars, tm.ini, tm.range,
-                    updates = TRUE)
+                    updates = FALSE, do.reprobing = TRUE)
     print(table(res[[1]][, 8]))
     print(table(res[[1]][, 9]))
     # print(res)
@@ -231,7 +232,7 @@ s.index <- 1
   }
   
   
-  
+  # 11/17
   
 # }
 
