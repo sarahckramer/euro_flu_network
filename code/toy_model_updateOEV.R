@@ -56,12 +56,12 @@ I0_low <- 0; I0_up <- 0.001 # proportion of population
 ### Parameters for the filters
 discrete <- FALSE # run the SIRS model continuously
 metricsonly <- FALSE # save all outputs
-lambda <- 1.0 # inflation factor for the ensemble filters c(1.00, 1.01, 1.02, 1.03, 1.05)
+lambda <- 1.03 # inflation factor for the ensemble filters c(1.00, 1.01, 1.02, 1.03, 1.05)
 
 oev_base <- 1e5
-oev_fact <- 10.0
+oev_fact <- 1.0
 oev_denom <- 1.0 # denominator for observation error variance c(1, 5, 10, 50) (less for old scalings?: c(0.25, 0.5, 1, 5))
-tmp_exp <- 3.0
+tmp_exp <- 2.0
 
 num_ens <- 300 # use 300 for ensemble filters, 10000 for particle filters
 num_runs <- 1
@@ -193,7 +193,8 @@ s.index <- 1
   par(mfrow = c(1, 1), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
   
   ### Variance of syndromic+ data:
-  obs_vars <- calc_obsvars_nTest(syn_i, test_i, pos_i, oev_base, oev_fact, oev_denom, tmp_exp)
+  obs_vars <- calc_obsvars_nTest(obs_i, syn_i, test_i, pos_i, oev_base, oev_fact, oev_denom, tmp_exp)
+  # obs_vars.orig <- calc_obsvars_nTest(syn_i, test_i, pos_i, oev_base, oev_fact, oev_denom, tmp_exp)
   # obs_vars <- calc_obsvars(obs_i, oev_base, oev_denom, oev_denom_tmp)
   matplot(obs_vars, pch = 20, col = viridis(n), type = 'b', lty = 1, cex = 0.75)
   
@@ -218,7 +219,7 @@ s.index <- 1
   for (run in 1:num_runs) {
     par(mfrow = c(4, 4), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
     res <- EAKF_rFC(num_ens, tmstep, param.bound, obs_i, ntrn, obs_vars, tm.ini, tm.range,
-                    updates = FALSE, do.reprobing = TRUE)
+                    updates = FALSE, do.reprobing = FALSE)
     print(table(res[[1]][, 8]))
     print(table(res[[1]][, 9]))
     # print(res)

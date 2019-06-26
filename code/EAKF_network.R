@@ -1,12 +1,12 @@
 
 EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_vars,
-                     tm.ini = 273, tm.range = 273:500, updates = FALSE, do.reprobing = TRUE){
+                     tm.ini = 273, tm.range = 273:500, updates = FALSE, do.reprobing = FALSE){
   
   if (!exists('updates')) {
     updates <- FALSE
   }
   if (!exists('do.reprobing')) {
-    do.reprobing <- TRUE
+    do.reprobing <- FALSE
   }
   
   to.check <- c(7, 9, 11, 19, 21) # difficult to look at 21 countries at once - assess visually for these 5
@@ -367,7 +367,7 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     # %%%%%%%%%%%%%
     
     if (do.reprobing) {
-      rpnum <- ceiling(0.01 * num_ens) # 2%? 5%?
+      rpnum <- ceiling(0.02 * num_ens) # 2%? 5%?
       rpid <- sample(1:num_ens, rpnum)
       
       parms.reprobe <- t(lhs(rpnum, param.bound))
