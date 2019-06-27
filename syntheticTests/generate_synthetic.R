@@ -34,7 +34,7 @@ D_up <- 7; L_up <- 10*365; Rmx_up <- 3.5; Rmn_up <- 1.2; airScale_up <- 1.25
 theta_low <- c(L_low, D_low, Rmx_low, Rmn_low, airScale_low)
 theta_up <- c(L_up, D_up, Rmx_up, Rmn_up, airScale_up)
 S0_low <- 0.55; S0_up <- 0.90 # proportion of population
-I0_low <- 0; I0_up <- 0.0001 # proportion of population
+I0_low <- 0; I0_up <- 0.0001 # proportion of population # to 0.01% or 0.1%?
 
 # ### Restricted parameter boundaries - try?
 # D_low <- 2; L_low <- 1*365; Rmx_low <- 2.0; Rmn_low <- 0.8; airScale_low <- 0.75
@@ -149,8 +149,8 @@ for (i in 1:n) {
 }
 
 ### Save FULL results:
-save(newI.c.COUNT, file = 'syntheticTests/syntheticData/allRunsCOUNTS_1000_0523.RData')
-save(newI.c, file = 'syntheticTests/syntheticData/allRunsRATES_1000_0523.RData')
+save(newI.c.COUNT, file = 'syntheticTests/syntheticData/allRunsCOUNTS_1000_0626.RData')
+save(newI.c, file = 'syntheticTests/syntheticData/allRunsRATES_1000_0626.RData')
 
 ### Run through free simulations and check:
 # at least 19 countries/21 have 500+ cases in 3+ weeks (alt: all countries exceed 500/100,000 (onset))
@@ -192,9 +192,8 @@ for (ix in 1:num_ens) {
   }
   
 }
-print(length(ens.of.interest)) # so consistently 4.2% are "realistic"
-# bumping lower S0 bound down makes it so that 0 / 1000 are "realistic!"
-# WOULD CHANGING ONE OF THESE METRICS LEAVE OUT SOME OF THE IS ONES?
+print(length(ens.of.interest)) # 36/1000; 24/1000 if wider I0 start
+# WOULD CHANGING ONE OF THESE METRICS LEAVE OUT SOME OF THE IS ONES? - doesn't seem so, these percentages/metrics seem fine
 
 ### How often early IS? / Plot:
 par(mfrow = c(3, 3), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
@@ -221,7 +220,7 @@ for (val in ens.of.interest) {
   lines(newI.ens[9, ]) # Where is Iceland?
 }
 print(count.is)
-# 9 / 36 (25%)
+# 9 / 36 (25%); 8 / 24 (33%) for higher I0 max
 # with proportional starts, definitely not as bad
 
 ### Look at differences in params, S0, and I0 between selected and not selected
@@ -261,6 +260,7 @@ print(kruskal.test(R0mn ~ sel, data = parms.df)) # sig
 print(kruskal.test(R0diff ~ sel, data = parms.df))
 print(kruskal.test(airScale ~ sel, data = parms.df)) # sig
 # R0mx, R0mn, airScale higher than in not selected
+# for higher I0 max, only L and D are significant
 
 initS.sel <- init.states.S[, ens.temp]; initS.notSel <- init.states.S[, ens.notSelected]
 initI.sel <- init.states.I[, ens.temp]; initI.notSel <- init.states.I[, ens.notSelected]
@@ -288,8 +288,8 @@ for (j in countries) {
   s0.ps <- c(s0.ps, kruskal.test(value ~ sel, data = initS.temp)$p.value)
   i0.ps <- c(i0.ps, kruskal.test(value ~ sel, data = initI.temp)$p.value)
 }
-print(countries[which(s0.ps < 0.05)]) # IS and SE have lower S0 than in unselected
-print(countries[which(i0.ps < 0.05)]) # CZ has lower I0 than in unselected
+print(countries[which(s0.ps < 0.05)]) # IS and SE have lower S0 than in unselected; for higher I0, IS SE UK
+print(countries[which(i0.ps < 0.05)]) # CZ has lower I0 than in unselected; for higher I0, non
 
 meanS = varS = meanS.notSel = varS.notSel = c()
 for (j in 1:num_ens) {
@@ -326,7 +326,7 @@ si.df <- as.data.frame(cbind(c(meanS, meanS.notSel), c(varS, varS.notSel),
                              c(rep('Yes', length(ens.temp)), rep('No', length(ens.notSelected)))))
 names(si.df) <- c('meanS', 'varS', 'meanI', 'varI', 'sel')
 print(kruskal.test(meanS ~ sel, data = si.df))
-print(kruskal.test(varS ~ sel, data = si.df)) # sig - lower variance in S0 than in unselected
+print(kruskal.test(varS ~ sel, data = si.df)) # sig - lower variance in S0 than in unselected; same for higher I0
 print(kruskal.test(meanI ~ sel, data = si.df))
 print(kruskal.test(varI ~ sel, data = si.df))
 dev.off()
@@ -337,15 +337,9 @@ dev.off()
     # lower Var in selected
 # I0: sig lower than expected in CZ
 
-### Let's choose a way of selecting "realistic" runs before continuing
-# Honestly, even 1 looks to have higher than observed synchrony, so I don't think we need to go narrower
-# Although 3 and 4 allow for a more w-to-e pattern to happen - allow AR range to be a bit wider?
-# What if do this, but don't force PT range to be so narrow?
-# Also not: except for 4 (where PT range very narrow), still neg corr between obs and synth PT
-# Doesn't seem super worth trying to capture these patterns in synthetic runs - esp. since
-# probably depends more on S0/I0
 # Ranges of PT are a bit wide for some included in 1 compared to 2, but selection criteria for 1
 # are based on observations, so I think it's okay
+# At the same time, synchrony seems a bit high?
 
 ### Compare runs beginning in IS with those not beginning in IS:
 not.is <- ens.of.interest[!(ens.of.interest %in% which.is.temp)]
@@ -369,10 +363,10 @@ parms.df <- parms.df[!is.na(parms.df$is.start), ]
 
 print(kruskal.test(L ~ is.start, data = parms.df))
 print(kruskal.test(D ~ is.start, data = parms.df))
-print(kruskal.test(R0mx ~ is.start, data = parms.df)) # sig
-print(kruskal.test(R0mn ~ is.start, data = parms.df)) # sig
+print(kruskal.test(R0mx ~ is.start, data = parms.df))
+print(kruskal.test(R0mn ~ is.start, data = parms.df))
 print(kruskal.test(R0diff ~ is.start, data = parms.df))
-print(kruskal.test(airScale ~ is.start, data = parms.df)) # sig
+print(kruskal.test(airScale ~ is.start, data = parms.df))
 # small "sample size," but still none sig
 
 initS.IS <- init.states.S[, not.is]; initS.notSel <- init.states.S[, which.is.temp]
@@ -414,11 +408,12 @@ for (j in countries) {
 print(countries[which(s0.ps < 0.05)]) # IS sig higher S0 when IS is the first to peak
 print(countries[which(i0.ps < 0.05)]) # none
 dev.off()
+# all results same for higher I0 maxs
 
 ### Look at parameters for chosen runs:
 summary(D.temp[ens.of.interest]) # 3-7
-summary(L.temp[ens.of.interest] / 365) # 1-10 years
-summary(airScale.temp[ens.of.interest]) # 0.75-1.25 (so full range)
+summary(L.temp[ens.of.interest] / 365) # 1-10 years; only up to ~7.5 years for higher I0 max
+summary(airScale.temp[ens.of.interest]) # 0.79-1.24 (so basically full range)
 summary(parms[3, ens.of.interest]) # 2.172 - 3.386
 summary(parms[4, ens.of.interest]) # 0.8 - 1.2
 summary(init.states.S[, ens.of.interest])
@@ -471,6 +466,7 @@ cor.test(select.parms$L, select.parms$D) # p = 0.04821, cor = 0.3836551
 # Bonferroni: 0.005 - only first is sig
 
 ### Plot chosen simulations:
+pdf('syntheticTests/outputs/synthetic_runs_0626.pdf', width = 9, height = 7)
 par(mfrow = c(3, 3), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 for (ix in not.is) {
   newI.ens <- NULL
@@ -481,6 +477,7 @@ for (ix in not.is) {
   matplot(t(newI.ens), type = 'b', pch = 20, cex = 0.7, col = viridis(n), main = ix, ylab = 'Cases / 100,000 Pop.')
   lines(newI.ens[9, ])
 }
+dev.off()
 
 # # Plot ALL simulations:
 # par(mfrow = c(5, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
@@ -507,8 +504,8 @@ for (i in 1:length(synth.runs.RATES)) {
   synth.runs.RATES[[i]] <- newI.ens
   synth.runs.COUNTS[[i]] <- newI.ens.count
 }
-save(synth.runs.RATES, file = 'syntheticTests/syntheticData/synth_05-27_RATES.RData')
-save(synth.runs.COUNTS, file = 'syntheticTests/syntheticData/synth_05-27_COUNTS.RData')
+save(synth.runs.RATES, file = 'syntheticTests/syntheticData/synth_06-26_RATES.RData')
+save(synth.runs.COUNTS, file = 'syntheticTests/syntheticData/synth_06-26_COUNTS.RData')
 
 # Save these initial conditions so that sensitivity to I0 can be assessed:
 # (Remember that this is an initial pass - might decide to do I0 in some other way)
@@ -516,8 +513,8 @@ init.states.SEL <- rbind(init.states.S[, not.is],
                          init.states.I[, not.is])
 # each column is a run
 
-save(init.states.SEL, file = 'syntheticTests/syntheticData/initStates_05-27.RData')
-save(select.parms, file = 'syntheticTests/syntheticData/params_05-27.RData')
+save(init.states.SEL, file = 'syntheticTests/syntheticData/initStates_06-26.RData')
+save(select.parms, file = 'syntheticTests/syntheticData/params_06-26.RData')
 # 5, 14, 24 (108, 467, 931) all seem to have later IS outbreaks and may be good candidates for fitting
 
 
@@ -534,6 +531,7 @@ save(select.parms, file = 'syntheticTests/syntheticData/params_05-27.RData')
 ### TO-DO ###
 # [] Prescribe several (~20) sets of params/initial conditions, get synthetic free simulations
 # [] Assess patterns in free simulations; compare with observed data
+
 # [x] Analyze patterns based on seeding:
 # [x] Everywhere
 # [x] Each country
@@ -543,13 +541,14 @@ save(select.parms, file = 'syntheticTests/syntheticData/params_05-27.RData')
 # [-] Test impact of net inflow/outflow on synthetic AR/PT/OT?
 # [-] Control for S0? Set all S0 equal? (or not - could look at it over multiple runs and see if consistent)
 # [-] Look at this for observed, too? (Controlling for S0?)
-# [] Also set S0/I0 equal to see what spatial patterns look like then?
 # [x] Param/S0 differences between runs with w-e vs. e-w spread?
+
 # [] Assess model sensitivity to different params by holding other 4 constant, then changing param of interest?
-# (At the very least, do this for airScale)
+      # (At the very least, do this for airScale)
 # [] Assess synthetic patterns when including/excluding different travel types (after getting more solid model)
 # [] Run w/o humidity
 # [] Run w/o IS? (Issues w/ SK too or are patterns consistent?)
+# [] Also set S0/I0 equal to see what spatial patterns look like then?
 
 
 

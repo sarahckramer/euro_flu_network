@@ -2,12 +2,14 @@
 ### Assess patterns in synthetic "data" and compare to observed data
 
 ### Save all plots:
-pdf('syntheticTests/outputs/synthetic_runs_0527.pdf', width = 16, height = 10)
+pdf('syntheticTests/outputs/synthetic_runs_Comp_0626.pdf', width = 16, height = 10)
 
 ### Read in synthetic "data" ###
 countries <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'FR', 'DE', 'HU', 'IS', 'IE', 'IT',
                'LU', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'UK')
-load('syntheticTests/syntheticData/synth_05-27_RATES.RData')
+load('syntheticTests/syntheticData/synth_06-26_RATES.RData')
+
+# synth.runs.RATES <- synth.runs.RATES[c(2:3, 5:7, 11:14, 18:19, 21:22, 24, 26:27)]
 
 ### Plot synthetic runs ###
 par(mfrow = c(3, 3), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
@@ -49,8 +51,9 @@ m$pt <- m$pt + 39; m$ot <- m$ot + 39
 # Which countries/runs have no onset?
 m.noOnset <- m[is.na(m$ot), ]; m.noOnset$country <- factor(m.noOnset$country)
 print(length(unique(m.noOnset$run)))
-rev(sort(table(m.noOnset$country))) # mostly PT and FR; also UK, IT, IE, HU, HR, ES, CZ
+rev(sort(table(m.noOnset$country))) # mostly PT and FR; also IT, IE, ES, CZ
 # obs: NL and SK in 13-14
+# for high I0, mostly PT, but IT, FR, UK, PL, HU, and HR all possible
 
 # Now remove those w/o onset for further analyses:
 m <- m[!is.na(m$ot), ]
@@ -114,7 +117,7 @@ med.m <- merge(med.m, obs.dist[[2]], by = 'country')
 med.m <- merge(med.m, obs.dist[[3]], by = 'country')
 
 cor.test(med.m$ar, med.m$ar_obs, method = 'spearman') # not sig
-cor.test(med.m$ot, med.m$ot_obs, method = 'spearman') # not sig
+cor.test(med.m$ot, med.m$ot_obs, method = 'spearman') # not sig; for high I0, borderline sig (p=0.05016) neg. relationship
 cor.test(med.m$pt, med.m$pt_obs, method = 'spearman') # not sig
 
 ### Look at range of AR, PT, OT by RUN ###
@@ -184,7 +187,7 @@ print(isSymmetric(dist.mat))
 
 synch.dist <- 1 - cor.synch.AVG # make into distance matrix
 mantel(as.dist(synch.dist) ~ as.dist(dist.mat), nperm = 10000, mrank = TRUE)
-# synchrony and distance between capitals are significantly associated (mantelr = -0.3926103)
+# synchrony and distance between capitals are significantly associated (mantelr = -0.3911778) (one-sided and two-sided sig)
 
 # Is synchrony related to commuting flows?:
 load('formatTravelData/formattedData/comm_mat_by_year_05-07.RData')
@@ -288,8 +291,11 @@ plot(cor.synch.plot$dist, cor.synch.plot$corr, pch = 20, xlab = 'Distance (100 k
 # We've also already looked at parameters
 
 ### Plot parameter ranges:
-load('syntheticTests/syntheticData/params_05-27.RData')
-load('syntheticTests/syntheticData/initStates_05-27.RData')
+load('syntheticTests/syntheticData/params_06-26.RData')
+load('syntheticTests/syntheticData/initStates_06-26.RData')
+
+# select.parms <- select.parms[c(2:3, 5:7, 11:14, 18:19, 21:22, 24, 26:27), ]
+# init.states.SEL <- init.states.SEL[, c(2:3, 5:7, 11:14, 18:19, 21:22, 24, 26:27)]
 
 par(mfrow = c(3, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 hist(select.parms$D, xlab = 'D', main = '', breaks = 15)
@@ -307,10 +313,11 @@ rownames(init.S) = rownames(init.I) = countries
 init.S.df <- melt(init.S); init.I.df <- melt(init.I)
 kruskal.test(value ~ Var1, data = init.S.df) # sig (p = 0.03465)
 kruskal.test(value ~ Var1, data = init.I.df) # not sig
-which(posthoc.kruskal.nemenyi.test(value ~ Var1, data = init.S.df)$p.value < 0.05/21, arr.ind = TRUE)
+which(posthoc.kruskal.nemenyi.test(value ~ Var1, data = init.S.df)$p.value < 0.05, arr.ind = TRUE) # none
 countries[c(9, 6, 12, 15, 21)] # sig between IS and: FR, LU, PT, UK
 # if reduced to p < 0.01, UK and IS are different
 # bonferroni: none sig
+# If we remove those starting in SE, there are no longer ANY sig differences here (kruskal still sig, but nothing pairwise)
 
 par(mfrow = c(2, 1), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 boxplot(init.S.df$value ~ init.S.df$Var1, col = 'lightblue2')
@@ -380,6 +387,7 @@ for (run in levels(m$run)) {
 dev.off()
 
 # Could also remove those starting in SE, but I think that's not worth doing right now
+      # This doesn't change much anyway
 # Keep eye on R0mn - should it be lower?
 
 
