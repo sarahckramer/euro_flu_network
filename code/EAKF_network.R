@@ -161,6 +161,7 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     obs_ens <- inflat.obs %*% (obsprior[,, tt] - obs_ens.mn %*% matrix(1, 1, num_ens)) + obs_ens.mn %*% matrix(1, 1, num_ens)
     # so we subtract the mean from the prior, inflate, then add the mean back in?
     # QUESTION: All xprior with no people in compartment are still zero, right?
+    # QUESTION: Any xprior < 0?
     
     # CHECK: No obsprior should be <0, right??
     not.to.adjust <- (1:dim(xprior)[1])[!((1:dim(xprior)[1]) %in% to.adjust)]
@@ -203,6 +204,7 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     
     # QUESITON: What was this line for?
     # prior_var[prior_mean == prior_var & prior_mean == 0] <- 1.0
+    # looks like this is for where prior_var is 0 - we already fixed this above
     
     post_mean <- post_var * (prior_mean / prior_var + as.vector(obs_i[tt, ]) / obs_var)
     # post_mean[is.na(post_mean)] <- 0 # QUESTION: Un-comment this line? - no, I think this is fine - NAs aren't 0s
@@ -235,7 +237,8 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     # print(all.equal(dy, dy.check))
     
     dy.full <- dy; #dy <- dy[!is.na(obs_i[tt, ]), ]
-    dy <- dy[-which(is.na(post_mean)), ]
+    # dy <- dy[-which(is.na(post_mean)), ] # QUESTION: potentially problematic if NO NAs in post_mean
+    dy <- dy[which(!is.na(post_mean)), ]
     # QUESTION: Is this correct?
     
     # print(dy.full[to.check, 1:8])
@@ -248,9 +251,12 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
       # C <- unlist(lapply((1:n)[!is.na(obs_i[tt, ])], function(ix) {
       #   cov(xprior[j,, tt], obsprior[ix,, tt]) / prior_var[ix]
       # }))
-      C <- unlist(lapply((1:n)[-which(is.na(post_mean))], function(ix) {
+      C <- unlist(lapply((1:n)[which(!is.na(post_mean))], function(ix) {
         cov(xprior[j,, tt], obsprior[ix,, tt]) / prior_var[ix]
       }))
+      # C <- unlist(lapply((1:n)[-which(is.na(post_mean))], function(ix) {
+      #   cov(xprior[j,, tt], obsprior[ix,, tt]) / prior_var[ix]
+      # }))
       rr <- rbind(rr, C)
     }
     #rr[is.na(rr)] <- 0 # QUESTION

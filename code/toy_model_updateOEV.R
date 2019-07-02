@@ -59,8 +59,8 @@ metricsonly <- FALSE # save all outputs
 lambda <- 1.03 # inflation factor for the ensemble filters c(1.00, 1.01, 1.02, 1.03, 1.05)
 
 oev_base <- 1e5
-oev_fact <- 1.0
-oev_denom <- 1.0 # denominator for observation error variance c(1, 5, 10, 50) (less for old scalings?: c(0.25, 0.5, 1, 5))
+oev_denom <- 1.0
+# oev_denom <- 1.0 # denominator for observation error variance c(1, 5, 10, 50) (less for old scalings?: c(0.25, 0.5, 1, 5))
 tmp_exp <- 2.0
 
 num_ens <- 300 # use 300 for ensemble filters, 10000 for particle filters
