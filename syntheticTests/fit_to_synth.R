@@ -2,25 +2,73 @@
 # This is just to plot out preliminary results
 # Eventually run in cluster and get full output files
 
+
+# Questions for Sen: Any issues with parameters not fitting well? What modifications did you make to the model? I0 randomly initiated everywhere or only in one/some locations?
+
+
+# [x] Look at fitted S over time
+# [x] S and I being initiated correctly? (rates vs. counts)
+# [x] Try reinitiating/reprobing
+# [x] Check Sen's paper
+    # [x] "observed variable initiated as 0" - do this? -- this is what I was already doing!
+# [] Check Sen's code
+# [] Can the fit parameters here reproduce a similar outbreak? (As in, does the model produce similar results for several parameter values?)
+# [x] Try with various amounts of error added
+    # [] And various error formats (tmp_exp)?
+# [] Remove IS (and/or other countries)?
+# [] Reprobing whenever a new onset occurs or something? It's not fitting well by the time later outbreaks start/peak
+# [x] Code to format results
+# [x] Code to plot results
+# [x] Choose smaller ntrn -- just fit all the way through, we can decide when to actually analyze the results
+# [] Change zeros to NAs and ignore them (at least in the middle of the season)?
+# [-] Try like 5e3/x? error should be relatively low when there's little activity -- then model becomes too "sure" and it's hard to pull it back up when outbreak starts
+# [] Calculate OEV for first two values in the outbreak using just j-1:j and j alone, so that there are at least values there?
+# [] Go back to doing reinit early on when values drop below zero, instead of just changing all to zero?
+# [x] EAKF code also needs to return onset.obs and onset.pred
+# Also see list in Word doc
+
+# Questions for Jeff:
+    # How much error is enough? How do we tell?
+    # What does this mean for this project? How might I improve this? Is it possible?
+    # Greater error on countries that have fewer tests in real life?
+    # obs_var using (j-2):j, or just j, since everything here is "known"? (probably still (j-2):j since we're using "data" with error in it) (but what about when adding the error?)
+    # obs_var is higher when countries have more cases - but countries in an outbreak are also what we want to focus on while fitting, right? (although of course the fact that others don't have outbreaks is important information, as well...)
+    # at what time point is parameter accuracy assessed?
+    # sometimes it seems like, even when I input the amount of error that was actually used, it's too much error to fit well
+    # we never actually did any synthetic testing for the single-country model
+    # something to prevent "collapse"? very low lambda when alp < like 0.2?
+    # in Sen's model, synthetic curves are very sensitive to random movement rate; should we incorporate something like that here?
+    # still initiate S and I by country, then normal dist/split proportionally for each individual compartment - is that okay, or should everything be drawn from LHS?
+    # possible to reprobe only some countries (along with outbreak params)?
+    # just having trouble getting things to fit the "data" without yanking the parameters around too much
+    # looks like there's at least something in obs_ens that's adjusted below 0 at every time point - is that normal with so many ens. members, or is it cause for concern?
+    # differences: no air travel; random travel prop. to commuting; 6 states
+    # think I need to check senstivity to different param values, and try w/o humidity forcing
+
+
 ### Read in libraries
 library("truncnorm"); library("tgp"); library("MASS"); library(reshape2); require(plyr)
 library(viridis)
 
 ### Read in model functions
-source('/Users/sarahkramer/Desktop/Lab/spatial_transmission/network_model/SIRS_network.R')
-source('/Users/sarahkramer/Desktop/Lab/spatial_transmission/forecasts/code/Fn_initializations.R')
-source('/Users/sarahkramer/Desktop/Lab/spatial_transmission/network_model/functions/Fn_checkxnobounds.R')
+source('code/SIRS_network.R')
+source('code/functions/Fn_initializations.R')
+source('code/functions/Fn_checkxnobounds.R')
+source('code/functions/Util.R')
+source('code/functions/calc_obsvars.R')
 
 ### Read in filter function
-source('/Users/sarahkramer/Desktop/Lab/spatial_transmission/network_model/synthetic/EAKF_rFC_Synth.R')
+source('syntheticTests/EAKF_rFC_Synth.R')
 
 ### Headers for output functions:
+metrics_header <- c('outbreak', 'run', 'oev_base', 'oev_denom', 'lambda', 'country', 'pkwk',
+                    'obs_pkwk', 'delta_pkwk_mean', 'peak_intensity', 'obs_peak_int', 'intensity_err',
+                    'corr', 'rmse', 'pi_acc', 'pt_acc')
+output_header <- c('outbreak','run','oev_base', 'oev_denom','lambda', 'week', 'L', 'L_sd',
+                   'D', 'D_sd', 'R0max', 'R0max_sd', 'R0min', 'R0min_sd', 'airScale', 'airScale_sd')
 
-
-
-
-### Ensemble member numbers kept:
-to.keep <- c(10, 38, 40, 88)
+### Ensemble member numbers kept (for now):
+to.keep <- c(3, 5, 13)#, 19, 26) #!!!
 
 ### Global variables
 dt <- 1 # time step for SIRS integration
@@ -28,124 +76,149 @@ tmstep <- 7 # "data" are weekly
 wk_start <- 40
 
 ### Parameter boundaries
-D_low <- 1.5; L_low <- 1*365; Rmx_low <- 1.3; Rmn_low <- 0.8;
-D_up <- 7; L_up <- 10*365; Rmx_up <- 4; Rmn_up <- 1.2;
-theta_low <- c(L_low, D_low, Rmx_low, Rmn_low)
-theta_up <- c(L_up, D_up, Rmx_up, Rmn_up)
+D_low <- 1.5; L_low <- 1*365; Rmx_low <- 1.3; Rmn_low <- 0.8; airScale_low <- 0.75
+D_up <- 7; L_up <- 10*365; Rmx_up <- 4; Rmn_up <- 1.2; airScale_up <- 1.25
+theta_low <- c(L_low, D_low, Rmx_low, Rmn_low, airScale_low)
+theta_up <- c(L_up, D_up, Rmx_up, Rmn_up, airScale_up)
 param.bound <- cbind(theta_low, theta_up)
+
+### Initial state variable values
+S0_low <- 0.30; S0_up <- 1.00 # proportion of population
+I0_low <- 0; I0_up <- 0.001 # proportion of population
 
 ### Parameters for the filters
 discrete <- FALSE # run the SIRS model continuously
 metricsonly <- FALSE # save all outputs
-lambda <- 1.05 # inflation factor for the ensemble filters
-oev_denom <- 5 # denominator for observation error variance
+lambda <- 1.03 # inflation factor for the ensemble filters c(1.00, 1.01, 1.02, 1.03, 1.05, 1.075?)
+oev_base <- 1e4; oev_denom <- 10.00
+# 1e4/5/1.00 combo doesn't look bad...; oev_base of 1e3 seems too low to handle early low error observations...
+# most similar to observed data seem to be 1e4/10, 1e4/20, and 1e5/20 (even 1e5/10, although a lot of error), based on visual similarity
+# OEVs look more like those calculated from Aim1 if denominator is 10 (although I know this isn't a great test)
+
 num_ens <- 300 # use 300 for ensemble filters, 10000 for particle filters
-num_runs <- 1
+num_runs <- 2
 
 ### Specify the country for which we are performing a forecast
-# countries <- c('BE', 'HR', 'CZ', 'DK', 'FR', 'DE', 'HU', 'IE', 'IS', 'IT',
-#                'LU', 'NL', 'PL', 'PT', 'SK', 'SI', 'ES', 'SE', 'UK')
-# count.indices <- c(2:20) # just those countries w/ train data, too
-
-countries <- c('BE', 'FR', 'DE')
-count.indices <- c(2, 6:7)
+countries <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'FR', 'DE', 'HU', 'IS', 'IE', 'IT',
+               'LU', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'UK')
+count.indices <- 1:21
 
 ### Set population sizes and # of countries used
-pop.size <- read.csv('/Users/sarahkramer/Desktop/Lab/spatial_transmission/forecasts/data/popcounts_02-07.csv')
+pop.size <- read.csv('data/popcounts_02-07.csv')
 pop.size <- pop.size[pop.size$country %in% countries, ]; pop.size$country <- factor(pop.size$country)
 pop.size <- pop.size[match(countries, pop.size$country), ]
 
-### Load commuting data
-load('/Users/sarahkramer/Desktop/Lab/spatial_transmission/flight_data/data/matrices/comm_mat_by_year_ADJ_04-16.RData')
-t.comm <- apply(simplify2array(comm.by.year.adj), 1:2, mean); rm(comm.by.year.adj)
-t.comm <- t.comm[countries, countries]
+### Read in humidity data
+ah <- read.csv('data/ah_05-07_formatted.csv')
+AH <- rbind(ah[, count.indices], ah[, count.indices])
 
-### Set country populations
+### Read in influenza "data":
+load('syntheticTests/syntheticData/synth_06-28_RATES_wError_1e4_10.RData')
+# synth.runs.RATES <- synth.runs.RATES[to.keep]
+# use rates b/c for observed data we used scaled data, which are meant to represent rates per 100,000 population
+
+### Initialize output data frames
+outputMetrics <- NULL
+outputOP <- NULL
+outputS = outputI = outputS_sd = outputI_sd = outputAlps = vector('list', length(to.keep) * num_runs)
+
+### Load commuting data:
+load('formatTravelData/formattedData/comm_mat_by_year_05-07.RData')
+t.comm <- apply(simplify2array(comm.by.year), 1:2, mean); rm(comm.by.year)
+# t.comm <- t.comm[countries, countries]
+
+### Set country populations:
 N <- t.comm; n <- length(countries) # w/ commuting
 diag(N) <- unlist(lapply(1:n, function(ix) {
   pop.size$pop[ix] - rowSums(N)[ix]
 }))
+# population and commuting data are COUNTS, not RATES
 
-### Read in random train data
-load('/Users/sarahkramer/Desktop/Lab/spatial_transmission/forecastsE/travel_data/train_04-30.RData')
-t.rand <- t.rand[countries, countries]
+### Set important values for fitting: #!!!
+tm.ini <- 273 - 1 #270 - 1
+tm.range <- 273:600 #270:600
 
-### Read in humidity data
-ah <- read.csv('/Users/sarahkramer/Desktop/Lab/spatial_transmission/forecastsE/data/ah_04-30_formatted.csv')
-AH <- rbind(ah[, count.indices], ah[, count.indices])
-
-### Read in influenza "data":
-load('/Users/sarahkramer/Desktop/Lab/spatial_transmission/forecastsE/synthetic/04-30-19/by_country_COUNTS_ERR.RData')
-
-### Format data for fitting:
-to.fit <- vector('list', length(to.keep))
-for (i in 1:length(to.keep)) {
-  newI.temp <- NULL
-  for (j in 1:length(countries)) {
-    newI.temp <- rbind(newI.temp, newI.ERR[[j]][i, ])
-  }
-  to.fit[[i]] <- newI.temp
-}
-rm(newI.ERR, newI.temp)
-
-### Set important values for fitting:
-tm.ini <- 270 - 1
-tm.range <- 270:600
-
-### Loop through ensemble members of interest:
-ens.index <- 1
-# for (ens.index in 1:4) {
+### Loop through synthetic runs:
+pos <- 1
+for (outbreak in 1:length(to.keep)) {
+  # outbreak <- 1
   
-  # Initialize output data frames (here?):
-  
-  
-  
-  # Get truth parameter values:
-  load('/Users/sarahkramer/Desktop/Lab/spatial_transmission/forecastsE/synthetic/04-30-19/all_params.RData')
-  true.params <- c(all.params[[4]][to.keep[ens.index]], all.params[[3]][to.keep[ens.index]],
-                   all.params[[1]][to.keep[ens.index]], all.params[[2]][to.keep[ens.index]])
+  # Get true parameter values:
+  load('syntheticTests/syntheticData/params_06-26.RData')
+  true.params <- select.parms[to.keep[outbreak], ]
   print(true.params)
   
-  # Get "data":
-  obs_i <- t(to.fit[[ens.index]])
-  matplot(obs_i, type = 'b', pch = 20, lty = 1, col = viridis(length(countries)), cex = 0.75,
-          xlab = 'Weeks from Outbreak Start', ylab = 'Syn+ Counts')
+  ### Get observations for current run:
+  obs_i <- synth.runs.RATES[[to.keep[outbreak]]]
+  nsn <- dim(obs_i)[1]
   
-  # Calculate "observational" error variance:
-  tmp <- matrix(0, nrow = nrow(obs_i), ncol = ncol(obs_i))
-  for (ix in 1:length(countries)) {
-    for (jx in 4:length(obs_i[, ix])) {
-      tmp[jx, ix] <- mean(obs_i[(jx - 3):(jx - 1), ix])
-    }
+  ### Plot:
+  par(mfrow = c(1, 1), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+  matplot(obs_i, pch = 20, col = viridis(n), type = 'b', lty = 1, cex = 0.9)
+  par(mfrow = c(5, 5), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+  for (i in 1:n) {
+    plot(obs_i[, i], type = 'b', pch = 20, col = 'coral', cex = 0.7, main = countries[i], xaxt = 'n', xlab = '', ylab = 'Syn+')
   }
-  obs_vars <- (1e5 + (tmp ** 2) / 5) / oev_denom
   
-  # Set initial time and time range:
-  tm.ini <- 270 - 1
-  tm.range <- 270:600
+  ### Variance of syndromic+ data:
+  # DO THIS WITH RATE DATA OR COUNT DATA??? - Fitting to rates, right? -- YES
+  obs_vars <- calc_obsvars(obs_i, oev_base, oev_denom)
+  # matplot(obs_vars, pch = 20, col = viridis(n), type = 'b', lty = 1, cex = 0.9)
   
-  # Fit through end of outbreak:
-  ntrn <- 39 # 4 weeks from "end" of outbreak
+  # tm.ini <- clim_start - 1 # the end of the former week
+  # tm.range <- clim_start:clim_end
   
-  # Model fitting!
-  pdf('/Users/sarahkramer/Desktop/Lab/spatial_transmission/forecastsE/synthetic/04-30-19/run_ens10_lam105_oevd5.pdf',
-      width = 10, height = 8)
+  ### Set ntrn:
+  ntrn <- nsn
+  
+  ### Fit to data: #!!!
   for (run in 1:num_runs) {
-    res <- EAKF_rFC(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn, obs_vars, tm.ini, tm.range)
+    par(mfrow = c(3, 2), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+    res <- EAKF_rFC(num_ens, tmstep, param.bound, obs_i, ntrn, obs_vars, tm.ini, tm.range,
+                    do.reprobing = TRUE)
+
+    print(table(res[[1]][, 10]))
+    print(table(res[[1]][, 11]))
+    print('')
     
+    true.params <- true.params[c(2, 1, 4:5, 3)]
+    true.params[1] <- true.params[1] * 365
     
+    par(mfrow = c(3, 2), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+    for (param.index in 1:5) {
+      plot(res[[4]][1:30, param.index], pch = 20, type = 'b', cex = 0.8,
+           xlab = 'Time Since Outbreak Start', ylab = names(res[[4]])[param.index],
+           ylim = c(min(unlist(c(res[[4]][, param.index], true.params[param.index]))),
+                    max(unlist(c(res[[4]][, param.index], true.params[param.index])))))#,
+           # ylim = c(param.bound[param.index, 1], param.bound[param.index, 2]))
+      abline(h = true.params[param.index], lwd = 2, lty = 1, col = 'blue')
+    }
     
+    outputMetrics <- rbind(outputMetrics, cbind(outbreak, run, oev_base, oev_denom, lambda, res[[1]]))
+    outputOP <- rbind(outputOP, cbind(outbreak, run, oev_base, oev_denom, lambda, 1:ntrn, res[[4]]))
+    
+    outputS[[pos]] <- res[[5]]; outputS_sd[[pos]] <- res[[6]] # in proportion of population
+    outputI[[pos]] <- res[[2]]; outputI_sd[[pos]] <- res[[3]] # in rate per 100,000
+    outputAlps[[pos]] <- res[[7]]
+    pos <- pos + 1
+
   }
-  dev.off()
   
-  
-  
-  
-# }
+}
 
+names(outputMetrics) <- metrics_header
 
+outputOP <- outputOP[, c(1:7, 12, 8, 13, 9, 14, 10, 15, 11, 16)]
+names(outputOP) <- output_header
 
+# write.csv(outputMetrics, file = 'syntheticTests/outputs/outputMet2.csv', row.names = FALSE)
+# write.csv(outputOP, file = 'syntheticTests/outputs/outputOP2.csv', row.names = FALSE)
 
+outputsS <- list(outputS, outputS_sd); outputsI <- list(outputI, outputI_sd)
+
+# save(outputsS, file = 'syntheticTests/outputs/outputS2.RData')
+# save(outputsI, file = 'syntheticTests/outputs/outputI2.RData')
+# save(outputAlps, file = 'syntheticTests/outputs/outputAlps2.RData')
 
 
 

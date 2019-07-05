@@ -11,8 +11,8 @@ for (i in 1:length(synth.runs.RATES)) {
 }
 
 # Prescribe OEV parameters:
-oev_base <- 1e3
-oev_denom <- 5.0 # 5, 10, 20
+oev_base <- 5e3
+oev_denom <- 20.0 # 5, 10, 20
 
 # Calculate "old" OEV format:
 source('code/functions/calc_obsvars.R')
@@ -21,6 +21,13 @@ obs_vars <- vector('list', length(synth.runs.RATES))
 for (i in 1:length(synth.runs.RATES)) {
   obs_vars[[i]] <- calc_obsvars(synth.runs.RATES[[i]], oev_base, oev_denom)
 }
+
+# for (j in 1:27) {
+#   par(mfrow = c(5, 5), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+#   for (i in 1:n) {
+#     plot(obs_vars[[j]][, i], type = 'b', pch = 20, col = 'coral', cex = 0.7, main = countries[i], xaxt = 'n', xlab = '', ylab = 'Syn+')
+#   }
+# }
 
 # Check visually:
 par(mfrow = c(2, 1), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
@@ -44,7 +51,7 @@ for (i in 1:length(synth.runs.RATES)) {
 matplot(synth.runs.RATES[[1]], pch = 20, col = viridis(21), cex = 0.8, type = 'b', lty = 1)
 
 # Save results:
-save(synth.runs.RATES, file = 'syntheticTests/syntheticData/synth_06-28_RATES_wError_1e3_5.RData')
+save(synth.runs.RATES, file = 'syntheticTests/syntheticData/synth_06-28_RATES_wError_5e3_20.RData')
 
 
 
