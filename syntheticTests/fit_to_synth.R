@@ -6,25 +6,17 @@
 # Questions for Sen: Any issues with parameters not fitting well? What modifications did you make to the model? I0 randomly initiated everywhere or only in one/some locations?
 
 
-# [x] Look at fitted S over time
-# [x] S and I being initiated correctly? (rates vs. counts)
 # [x] Try reinitiating/reprobing
 # [x] Check Sen's paper
-    # [x] "observed variable initiated as 0" - do this? -- this is what I was already doing!
 # [] Check Sen's code
 # [] Can the fit parameters here reproduce a similar outbreak? (As in, does the model produce similar results for several parameter values?)
 # [x] Try with various amounts of error added
     # [] And various error formats (tmp_exp)?
 # [] Remove IS (and/or other countries)?
 # [] Reprobing whenever a new onset occurs or something? It's not fitting well by the time later outbreaks start/peak
-# [x] Code to format results
-# [x] Code to plot results
-# [x] Choose smaller ntrn -- just fit all the way through, we can decide when to actually analyze the results
-# [] Change zeros to NAs and ignore them (at least in the middle of the season)?
 # [-] Try like 5e3/x? error should be relatively low when there's little activity -- then model becomes too "sure" and it's hard to pull it back up when outbreak starts
 # [] Calculate OEV for first two values in the outbreak using just j-1:j and j alone, so that there are at least values there?
 # [] Go back to doing reinit early on when values drop below zero, instead of just changing all to zero?
-# [x] EAKF code also needs to return onset.obs and onset.pred
 # Also see list in Word doc
 
 # Questions for Jeff:
@@ -33,8 +25,6 @@
     # Greater error on countries that have fewer tests in real life?
     # obs_var using (j-2):j, or just j, since everything here is "known"? (probably still (j-2):j since we're using "data" with error in it) (but what about when adding the error?)
     # obs_var is higher when countries have more cases - but countries in an outbreak are also what we want to focus on while fitting, right? (although of course the fact that others don't have outbreaks is important information, as well...)
-    # at what time point is parameter accuracy assessed?
-    # sometimes it seems like, even when I input the amount of error that was actually used, it's too much error to fit well
     # we never actually did any synthetic testing for the single-country model
     # something to prevent "collapse"? very low lambda when alp < like 0.2?
     # in Sen's model, synthetic curves are very sensitive to random movement rate; should we incorporate something like that here?
