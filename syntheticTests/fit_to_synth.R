@@ -12,7 +12,6 @@
 # [] Can the fit parameters here reproduce a similar outbreak? (As in, does the model produce similar results for several parameter values?)
 # [x] Try with various amounts of error added
     # [] And various error formats (tmp_exp)?
-# [] Remove IS (and/or other countries)?
 # [] Reprobing whenever a new onset occurs or something? It's not fitting well by the time later outbreaks start/peak
 # [-] Try like 5e3/x? error should be relatively low when there's little activity -- then model becomes too "sure" and it's hard to pull it back up when outbreak starts
 # [] Calculate OEV for first two values in the outbreak using just j-1:j and j alone, so that there are at least values there?
@@ -34,6 +33,14 @@
     # looks like there's at least something in obs_ens that's adjusted below 0 at every time point - is that normal with so many ens. members, or is it cause for concern?
     # differences: no air travel; random travel prop. to commuting; 6 states
     # think I need to check senstivity to different param values, and try w/o humidity forcing
+        # strong pattern in relative PT when AH-forcing that all but disappears without forcing
+        # tune humidity more to population centers (esp. for SE)?
+    # general assessment suggests that, while AH is a stronger driver with high R0mx and low D, parameters don't have a strong impact on patterns and might be hard to fit
+        # impact of R0mx and D on synchrony much stronger when AH removed
+        # airScale especially has no impact, even when AH removed; removing all travel also doesn't seem to have a strong impact
+        # better way to assess this?
+    # remove IS (and/or others?)
+    # having most trouble by time later outbreaks roll around
 
 
 ### Read in libraries
