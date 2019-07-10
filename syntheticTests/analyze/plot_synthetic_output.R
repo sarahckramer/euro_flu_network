@@ -1,14 +1,14 @@
 
 library(ggplot2); library(gridExtra)
 
-pdf('syntheticTests/outputs/cluster/model_fit_070519.pdf',
+pdf('syntheticTests/outputs/cluster/model_fit_alp90reprobe2_070919.pdf',
     width = 14, height = 10)
 
 # Read in results:
-m <- read.csv('syntheticTests/outputs/cluster/outputMet.csv')
-o <- read.csv('syntheticTests/outputs/cluster/outputOP.csv')
-oStates <- read.csv('syntheticTests/outputs/cluster/outputOPStates.csv')
-alps <- read.csv('syntheticTests/outputs/cluster/outputAlps.csv')
+m <- read.csv('syntheticTests/outputs/cluster/outputMet_alp95reprobe10.csv')
+o <- read.csv('syntheticTests/outputs/cluster/outputOP_alp95reprobe10.csv')
+oStates <- read.csv('syntheticTests/outputs/cluster/outputOPStates_alp95reprobe10.csv')
+alps <- read.csv('syntheticTests/outputs/cluster/outputAlps_alp95reprobe10.csv')
 
 # Check what combos ran:
 table(m$oev_base, m$oev_denom)
@@ -156,7 +156,8 @@ m2 <- lm(rmse ~ obs_pkwk + obs_peak_int + outbreak + run + oev_denom + lambda, d
 
 # Plot observed data vs. fit obs:
 oStates$group <- paste(oStates$oev_base, oStates$oev_denom, sep = '_'); oStates$group <- factor(oStates$group)
-oStates$group <- factor(oStates$group, levels = levels(oStates$group)[c(1, 4, 2:3)])
+# oStates$group <- factor(oStates$group, levels = levels(oStates$group)[c(1, 4, 2:3)])
+oStates$group <- factor(oStates$group, levels = levels(oStates$group)[c(3, 1:2, 6, 4:5)])
 oStates$group.plot <- paste(oStates$run, oStates$oev_base, oStates$oev_denom, oStates$lambda, sep = '_'); oStates$group.plot <- factor(oStates$group.plot)
 oStates$lambda <- factor(oStates$lambda)
 
@@ -165,7 +166,7 @@ countries <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'FR', 'DE', 'HU', 'IS', 'IE', 'IT',
 n <- length(countries)
 
 load('syntheticTests/syntheticData/synth_06-28_RATES_wError_1e5_10.RData')
-to.keep <- c(3, 5, 13, 19, 26)
+to.keep <- c(3, 5, 13, 11, 19, 26)
 synth.runs.RATES <- synth.runs.RATES[to.keep]
 
 for (outbreak in 1:length(to.keep)) {
@@ -265,16 +266,18 @@ for (outbreak in 1:length(to.keep)) {
 load('syntheticTests/syntheticData/params_06-26.RData')
 select.parms <- select.parms[to.keep, ]
 select.parms$L <- select.parms$L * 365
-select.parms <- as.data.frame(cbind(rep(1:5, 5), melt(select.parms)))
+select.parms <- as.data.frame(cbind(rep(1:6, 5), melt(select.parms)))
 names(select.parms) <- c('outbreak', 'parameter', 'value')
 
 o$group <- paste(o$oev_base, o$oev_denom, sep = '_'); o$group <- factor(o$group)
-o$group <- factor(o$group, levels = levels(o$group)[c(1, 4, 2:3)])
+# o$group <- factor(o$group, levels = levels(o$group)[c(1, 4, 2:3)])
+o$group <- factor(o$group, levels = levels(o$group)[c(3, 1:2, 6, 4:5)])
 o$lambda <- factor(o$lambda)
 o$group.plot <- paste(o$outbreak, o$run, o$oev_base, o$oev_denom, o$lambda, sep = '_'); o$group.plot <- factor(o$group.plot)
 
 o.plot <- o[o$week <= 30, ]
-o.plot <- o.plot[o.plot$group != '10000_5', ]; o.plot$group <- factor(o.plot$group)
+# o.plot <- o.plot[o.plot$group != '10000_5', ]; o.plot$group <- factor(o.plot$group)
+o.plot <- o.plot[o.plot$oev_base == 1e5, ]; o.plot$group <- factor(o.plot$group)
 
 p1 <- ggplot(data = o.plot) +
   geom_hline(data = select.parms[select.parms$parameter == 'L', ], aes(yintercept = value), lwd = 1.0) +
