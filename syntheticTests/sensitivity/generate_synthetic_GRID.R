@@ -1,9 +1,6 @@
 
-### First: Run with AH-forcing ###
-
 # Setup:
 library("truncnorm"); library("tgp"); library("MASS"); library(reshape2); library(plyr); library(ggplot2); library(viridis)
-set.seed(10489436)
 source('code/SIRS_network.R')
 dt <- 1 # time step for SIRS integration
 tmstep <- 7 #data is weekly
@@ -13,16 +10,28 @@ wk_start <- 40
 tm_strt <- 273; tm_end <- 573; tm_step <- 1#; t <- 1 # 273 is first of October
 tm.range <- tm_strt:tm_end
 
-L_low <- 1*365; Rmn_low <- 0.8; L_up <- 10*365; Rmn_up <- 1.2
-theta_low <- c(L_low, Rmn_low); theta_up <- c(L_up, Rmn_up)
-
-S0_low <- 0.55; S0_up <- 0.90 # proportion of population
-I0_low <- 0; I0_up <- 0.0001 # proportion of population # to 0.01% or 0.1%?
-
 # Countries:
 countries <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'FR', 'DE', 'HU', 'IS', 'IE', 'IT',
                'LU', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'UK')
 count.indices <- c(1:21)
+
+# Get collection of params that produce "full" outbreaks:
+load('syntheticTests/syntheticData/params_06-26.RData')
+parms.USE <- select.parms[c(3, 5, 13), ]
+rm(select.parms)
+
+load('syntheticTests/syntheticData/initStates_06-26.RData')
+init.states.USE <- init.states.SEL[, c(3, 5, 13)]
+rm(init.states.SEL)
+
+###################################################################################################################################################################################################
+###################################################################################################################################################################################################
+###################################################################################################################################################################################################
+
+### First: Run with AH-forcing ###
+
+# Setup:
+set.seed(10489436)
 
 # Set population sizes and # of countries used
 pop.size <- read.csv('data/popcounts_02-07.csv')
@@ -44,23 +53,25 @@ diag(N) <- unlist(lapply(1:n, function(ix) {
 ah <- read.csv('data/ah_05-07_formatted.csv')
 AH <- rbind(ah[, count.indices], ah[, count.indices])
 
-# Set initial conditions and L/R0mn using LHS:
-num_ens <- 10
-param.bound <- cbind(c(rep(S0_low, n), rep(I0_low, n), theta_low),
-                     c(rep(S0_up, n), rep(I0_up, n), theta_up))
-parms <- t(lhs(num_ens, param.bound))
+# Set initial conditions and params:
+parms <- rbind(init.states.USE, t(parms.USE))
 
-# Repeat 27 times!:
+# Repeat 6 times!:
 count <- 1
-while (count < 27) {
-  parms <- cbind(parms, parms[, 1:10]); count <- count + 1
+while (count < 7) {
+  parms <- cbind(parms, parms[, 1:3]); count <- count + 1
 }
 
-# Add in combos of D, R0mx, and airScale:
-parms <- rbind(parms, rbind(c(rep(2.5, 90), rep(4.25, 90), rep (6.0, 90)), rep(c(rep(1.5, 30), rep(2.0, 30), rep(2.5, 30)), 3), rep(c(rep(0.75, 10), rep(1.00, 10), rep(1.25, 10)), 9)))
+# Change R0mx and airScale where desired:
+parms[46, 4:6] <- 2.5
+parms[46, 7:9] <- 2.75
+parms[46, 10:12] <- 3.0
+parms[45, 13:15] <- 0.75
+parms[45, 16:18] <- 1.00
+parms[45, 19:21] <- 1.25
 
 # Set initial S/I for all compartments:
-num_ens <- num_ens * 27
+num_ens <- dim(parms)[2]
 S0.temp = I0.temp = vector('list', num_ens)
 for (i in 1:num_ens) {
   S0.temp[[i]] = I0.temp[[i]] = matrix(0, nrow = n, ncol = n)
@@ -77,30 +88,21 @@ for (i in 1:num_ens) {
   I0.temp[[i]] <- I0.temp[[i]] * N
 }
 
-# Store initial S0/I0 conditions:
-init.states.S <- parms[1:n, ]; init.states.I  <- parms[(n + 1):(2 * n), ]
-
 # Reduce parms to hold just the parameters now:
 parms <- parms[(dim(parms)[1] - 4):(dim(parms)[1]), ]
-print(parms[, 1:20])
-
-# Store initial states and parameters:
-save(init.states.S, file = 'syntheticTests/sensitivity/outputs_datasets/grid_initS.RData')
-save(init.states.I, file = 'syntheticTests/sensitivity/outputs_datasets/grid_initI.RData')
-save(parms, file = 'syntheticTests/sensitivity/outputs_datasets/grid_parms.RData')
 
 # Calculate betas
 beta.range <- tm.range[1]:(tail(tm.range, 1) + 2 * tmstep)
 AHpt <- AH[beta.range, ]
 AHpt <- as.matrix(AHpt, length(AHpt), n)
-b <- log(parms[4, ] - parms[2, ])
+b <- log(parms[4, ] - parms[5, ])
 a <- -180
 beta <- lapply(1:num_ens, function(ix) {
-  (exp(a * AHpt + b[ix]) + parms[2, ix]) / parms[3, ix]
+  (exp(a * AHpt + b[ix]) + parms[5, ix]) / parms[1, ix]
 })
 
 # Create vectors of initial parameters:
-D.temp <- parms[3, ]; L.temp <- parms[1, ]; airScale.temp <- parms[5, ]
+D.temp <- parms[1, ]; L.temp <- parms[2, ] * 365; airScale.temp <- parms[3, ]
 
 # Run!
 m <- sapply(1:num_ens, function(ix) {
@@ -140,9 +142,38 @@ for (i in 1:num_ens) {
   newI.ens[[i]] <- t(newI.ens.temp)
 }; rm(newI.ens.temp)
 
-# Save results:
-newI.ens.BOTH <- newI.ens
-save(newI.ens.BOTH, file = 'syntheticTests/sensitivity/outputs_datasets/grid_AH-Travel.RData')
+# Plot out results by param?
+# 1/R0mx: 4, 7, 10; 2/R0mx: 5, 8, 11; 3/R0mx: 6, 9, 12; 1/aS: 13, 16, 19; 2/aS: 14, 17, 20; 3/aS: 15, 18, 21
+
+pdf('syntheticTests/sensitivity/outputs_plots/sens_to_models_and_params_red_Base.pdf', height = 10, width = 8)
+
+par(mfrow = c(3, 1), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+matplot(newI.ens[[4]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'R0mx = 2.5')
+matplot(newI.ens[[7]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'R0mx = 2.75')
+matplot(newI.ens[[10]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'R0mx = 3.0')
+
+matplot(newI.ens[[5]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'R0mx = 2.5')
+matplot(newI.ens[[8]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'R0mx = 2.75')
+matplot(newI.ens[[11]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'R0mx = 3.0')
+
+matplot(newI.ens[[6]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'R0mx = 2.5')
+matplot(newI.ens[[9]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'R0mx = 2.75')
+matplot(newI.ens[[12]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'R0mx = 3.0')
+
+matplot(newI.ens[[13]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'airScale = 0.75')
+matplot(newI.ens[[16]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'airScale = 1.00')
+matplot(newI.ens[[19]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'airScale = 1.25')
+
+matplot(newI.ens[[14]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'airScale = 0.75')
+matplot(newI.ens[[17]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'airScale = 1.00')
+matplot(newI.ens[[20]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'airScale = 1.25')
+
+matplot(newI.ens[[15]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'airScale = 0.75')
+matplot(newI.ens[[18]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'airScale = 1.00')
+matplot(newI.ens[[21]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'airScale = 1.25')
+# so R0mx increases synchrony, but little impact of airScale (can see very slight changes in some countries, but not like increased synchrony in Sen's model)
+
+dev.off()
 
 ###################################################################################################################################################################################################
 ###################################################################################################################################################################################################
@@ -153,26 +184,26 @@ save(newI.ens.BOTH, file = 'syntheticTests/sensitivity/outputs_datasets/grid_AH-
 # Setup:
 set.seed(10489436)
 
-# Set initial conditions and L/R0mn using LHS:
-num_ens <- 10
-param.bound <- cbind(c(rep(S0_low, n), rep(I0_low, n), theta_low),
-                     c(rep(S0_up, n), rep(I0_up, n), theta_up))
-parms <- t(lhs(num_ens, param.bound))
+# Set initial conditions and params:
+parms <- rbind(init.states.USE, t(parms.USE))
 
-# Repeat 27 times!:
+# Repeat 6 times!:
 count <- 1
-while (count < 27) {
-  parms <- cbind(parms, parms[, 1:10]); count <- count + 1
+while (count < 7) {
+  parms <- cbind(parms, parms[, 1:3]); count <- count + 1
 }
 
-# Add in combos of D, R0, and airScale:
-parms <- rbind(parms, rbind(c(rep(2.5, 90), rep(4.25, 90), rep (6.0, 90)), rep(c(rep(1.2, 30), rep(1.7, 30), rep(2.2, 30)), 3), rep(c(rep(0.75, 10), rep(1.00, 10), rep(1.25, 10)), 9)))
-
-# Remove unnecessary parameters:
-parms <- parms[c(1:43, 45:47), ]
+# Change R0mx and airScale where desired:
+parms[46, 4:6] <- 1.4
+parms[46, 7:9] <- 1.6
+parms[46, 10:12] <- 2.0
+parms[45, 13:15] <- 0.75
+parms[45, 16:18] <- 1.00
+parms[45, 19:21] <- 1.25
+parms[46, 13:21] <- parms[46, 13:21] - 0.9
 
 # Set initial S/I for all compartments:
-num_ens <- num_ens * 27
+num_ens <- dim(parms)[2]
 S0.temp = I0.temp = vector('list', num_ens)
 for (i in 1:num_ens) {
   S0.temp[[i]] = I0.temp[[i]] = matrix(0, nrow = n, ncol = n)
@@ -190,17 +221,16 @@ for (i in 1:num_ens) {
 }
 
 # Reduce parms to hold just the parameters now:
-parms <- parms[(dim(parms)[1] - 3):(dim(parms)[1]), ]
-print(parms[, 1:20])
+parms <- parms[(dim(parms)[1] - 4):(dim(parms)[1]), ]
 
 # Calculate betas
 beta.range <- tm.range[1]:(tail(tm.range, 1) + 2 * tmstep)
 beta <- lapply(1:num_ens, function(ix) {
-  matrix(parms[3, ix] / parms[2, ix], nrow = length(beta.range), ncol = n)
+  matrix(parms[4, ix] / parms[1, ix], nrow = length(beta.range), ncol = n)
 })
 
 # Create vectors of initial parameters:
-D.temp <- parms[2, ]; L.temp <- parms[1, ]; airScale.temp <- parms[4, ]
+D.temp <- parms[1, ]; L.temp <- parms[2, ] * 365; airScale.temp <- parms[3, ]
 
 # Run!
 m <- sapply(1:num_ens, function(ix) {
@@ -240,9 +270,35 @@ for (i in 1:num_ens) {
   newI.ens[[i]] <- t(newI.ens.temp)
 }; rm(newI.ens.temp)
 
-# Save results:
-newI.ens.noAH <- newI.ens
-save(newI.ens.noAH, file = 'syntheticTests/sensitivity/outputs_datasets/grid_noAH_Travel.RData')
+pdf('syntheticTests/sensitivity/outputs_plots/sens_to_models_and_params_red_noAH.pdf', height = 10, width = 8)
+
+par(mfrow = c(3, 1), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+matplot(newI.ens[[4]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'R0 = 1.4')
+matplot(newI.ens[[7]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'R0 = 1.6')
+matplot(newI.ens[[10]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'R0 = 2.0')
+
+matplot(newI.ens[[5]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'R0 = 1.4')
+matplot(newI.ens[[8]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'R0 = 1.6')
+matplot(newI.ens[[11]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'R0 = 2.0')
+
+matplot(newI.ens[[6]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'R0 = 1.4')
+matplot(newI.ens[[9]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'R0 = 1.6')
+matplot(newI.ens[[12]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'R0 = 2.0')
+
+matplot(newI.ens[[13]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'airScale = 0.75 (R0 = R0mx - 0.9)')
+matplot(newI.ens[[16]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'airScale = 1.00')
+matplot(newI.ens[[19]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'airScale = 1.25')
+
+matplot(newI.ens[[14]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'airScale = 0.75 (R0 = R0mx - 0.9)')
+matplot(newI.ens[[17]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'airScale = 1.00')
+matplot(newI.ens[[20]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'airScale = 1.25')
+
+matplot(newI.ens[[15]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'airScale = 0.75 (R0 = R0mx - 0.9)')
+matplot(newI.ens[[18]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'airScale = 1.00')
+matplot(newI.ens[[21]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'airScale = 1.25')
+# so R0mx increases synchrony, but little impact of airScale (can see very slight changes in some countries, but not like increased synchrony in Sen's model)
+
+dev.off()
 
 ###################################################################################################################################################################################################
 ###################################################################################################################################################################################################
@@ -252,7 +308,11 @@ save(newI.ens.noAH, file = 'syntheticTests/sensitivity/outputs_datasets/grid_noA
 
 # Setup:
 set.seed(10489436)
-# source('code/SIRS_network.R') # HAVE TO CHANGE CODE!!
+
+# Set population sizes and # of countries used
+pop.size <- read.csv('data/popcounts_02-07.csv')
+pop.size <- pop.size[pop.size$country %in% countries, ]; pop.size$country <- factor(pop.size$country)
+pop.size <- pop.size[match(countries, pop.size$country), ]
 
 # Load commuting data
 load('formatTravelData/formattedData/comm_mat_by_year_05-07.RData')
@@ -266,23 +326,25 @@ diag(N) <- unlist(lapply(1:n, function(ix) {
   pop.size$pop[ix] - rowSums(N)[ix]
 }))
 
-# Set initial conditions and L/R0mn using LHS:
-num_ens <- 10
-param.bound <- cbind(c(rep(S0_low, n), rep(I0_low, n), theta_low),
-                     c(rep(S0_up, n), rep(I0_up, n), theta_up))
-parms <- t(lhs(num_ens, param.bound))
+# Set initial conditions and params:
+parms <- rbind(init.states.USE, t(parms.USE))
 
-# Repeat 9 times!:
+# Repeat 4 times!:
 count <- 1
-while (count < 9) {
-  parms <- cbind(parms, parms[, 1:10]); count <- count + 1
+while (count < 4) {
+  parms <- cbind(parms, parms[, 1:3]); count <- count + 1
 }
 
-# Add in combos of D and R0mx:
-parms <- rbind(parms, rbind(c(rep(2.5, 30), rep(4.25, 30), rep (6.0, 30)), rep(c(rep(1.5, 10), rep(2.0, 10), rep(2.5, 10)), 3)))
+# Change R0mx and airScale where desired:
+parms[46, 4:6] <- 2.5
+parms[46, 7:9] <- 2.75
+parms[46, 10:12] <- 3.0
+# parms[45, 13:15] <- 0.75
+# parms[45, 16:18] <- 1.00
+# parms[45, 19:21] <- 1.25
 
 # Set initial S/I for all compartments:
-num_ens <- num_ens * 9
+num_ens <- dim(parms)[2]
 S0.temp = I0.temp = vector('list', num_ens)
 for (i in 1:num_ens) {
   S0.temp[[i]] = I0.temp[[i]] = matrix(0, nrow = n, ncol = n)
@@ -300,21 +362,20 @@ for (i in 1:num_ens) {
 }
 
 # Reduce parms to hold just the parameters now:
-parms <- parms[(dim(parms)[1] - 3):(dim(parms)[1]), ]
-print(parms[, 1:20])
+parms <- parms[(dim(parms)[1] - 4):(dim(parms)[1]), ]
 
 # Calculate betas
 beta.range <- tm.range[1]:(tail(tm.range, 1) + 2 * tmstep)
 AHpt <- AH[beta.range, ]
 AHpt <- as.matrix(AHpt, length(AHpt), n)
-b <- log(parms[4, ] - parms[2, ])
+b <- log(parms[4, ] - parms[5, ])
 a <- -180
 beta <- lapply(1:num_ens, function(ix) {
-  (exp(a * AHpt + b[ix]) + parms[2, ix]) / parms[3, ix]
+  (exp(a * AHpt + b[ix]) + parms[5, ix]) / parms[1, ix]
 })
 
 # Create vectors of initial parameters:
-D.temp <- parms[3, ]; L.temp <- parms[1, ]
+D.temp <- parms[1, ]; L.temp <- parms[2, ] * 365
 
 # Run!
 m <- sapply(1:num_ens, function(ix) {
@@ -353,9 +414,24 @@ for (i in 1:num_ens) {
   newI.ens[[i]] <- t(newI.ens.temp)
 }; rm(newI.ens.temp)
 
-# Save results:
-newI.ens.noTravel <- newI.ens
-save(newI.ens.noTravel, file = 'syntheticTests/sensitivity/outputs_datasets/grid_AH-noTravel.RData')
+
+pdf('syntheticTests/sensitivity/outputs_plots/sens_to_models_and_params_red_noTravel.pdf', height = 10, width = 8)
+
+par(mfrow = c(3, 1), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+matplot(newI.ens[[4]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'R0mx = 2.5')
+matplot(newI.ens[[7]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'R0mx = 2.75')
+matplot(newI.ens[[10]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'R0mx = 3.0')
+
+matplot(newI.ens[[5]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'R0mx = 2.5')
+matplot(newI.ens[[8]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'R0mx = 2.75')
+matplot(newI.ens[[11]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'R0mx = 3.0')
+
+matplot(newI.ens[[6]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'R0mx = 2.5')
+matplot(newI.ens[[9]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'R0mx = 2.75')
+matplot(newI.ens[[12]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'R0mx = 3.0')
+# these certainly look a lot "ropier" than with commuting - less synchrony with later peaks; so commuting seems to play a role, but not air travel as much; that agrees with literature, though
+
+dev.off()
 
 ###################################################################################################################################################################################################
 ###################################################################################################################################################################################################
@@ -367,26 +443,42 @@ save(newI.ens.noTravel, file = 'syntheticTests/sensitivity/outputs_datasets/grid
 # Setup:
 set.seed(10489436)
 
-# Set initial conditions and L/R0mn using LHS:
-num_ens <- 10
-param.bound <- cbind(c(rep(S0_low, n), rep(I0_low, n), theta_low),
-                     c(rep(S0_up, n), rep(I0_up, n), theta_up))
-parms <- t(lhs(num_ens, param.bound))
+# Set population sizes and # of countries used
+pop.size <- read.csv('data/popcounts_02-07.csv')
+pop.size <- pop.size[pop.size$country %in% countries, ]; pop.size$country <- factor(pop.size$country)
+pop.size <- pop.size[match(countries, pop.size$country), ]
 
-# Repeat 9 times!:
+# Load commuting data
+load('formatTravelData/formattedData/comm_mat_by_year_05-07.RData')
+t.comm <- apply(simplify2array(comm.by.year), 1:2, mean); rm(comm.by.year)
+t.comm <- t.comm[countries, countries]
+t.comm[t.comm > 0] <- 0
+
+# Set country populations
+N <- t.comm; n <- length(countries) # w/ commuting
+diag(N) <- unlist(lapply(1:n, function(ix) {
+  pop.size$pop[ix] - rowSums(N)[ix]
+}))
+
+# Set initial conditions and params:
+parms <- rbind(init.states.USE, t(parms.USE))
+
+# Repeat 4 times!:
 count <- 1
-while (count < 9) {
-  parms <- cbind(parms, parms[, 1:10]); count <- count + 1
+while (count < 4) {
+  parms <- cbind(parms, parms[, 1:3]); count <- count + 1
 }
 
-# Add in combos of D and R0mx:
-parms <- rbind(parms, rbind(c(rep(2.5, 30), rep(4.25, 30), rep (6.0, 30)), rep(c(rep(1.2, 10), rep(1.7, 10), rep(2.2, 10)), 3)))
-
-# Remove unnecessary parameters:
-parms <- parms[c(1:43, 45:46), ]
+# Change R0mx and airScale where desired:
+parms[46, 4:6] <- 1.4
+parms[46, 7:9] <- 1.6
+parms[46, 10:12] <- 2.0
+# parms[45, 13:15] <- 0.75
+# parms[45, 16:18] <- 1.00
+# parms[45, 19:21] <- 1.25
 
 # Set initial S/I for all compartments:
-num_ens <- num_ens * 9
+num_ens <- dim(parms)[2]
 S0.temp = I0.temp = vector('list', num_ens)
 for (i in 1:num_ens) {
   S0.temp[[i]] = I0.temp[[i]] = matrix(0, nrow = n, ncol = n)
@@ -404,17 +496,16 @@ for (i in 1:num_ens) {
 }
 
 # Reduce parms to hold just the parameters now:
-parms <- parms[(dim(parms)[1] - 2):(dim(parms)[1]), ]
-print(parms[, 1:20])
+parms <- parms[(dim(parms)[1] - 4):(dim(parms)[1]), ]
 
 # Calculate betas
 beta.range <- tm.range[1]:(tail(tm.range, 1) + 2 * tmstep)
 beta <- lapply(1:num_ens, function(ix) {
-  matrix(parms[3, ix] / parms[2, ix], nrow = length(beta.range), ncol = n)
+  matrix(parms[4, ix] / parms[1, ix], nrow = length(beta.range), ncol = n)
 })
 
 # Create vectors of initial parameters:
-D.temp <- parms[2, ]; L.temp <- parms[1, ]
+D.temp <- parms[1, ]; L.temp <- parms[2, ] * 365
 
 # Run!
 m <- sapply(1:num_ens, function(ix) {
@@ -453,9 +544,21 @@ for (i in 1:num_ens) {
   newI.ens[[i]] <- t(newI.ens.temp)
 }; rm(newI.ens.temp)
 
-# Save results:
-newI.ens.None <- newI.ens
-save(newI.ens.None, file = 'syntheticTests/sensitivity/outputs_datasets/grid_noAH-noTravel.RData')
+pdf('syntheticTests/sensitivity/outputs_plots/sens_to_models_and_params_red_noAH_noTravel.pdf', height = 10, width = 8)
 
+par(mfrow = c(3, 1), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+matplot(newI.ens[[4]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'R0 = 1.4')
+matplot(newI.ens[[7]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'R0 = 1.6')
+matplot(newI.ens[[10]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'R0 = 2.0')
+
+matplot(newI.ens[[5]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'R0 = 1.4')
+matplot(newI.ens[[8]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'R0 = 1.6')
+matplot(newI.ens[[11]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'R0 = 2.0')
+
+matplot(newI.ens[[6]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'R0 = 1.4')
+matplot(newI.ens[[9]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'R0 = 1.6')
+matplot(newI.ens[[12]], type = 'b', pch = 20, lty = 1, col = viridis(n), main = 'R0 = 2.0')
+
+dev.off()
 
 
