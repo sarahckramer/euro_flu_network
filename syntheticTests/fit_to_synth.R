@@ -8,39 +8,29 @@
 
 # [x] Try reinitiating/reprobing
 # [x] Check Sen's paper
-# [] Check Sen's code
-# [] Can the fit parameters here reproduce a similar outbreak? (As in, does the model produce similar results for several parameter values?)
+# [x] Check Sen's code - different start conditions (more narrow S, D up to 12, R0mn lowest at 1.0)
 # [x] Try with various amounts of error added
     # [] And various error formats (tmp_exp)?
-# [] Reprobing whenever a new onset occurs or something? It's not fitting well by the time later outbreaks start/peak
-# [-] Try like 5e3/x? error should be relatively low when there's little activity -- then model becomes too "sure" and it's hard to pull it back up when outbreak starts
-# [] Calculate OEV for first two values in the outbreak using just j-1:j and j alone, so that there are at least values there?
-# [] Go back to doing reinit early on when values drop below zero, instead of just changing all to zero?
-# Also see list in Word doc
+# See list in Word doc
 
-# Questions for Jeff:
-    # How much error is enough? How do we tell?
-    # What does this mean for this project? How might I improve this? Is it possible?
-    # Greater error on countries that have fewer tests in real life?
-    # obs_var using (j-2):j, or just j, since everything here is "known"? (probably still (j-2):j since we're using "data" with error in it) (but what about when adding the error?)
-    # obs_var is higher when countries have more cases - but countries in an outbreak are also what we want to focus on while fitting, right? (although of course the fact that others don't have outbreaks is important information, as well...)
-    # we never actually did any synthetic testing for the single-country model
-    # something to prevent "collapse"? very low lambda when alp < like 0.2?
-    # in Sen's model, synthetic curves are very sensitive to random movement rate; should we incorporate something like that here?
-    # still initiate S and I by country, then normal dist/split proportionally for each individual compartment - is that okay, or should everything be drawn from LHS?
-    # possible to reprobe only some countries (along with outbreak params)?
-    # just having trouble getting things to fit the "data" without yanking the parameters around too much
-    # looks like there's at least something in obs_ens that's adjusted below 0 at every time point - is that normal with so many ens. members, or is it cause for concern?
-    # differences: no air travel; random travel prop. to commuting; 6 states
-    # think I need to check senstivity to different param values, and try w/o humidity forcing
-        # strong pattern in relative PT when AH-forcing that all but disappears without forcing
-        # tune humidity more to population centers (esp. for SE)?
-    # general assessment suggests that, while AH is a stronger driver with high R0mx and low D, parameters don't have a strong impact on patterns and might be hard to fit
-        # impact of R0mx and D on synchrony much stronger when AH removed
-        # airScale especially has no impact, even when AH removed; removing all travel also doesn't seem to have a strong impact
-        # better way to assess this?
-    # remove IS (and/or others?)
-    # having most trouble by time later outbreaks roll around
+# Meeting w/ Jeff:
+    # How does this make sense? Not being able to fit something it made itself?
+    # Changing multiplier of air travel has very little impact, but commuting seems to play a role; right now though, patterns are dominated by AH-forcing; R0mx/D have stronger impact on pattern when no AH
+        # Add in proportional random travel to commuting (like Sen)? (In Sen's model, transmission is very sensitive to random movement rate - seems important)
+        # Country-level AH weighted by population density (SE)? Remove IS and maybe SE?
+    # How to tell how much error to add? Just so it vaguely looks like observations?
+    # obs_var using (j-2):j, or just j, since everything here is "known"? (note: for when adding error, not fitting)
+    # Still initiate S and I by country, then normal dist/split proportionally for each individual compartment - is that okay, or should everything be drawn from LHS?
+    # Still having most trouble with later peaks - fit seems to have already "settled in," and harder to get it to move upward again
+
+# Notes from meeting w/ Jeff:
+    # [] Also look at incidence relative to the TRUE newI, not just error-laden observations
+    # [] Look at beta, R0, Re, S (truth)
+    # [] Re-check humidity data; humidity data by population density?
+    # [] Remove IS
+    # [] Proportional random movement
+    # [] For fitting: draw all S and I from LHS
+    # [] Use j-2 and j for first two points
 
 
 ### Read in libraries
