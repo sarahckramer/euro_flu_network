@@ -2,7 +2,7 @@
 ### Add normally-distributed noise using old OEV form as variance
 
 # Read in "realistic" synthetic runs:
-load('syntheticTests/syntheticData/synth_06-26_RATES.RData')
+load('syntheticTests/syntheticData/synth_07-11_RATES.RData')
 # use rates since these are what we'll input into the model anyway
 
 # "Flip" data to be in correct format
@@ -11,8 +11,8 @@ for (i in 1:length(synth.runs.RATES)) {
 }
 
 # Prescribe OEV parameters:
-oev_base <- 5e3
-oev_denom <- 20.0 # 5, 10, 20
+oev_base <- 1e6 # 1e4, 1e5, 1e6
+oev_denom <- 5.0 # 5, 10, 20
 
 # Calculate "old" OEV format:
 source('code/functions/calc_obsvars.R')
@@ -51,7 +51,7 @@ for (i in 1:length(synth.runs.RATES)) {
 matplot(synth.runs.RATES[[1]], pch = 20, col = viridis(21), cex = 0.8, type = 'b', lty = 1)
 
 # Save results:
-save(synth.runs.RATES, file = 'syntheticTests/syntheticData/synth_06-28_RATES_wError_5e3_20.RData')
+save(synth.runs.RATES, file = 'syntheticTests/syntheticData/synth_07-11_RATES_wError_1e6_5.RData')
 
 
 

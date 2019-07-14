@@ -1,6 +1,6 @@
 
 # Load TRUE observations:
-load('syntheticTests/syntheticData/synth_06-26_RATES.RData')
+load('syntheticTests/syntheticData/synth_07-11_RATES.RData')
 
 # Reformat "data":
 for (i in 1:length(synth.runs.RATES)) {
@@ -8,11 +8,11 @@ for (i in 1:length(synth.runs.RATES)) {
 }
 
 # Load S0:
-load('syntheticTests/syntheticData/initStates_06-26.RData')
+load('syntheticTests/syntheticData/initStates_07-11.RData')
 
 # Keep only S0 (I0 is only used to run model and calculate cases in first week, right?):
     # or rather, S is already S0 even when I0 are already infected - decreases from there
-init.states.SEL <- init.states.SEL[1:21, ]
+init.states.SEL <- init.states.SEL[1:20, ]
 
 # Calculate S0 as rate per 100,000:
 init.states.SEL <- init.states.SEL * 100000
@@ -41,7 +41,7 @@ for (i in 1:length(synth.runs.RATES)) {
 }
 
 # Save:
-save(synth.runs.S, file = 'syntheticTests/syntheticData/synth_06-26_S.RData')
+save(synth.runs.S, file = 'syntheticTests/syntheticData/synth_07-11_S.RData')
 
 
 

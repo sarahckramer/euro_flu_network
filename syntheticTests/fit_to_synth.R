@@ -24,13 +24,13 @@
     # Still having most trouble with later peaks - fit seems to have already "settled in," and harder to get it to move upward again
 
 # Notes from meeting w/ Jeff:
-    # [] Also look at incidence relative to the TRUE newI, not just error-laden observations
+    # [x] Also look at incidence relative to the TRUE newI, not just error-laden observations
     # [] Look at beta, R0, Re, S (truth)
     # [] Re-check humidity data; humidity data by population density?
-    # [] Remove IS
-    # [] Proportional random movement
-    # [] For fitting: draw all S and I from LHS
-    # [] Use j-2 and j for first two points
+    # [x] Remove IS
+    # [] Proportional random movement (~0-5%)
+    # [x] For fitting: draw all S and I from LHS
+    # [x] Use j-2 and j for first two points
 
 
 ### Read in libraries
@@ -55,7 +55,7 @@ output_header <- c('outbreak','run','oev_base', 'oev_denom','lambda', 'week', 'L
                    'D', 'D_sd', 'R0max', 'R0max_sd', 'R0min', 'R0min_sd', 'airScale', 'airScale_sd')
 
 ### Ensemble member numbers kept (for now):
-to.keep <- c(3, 5, 13)#, 19, 26) #!!!
+to.keep <- c(1, 2, 8)#, 10, 15, 18) #!!!
 
 ### Global variables
 dt <- 1 # time step for SIRS integration
@@ -77,7 +77,7 @@ I0_low <- 0; I0_up <- 0.001 # proportion of population
 discrete <- FALSE # run the SIRS model continuously
 metricsonly <- FALSE # save all outputs
 lambda <- 1.03 # inflation factor for the ensemble filters c(1.00, 1.01, 1.02, 1.03, 1.05, 1.075?)
-oev_base <- 1e4; oev_denom <- 10.00
+oev_base <- 1e5; oev_denom <- 20.00
 # 1e4/5/1.00 combo doesn't look bad...; oev_base of 1e3 seems too low to handle early low error observations...
 # most similar to observed data seem to be 1e4/10, 1e4/20, and 1e5/20 (even 1e5/10, although a lot of error), based on visual similarity
 # OEVs look more like those calculated from Aim1 if denominator is 10 (although I know this isn't a great test)
@@ -86,9 +86,9 @@ num_ens <- 300 # use 300 for ensemble filters, 10000 for particle filters
 num_runs <- 2
 
 ### Specify the country for which we are performing a forecast
-countries <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'FR', 'DE', 'HU', 'IS', 'IE', 'IT',
+countries <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'FR', 'DE', 'HU', 'IE', 'IT',
                'LU', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'UK')
-count.indices <- 1:21
+count.indices <- c(1:8, 10:21)
 
 ### Set population sizes and # of countries used
 pop.size <- read.csv('data/popcounts_02-07.csv')
@@ -100,7 +100,9 @@ ah <- read.csv('data/ah_05-07_formatted.csv')
 AH <- rbind(ah[, count.indices], ah[, count.indices])
 
 ### Read in influenza "data":
-load('syntheticTests/syntheticData/synth_06-28_RATES_wError_1e4_10.RData')
+load('syntheticTests/syntheticData/synth_07-11_RATES.RData')
+synth.runs.TRUE <- synth.runs.RATES
+load('syntheticTests/syntheticData/synth_07-11_RATES_wError_1e5_10.RData')
 # synth.runs.RATES <- synth.runs.RATES[to.keep]
 # use rates b/c for observed data we used scaled data, which are meant to represent rates per 100,000 population
 
@@ -112,7 +114,7 @@ outputS = outputI = outputS_sd = outputI_sd = outputAlps = vector('list', length
 ### Load commuting data:
 load('formatTravelData/formattedData/comm_mat_by_year_05-07.RData')
 t.comm <- apply(simplify2array(comm.by.year), 1:2, mean); rm(comm.by.year)
-# t.comm <- t.comm[countries, countries]
+t.comm <- t.comm[countries, countries]
 
 ### Set country populations:
 N <- t.comm; n <- length(countries) # w/ commuting
@@ -131,7 +133,7 @@ for (outbreak in 1:length(to.keep)) {
   # outbreak <- 1
   
   # Get true parameter values:
-  load('syntheticTests/syntheticData/params_06-26.RData')
+  load('syntheticTests/syntheticData/params_07-11.RData')
   true.params <- select.parms[to.keep[outbreak], ]
   print(true.params)
   
@@ -139,16 +141,18 @@ for (outbreak in 1:length(to.keep)) {
   obs_i <- synth.runs.RATES[[to.keep[outbreak]]]
   nsn <- dim(obs_i)[1]
   
+  ### Get TRUE case rates for current run:
+  obs_TRUE <- t(synth.runs.TRUE[[to.keep[outbreak]]])
+  
   ### Plot:
   par(mfrow = c(1, 1), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
   matplot(obs_i, pch = 20, col = viridis(n), type = 'b', lty = 1, cex = 0.9)
-  par(mfrow = c(5, 5), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-  for (i in 1:n) {
-    plot(obs_i[, i], type = 'b', pch = 20, col = 'coral', cex = 0.7, main = countries[i], xaxt = 'n', xlab = '', ylab = 'Syn+')
-  }
+  # par(mfrow = c(5, 5), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+  # for (i in 1:n) {
+  #   plot(obs_i[, i], type = 'b', pch = 20, col = 'coral', cex = 0.7, main = countries[i], xaxt = 'n', xlab = '', ylab = 'Syn+')
+  # }
   
   ### Variance of syndromic+ data:
-  # DO THIS WITH RATE DATA OR COUNT DATA??? - Fitting to rates, right? -- YES
   obs_vars <- calc_obsvars(obs_i, oev_base, oev_denom)
   # matplot(obs_vars, pch = 20, col = viridis(n), type = 'b', lty = 1, cex = 0.9)
   

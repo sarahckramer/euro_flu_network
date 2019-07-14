@@ -69,26 +69,16 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
   param.indices <- (max(newI.indices) + 1):(max(newI.indices) + 5) # where the epi parameters are stored
   
   ### Set initial conditions based on input parameters
-  param.bound <- cbind(c(rep(S0_low, n), rep(I0_low, n), theta_low),
-                       c(rep(S0_up, n), rep(I0_up, n), theta_up))
+  param.bound <- cbind(c(rep(S0_low, n ** 2), rep(I0_low, n ** 2), theta_low),
+                       c(rep(S0_up, n ** 2), rep(I0_up, n ** 2), theta_up))
   parms <- t(lhs(num_ens, param.bound))
   
   S0.temp = I0.temp = vector('list', num_ens)
   for (i in 1:num_ens) {
-    S0.temp[[i]] = I0.temp[[i]] = matrix(0, nrow = n, ncol = n)
-    
-    diag(S0.temp[[i]]) <- parms[1:n, i]
-    S0.temp[[i]][S0.temp[[i]] == 0] <- sapply(1:n, function(jx) {
-      rnorm(n - 1, mean = S0.temp[[i]][jx, jx], sd = 0.05)
-    })
-    S0.temp[[i]] <- t(S0.temp[[i]])
-    S0.temp[[i]] <- S0.temp[[i]] * N
-    
-    diag(I0.temp[[i]]) <- parms[(1:n) + n, i]
-    I0.temp[[i]] <- sweep(N / rowSums(N), 1, diag(I0.temp[[i]]), '*')
-    I0.temp[[i]] <- I0.temp[[i]] * N
+    S0.temp[[i]] <- matrix(parms[1:(n ** 2), i], nrow = n, ncol = n, byrow = T) * N
+    I0.temp[[i]] <- matrix(parms[1:(n ** 2) + (n ** 2), i], nrow = n, ncol = n, byrow = T) * N
   }
-  parms <- parms[(dim(parms)[1] - 4):(dim(parms)[1]), ]
+  parms <- parms[(dim(parms)[1] - 4):(dim(parms)[1]), ] # L, D, R0mx, R0mn, airScale
   
   ### Calculate the reproductive number at time t BT1 and the transmission rate
   beta.range <- tm.range[1]:(tail(tm.range, 1) + 2 * tmstep)
@@ -249,40 +239,8 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     }
     # xnew[to.zero, ] <- 0
     
-    
-    
-    
-    
-    
-    
-    
-    
     # REPROBING
-    # # if(abs(obs_i[tt] - mean(xpost[H,,tt])) > 0.2*obs_i[tt]) {} # divergence; from Wan's HK fitting code; if mean of ensembles differing from obs by >20%
-    # print('')
-    # # print(obs_i[tt, ])
-    # # print(dim(obs_ens))
-    # # print(rowMeans(obs_ens))
-    # div.df <- as.data.frame(t(rbind(abs(obs_i[tt, ] - rowMeans(obs_ens)),
-    #             0.2 * obs_i[tt, ],
-    #             abs(obs_i[tt, ] - rowMeans(obs_ens)) > (0.2 * obs_i[tt, ]) & obs_i[tt, ] > 0 & !is.na(obs_i[tt, ]))))
-    # names(div.df) <- c('Obs', 'Mean Fit', 'Divergence')
-    # div.df$Divergence <- div.df$Divergence == 1
-    # # print(div.df)
-    # print(div.df[div.df$Divergence, ])
-    # print('')
-    # # Reprobe just for certain countries? But that's only if we're basing when to reprobe on divergence, and not just doing it all the time
-    # # Seems many countries are "diverging" after the peak
-    
-    # print(abs(obs_i[tt] - rowMeans(obs_ens)) > 0.2*obs_i[tt] & obs_i[tt, ] > 0)
-    # print(sum(abs(obs_i[tt] - rowMeans(obs_ens)) > 0.2*obs_i[tt] & obs_i[tt, ] > 0))
-    # print('')
-    # Can use a certain number of "TRUE"s as a baseline, but the exact metric only works when we only have one "H" variable of interest
-    # Try using some number of these, as well as alp cutoff - which works better? They don't always line up!
-    
-    # above > c(15, 16, 17, 18); alp > c(0.80, 0.85, 0.90, 0.95); mean or median? (median tends to be higher, so would be a stricter cutoff); 2%? 5%?
-    # REDUCE: alp > c(0.80, 0.85, 0.90, 0.95); mean or median? (once reprobing in effect, median can be much higher!); what percent? (c(0.02, 0.05, 0.10))
-    
+    # alp > c(0.80, 0.85, 0.90, 0.95); mean or median? (once reprobing in effect, median can be much higher!); what percent? (c(0.02, 0.05, 0.10))
     if (do.reprobing) {
       
       # Option to try re-initiating if high divergence early on; but this isn't something that it makes sense to do midway through an epidemic
@@ -330,15 +288,6 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
       }
       
     }
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     # Store posteriors:
     xpost[,, tt] <- xnew
@@ -415,25 +364,6 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     
   } # end of training
   
-  # # Plot trend of parameters/states/alps over time:
-  # mean.param.vals <- apply(xpost[param.indices,, ], c(1, 3), mean)
-  # param.labs <- c('L', 'D', 'R0mx', 'R0mn')
-  # par(mfrow = c(4, 1), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-  # for (i in 1:4) {
-  #   plot(mean.param.vals[i, ], type = 'b', pch = 20, xlab = 'Time Since Outbreak Start', ylab = param.labs[i])
-  #   abline(h = true.params[i], lty = 2)
-  # }
-  # 
-  # spost <- matrix(0, n, ntrn)
-  # for (i in 1:n) {
-  #   spost[i, ] <- colSums(apply(xpost[S0.indices[(1:n) + n * (i - 1)],, ], c(1, 3), mean)) / pop.size$pop[i] * 100
-  # }
-  # par(mfrow = c(1, 1), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-  # matplot(t(spost), type = 'b', pch = 20, lty = 1, col = viridis(n), xlab = 'Time Since Outbreak Start', ylab = '%S')
-  # 
-  # par(mfrow = c(1, 1), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-  # matplot(t(alps), type = 'b', pch = 20, lty = 1, col = viridis(n))
-  
   ### For now, we just want to return: PT, PI, corr, rmse, newI, S, and params!
   
   # Get parameters (and parameter sd) over time:
@@ -457,7 +387,7 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
   # Calculate accuracy metrics:
   pt = pt.obs = pi = pi.obs = corrs = rmses = c()
   for (i in 1:n) {
-    obs_temp <- obs_i[1:tt, i]
+    obs_temp <- obs_TRUE[1:tt, i]
     pred_temp <- obspost_mean[, i]
     
     if (!all(is.na(obs_temp))) {

@@ -5,6 +5,11 @@ calc_obsvars <- function(obs, oev_base, oev_denom) {#, oev_denom_tmp, tmp_exp) {
     for (j in 3:length(obs[, i])) {
       tmp[j, i] <- mean(obs[(j - 2):(j), i], na.rm = TRUE)
     }
+    tmp[2, i] <- mean(obs[1:2, i], na.rm = TRUE)
+    
+    if (!is.na(obs[1, i])) {
+      tmp[1, i] <- obs[1, i]
+    } # otherwise just leave as zero
   }
   
   vars.temp <- tmp
@@ -58,6 +63,11 @@ calc_obsvars_nTest <- function(obs, syn_dat, ntests, posprops, oev_base, oev_fac
     for (j in 3:length(posprops[, i])) {
       tmp[j, i] <- mean(posprops[(j - 2):(j), i], na.rm = TRUE)
     }
+    
+    tmp[2, i] <- mean(posprops[1:2, i], na.rm = TRUE)
+    if (!is.na(posprops[1, i])) {
+      tmp[1, i] <- posprops[1, i]
+    } # otherwise just leave as zero
   }
   
   # Also do this for syn_dat and ntests:
@@ -66,6 +76,10 @@ calc_obsvars_nTest <- function(obs, syn_dat, ntests, posprops, oev_base, oev_fac
     for (j in 3:length(syn_dat[, i])) {
       tmp.syn[j, i] <- mean(syn_dat[(j - 2):j, i], na.rm = TRUE)
     }
+    tmp.syn[2, i] <- mean(syn_dat[1:2, i], na.rm = TRUE)
+    if (!is.na(syn_dat[1, i])) {
+      tmp.syn[1, i] <- syn_dat[1, i]
+    } # otherwise just leave as zero
   }
   
   tmp.test <- matrix(0, nrow = nrow(ntests), ncol = ncol(syn.dat))
@@ -73,6 +87,10 @@ calc_obsvars_nTest <- function(obs, syn_dat, ntests, posprops, oev_base, oev_fac
     for (j in 3:length(ntests[, i])) {
       tmp.test[j, i] <- mean(ntests[(j - 2):j, i], na.rm = TRUE)
     }
+    tmp.test[2, i] <- mean(ntests[1:2, i], na.rm = TRUE)
+    if (!is.na(ntests[1, i])) {
+      tmp.test[1, i] <- ntests[1, i]
+    } # otherwise just leave as zero
   }
   
   # NAs here are either NAs in data, or else leading/lagging 0s (which were originally NAs)

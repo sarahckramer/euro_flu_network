@@ -45,10 +45,9 @@ I0_low <- 0; I0_up <- 0.0001 # proportion of population # to 0.01% or 0.1%?
 # I0_low <- 1.0; I0_up <- 50.0 # raw number
 
 ### Specify the country for which we are performing a forecast
-countries <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'FR', 'DE', 'HU', 'IS', 'IE', 'IT',
+countries <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'FR', 'DE', 'HU', 'IE', 'IT',
                'LU', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'UK')
-count.indices <- c(1:21)
-# countries <- c('AT', 'BE', 'HR'); count.indices <- 1:3 # for code writing purposes
+count.indices <- c(1:8, 10:21)
 
 ### Set population sizes and # of countries used
 pop.size <- read.csv('data/popcounts_02-07.csv')
@@ -125,7 +124,8 @@ m <- sapply(1:num_ens, function(ix) {
   propagateToySIRS(tm_strt = tm_strt, tm_end = tm_end, dt,
                    S0 = S0.temp[[ix]], I0 = I0.temp[[ix]], N,
                    D = D.temp[ix], L = L.temp[ix], beta[[ix]],
-                   airScale = airScale.temp[ix], realdata = TRUE)
+                   airScale = airScale.temp[ix], realdata = TRUE,
+                   prohibAir = FALSE)
 })
 
 ### Calculate weekly incidence by compartment:
@@ -149,8 +149,8 @@ for (i in 1:n) {
 }
 
 ### Save FULL results:
-save(newI.c.COUNT, file = 'syntheticTests/syntheticData/allRunsCOUNTS_1000_0626.RData')
-save(newI.c, file = 'syntheticTests/syntheticData/allRunsRATES_1000_0626.RData')
+save(newI.c.COUNT, file = 'syntheticTests/syntheticData/allRunsCOUNTS_1000_0711.RData')
+save(newI.c, file = 'syntheticTests/syntheticData/allRunsRATES_1000_0711.RData')
 
 ### Run through free simulations and check:
 # at least 19 countries/21 have 500+ cases in 3+ weeks (alt: all countries exceed 500/100,000 (onset))
@@ -195,8 +195,8 @@ for (ix in 1:num_ens) {
 print(length(ens.of.interest)) # 36/1000; 24/1000 if wider I0 start
 # WOULD CHANGING ONE OF THESE METRICS LEAVE OUT SOME OF THE IS ONES? - doesn't seem so, these percentages/metrics seem fine
 
-### How often early IS? / Plot:
-par(mfrow = c(3, 3), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+### How often early SE? / Plot:
+par(mfrow = c(5, 4), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 count.is <- 0
 which.is.temp <- c()
 for (val in ens.of.interest) {
@@ -208,20 +208,18 @@ for (val in ens.of.interest) {
   for (i in 1:n) {
     ot.temp <- c(ot.temp, findOnset(newI.ens[i, ], baseline = 500)$onset)
   }
-  # print(countries[which(ot.temp == min(ot.temp, na.rm = TRUE))])
   
-  if ('IS' %in% countries[which(ot.temp == min(ot.temp, na.rm = TRUE))]) {
+  if ('SE' %in% countries[which(ot.temp == min(ot.temp, na.rm = TRUE))]) {
     count.is <- count.is + 1
     which.is.temp <- c(which.is.temp, val)
   }
   
   matplot(t(newI.ens), pch = 20, col = viridis(n), type = 'b', xlab = 'Weeks Since Outbreak Start',
           ylab = 'Syndromic+ (per 100,000)', main = val)
-  lines(newI.ens[9, ]) # Where is Iceland?
+  lines(newI.ens[19, ]) # Where is Sweden?
 }
 print(count.is)
-# 9 / 36 (25%); 8 / 24 (33%) for higher I0 max
-# with proportional starts, definitely not as bad
+# 7/20 for SE - 35%
 
 ### Look at differences in params, S0, and I0 between selected and not selected
 ens.temp <- ens.of.interest
@@ -256,11 +254,10 @@ parms.df$sel <- factor(parms.df$sel)
 print(kruskal.test(L ~ sel, data = parms.df))
 print(kruskal.test(D ~ sel, data = parms.df))
 print(kruskal.test(R0mx ~ sel, data = parms.df)) # sig
-print(kruskal.test(R0mn ~ sel, data = parms.df)) # sig
-print(kruskal.test(R0diff ~ sel, data = parms.df))
-print(kruskal.test(airScale ~ sel, data = parms.df)) # sig
-# R0mx, R0mn, airScale higher than in not selected
-# for higher I0 max, only L and D are significant
+print(kruskal.test(R0mn ~ sel, data = parms.df))
+print(kruskal.test(R0diff ~ sel, data = parms.df)) # sig
+print(kruskal.test(airScale ~ sel, data = parms.df))
+# R0mx and R0diff both higher in selected (so higher R0mx, but also higher impact of humidity?)
 
 initS.sel <- init.states.S[, ens.temp]; initS.notSel <- init.states.S[, ens.notSelected]
 initI.sel <- init.states.I[, ens.temp]; initI.notSel <- init.states.I[, ens.notSelected]
@@ -288,8 +285,8 @@ for (j in countries) {
   s0.ps <- c(s0.ps, kruskal.test(value ~ sel, data = initS.temp)$p.value)
   i0.ps <- c(i0.ps, kruskal.test(value ~ sel, data = initI.temp)$p.value)
 }
-print(countries[which(s0.ps < 0.05)]) # IS and SE have lower S0 than in unselected; for higher I0, IS SE UK
-print(countries[which(i0.ps < 0.05)]) # CZ has lower I0 than in unselected; for higher I0, non
+print(countries[which(s0.ps < 0.05)]) # UK has higher S0 than in unselected
+print(countries[which(i0.ps < 0.05)]) # no differences
 
 meanS = varS = meanS.notSel = varS.notSel = c()
 for (j in 1:num_ens) {
@@ -326,22 +323,17 @@ si.df <- as.data.frame(cbind(c(meanS, meanS.notSel), c(varS, varS.notSel),
                              c(rep('Yes', length(ens.temp)), rep('No', length(ens.notSelected)))))
 names(si.df) <- c('meanS', 'varS', 'meanI', 'varI', 'sel')
 print(kruskal.test(meanS ~ sel, data = si.df))
-print(kruskal.test(varS ~ sel, data = si.df)) # sig - lower variance in S0 than in unselected; same for higher I0
+print(kruskal.test(varS ~ sel, data = si.df)) # sig - lower variance in S0 than in unselected
 print(kruskal.test(meanI ~ sel, data = si.df))
-print(kruskal.test(varI ~ sel, data = si.df))
+print(kruskal.test(varI ~ sel, data = si.df)) # sig (but barely - p=0.04411) - lower variance in I0 than in unselected
 dev.off()
 
 # patterns:
-# R0mx, R0mn, airScale sig higher in selected
-# S0: sig lower than expected in IS and SE
-    # lower Var in selected
-# I0: sig lower than expected in CZ
+# R0mx, R0diff sig higher in selected
+# S0: sig higher than expected in UK
+    # lower Var in selected (also for I0)
 
-# Ranges of PT are a bit wide for some included in 1 compared to 2, but selection criteria for 1
-# are based on observations, so I think it's okay
-# At the same time, synchrony seems a bit high?
-
-### Compare runs beginning in IS with those not beginning in IS:
+### Compare runs beginning in SE with those not beginning in SE:
 not.is <- ens.of.interest[!(ens.of.interest %in% which.is.temp)]
 
 pdf('syntheticTests/outputs/IS_v_not.pdf', width = 14, height = 7)
@@ -411,10 +403,10 @@ dev.off()
 # all results same for higher I0 maxs
 
 ### Look at parameters for chosen runs:
-summary(D.temp[ens.of.interest]) # 3-7
-summary(L.temp[ens.of.interest] / 365) # 1-10 years; only up to ~7.5 years for higher I0 max
-summary(airScale.temp[ens.of.interest]) # 0.79-1.24 (so basically full range)
-summary(parms[3, ens.of.interest]) # 2.172 - 3.386
+summary(D.temp[ens.of.interest]) # 2.7-7
+summary(L.temp[ens.of.interest] / 365) # 1-10 years
+summary(airScale.temp[ens.of.interest]) # 0.84-1.23 (so basically full range)
+summary(parms[3, ens.of.interest]) # 2.213 - 3.454
 summary(parms[4, ens.of.interest]) # 0.8 - 1.2
 summary(init.states.S[, ens.of.interest])
 select.parms <- as.data.frame(cbind(D.temp[ens.of.interest],
@@ -430,70 +422,18 @@ for (i in 1:4) {
     print(names(select.parms)[c(i, j)])
     print(cor.test(select.parms[, i], select.parms[, j]))
   }
-} # D/L, D/R0mx, L/R0mx, L/R0mn (all pos)
+} # D/L, D/R0mx, L/R0mx (all pos); airScale/R0mn (neg)
 
-cor.test(select.parms$R0mx, select.parms$D) # p = 5.474e-06, cor = 0.6782753
-cor.test(select.parms$R0mx, select.parms$L) # p = 0.002593, cor = 0.4870138
-cor.test(select.parms$L, select.parms$D) # p = 0.01745, cor = 0.3939188
-cor.test(select.parms$R0mn, select.parms$L) # p = 0.03127, cor = 0.3595276
+cor.test(select.parms$R0mx, select.parms$D)
+cor.test(select.parms$R0mn, select.parms$airScale)
+cor.test(select.parms$R0mx, select.parms$L)
+cor.test(select.parms$L, select.parms$D)
 # Bonferroni: 0.005 - only first 2 are sig
 
-### And for just those that don't start in IS:
-summary(D.temp[not.is]) # 3-7
-summary(L.temp[not.is] / 365) # 1-10 years
-summary(airScale.temp[not.is]) # 0.8-1.25 (so almost full range)
-summary(parms[3, not.is]) # 2.172 - 3.241
-summary(parms[4, not.is]) # 0.8 - 1.2
-summary(init.states.S[, not.is])
-select.parms <- as.data.frame(cbind(D.temp[not.is],
-                                    L.temp[not.is] / 365,
-                                    airScale.temp[not.is],
-                                    parms[3, not.is],
-                                    parms[4, not.is]))
-names(select.parms) <- c('D', 'L', 'airScale', 'R0mx', 'R0mn')
-
-plot(select.parms, pch = 20, cex = 1.2)
-for (i in 1:4) {
-  for (j in (i + 1):5) {
-    print(names(select.parms)[c(i, j)])
-    print(cor.test(select.parms[, i], select.parms[, j]))
-  }
-} # D/L, D/R0mx, L/R0mx (all pos)
-
-cor.test(select.parms$R0mx, select.parms$D) # p = 5.484e-05, cor = 0.6963224
-cor.test(select.parms$R0mx, select.parms$L) # p = 0.01552, cor = 0.4609851
-cor.test(select.parms$L, select.parms$D) # p = 0.04821, cor = 0.3836551
-# Bonferroni: 0.005 - only first is sig
-
-### Plot chosen simulations:
-pdf('syntheticTests/outputs/synthetic_runs_0626.pdf', width = 9, height = 7)
-par(mfrow = c(3, 3), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-for (ix in not.is) {
-  newI.ens <- NULL
-  for (i in 1:n) {
-    newI.ens <- rbind(newI.ens, newI.c[[i]][ix, ])
-  }
-  # newI.ens <- newI.ens[, 2:(dim(newI.ens)[2])]
-  matplot(t(newI.ens), type = 'b', pch = 20, cex = 0.7, col = viridis(n), main = ix, ylab = 'Cases / 100,000 Pop.')
-  lines(newI.ens[9, ])
-}
-dev.off()
-
-# # Plot ALL simulations:
-# par(mfrow = c(5, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-# for (ix in 1:num_ens) {
-#   newI.ens <- NULL
-#   for (i in 1:n) {
-#     newI.ens <- rbind(newI.ens, newI.c[[i]][ix, ])
-#   }
-#   # newI.ens <- newI.ens[, 2:(dim(newI.ens)[2])]
-#   matplot(t(newI.ens), type = 'b', pch = 20, cex = 0.7, col = viridis(n), main = ix, ylab = 'Cases / 100,000 Pop.')
-# }
-
 # Save these synthetic sets:
-synth.runs.RATES = synth.runs.COUNTS = vector('list', length(not.is))
+synth.runs.RATES = synth.runs.COUNTS = vector('list', length(ens.of.interest))
 for (i in 1:length(synth.runs.RATES)) {
-  ix <- not.is[i]
+  ix <- ens.of.interest[i]
   
   newI.ens = newI.ens.count = NULL
   for (country in 1:n) {
@@ -504,22 +444,24 @@ for (i in 1:length(synth.runs.RATES)) {
   synth.runs.RATES[[i]] <- newI.ens
   synth.runs.COUNTS[[i]] <- newI.ens.count
 }
-save(synth.runs.RATES, file = 'syntheticTests/syntheticData/synth_06-26_RATES.RData')
-save(synth.runs.COUNTS, file = 'syntheticTests/syntheticData/synth_06-26_COUNTS.RData')
+save(synth.runs.RATES, file = 'syntheticTests/syntheticData/synth_07-11_RATES.RData')
+save(synth.runs.COUNTS, file = 'syntheticTests/syntheticData/synth_07-11_COUNTS.RData')
 
 # Save these initial conditions so that sensitivity to I0 can be assessed:
 # (Remember that this is an initial pass - might decide to do I0 in some other way)
-init.states.SEL <- rbind(init.states.S[, not.is],
-                         init.states.I[, not.is])
+init.states.SEL <- rbind(init.states.S[, ens.of.interest],
+                         init.states.I[, ens.of.interest])
 # each column is a run
 
-save(init.states.SEL, file = 'syntheticTests/syntheticData/initStates_06-26.RData')
-save(select.parms, file = 'syntheticTests/syntheticData/params_06-26.RData')
+save(init.states.SEL, file = 'syntheticTests/syntheticData/initStates_07-11.RData')
+save(select.parms, file = 'syntheticTests/syntheticData/params_07-11.RData')
 # 5, 14, 24 (108, 467, 931) all seem to have later IS outbreaks and may be good candidates for fitting
 
-
-
-
+### Narrowed down to 6 to check first:
+to.run <- c(1, 2, 8:10, 15)
+init.states.SEL[, to.run]
+select.parms[to.run, ]
+# might be good to find one with lower D/R0mx - Done!
 
 
 
