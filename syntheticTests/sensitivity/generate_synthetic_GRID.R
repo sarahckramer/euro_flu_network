@@ -1,4 +1,7 @@
 
+# Basically this, but add section to look at how relation to first outbreak timing changes with parameter values and model type
+
+
 # Setup:
 library("truncnorm"); library("tgp"); library("MASS"); library(reshape2); library(plyr); library(ggplot2); library(viridis)
 source('code/SIRS_network.R')

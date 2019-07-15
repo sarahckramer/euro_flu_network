@@ -66,7 +66,7 @@ diag(N) <- unlist(lapply(1:n, function(ix) {
 }))
 
 ### Read in humidity data
-ah <- read.csv('data/ah_05-07_formatted.csv')
+ah <- read.csv('../GLDAS_data/ah_Europe_07142019.csv')
 AH <- rbind(ah[, count.indices], ah[, count.indices])
 
 ### Set initial conditions based on input parameters
@@ -149,8 +149,8 @@ for (i in 1:n) {
 }
 
 ### Save FULL results:
-save(newI.c.COUNT, file = 'syntheticTests/syntheticData/allRunsCOUNTS_1000_0711.RData')
-save(newI.c, file = 'syntheticTests/syntheticData/allRunsRATES_1000_0711.RData')
+save(newI.c.COUNT, file = 'syntheticTests/syntheticData/allRunsCOUNTS_1000_0714.RData')
+save(newI.c, file = 'syntheticTests/syntheticData/allRunsRATES_1000_0714.RData')
 
 ### Run through free simulations and check:
 # at least 19 countries/21 have 500+ cases in 3+ weeks (alt: all countries exceed 500/100,000 (onset))
@@ -192,8 +192,8 @@ for (ix in 1:num_ens) {
   }
   
 }
-print(length(ens.of.interest)) # 36/1000; 24/1000 if wider I0 start
-# WOULD CHANGING ONE OF THESE METRICS LEAVE OUT SOME OF THE IS ONES? - doesn't seem so, these percentages/metrics seem fine
+print(length(ens.of.interest)) # 24/1000
+# Still fairly difficult to get a realistic-looking epidemic out of the model - is this an issue?
 
 ### How often early SE? / Plot:
 par(mfrow = c(5, 4), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
@@ -219,7 +219,7 @@ for (val in ens.of.interest) {
   lines(newI.ens[19, ]) # Where is Sweden?
 }
 print(count.is)
-# 7/20 for SE - 35%
+# 5/24 - still pretty similar to before?
 
 ### Look at differences in params, S0, and I0 between selected and not selected
 ens.temp <- ens.of.interest
@@ -256,7 +256,7 @@ print(kruskal.test(D ~ sel, data = parms.df))
 print(kruskal.test(R0mx ~ sel, data = parms.df)) # sig
 print(kruskal.test(R0mn ~ sel, data = parms.df))
 print(kruskal.test(R0diff ~ sel, data = parms.df)) # sig
-print(kruskal.test(airScale ~ sel, data = parms.df))
+print(kruskal.test(airScale ~ sel, data = parms.df)) # 0.09
 # R0mx and R0diff both higher in selected (so higher R0mx, but also higher impact of humidity?)
 
 initS.sel <- init.states.S[, ens.temp]; initS.notSel <- init.states.S[, ens.notSelected]
@@ -285,7 +285,7 @@ for (j in countries) {
   s0.ps <- c(s0.ps, kruskal.test(value ~ sel, data = initS.temp)$p.value)
   i0.ps <- c(i0.ps, kruskal.test(value ~ sel, data = initI.temp)$p.value)
 }
-print(countries[which(s0.ps < 0.05)]) # UK has higher S0 than in unselected
+print(countries[which(s0.ps < 0.05)]) # FR and IE have higher S0 than in unselected, HU has lower
 print(countries[which(i0.ps < 0.05)]) # no differences
 
 meanS = varS = meanS.notSel = varS.notSel = c()
@@ -333,75 +333,6 @@ dev.off()
 # S0: sig higher than expected in UK
     # lower Var in selected (also for I0)
 
-### Compare runs beginning in SE with those not beginning in SE:
-not.is <- ens.of.interest[!(ens.of.interest %in% which.is.temp)]
-
-pdf('syntheticTests/outputs/IS_v_not.pdf', width = 14, height = 7)
-par(mfrow = c(1, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-boxplot(D.temp[not.is], D.temp[which.is.temp], names = c('Other Start', 'IS Start'), ylab = 'D')
-boxplot(L.temp[not.is], L.temp[which.is.temp], names = c('Other Start', 'IS Start'), ylab = 'L')
-boxplot(parms[3, not.is], parms[3, which.is.temp], names = c('Other Start', 'IS Start'), ylab = 'R0mx')
-boxplot(parms[4, not.is], parms[4, which.is.temp], names = c('Other Start', 'IS Start'), ylab = 'R0mn')
-boxplot(airScale.temp[not.is], airScale.temp[which.is.temp], names = c('Other Start', 'IS Start'), ylab = 'airScale')
-
-parms.df <- as.data.frame(t(parms))
-names(parms.df) <- c('L', 'D', 'R0mx', 'R0mn', 'airScale')
-parms.df$R0diff <- parms.df$R0mx - parms.df$R0mn
-parms.df$is.start <- NA
-parms.df$is.start[which.is.temp] <- 'Yes'
-parms.df$is.start[not.is] <- 'No'
-parms.df$is.start <- factor(parms.df$is.start)
-parms.df <- parms.df[!is.na(parms.df$is.start), ]
-
-print(kruskal.test(L ~ is.start, data = parms.df))
-print(kruskal.test(D ~ is.start, data = parms.df))
-print(kruskal.test(R0mx ~ is.start, data = parms.df))
-print(kruskal.test(R0mn ~ is.start, data = parms.df))
-print(kruskal.test(R0diff ~ is.start, data = parms.df))
-print(kruskal.test(airScale ~ is.start, data = parms.df))
-# small "sample size," but still none sig
-
-initS.IS <- init.states.S[, not.is]; initS.notSel <- init.states.S[, which.is.temp]
-initI.IS <- init.states.I[, not.is]; initI.notSel <- init.states.I[, which.is.temp]
-
-initS <- melt(init.states.S); initI <- melt(init.states.I)
-names(initS) = names(initI) = c('country', 'run', 'value')
-initS$country <- factor(initS$country); initI$country <- factor(initI$country)
-levels(initS$country) = levels(initI$country) = countries
-initS$is.start = initI$is.start = NA
-initS$is.start[initS$run %in% which.is.temp] <- 'Yes'; initI$is.start[initI$run %in% which.is.temp] <- 'Yes'
-initS$is.start[initS$run %in% not.is] <- 'No'; initI$is.start[initI$run %in% not.is] <- 'No'
-initS$is.start <- factor(initS$is.start); initI$is.start <- factor(initI$is.start)
-initS <- initS[!is.na(initS$is.start), ]; initI <- initI[!is.na(initI$is.start), ]
-
-p1 <- ggplot(data = initS[initS$is.start == 'No', ]) +
-  geom_boxplot(aes(x = country, y = value), fill = 'lightblue2') +
-  theme_classic() + labs(x = '', y = 'S0 Prop.', title = 'Other Start')
-p2 <- ggplot(data = initS[initS$is.start == 'Yes', ]) +
-  geom_boxplot(aes(x = country, y = value), fill = 'lightblue2') +
-  theme_classic() + labs(x = '', y = 'S0 Prop.', title = 'IS Start')
-p3 <- ggplot(data = initI[initI$is.start == 'No', ]) +
-  geom_boxplot(aes(x = country, y = value), fill = 'lightblue2') +
-  theme_classic() + theme(axis.text.y = element_text(angle = 90, hjust = 0.5)) +
-  labs(x = '', y = 'I0 Prop.', title = 'Other Start')
-p4 <- ggplot(data = initI[initI$is.start == 'Yes', ]) +
-  geom_boxplot(aes(x = country, y = value), fill = 'lightblue2') +
-  theme_classic() + theme(axis.text.y = element_text(angle = 90, hjust = 0.5)) +
-  labs(x = '', y = 'I0 Prop.', title = 'IS Start')
-grid.arrange(p1, p2, ncol = 1)
-grid.arrange(p3, p4, ncol = 1)
-
-s0.ps = i0.ps <- c()
-for (j in countries) {
-  initS.temp <- initS[initS$country == j, ]; initI.temp <- initI[initI$country == j, ]
-  s0.ps <- c(s0.ps, kruskal.test(value ~ is.start, data = initS.temp)$p.value)
-  i0.ps <- c(i0.ps, kruskal.test(value ~ is.start, data = initI.temp)$p.value)
-}
-print(countries[which(s0.ps < 0.05)]) # IS sig higher S0 when IS is the first to peak
-print(countries[which(i0.ps < 0.05)]) # none
-dev.off()
-# all results same for higher I0 maxs
-
 ### Look at parameters for chosen runs:
 summary(D.temp[ens.of.interest]) # 2.7-7
 summary(L.temp[ens.of.interest] / 365) # 1-10 years
@@ -415,6 +346,7 @@ select.parms <- as.data.frame(cbind(D.temp[ens.of.interest],
                                     parms[3, ens.of.interest],
                                     parms[4, ens.of.interest]))
 names(select.parms) <- c('D', 'L', 'airScale', 'R0mx', 'R0mn')
+# these really are basically the same ranges before I changed the humidity
 
 plot(select.parms, pch = 20, cex = 1.2)
 for (i in 1:4) {
@@ -428,7 +360,7 @@ cor.test(select.parms$R0mx, select.parms$D)
 cor.test(select.parms$R0mn, select.parms$airScale)
 cor.test(select.parms$R0mx, select.parms$L)
 cor.test(select.parms$L, select.parms$D)
-# Bonferroni: 0.005 - only first 2 are sig
+# Bonferroni: 0.005 - only first is sig
 
 # Save these synthetic sets:
 synth.runs.RATES = synth.runs.COUNTS = vector('list', length(ens.of.interest))
@@ -444,8 +376,8 @@ for (i in 1:length(synth.runs.RATES)) {
   synth.runs.RATES[[i]] <- newI.ens
   synth.runs.COUNTS[[i]] <- newI.ens.count
 }
-save(synth.runs.RATES, file = 'syntheticTests/syntheticData/synth_07-11_RATES.RData')
-save(synth.runs.COUNTS, file = 'syntheticTests/syntheticData/synth_07-11_COUNTS.RData')
+save(synth.runs.RATES, file = 'syntheticTests/syntheticData/synth_07-14_RATES.RData')
+save(synth.runs.COUNTS, file = 'syntheticTests/syntheticData/synth_07-14_COUNTS.RData')
 
 # Save these initial conditions so that sensitivity to I0 can be assessed:
 # (Remember that this is an initial pass - might decide to do I0 in some other way)
@@ -453,12 +385,19 @@ init.states.SEL <- rbind(init.states.S[, ens.of.interest],
                          init.states.I[, ens.of.interest])
 # each column is a run
 
-save(init.states.SEL, file = 'syntheticTests/syntheticData/initStates_07-11.RData')
-save(select.parms, file = 'syntheticTests/syntheticData/params_07-11.RData')
+save(init.states.SEL, file = 'syntheticTests/syntheticData/initStates_07-14.RData')
+save(select.parms, file = 'syntheticTests/syntheticData/params_07-14.RData')
 # 5, 14, 24 (108, 467, 931) all seem to have later IS outbreaks and may be good candidates for fitting
 
-### Narrowed down to 6 to check first:
-to.run <- c(1, 2, 8:10, 15)
+### Narrow down to a few to check first?:
+pdf('syntheticTests/outputs/by_run.pdf', width = 12, height = 12)
+par(mfrow = c(6, 4), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+for (i in 1:length(synth.runs.RATES)) {
+  matplot(t(synth.runs.RATES[[i]]), pch = 20, type = 'b', lty = 1, col = viridis(n), main = i)
+}
+dev.off()
+
+to.run <- c(1, 6, 9, 11, 18, 19, 21) # honestly, they're all fine... edit cluster to run all (3 runs)
 init.states.SEL[, to.run]
 select.parms[to.run, ]
 # might be good to find one with lower D/R0mx - Done!
