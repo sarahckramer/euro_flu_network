@@ -25,12 +25,13 @@
 
 # Notes from meeting w/ Jeff:
     # [x] Also look at incidence relative to the TRUE newI, not just error-laden observations
-    # [] Look at beta, R0, Re, S (truth)
-    # [] Re-check humidity data; humidity data by population density?
+    # [x] Look at beta, R0, Re, S (truth)
+    # [x] Re-check humidity data; humidity data by population density?
     # [x] Remove IS
     # [] Proportional random movement (~0-5%)
     # [x] For fitting: draw all S and I from LHS
     # [x] Use j-2 and j for first two points
+    # [] Recode EAKF to loop through each country (like Sen), rather than using matrices?
 
 
 ### Read in libraries
