@@ -136,6 +136,16 @@ newI <- lapply(1:(n ** 2), function(ix) {
   })), nrow = num_ens, byrow = TRUE)
 }) # each ensemble member has its own row
 
+### Also calculate S at the end of each week:
+
+# m[1, ] is a list of 1000 runs
+# each item in the list (m[1, x]$S) is a matrix of 302 days and 400 compartments
+
+weekS <- lapply(1:num_ens, function(ix) {
+  m[1, ix]$S[tmstep * (1:nt) + 1, ] # 43 x 400 matrix
+})
+# now it's a list of 1000 runs, each with 43 x 400 matrix of weekly S
+
 ### Aggregate to the country level:
 newI.c <- vector('list', n)
 for (i in 1:n) {
@@ -143,14 +153,29 @@ for (i in 1:n) {
 }
 newI.c.COUNT <- newI.c
 
+weekS.c <- vector('list', num_ens)
+for (ix in 1:num_ens) {
+  weekS.temp <- matrix(NA, nrow = nt, ncol = n)
+  for (i in 1:n) {
+    weekS.temp[, i] <- rowSums(weekS[[ix]][, (i * n - n + 1):(i * n)])
+  }
+  weekS.c[[ix]] <- weekS.temp
+}
+
 ### Standardize results to per 100,000 population:
 for (i in 1:n) {
   newI.c[[i]] <- (newI.c[[i]] / pop.size$pop[i]) * 100000
 }
 
-### Save FULL results:
-save(newI.c.COUNT, file = 'syntheticTests/syntheticData/allRunsCOUNTS_1000_0714.RData')
-save(newI.c, file = 'syntheticTests/syntheticData/allRunsRATES_1000_0714.RData')
+for (ix in 1:num_ens) {
+  for (i in 1:n) {
+    weekS.c[[ix]][, i] <- (weekS.c[[ix]][, i] / pop.size$pop[i]) * 100000
+  }
+}
+
+# ### Save FULL results:
+# save(newI.c.COUNT, file = 'syntheticTests/syntheticData/allRunsCOUNTS_1000_0714.RData')
+# save(newI.c, file = 'syntheticTests/syntheticData/allRunsRATES_1000_0714.RData')
 
 ### Run through free simulations and check:
 # at least 19 countries/21 have 500+ cases in 3+ weeks (alt: all countries exceed 500/100,000 (onset))
@@ -194,6 +219,10 @@ for (ix in 1:num_ens) {
 }
 print(length(ens.of.interest)) # 24/1000
 # Still fairly difficult to get a realistic-looking epidemic out of the model - is this an issue?
+
+### Get S for just those runs of interest:
+synth.S.RATES <- weekS.c[ens.of.interest]
+# save(synth.S.RATES, file = 'syntheticTests/syntheticData/synth_07-14_S.RData')
 
 ### How often early SE? / Plot:
 par(mfrow = c(5, 4), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
@@ -376,8 +405,8 @@ for (i in 1:length(synth.runs.RATES)) {
   synth.runs.RATES[[i]] <- newI.ens
   synth.runs.COUNTS[[i]] <- newI.ens.count
 }
-save(synth.runs.RATES, file = 'syntheticTests/syntheticData/synth_07-14_RATES.RData')
-save(synth.runs.COUNTS, file = 'syntheticTests/syntheticData/synth_07-14_COUNTS.RData')
+# save(synth.runs.RATES, file = 'syntheticTests/syntheticData/synth_07-14_RATES.RData')
+# save(synth.runs.COUNTS, file = 'syntheticTests/syntheticData/synth_07-14_COUNTS.RData')
 
 # Save these initial conditions so that sensitivity to I0 can be assessed:
 # (Remember that this is an initial pass - might decide to do I0 in some other way)
@@ -385,8 +414,8 @@ init.states.SEL <- rbind(init.states.S[, ens.of.interest],
                          init.states.I[, ens.of.interest])
 # each column is a run
 
-save(init.states.SEL, file = 'syntheticTests/syntheticData/initStates_07-14.RData')
-save(select.parms, file = 'syntheticTests/syntheticData/params_07-14.RData')
+# save(init.states.SEL, file = 'syntheticTests/syntheticData/initStates_07-14.RData')
+# save(select.parms, file = 'syntheticTests/syntheticData/params_07-14.RData')
 # 5, 14, 24 (108, 467, 931) all seem to have later IS outbreaks and may be good candidates for fitting
 
 ### Narrow down to a few to check first?:
@@ -397,7 +426,7 @@ for (i in 1:length(synth.runs.RATES)) {
 }
 dev.off()
 
-to.run <- c(1, 6, 9, 11, 18, 19, 21) # honestly, they're all fine... edit cluster to run all (3 runs)
+to.run <- c(1, 6, 9, 11, 13, 18, 19, 21) # honestly, they're all fine... edit cluster to run all (3 runs)
 init.states.SEL[, to.run]
 select.parms[to.run, ]
 # might be good to find one with lower D/R0mx - Done!
