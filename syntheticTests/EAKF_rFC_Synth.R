@@ -140,8 +140,9 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
   
   #### Begin looping through observations
   #### Training process
-  to.adjust <- c(pos.in.vector, pos.in.vector + n ** 2, pos.in.vector + n ** 2 * 2, param.indices)
+  # to.adjust <- c(pos.in.vector, pos.in.vector + n ** 2, pos.in.vector + n ** 2 * 2, param.indices)
   for (tt in 1:ntrn) {
+    
     # Update state variables and parameters, then integrate forward
     print(tt)
     
@@ -149,95 +150,91 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     inflat <- diag(x = rep(lambda, n ** 2 * 3 + 5), n ** 2 * 3 + 5, n ** 2 * 3 + 5)
     inflat.obs <- diag(x = rep(lambda, n), n, n)
     xmn <- rowMeans(xprior[,, tt]); obs_ens.mn <- rowMeans(obs_ens)
-    xprior[,, tt] <- inflat %*% (xprior[,, tt] - xmn %*% matrix(1, 1, num_ens)) + xmn %*% matrix(1, 1, num_ens)
+    x <- inflat %*% (xprior[,, tt] - xmn %*% matrix(1, 1, num_ens)) + xmn %*% matrix(1, 1, num_ens)
     obs_ens <- inflat.obs %*% (obsprior[,, tt] - obs_ens.mn %*% matrix(1, 1, num_ens)) + obs_ens.mn %*% matrix(1, 1, num_ens)
     
-    # Compartments w/o people should always be zero - alert if not:
-    not.to.adjust <- (1:dim(xprior)[1])[!((1:dim(xprior)[1]) %in% to.adjust)]
-    if (any(xprior[not.to.adjust,, tt] != 0)) {
-      print('Empty compartment(s) w/ > 0!')
-    }
+    # # Compartments w/o people should always be zero - alert if not:
+    # not.to.adjust <- (1:dim(xprior)[1])[!((1:dim(xprior)[1]) %in% to.adjust)]
+    # if (any(x[not.to.adjust, ] != 0)) {
+    #   print('Empty compartment(s) w/ > 0!')
+    # }
     
     ### FIX 1: Don't allow obsprior to be <0 - set to 0?
-    xprior[which(xprior < 0, arr.ind = T)] <- 0 # CHECK
+    # QUESTION: Don't do this yet? Sen hadn't corrected for aphysicalities yet
+    x[which(x < 0, arr.ind = T)] <- 0 # CHECK
     obs_ens[which(obs_ens < 0, arr.ind = T)] <- 0 # CHECK
+    xprior[,, tt] <- x
     obsprior[,, tt] <- obs_ens
     
-    ####  Get the variance of the ensemble
-    obs_var <- obs_vars[tt, ];
-    # obs_var[obs_var == 0 & !is.na(obs_var)] <- NA # CHECK
-    prior_var <- unlist(lapply(1:n, function(ix) { # for each country (ix)
-      var(obsprior[ix,, tt])
-    }))
-    post_var <- prior_var * (obs_var / (prior_var + obs_var))
-    # basically, if var between ens mems is low compared to obs var, var in ens will dominate
-    # as obs_var gets comparatively lower, post_var also gets lower
-    # ranges from 0 to prior_var
-    # print(prior_var); print(post_var)
-    
-    if (any(prior_var == 0)) {
-      print('prior_var = 0!')
-      post_var[prior_var == 0] <- 0
-      prior_var[prior_var == 0] <- 1e-3
-    } # CHECK
-    
-    prior_mean <- unlist(lapply(1:n, function(ix) {
-      mean(obsprior[ix,, tt])
-    }))
-    post_mean <- post_var * (prior_mean / prior_var + as.vector(obs_i[tt, ]) / obs_var)
-    # post_mean[is.na(post_mean)] <- 0 # CHECK; but this is also commented out in EAKF_network
-    
-    #### Compute alpha and adjust distribution to conform to posterior moments
-    alp <- sqrt(obs_var / (obs_var + prior_var))
-    alps[, tt] <- alp
-    print(alp)
-    print(paste(mean(alp), median(alp), sep = ', '))#; print(median(alp))
-    
-    # plot(alp, pch = 20, cex = 1.25, xaxt = 'n', ylab = 'alp', ylim = c(0, 1), main = tt)
-    # axis(side = 1, at = 1:n, labels = countries)
-    
-    alp.mat <- matrix(0, n, n); diag(alp.mat) <- alp
-    dy <- as.numeric(post_mean) + alp.mat %*% (obsprior[,, tt] - prior_mean) - obsprior[,, tt]
-    dy.full <- dy; #dy <- dy[!is.na(obs_i[tt, ]), ]
-    # dy <- dy.full[-which(is.na(post_mean)), ] # no NAs in synthetic "data"
-    
-    rr <- NULL
-    for (j in to.adjust) {
-      C <- unlist(lapply((1:n)[which(!is.na(post_mean))], function(ix) {
-        cov(xprior[j,, tt], obsprior[ix,, tt]) / prior_var[ix]
-      }))
-      rr <- rbind(rr, C)
-    }
-    # print(which(rr == 0, arr.ind = TRUE))
-    dx <- rr %*% dy
-    
-    # print(which(dx == 0, arr.ind = TRUE))
-    # print(which(is.na(dx), arr.ind = TRUE))
-    # print('')
-    
-    ###  Get the new ensemble and save prior and posterior
-    xnew <- xprior[,, tt]
-    xnew[to.adjust, ] <- xprior[to.adjust,, tt] + dx
-    obs_ens <- obs_ens + dy.full
-    
-    # Corrections to data aphysicalities
-    if (any(xnew < 0)) {
-      print('xnew < 0')
-    }
-    if (any(obs_ens < 0)) {
-      print('obs_ens < 0')
+    # Loop through observations:
+    for (loc in 1:n) { # for (loc in n:1) { # to test for sensitivity to loop order
+      # Get variances:
+      obs_var <- obs_vars[tt, loc]
+      prior_var <- var(obs_ens[loc, ])
+      post_var <- prior_var * (obs_var / (prior_var + obs_var))
+      
+      if (prior_var == 0) {
+        post_var <- 0
+        prior_var <- 1e-3
+      }
+      
+      prior_mean <- mean(obs_ens[loc, ])
+      post_mean <- post_var * (prior_mean / prior_var + obs_i[tt, loc] / obs_var)
+      
+      # Compute alpha and adjust distribution to conform to posterior moments:
+      alp <- sqrt(obs_var / (obs_var + prior_var))
+      # POTENTIALLY CONDITION ON THIS!
+      alps[loc, tt] <- alp
+      print(paste0(countries[loc], ': ', round(alp, 3)))
+      
+      dy <- post_mean + alp * (obs_ens[loc, ] - prior_mean) - obs_ens[loc, ] # no NAs in synthetic data, so don't have to worry about that
+      
+      # Get covariance of the prior state space and the observations, and loop over each state variable:
+      rr <- NULL
+      for (j in 1:dim(x)[1]) { # so here, we're not doing only "to.adjust" - QUESTION
+        C <- cov(x[j, ], obs_ens[loc, ]) / prior_var # this will be 0 for empty compartments
+        rr <- append(rr, C)
+      }
+      dx <- rr %*% t(dy)
+      
+      # Get adjusted ensemble and obs_ens:
+      x <- x + dx # QUESTION: then using the updated x and obs_ens to update further - isn't this a little not genuine?
+      obs_ens[loc, ] <- obs_ens[loc, ] + dy
+      
+      # print(any(x < 0)) # QUESTION: Is this and the next line a problem?
+      if (any(obs_ens < 0)) {
+        print(countries[loc])
+      }
+      # for (div.check.count in 1:n) {
+      #   if (any(obs_ens[div.check.count, ] < 0)) {
+      #     print(countries[div.check.count])
+      #   }
+      # } # if yes, they're reducing themselves below 0, obviously
+      
+      x[which(x < 0, arr.ind = TRUE)] <- 0 # try - set this to 1.0 instead of 0, like in Fn_checkxnobounds?
+      x <- Fn_checkxnobounds(x, S0.indices, I0.indices, param.indices) # this alone sets the "empty" compartments to 1.0; also, nothing to check newI? (okay, b/c makes sure don't go below 0)
+      obs_ens[loc, obs_ens[loc, ] < 0] <- 0 # so we do ensure these aren't wild as we go, though
     }
     
-    xnew[xnew < 0] <- 0 # do this first so that checkxnobounds doesn't set 0s to 1s
-    obs_ens[obs_ens < 0] <- 0
-    xnew <- Fn_checkxnobounds(xnew, S0.indices, I0.indices, param.indices)
+    xnew <- x
     
-    # Finally, reduce S and I in "empty" compartments to zero
-    to.zero <- (1:(dim(xpost)[1]))[!((1:dim(xpost)[1]) %in% to.adjust)]
-    if (any(xnew == 1.0)) {
-      print ('1s in xnew!')
-    }
-    # xnew[to.zero, ] <- 0
+    # # Finally, reduce S and I in "empty" compartments to zero
+    # to.zero <- (1:(dim(xpost)[1]))[!((1:dim(xpost)[1]) %in% to.adjust)]
+    # if (any(xnew == 1.0)) {
+    #   print ('1s in xnew!')
+    # }
+    # # xnew[to.zero, ] <- 0
+    
+    # Check potential reprobing conditions:
+    # (any alp > 0.9; 5 countries obs < 500; divergence?)
+    print('')
+    print(any(alps[, tt] > 0.9))
+    # print(any(alps[, tt] < 0.3)) # detect low OEV before divergence occurs? - but this would really only be true if collapse was occurring, not gradual divergence
+    print(any(obs_i[tt, ] > 500 & (rowMeans(obs_ens) > 1.2 * obs_i[tt, ] | rowMeans(obs_ens) < 0.8 * obs_i[tt, ])))
+    print(which(obs_i[tt, ] > 500 & (rowMeans(obs_ens) > 1.2 * obs_i[tt, ] | rowMeans(obs_ens) < 0.8 * obs_i[tt, ])))
+    # first and third tend to be true early on; first stops being true around tt == 10, but last one is always true...; 30% - a few weeks near peak where only a few countries; 50% - still always true, but sometimes just for one country
+    # seems like, to use this third one, we have to first get it to a state where it's not constantly diverging so much?
+    # stop adjusting below 0 after tt == 13! Use this somehow? Then also if any alp > 0.95? Or if >5 diverge by 20%?
     
     # REPROBING
     # alp > c(0.80, 0.85, 0.90, 0.95); mean or median? (once reprobing in effect, median can be much higher!); what percent? (c(0.02, 0.05, 0.10))
