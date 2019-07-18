@@ -78,7 +78,7 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     S0.temp[[i]] <- matrix(parms[1:(n ** 2), i], nrow = n, ncol = n, byrow = T) * N
     I0.temp[[i]] <- matrix(parms[1:(n ** 2) + (n ** 2), i], nrow = n, ncol = n, byrow = T) * N
   }
-  parms <- parms[(dim(parms)[1] - 4):(dim(parms)[1]), ]
+  parms <- parms[(dim(parms)[1] - 4):(dim(parms)[1]), ] # L, D, R0mx, R0mn, airScale
   
   ### Calculate the reproductive number at time t BT1 and the transmission rate
   beta.range <- tm.range[1]:(tail(tm.range, 1) + 2 * tmstep)
@@ -221,6 +221,13 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     obs_ens <- obs_ens + dy.full
     
     # Corrections to data aphysicalities
+    # if (any(xnew < 0)) {
+    #   print('xnew < 0')
+    # }
+    # if (any(obs_ens < 0)) {
+    #   print('obs_ens < 0')
+    # }
+    
     xnew[xnew < 0] <- 0 # do this first so that checkxnobounds doesn't set 0s to 1s
     obs_ens[obs_ens < 0] <- 0
     xnew <- Fn_checkxnobounds(xnew, S0.indices, I0.indices, param.indices)
@@ -232,50 +239,18 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     }
     # xnew[to.zero, ] <- 0
     
-    
-    
-    
-    
-    
-    
-    
-    
     # REPROBING
-    # # if(abs(obs_i[tt] - mean(xpost[H,,tt])) > 0.2*obs_i[tt]) {} # divergence; from Wan's HK fitting code; if mean of ensembles differing from obs by >20%
-    # print('')
-    # # print(obs_i[tt, ])
-    # # print(dim(obs_ens))
-    # # print(rowMeans(obs_ens))
-    # div.df <- as.data.frame(t(rbind(abs(obs_i[tt, ] - rowMeans(obs_ens)),
-    #             0.2 * obs_i[tt, ],
-    #             abs(obs_i[tt, ] - rowMeans(obs_ens)) > (0.2 * obs_i[tt, ]) & obs_i[tt, ] > 0 & !is.na(obs_i[tt, ]))))
-    # names(div.df) <- c('Obs', 'Mean Fit', 'Divergence')
-    # div.df$Divergence <- div.df$Divergence == 1
-    # # print(div.df)
-    # print(div.df[div.df$Divergence, ])
-    # print('')
-    # # Reprobe just for certain countries? But that's only if we're basing when to reprobe on divergence, and not just doing it all the time
-    # # Seems many countries are "diverging" after the peak
-    
-    # print(abs(obs_i[tt] - rowMeans(obs_ens)) > 0.2*obs_i[tt] & obs_i[tt, ] > 0)
-    # print(sum(abs(obs_i[tt] - rowMeans(obs_ens)) > 0.2*obs_i[tt] & obs_i[tt, ] > 0))
-    # print('')
-    # Can use a certain number of "TRUE"s as a baseline, but the exact metric only works when we only have one "H" variable of interest
-    # Try using some number of these, as well as alp cutoff - which works better? They don't always line up!
-    
-    # above > c(15, 16, 17, 18); alp > c(0.80, 0.85, 0.90, 0.95); mean or median? (median tends to be higher, so would be a stricter cutoff); 2%? 5%?
-    # REDUCE: alp > c(0.80, 0.85, 0.90, 0.95); mean or median? (once reprobing in effect, median can be much higher!); what percent? (c(0.02, 0.05, 0.10))
-    
+    # alp > c(0.80, 0.85, 0.90, 0.95); mean or median? (once reprobing in effect, median can be much higher!); what percent? (c(0.02, 0.05, 0.10))
     if (do.reprobing) {
       
       # Option to try re-initiating if high divergence early on; but this isn't something that it makes sense to do midway through an epidemic
       # And by the time the large majority of countries have divergence, we're already well into the epidemic in at least some countries
       
       # if (sum(abs(obs_i[tt] - rowMeans(obs_ens)) > 0.2*obs_i[tt] & obs_i[tt, ] > 0) > 17) { # using this one seems to result at reprobing all through the peak...; granted, this was for a total reinit, right?
-      if (mean(alp) > 0.95) {
+      if (mean(alp) > 0.85) {
         print('Reprobing...')
         
-        rpnum <- ceiling(0.1 * num_ens) # 2%? 5%?
+        rpnum <- ceiling(0.02 * num_ens) # 2%? 5%?
         rpid <- sample(1:num_ens, rpnum)
         
         parms.reprobe <- t(lhs(rpnum, param.bound))
@@ -304,8 +279,6 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
         
         xnew[S0.indices, rpid] <- S0.reprobe # dim 441 6
         xnew[I0.indices, rpid] <- I0.reprobe
-        
-        # QUESTION: Should this be done at the beginning of the loop instead?
         xnew[param.indices, rpid] <- parms.reprobe
         
         xnew[xnew < 0] <- 0
@@ -313,15 +286,6 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
       }
       
     }
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     # Store posteriors:
     xpost[,, tt] <- xnew
@@ -397,25 +361,6 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     # matlines(obs.prior.toPlot, type = 'b', pch = 20, lty = 1, cex = 0.75, col = viridis(n))
     
   } # end of training
-  
-  # # Plot trend of parameters/states/alps over time:
-  # mean.param.vals <- apply(xpost[param.indices,, ], c(1, 3), mean)
-  # param.labs <- c('L', 'D', 'R0mx', 'R0mn')
-  # par(mfrow = c(4, 1), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-  # for (i in 1:4) {
-  #   plot(mean.param.vals[i, ], type = 'b', pch = 20, xlab = 'Time Since Outbreak Start', ylab = param.labs[i])
-  #   abline(h = true.params[i], lty = 2)
-  # }
-  # 
-  # spost <- matrix(0, n, ntrn)
-  # for (i in 1:n) {
-  #   spost[i, ] <- colSums(apply(xpost[S0.indices[(1:n) + n * (i - 1)],, ], c(1, 3), mean)) / pop.size$pop[i] * 100
-  # }
-  # par(mfrow = c(1, 1), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-  # matplot(t(spost), type = 'b', pch = 20, lty = 1, col = viridis(n), xlab = 'Time Since Outbreak Start', ylab = '%S')
-  # 
-  # par(mfrow = c(1, 1), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-  # matplot(t(alps), type = 'b', pch = 20, lty = 1, col = viridis(n))
   
   ### For now, we just want to return: PT, PI, corr, rmse, newI, S, and params!
   
@@ -519,8 +464,6 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
   res.list <- list(m, obspost_mean, obspost_sd, params.post_df, s.post_mean, s.post_sd, alps)
   return(res.list)
 }
-
-
 
 
 

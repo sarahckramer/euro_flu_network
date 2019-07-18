@@ -279,8 +279,6 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
         
         xnew[S0.indices, rpid] <- S0.reprobe # dim 441 6
         xnew[I0.indices, rpid] <- I0.reprobe
-        
-        # QUESTION: Should this be done at the beginning of the loop instead?
         xnew[param.indices, rpid] <- parms.reprobe
         
         xnew[xnew < 0] <- 0
@@ -385,10 +383,14 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
   names(obspost_mean) <- countries
   
   # Calculate accuracy metrics:
-  pt = pt.obs = pi = pi.obs = corrs = rmses = c()
+  pt = pt.obs = pi = pi.obs = ot = ot.obs = corrs = rmses = c()
   for (i in 1:n) {
     obs_temp <- obs_TRUE[1:tt, i]
     pred_temp <- obspost_mean[, i]
+    
+    wk_start <- 1
+    ot.obs <- c(ot.obs, findOnset(obs_temp, 500)$onset)
+    ot <- c(ot, findOnset(pred_temp, 500)$onset)
     
     if (!all(is.na(obs_temp))) {
       pt <- c(pt, which(pred_temp == max(pred_temp, na.rm = TRUE)))
@@ -410,7 +412,7 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     }
   }
   
-  m <- as.data.frame(cbind(countries, pt, pt.obs, pt - pt.obs, pi, pi.obs, pi - pi.obs, corrs, rmses))
+  m <- as.data.frame(cbind(countries, pt, pt.obs, pt - pt.obs, pi, pi.obs, pi - pi.obs, ot, ot.obs, ot - ot.obs, corrs, rmses))
   m$pt.acc = m$pi.acc = NA
   
   for (i in 1:n) {
@@ -462,8 +464,6 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
   res.list <- list(m, obspost_mean, obspost_sd, params.post_df, s.post_mean, s.post_sd, alps)
   return(res.list)
 }
-
-
 
 
 
