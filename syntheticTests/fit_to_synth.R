@@ -46,7 +46,7 @@ output_header <- c('outbreak','run','oev_base', 'oev_denom','lambda', 'week', 'L
                    'D', 'D_sd', 'R0max', 'R0max_sd', 'R0min', 'R0min_sd', 'airScale', 'airScale_sd')
 
 ### Ensemble member numbers kept (for now):
-to.keep <- c(1, 2, 8)#, 10, 15, 18) #!!!
+to.keep <- c(1, 6, 9, 13)
 
 ### Global variables
 dt <- 1 # time step for SIRS integration
@@ -67,14 +67,13 @@ I0_low <- 0; I0_up <- 0.001 # proportion of population
 ### Parameters for the filters
 discrete <- FALSE # run the SIRS model continuously
 metricsonly <- FALSE # save all outputs
-lambda <- 1.03 # inflation factor for the ensemble filters c(1.00, 1.01, 1.02, 1.03, 1.05, 1.075?)
-oev_base <- 1e5; oev_denom <- 10.00
-# 1e4/5/1.00 combo doesn't look bad...; oev_base of 1e3 seems too low to handle early low error observations...
+lambda <- 1.01 # inflation factor for the ensemble filters c(1.00, 1.01, 1.02, 1.03, 1.05, 1.075?)
+oev_base <- 1e4; oev_denom <- 10.00
 # most similar to observed data seem to be 1e4/10, 1e4/20, and 1e5/20 (even 1e5/10, although a lot of error), based on visual similarity
 # OEVs look more like those calculated from Aim1 if denominator is 10 (although I know this isn't a great test)
 
 num_ens <- 300 # use 300 for ensemble filters, 10000 for particle filters
-num_runs <- 3
+num_runs <- 2
 
 ### Specify the country for which we are performing a forecast
 countries <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'FR', 'DE', 'HU', 'IE', 'IT',
@@ -87,14 +86,13 @@ pop.size <- pop.size[pop.size$country %in% countries, ]; pop.size$country <- fac
 pop.size <- pop.size[match(countries, pop.size$country), ]
 
 ### Read in humidity data
-ah <- read.csv('data/ah_05-07_formatted.csv')
+ah <- read.csv('../GLDAS_data/ah_Europe_07142019.csv')
 AH <- rbind(ah[, count.indices], ah[, count.indices])
 
 ### Read in influenza "data":
 load('syntheticTests/syntheticData/synth_07-14_RATES.RData')
 synth.runs.TRUE <- synth.runs.RATES
-load('syntheticTests/syntheticData/synth_07-14_RATES_wError_1e5_10.RData')
-# synth.runs.RATES <- synth.runs.RATES[to.keep]
+load('syntheticTests/syntheticData/synth_07-14_RATES_wError_1e4_10.RData')
 # use rates b/c for observed data we used scaled data, which are meant to represent rates per 100,000 population
 
 ### Initialize output data frames
