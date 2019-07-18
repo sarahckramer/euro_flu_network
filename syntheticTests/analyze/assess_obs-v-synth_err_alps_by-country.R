@@ -1,13 +1,17 @@
 
+# Note: Any of this is really only important if we need to prevent "collapse" - so find our best combos of oev_base/oev_denom/lambda first, then see if any countries in particular are causing issues
+# Can also use this code to determine which oev_base/oev_denom/lambda combos lead to collapse
+
 # Read in "alps":
-alps <- read.csv('syntheticTests/outputs/cluster/071419/outputAlps.csv')
+alps <- read.csv('syntheticTests/outputs/cluster/071519/outputAlps.csv')
+# alps <- alps[alps$oev_base != 1e6, ]
 
 # Plot alps over each outbreak by country:
 alps$group <- paste(alps$outbreak, alps$run, alps$oev_base, alps$oev_denom, alps$lambda, alps$country, sep = '_'); alps$group <- factor(alps$group)
-p1 <- ggplot(data = alps) + geom_line(aes(x = week, y = alp, group = group)) +
-  theme_classic() + labs(x = 'Week', y = 'alp') +
-  facet_wrap(~ country)
-p1
+# p1 <- ggplot(data = alps) + geom_line(aes(x = week, y = alp, group = group)) +
+#   theme_classic() + labs(x = 'Week', y = 'alp') +
+#   facet_wrap(~ country)
+# p1
 # all drop very low b/c some combos of oev_base/oev_denom/lambda don't fit well - loop through these at least
 
 # Loop through OEV/lambda params:
@@ -36,6 +40,13 @@ for (oev1 in unique(alps$oev_base)) {
     }
   }
 }
+# Mostly HR, HU, SE, SI; but also AT, FR, RO, SK, UK; PL?
+
+# Combos to keep: 1e4/5/1-1.01, 1e4/10/1-1.01, all 1e5
+# 1e4/20/1.05 seems to work for outbreak 13 but none of the others?
+
+
+
 # Troublesome: CZ, DE, DK, FR, HU, IT, PL, RO, SE, SI, SK, UK
 # Might be more interesting to see which drops first
 

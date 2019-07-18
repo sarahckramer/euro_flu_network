@@ -13,16 +13,6 @@
     # [] And various error formats (tmp_exp)?
 # See list in Word doc
 
-# Meeting w/ Jeff:
-    # How does this make sense? Not being able to fit something it made itself?
-    # Changing multiplier of air travel has very little impact, but commuting seems to play a role; right now though, patterns are dominated by AH-forcing; R0mx/D have stronger impact on pattern when no AH
-        # Add in proportional random travel to commuting (like Sen)? (In Sen's model, transmission is very sensitive to random movement rate - seems important)
-        # Country-level AH weighted by population density (SE)? Remove IS and maybe SE?
-    # How to tell how much error to add? Just so it vaguely looks like observations?
-    # obs_var using (j-2):j, or just j, since everything here is "known"? (note: for when adding error, not fitting)
-    # Still initiate S and I by country, then normal dist/split proportionally for each individual compartment - is that okay, or should everything be drawn from LHS?
-    # Still having most trouble with later peaks - fit seems to have already "settled in," and harder to get it to move upward again
-
 # Notes from meeting w/ Jeff:
     # [x] Also look at incidence relative to the TRUE newI, not just error-laden observations
     # [x] Look at beta, R0, Re, S (truth)
@@ -78,13 +68,13 @@ I0_low <- 0; I0_up <- 0.001 # proportion of population
 discrete <- FALSE # run the SIRS model continuously
 metricsonly <- FALSE # save all outputs
 lambda <- 1.03 # inflation factor for the ensemble filters c(1.00, 1.01, 1.02, 1.03, 1.05, 1.075?)
-oev_base <- 1e5; oev_denom <- 20.00
+oev_base <- 1e5; oev_denom <- 10.00
 # 1e4/5/1.00 combo doesn't look bad...; oev_base of 1e3 seems too low to handle early low error observations...
 # most similar to observed data seem to be 1e4/10, 1e4/20, and 1e5/20 (even 1e5/10, although a lot of error), based on visual similarity
 # OEVs look more like those calculated from Aim1 if denominator is 10 (although I know this isn't a great test)
 
 num_ens <- 300 # use 300 for ensemble filters, 10000 for particle filters
-num_runs <- 2
+num_runs <- 3
 
 ### Specify the country for which we are performing a forecast
 countries <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'FR', 'DE', 'HU', 'IE', 'IT',
@@ -101,9 +91,9 @@ ah <- read.csv('data/ah_05-07_formatted.csv')
 AH <- rbind(ah[, count.indices], ah[, count.indices])
 
 ### Read in influenza "data":
-load('syntheticTests/syntheticData/synth_07-11_RATES.RData')
+load('syntheticTests/syntheticData/synth_07-14_RATES.RData')
 synth.runs.TRUE <- synth.runs.RATES
-load('syntheticTests/syntheticData/synth_07-11_RATES_wError_1e5_10.RData')
+load('syntheticTests/syntheticData/synth_07-14_RATES_wError_1e5_10.RData')
 # synth.runs.RATES <- synth.runs.RATES[to.keep]
 # use rates b/c for observed data we used scaled data, which are meant to represent rates per 100,000 population
 
@@ -134,7 +124,7 @@ for (outbreak in 1:length(to.keep)) {
   # outbreak <- 1
   
   # Get true parameter values:
-  load('syntheticTests/syntheticData/params_07-11.RData')
+  load('syntheticTests/syntheticData/params_07-14.RData')
   true.params <- select.parms[to.keep[outbreak], ]
   print(true.params)
   
@@ -167,7 +157,7 @@ for (outbreak in 1:length(to.keep)) {
   for (run in 1:num_runs) {
     par(mfrow = c(3, 2), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
     res <- EAKF_rFC(num_ens, tmstep, param.bound, obs_i, ntrn, obs_vars, tm.ini, tm.range,
-                    do.reprobing = TRUE)
+                    do.reprobing = FALSE)
 
     print(table(res[[1]][, 10]))
     print(table(res[[1]][, 11]))
