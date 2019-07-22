@@ -1,10 +1,10 @@
 
 ### QUESTIONS:
 # Should tm.ini be 3-4 weeks into the outbreak and not actually at time 1?
-      # I don't think so; tm.ini is just the beginning of October - when does the beginning
-      # of October happen in our simulation? tm.ini should correspond to the correct date
-      # at time 1 of the simulation
-      # Simulations also start at 1st of October (t 273)
+# I don't think so; tm.ini is just the beginning of October - when does the beginning
+# of October happen in our simulation? tm.ini should correspond to the correct date
+# at time 1 of the simulation
+# Simulations also start at 1st of October (t 273)
 # What happens if we remove reinit/change reinit to just setting to 0? (Line 211)
 # xpost is already accounting for differences in population sizes, right?
 # Check that iterating variables (i, j, etc.) aren't being reused!
@@ -167,6 +167,7 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     obsprior[,, tt] <- obs_ens
     
     # Loop through observations:
+    any.pushed.negative <- FALSE
     for (loc in 1:n) { # for (loc in n:1) { # to test for sensitivity to loop order
       # Get variances:
       obs_var <- obs_vars[tt, loc]
@@ -204,6 +205,7 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
       # print(any(x < 0)) # QUESTION: Is this and the next line a problem?
       if (any(obs_ens < 0)) {
         print(countries[loc])
+        any.pushed.negative <- TRUE
       }
       # for (div.check.count in 1:n) {
       #   if (any(obs_ens[div.check.count, ] < 0)) {
@@ -215,8 +217,13 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
       x <- Fn_checkxnobounds(x, S0.indices, I0.indices, param.indices) # this alone sets the "empty" compartments to 1.0; also, nothing to check newI? (okay, b/c makes sure don't go below 0)
       obs_ens[loc, obs_ens[loc, ] < 0] <- 0 # so we do ensure these aren't wild as we go, though
     }
-    
     xnew <- x
+    
+    if (any.pushed.negative) {
+      do.reprobing <- TRUE
+    } else {
+      do.reprobing <- FALSE
+    }
     
     # # Finally, reduce S and I in "empty" compartments to zero
     # to.zero <- (1:(dim(xpost)[1]))[!((1:dim(xpost)[1]) %in% to.adjust)]
@@ -244,43 +251,45 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
       # And by the time the large majority of countries have divergence, we're already well into the epidemic in at least some countries
       
       # if (sum(abs(obs_i[tt] - rowMeans(obs_ens)) > 0.2*obs_i[tt] & obs_i[tt, ] > 0) > 17) { # using this one seems to result at reprobing all through the peak...; granted, this was for a total reinit, right?
-      if (mean(alp) > 0.85) {
-        print('Reprobing...')
-        
-        rpnum <- ceiling(0.02 * num_ens) # 2%? 5%?
-        rpid <- sample(1:num_ens, rpnum)
-        
-        parms.reprobe <- t(lhs(rpnum, param.bound))
-        S0.reprobe = I0.reprobe = vector('list', rpnum)
-        for (ir in 1:rpnum) {
-          S0.reprobe[[ir]] = I0.reprobe[[ir]] = matrix(0, nrow = n, ncol = n)
-          
-          diag(S0.reprobe[[ir]]) <- parms.reprobe[1:n, ir]
-          S0.reprobe[[ir]][S0.reprobe[[ir]] == 0] <- sapply(1:n, function(jx) {
-            rnorm(n - 1, mean = S0.reprobe[[ir]][jx, jx], sd = 0.05)
-          })
-          S0.reprobe[[ir]] <- t(S0.reprobe[[ir]])
-          S0.reprobe[[ir]] <- S0.reprobe[[ir]] * N
-          S0.reprobe[[ir]] <- as.vector(t(S0.reprobe[[ir]]))
-          
-          diag(I0.reprobe[[ir]]) <- parms.reprobe[(1:n) + n, ir]
-          I0.reprobe[[ir]] <- sweep(N / rowSums(N), 1, diag(I0.reprobe[[ir]]), '*')
-          I0.reprobe[[ir]] <- I0.reprobe[[ir]] * N
-          I0.reprobe[[ir]] <- as.vector(t(I0.reprobe[[ir]]))
-        }
-        S0.reprobe <- matrix(unlist(S0.reprobe), ncol = rpnum, byrow = F)
-        I0.reprobe <- matrix(unlist(I0.reprobe), ncol = rpnum, byrow = F)
-        parms.reprobe <- parms.reprobe[(dim(parms.reprobe)[1] - 4):(dim(parms.reprobe)[1]), ]
-        
-        # S0.indices go row by row - so full first row, then on to second row, etc.
-        
-        xnew[S0.indices, rpid] <- S0.reprobe # dim 441 6
-        xnew[I0.indices, rpid] <- I0.reprobe
-        xnew[param.indices, rpid] <- parms.reprobe
-        
-        xnew[xnew < 0] <- 0
-        xnew <- Fn_checkxnobounds(xnew, S0.indices, I0.indices, param.indices)
+      # if (mean(alp) > 0.85) {
+      print('Reprobing...')
+      
+      rpnum <- ceiling(0.05 * num_ens) # 2%? 5%?
+      rpid <- sample(1:num_ens, rpnum)
+      
+      parms.reprobe <- t(lhs(rpnum, param.bound))
+      
+      S0.reprobe = I0.reprobe = vector('list', rpnum)
+      for (ir in 1:rpnum) {
+        S0.reprobe[[ir]] <- matrix(parms.reprobe[1:(n ** 2), ir], nrow = n, ncol = n, byrow = T) * N
+        I0.reprobe[[ir]] <- matrix(parms.reprobe[1:(n ** 2) + (n ** 2), ir], nrow = n, ncol = n, byrow = T) * N
+        # S0.reprobe[[ir]] = I0.reprobe[[ir]] = matrix(0, nrow = n, ncol = n)
+        # 
+        # diag(S0.reprobe[[ir]]) <- parms.reprobe[1:n, ir]
+        # S0.reprobe[[ir]][S0.reprobe[[ir]] == 0] <- sapply(1:n, function(jx) {
+        #   rnorm(n - 1, mean = S0.reprobe[[ir]][jx, jx], sd = 0.05)
+        # })
+        # S0.reprobe[[ir]] <- t(S0.reprobe[[ir]])
+        # S0.reprobe[[ir]] <- S0.reprobe[[ir]] * N
+        # S0.reprobe[[ir]] <- as.vector(t(S0.reprobe[[ir]]))
+        # 
+        # diag(I0.reprobe[[ir]]) <- parms.reprobe[(1:n) + n, ir]
+        # I0.reprobe[[ir]] <- sweep(N / rowSums(N), 1, diag(I0.reprobe[[ir]]), '*')
+        # I0.reprobe[[ir]] <- I0.reprobe[[ir]] * N
+        # I0.reprobe[[ir]] <- as.vector(t(I0.reprobe[[ir]]))
       }
+      S0.reprobe <- matrix(unlist(S0.reprobe), ncol = rpnum, byrow = F)
+      I0.reprobe <- matrix(unlist(I0.reprobe), ncol = rpnum, byrow = F)
+      parms.reprobe <- parms.reprobe[(dim(parms.reprobe)[1] - 4):(dim(parms.reprobe)[1]), ]
+      # S0.indices go row by row - so full first row, then on to second row, etc.
+      
+      xnew[S0.indices, rpid] <- S0.reprobe # dim 441 6
+      xnew[I0.indices, rpid] <- I0.reprobe
+      xnew[param.indices, rpid] <- parms.reprobe
+      
+      xnew[xnew < 0] <- 0
+      xnew <- Fn_checkxnobounds(xnew, S0.indices, I0.indices, param.indices)
+      # }
       
     }
     
