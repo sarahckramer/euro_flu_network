@@ -1,8 +1,8 @@
 
 # Read in results:
-m <- read.csv('syntheticTests/outputs/cluster/071519/outputMet_I0range.csv')
-o <- read.csv('syntheticTests/outputs/cluster/071519/outputOP_I0range.csv')
-oStates <- read.csv('syntheticTests/outputs/cluster/071519/outputOPStates_I0range.csv')
+m <- read.csv('syntheticTests/outputs/cluster/071519/outputMet_loop_reduceS0I0.csv')
+o <- read.csv('syntheticTests/outputs/cluster/071519/outputOP_loop_reduceS0I0.csv')
+oStates <- read.csv('syntheticTests/outputs/cluster/071519/outputOPStates_loop_reduceS0I0.csv')
 
 # Check what combos ran:
 table(m$oev_base, m$oev_denom)
@@ -15,9 +15,9 @@ oStates$group <- paste(oStates$oev_base, oStates$oev_denom, oStates$lambda, sep 
 # o <- o[o$group %in% levels(m$group)[c(1, 9, 13:16, 18:24)], ]; o$group <- factor(o$group)
 # oStates <- oStates[oStates$group %in% levels(m$group)[c(1, 9, 13:16, 18:24)], ]; oStates$group <- factor(oStates$group)
 # m <- m[m$group %in% levels(m$group)[c(1, 9, 13:16, 18:24)], ]; m$group <- factor(m$group)
-o <- o[o$group %in% levels(m$group)[c(1:3, 5:6, 9:10, 13:14, 17:18, 21:22)], ]; o$group <- factor(o$group)
-oStates <- oStates[oStates$group %in% levels(m$group)[c(1:3, 5:6, 9:10, 13:14, 17:18, 21:22)], ]; oStates$group <- factor(oStates$group)
-m <- m[m$group %in% levels(m$group)[c(1:3, 5:6, 9:10, 13:14, 17:18, 21:22)], ]; m$group <- factor(m$group)
+# o <- o[o$group %in% levels(m$group)[c(1:3, 5:6, 9:10, 13:14, 17:18, 21:22)], ]; o$group <- factor(o$group)
+# oStates <- oStates[oStates$group %in% levels(m$group)[c(1:3, 5:6, 9:10, 13:14, 17:18, 21:22)], ]; oStates$group <- factor(oStates$group)
+# m <- m[m$group %in% levels(m$group)[c(1:3, 5:6, 9:10, 13:14, 17:18, 21:22)], ]; m$group <- factor(m$group)
 # S0 range: 1e4/5/1, 1e4/10/1 (maybe), 1e5/5/all, 1e5/10/all, 1e5/20/1.01-1.05 (1e5 way less likely to fail)
 # I0 range: 1e4/5/1-1.01, 1e4/10/1-1.03, 1e4/20/1-1.01, 1e5/5/1-1.01, 1e5/10/1-1.01, 1e5/20/1-1.01
 
@@ -189,11 +189,12 @@ oStates.err$outbreak <- factor(oStates.err$outbreak)
 
 # Write new files as list (m, o, o.err, oStates, oStates.err)
 res <- list(m, o, o.err, oStates, oStates.err)
-save(res, file = 'syntheticTests/outputs/cluster/071519/res_I0range.RData')
+save(res, file = 'syntheticTests/outputs/cluster/071519/res_loop_S0I0range.RData')
 
 # true.epi.params <- list(true.betas, true.R0, true.Re)
 # save(true.epi.params, file = 'syntheticTests/outputs/cluster/071519/true_betaR0Re.RData')
 
+rm(list=ls())
 
 
 

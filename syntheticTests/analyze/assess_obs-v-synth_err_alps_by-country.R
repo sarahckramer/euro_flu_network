@@ -3,7 +3,7 @@
 # Can also use this code to determine which oev_base/oev_denom/lambda combos lead to collapse
 
 # Read in "alps":
-alps <- read.csv('syntheticTests/outputs/cluster/071519/outputAlps_loop.csv')
+alps <- read.csv('syntheticTests/outputs/cluster/071519/outputAlps_loop_reduceS0I0.csv')
 # alps <- alps[alps$oev_base != 1e6, ]
 
 # Plot alps over each outbreak by country:
@@ -23,12 +23,12 @@ for (oev1 in unique(alps$oev_base)) {
       a.temp$group <- factor(a.temp$group); a.temp$outbreak <- factor(a.temp$outbreak)
       
       if (length(a.temp$country) > 0) {
-        p2 <- ggplot(data = a.temp) + geom_line(aes(x = week, y = alp, group = group, col = outbreak)) +
-          geom_hline(yintercept = 0.5) + geom_hline(yintercept = 0.3) +
-          theme_classic() +
-          labs(x = 'Week', y = 'alp', col = 'Outbreak', title = paste(oev1, oev2, lam, sep = '_')) +
-          facet_wrap(~ country) + scale_color_brewer(palette = 'Set2')
-        print(p2)
+        # p2 <- ggplot(data = a.temp) + geom_line(aes(x = week, y = alp, group = group, col = outbreak)) +
+        #   geom_hline(yintercept = 0.5) + geom_hline(yintercept = 0.3) +
+        #   theme_classic() +
+        #   labs(x = 'Week', y = 'alp', col = 'Outbreak', title = paste(oev1, oev2, lam, sep = '_')) +
+        #   facet_wrap(~ country) + scale_color_brewer(palette = 'Set2')
+        # print(p2)
         
         p3 <- ggplot(data = a.temp) + geom_line(aes(x = week, y = alp, group = group, col = country)) +
           theme_classic() +

@@ -1,11 +1,11 @@
 
 library(ggplot2); library(gridExtra)
 
-pdf('syntheticTests/outputs/cluster/model_fit_072219_loop_Truth.pdf',
-    width = 14, height = 10)
+pdf('syntheticTests/outputs/cluster/model_fit_072219_loop_S0I0_Truth.pdf',
+    width = 16, height = 12)
 
 # Read in results:
-load('syntheticTests/outputs/cluster/071519/res_loop.RData')
+load('syntheticTests/outputs/cluster/071519/res_loop_S0I0range.RData')
 
 m <- res[[1]]
 o <- res[[2]]
@@ -156,8 +156,7 @@ p5 <- ggplot(data = o.plot) +
   scale_y_continuous(limits = c(0.75, 1.25))
 grid.arrange(p1, p2, p3, p4, p5, ncol = 1)
 
-# oev_base 1e4 tends to think that D is unrealistically high at the beginning - how do we deal with fit issues very early in the outbreak? (actually, 1e5 is choppy at the beginning, too)
-# still a lot of difficulty fitting R0mx correctly
+# With loop, earlys params don't seem to have as much trouble anymore
 
 # # Plot parameter sd over time:
 # p1 <- ggplot(data = o.plot) +
@@ -193,80 +192,14 @@ grid.arrange(p1, p2, p3, p4, p5, ncol = 1)
 #   scale_color_brewer(palette = 'Set1')
 # grid.arrange(p1, p2, p3, p4, p5, ncol = 1)
 # SD starts increasing near end for higher lambdas, where ens. var. is being inflated, even
-# though it's still too sure of itself to change much, right?
+# Most look pretty settled by t = 10-20
 
-# Calculate TRUE values of beta, R0, Re at each time point:
-ah <- read.csv('../GLDAS_data/ah_Europe_07142019.csv')
-AH <- rbind(ah[, c(1:8, 10:21)], ah[, c(1:8, 10:21)])
-
-tm_strt <- 273; tm_end <- 573; tm_step <- 1 #; t <- 1 # 273 is first of October
-tm.range <- tm_strt:tm_end
-tmstep <- 7
-beta.range <- seq(tm.range[1] + tmstep, (tail(tm.range, 1) + tmstep), by = tmstep)
-
-AHpt <- AH[beta.range, ]; AHpt <- as.matrix(AHpt, length(AHpt), n)
-
-true.betas = true.R0 = true.Re = vector('list', length(synth.runs.RATES))
-for (i in 1:length(true.betas)) {
-  parms.temp <- select.parms[select.parms$outbreak == to.keep[i], ]
-  s.temp <- synth.runs.S[[i]]
-
-  betas.temp = r0.temp = re.temp = matrix(NA, nrow = dim(s.temp)[1], ncol = dim(s.temp)[2])
-
-  b <- log(parms.temp$value[parms.temp$parameter == 'R0mx'] - parms.temp$value[parms.temp$parameter == 'R0mn'])
-  a <- -180
-
-  r0.temp <- exp(a * AHpt + b) + parms.temp$value[parms.temp$parameter == 'R0mn']
-  beta.temp <- r0.temp / parms.temp$value[parms.temp$parameter == 'D']
-
-  for (j in 1:n) {
-    re.temp[, j] <- r0.temp[, j] * (s.temp[, j] / 100000)
-  }
-
-  true.betas[[i]] <- beta.temp
-  true.R0[[i]] <- r0.temp
-  true.Re[[i]] <- re.temp
-}
-# 
-# # Calculate SIMULATED values of beta, R0, Re at each time point:
-# oStates$beta = oStates$R0 = oStates$Re = NA
-# o$oev_base <- factor(o$oev_base); o$oev_denom <- factor(o$oev_denom)
-# 
-# for (i in 1:length(synth.runs.RATES)) {
-#   print(i)
-#   
-#   for (j in 1:length(unique(o$run))) {
-#     print(j)
-#     
-#     for (oev_base in levels(o$oev_base)) {
-#       for (oev in levels(o$oev_denom)) {
-#         for (lambda in levels(o$lambda)) {
-#           
-#           o.temp <- o[o$outbreak == to.keep[i] & o$run == j & o$oev_base == oev_base & o$oev_denom == oev & o$lambda == lambda, ]
-#           oStates.temp <- oStates[oStates$outbreak == to.keep[i] & oStates$run == j & oStates$oev_base == oev_base & oStates$oev_denom == oev & oStates$lambda == lambda, ]
-#           
-#           b <- log(o.temp$R0max - o.temp$R0min); a <- -180
-#           
-#           if (length(o.temp$outbreak) > 0) {
-#             for (country in 1:n) {
-#               # print(country)
-#               oStates$R0[oStates$outbreak == to.keep[i] & oStates$run == j & oStates$oev_base == oev_base & oStates$oev_denom == oev & oStates$lambda == lambda & oStates$country == countries[country]] <- exp(a * AHpt[, country] + b) + o.temp$R0min
-#               oStates$beta[oStates$outbreak == to.keep[i] & oStates$run == j & oStates$oev_base == oev_base & oStates$oev_denom == oev & oStates$lambda == lambda & oStates$country == countries[country]] <-
-#                 oStates$R0[oStates$outbreak == to.keep[i] & oStates$run == j & oStates$oev_base == oev_base & oStates$oev_denom == oev & oStates$lambda == lambda & oStates$country == countries[country]] / o.temp$D
-#               oStates$Re[oStates$outbreak == to.keep[i] & oStates$run == j & oStates$oev_base == oev_base & oStates$oev_denom == oev & oStates$lambda == lambda & oStates$country == countries[country]] <-
-#                 oStates$R0[oStates$outbreak == to.keep[i] & oStates$run == j & oStates$oev_base == oev_base & oStates$oev_denom == oev & oStates$lambda == lambda & oStates$country == countries[country]] *
-#                 oStates$S[oStates$outbreak == to.keep[i] & oStates$run == j & oStates$oev_base == oev_base & oStates$oev_denom == oev & oStates$lambda == lambda & oStates$country == countries[country]]
-#             }
-#           }
-#           
-#         }
-#       }
-#     }
-#   }
-# }
-# 
-# # Store these results:
-# write.csv(oStates, file = 'syntheticTests/outputs/cluster/071519/outputOPStates_beta-R0-Re.csv', row.names = FALSE)
+# Read in TRUE values of beta, R0, Re at each time point:
+load('syntheticTests/outputs/cluster/071519/true_betaR0Re.RData')
+true.betas <- true.epi.params[[1]]
+true.R0 <- true.epi.params[[2]]
+true.Re <- true.epi.params[[3]]
+rm(true.epi.params)
 
 # Plot fit accuracy for beta, R0, Re:
 for (outbreak in 1:length(to.keep)) {
@@ -281,25 +214,28 @@ for (outbreak in 1:length(to.keep)) {
   
   oStates.temp <- oStates[oStates$outbreak == to.keep[outbreak], ]
   
-  p1 <- ggplot() + geom_line(data = beta.temp, aes(x = week, y = value), lwd = 1.0) +
+  p1 <- ggplot() +
     geom_line(data = oStates.temp, aes(x = week, y = beta, group = group.plot, col = group), lwd = 0.5, alpha = 0.5) +
     geom_point(data = oStates.temp, aes(x = week, y = beta, group = group.plot, col = group, pch = lambda), alpha = 0.5) +
+    geom_line(data = beta.temp, aes(x = week, y = value), lwd = 1.0) +
     facet_wrap(~ country) + #scale_y_continuous(limits = c(0.2, 0.8)) +
-    theme_classic() + labs(x = 'Week', y = 'Beta', title = paste0('Outbreak ', outbreak)) +
+    theme_classic() + labs(x = 'Week', y = 'Beta', title = paste0('Outbreak ', to.keep[outbreak])) +
     scale_color_viridis(discrete = T, option = 'D') + scale_y_continuous(limits = c(0, 0.7))
   print(p1)
   
-  p2 <- ggplot() + geom_line(data = R0.temp, aes(x = week, y = value), lwd = 1.0) +
+  p2 <- ggplot() +
     geom_line(data = oStates.temp, aes(x = week, y = R0, group = group.plot, col = group), lwd = 0.5, alpha = 0.5) +
     geom_point(data = oStates.temp, aes(x = week, y = R0, group = group.plot, col = group, pch = lambda), alpha = 0.5) +
+    geom_line(data = R0.temp, aes(x = week, y = value), lwd = 1.0) +
     facet_wrap(~ country) +
     theme_classic() + labs(x = 'Week', y = 'R0') +
     scale_color_viridis(discrete = T, option = 'D') + scale_y_continuous(limits = c(1.0, 3.0))
   print(p2)
   
-  p3 <- ggplot() + geom_line(data = Re.temp, aes(x = week, y = value), lwd = 1.0) +
+  p3 <- ggplot() +
     geom_line(data = oStates.temp, aes(x = week, y = Re, group = group.plot, col = group), lwd = 0.5, alpha = 0.5) +
     geom_point(data = oStates.temp, aes(x = week, y = Re, group = group.plot, col = group, pch = lambda), alpha = 0.5) +
+    geom_line(data = Re.temp, aes(x = week, y = value), lwd = 1.0) +
     facet_wrap(~ country) +
     theme_classic() + labs(x = 'Week', y = 'Re') +
     scale_color_viridis(discrete = T, option = 'D') + scale_y_continuous(limits = c(0, 2.0))
@@ -313,56 +249,16 @@ for (outbreak in 1:length(to.keep)) {
 # Outbreak 13: beta tends to be overestimated; 1e4 clearly better for R0; 1e4 a little better I think
 
 # Plot distribution of relative param error at t=15 and t=20:
-# o.err <- o[o$week %in% c(15, 20), c(1:7, 9, 11, 13, 15)]
-o.err <- o[o$week == 20, c(1:7, 9, 11, 13, 15)]
-# o.err <- o.err[o.err$oev_base == 1e5 & o.err$lambda != 1.05, ]
-o.err$L.err = o.err$D.err = o.err$R0mx.err = o.err$R0mn.err = o.err$aS.err = NA
+o.err <- o.err[o.err$week == 20, ]
 
-# First, subtract actual - fit, and divide by observed
-for (outbreak in to.keep) {
-  o.err$L.err[o.err$outbreak == outbreak] <-
-    (select.parms$value[select.parms$outbreak == outbreak & select.parms$parameter == 'L'] -
-       o.err$L[o.err$outbreak == outbreak]) * -1 /
-    select.parms$value[select.parms$outbreak == outbreak & select.parms$parameter == 'L']
-  
-  o.err$D.err[o.err$outbreak == outbreak] <-
-    (select.parms$value[select.parms$outbreak == outbreak & select.parms$parameter == 'D'] -
-       o.err$D[o.err$outbreak == outbreak]) * -1 /
-    select.parms$value[select.parms$outbreak == outbreak & select.parms$parameter == 'D']
-  
-  o.err$R0mx.err[o.err$outbreak == outbreak] <-
-    (select.parms$value[select.parms$outbreak == outbreak & select.parms$parameter == 'R0mx'] -
-       o.err$R0max[o.err$outbreak == outbreak]) * -1 /
-    select.parms$value[select.parms$outbreak == outbreak & select.parms$parameter == 'R0mx']
-  
-  o.err$R0mn.err[o.err$outbreak == outbreak] <-
-    (select.parms$value[select.parms$outbreak == outbreak & select.parms$parameter == 'R0mn'] -
-       o.err$R0min[o.err$outbreak == outbreak]) * -1 /
-    select.parms$value[select.parms$outbreak == outbreak & select.parms$parameter == 'R0mn']
-  
-  o.err$aS.err[o.err$outbreak == outbreak] <-
-    (select.parms$value[select.parms$outbreak == outbreak & select.parms$parameter == 'airScale'] -
-       o.err$airScale[o.err$outbreak == outbreak]) * -1 /
-    select.parms$value[select.parms$outbreak == outbreak & select.parms$parameter == 'airScale']
-}
-
-o.err$oev_denom <- factor(o.err$oev_denom)
-o.err$oev_base <- factor(o.err$oev_base)
-# p1 <- ggplot(data = o.err) +
-#   geom_histogram(aes(x = L.err, fill = oev_denom), binwidth = 0.05, col = 'white') +
-#   geom_vline(xintercept = 0, lty = 2) +
-#   theme_classic() + labs(x = 'Relative Error (L)', y = '', fill = 'OEV Denom.') +
-#   scale_fill_brewer(palette = 'Set1') +
-#   facet_grid(week ~ oev_denom)
-
-o.err$L.err[o.err$L.err > 2.0] <- NA
-o.err$D.err[o.err$D.err > 2.0] <- NA
-o.err$R0mx.err[o.err$R0mx.err > 2.0] <- NA
-o.err$R0mn.err[o.err$R0mn.err > 2.0] <- NA
-o.err$aS.err[o.err$aS.err > 2.0] <- NA
+# o.err$L.err[o.err$L.err > 2.0] <- NA
+# o.err$D.err[o.err$D.err > 2.0] <- NA
+# o.err$R0mx.err[o.err$R0mx.err > 2.0] <- NA
+# o.err$R0mn.err[o.err$R0mn.err > 2.0] <- NA
+# o.err$aS.err[o.err$aS.err > 2.0] <- NA
 
 p1 <- ggplot(data = o.err) +
-  geom_histogram(aes(x = L.err), binwidth = 0.02, col = 'white', fill = 'steelblue') +
+  geom_histogram(aes(x = L.err), binwidth = 0.2, col = 'white', fill = 'steelblue') +
   geom_vline(xintercept = 0, lty = 2) +
   theme_classic() + labs(x = 'Relative Error (L)', y = '', main = 'Error at t=20') +
   scale_fill_brewer(palette = 'Set1')
@@ -395,7 +291,7 @@ for (o1 in levels(o.err$oev_base)) {
     o.err.temp$outbreak <- factor(o.err.temp$outbreak)
     
     p1 <- ggplot(data = o.err.temp) +
-      geom_histogram(aes(x = L.err, fill = lambda, col = outbreak), binwidth = 0.02, col = 'white') +#, fill = 'steelblue') +
+      geom_histogram(aes(x = L.err, fill = lambda, col = outbreak), binwidth = 0.2, col = 'white') +#, fill = 'steelblue') +
       geom_vline(xintercept = 0, lty = 2) +
       theme_classic() + labs(x = 'Relative Error (L)', y = '', title = paste(o1, o2, sep = '_')) +
       scale_fill_brewer(palette = 'Set1')
@@ -426,55 +322,6 @@ for (o1 in levels(o.err$oev_base)) {
 # Good: 1e5/10 (but tends to underestimate D more than over), 1e5/20 (same w/ D); 1e4/5 and 1e4/10 aren't bad, but don't look quite as good?
 
 # Plot distribution of relative error for S, beta, R0, Re for each country at t = 10, 15, 20:
-oStates.err <- oStates[oStates$week %in% c(10, 15, 20), c(1:8, 12:14)]
-
-# oStates.err <- oStates.err[(oStates.err$oev_base == 1e4 & oStates.err$oev_denom == 5 & oStates.err$lambda == 1.0) |
-#                              (oStates.err$oev_base == 1e4 & oStates.err$oev_denom == 10 & oStates.err$lambda == 1.0) |
-#                              (oStates.err$oev_base == 1e5 & oStates.err$oev_denom == 20 & oStates.err$lambda == 1.05), ]
-
-oStates.err$Re.err = oStates.err$R0.err = oStates.err$beta.err = oStates.err$S.err = NA
-oStates.err$S <- oStates.err$S * 100000
-oStates.err$oev_denom <- factor(oStates.err$oev_denom)
-oStates.err$oev_base <- factor(oStates.err$oev_base)
-
-for (outbreak in 1:length(synth.runs.RATES)) {
-  print(outbreak)
-  susc_i <- synth.runs.S[[outbreak]]
-  beta.temp <- true.betas[[outbreak]]
-  R0.temp <- true.R0[[outbreak]]
-  Re.temp <- true.Re[[outbreak]]
-  
-  for (run in 1:length(unique(oStates.err$run))) {
-    for (oev_base in levels(oStates.err$oev_base)) {
-      for (oev in levels(oStates.err$oev_denom)) {
-        for (lambda in levels(oStates.err$lambda)) {
-          
-          for (count.index in 1:n) {
-            oStates.err.temp <- oStates.err[oStates.err$outbreak == to.keep[outbreak] & oStates.err$run == run & oStates.err$oev_base == oev_base & oStates.err$oev_denom == oev & oStates.err$lambda == lambda & oStates.err$country == countries[count.index], ]
-            
-            if (length(oStates.err.temp$country) > 0) {
-              
-              oStates.err$S.err[oStates.err$outbreak == to.keep[outbreak] & oStates.err$run == run & oStates.err$oev_denom == oev & oStates.err$lambda == lambda & oStates.err$country == countries[count.index]] <-
-                (-1 * (susc_i[c(10, 15, 20), count.index] - oStates.err.temp$S)) / susc_i[c(10, 15, 20), count.index]
-              oStates.err$beta.err[oStates.err$outbreak == to.keep[outbreak] & oStates.err$run == run & oStates.err$oev_denom == oev & oStates.err$lambda == lambda & oStates.err$country == countries[count.index]] <-
-                (-1 * (beta.temp[c(10, 15, 20), count.index] - oStates.err.temp$beta)) / beta.temp[c(10, 15, 20), count.index]
-              oStates.err$R0.err[oStates.err$outbreak == to.keep[outbreak] & oStates.err$run == run & oStates.err$oev_denom == oev & oStates.err$lambda == lambda & oStates.err$country == countries[count.index]] <-
-                (-1 * (R0.temp[c(10, 15, 20), count.index] - oStates.err.temp$R0)) / R0.temp[c(10, 15, 20), count.index]
-              oStates.err$Re.err[oStates.err$outbreak == to.keep[outbreak] & oStates.err$run == run & oStates.err$oev_denom == oev & oStates.err$lambda == lambda & oStates.err$country == countries[count.index]] <-
-                (-1 * (Re.temp[c(10, 15, 20), count.index] - oStates.err.temp$Re)) / Re.temp[c(10, 15, 20), count.index]
-            }
-            
-          }
-          
-        }
-      }
-    }
-  }
-}
-oStates.err$group <- paste(oStates.err$oev_base, oStates.err$oev_denom, sep = '_'); oStates.err$group <- factor(oStates.err$group)
-oStates.err$group <- factor(oStates.err$group, levels = levels(oStates.err$group)[c(2, 1, 5, 3:4)])
-oStates.err$outbreak <- factor(oStates.err$outbreak)
-
 oStates.err.10 <- oStates.err[oStates.err$week == 10, ]
 oStates.err.15 <- oStates.err[oStates.err$week == 15, ]
 oStates.err.20 <- oStates.err[oStates.err$week == 20, ]
@@ -509,20 +356,20 @@ p3 <- ggplot(data = oStates.err.20) +
 # scale_x_continuous(limits = c(-1, 1))
 grid.arrange(p1, p2, p3, ncol = 1)
 
-p1 <- ggplot(data = oStates.err.10) +
-  geom_histogram(aes(x = S.err, fill = outbreak), binwidth = 0.02, col = 'white') +
-  geom_vline(xintercept = 0, lty = 2) + facet_wrap(~ country, ncol = 1) +
-  theme_classic() + labs(x = 'Relative Error (S)', y = '', title = 'Error at t=10')
-p2 <- ggplot(data = oStates.err.15) +
-  geom_histogram(aes(x = S.err, fill = outbreak), binwidth = 0.03, col = 'white') +
-  geom_vline(xintercept = 0, lty = 2) + facet_wrap(~ country, ncol = 1) +
-  theme_classic() + labs(x = 'Relative Error (S)', y = '', title = 'Error at t=15')
-p3 <- ggplot(data = oStates.err.20) +
-  geom_histogram(aes(x = S.err, fill = outbreak), binwidth = 0.05, col = 'white') +
-  geom_vline(xintercept = 0, lty = 2) + facet_wrap(~ country, ncol = 1) +
-  theme_classic() + labs(x = 'Relative Error (S)', y = '', title = 'Error at t=20')# +
-  # scale_x_continuous(limits = c(-1, 1))
-grid.arrange(p1, p2, p3, ncol = 3)
+# p1 <- ggplot(data = oStates.err.10) +
+#   geom_histogram(aes(x = S.err, fill = outbreak), binwidth = 0.02, col = 'white') +
+#   geom_vline(xintercept = 0, lty = 2) + facet_wrap(~ country, ncol = 1) +
+#   theme_classic() + labs(x = 'Relative Error (S)', y = '', title = 'Error at t=10')
+# p2 <- ggplot(data = oStates.err.15) +
+#   geom_histogram(aes(x = S.err, fill = outbreak), binwidth = 0.03, col = 'white') +
+#   geom_vline(xintercept = 0, lty = 2) + facet_wrap(~ country, ncol = 1) +
+#   theme_classic() + labs(x = 'Relative Error (S)', y = '', title = 'Error at t=15')
+# p3 <- ggplot(data = oStates.err.20) +
+#   geom_histogram(aes(x = S.err, fill = outbreak), binwidth = 0.05, col = 'white') +
+#   geom_vline(xintercept = 0, lty = 2) + facet_wrap(~ country, ncol = 1) +
+#   theme_classic() + labs(x = 'Relative Error (S)', y = '', title = 'Error at t=20')# +
+#   # scale_x_continuous(limits = c(-1, 1))
+# grid.arrange(p1, p2, p3, ncol = 3)
 
 p1 <- ggplot(data = oStates.err.10) +
   geom_histogram(aes(x = beta.err, fill = group), binwidth = 0.02, col = 'white') +#, fill = 'steelblue') +
@@ -554,21 +401,21 @@ p3 <- ggplot(data = oStates.err.20) +
 # scale_x_continuous(limits = c(-1, 1))
 grid.arrange(p1, p2, p3, ncol = 1)
 
-p1 <- ggplot(data = oStates.err.10) +
-  geom_histogram(aes(x = beta.err, fill = outbreak), binwidth = 0.02, col = 'white') +
-  geom_vline(xintercept = 0, lty = 2) + facet_wrap(~ country, ncol = 1) +
-  theme_classic() + labs(x = 'Relative Error (Beta)', y = '', title = 'Error at t=10')
-p2 <- ggplot(data = oStates.err.15) +
-  geom_histogram(aes(x = beta.err, fill = outbreak), binwidth = 0.03, col = 'white') +
-  geom_vline(xintercept = 0, lty = 2) + facet_wrap(~ country, ncol = 1) +
-  theme_classic() + labs(x = 'Relative Error (Beta)', y = '', title = 'Error at t=15') +
-  scale_x_continuous(limits = c(-1, 1))
-p3 <- ggplot(data = oStates.err.20) +
-  geom_histogram(aes(x = beta.err, fill = outbreak), binwidth = 0.05, col = 'white') +
-  geom_vline(xintercept = 0, lty = 2) + facet_wrap(~ country, ncol = 1) +
-  theme_classic() + labs(x = 'Relative Error (Beta)', y = '', title = 'Error at t=20')# +
-  # scale_x_continuous(limits = c(-1, 1))
-grid.arrange(p1, p2, p3, ncol = 3)
+# p1 <- ggplot(data = oStates.err.10) +
+#   geom_histogram(aes(x = beta.err, fill = outbreak), binwidth = 0.02, col = 'white') +
+#   geom_vline(xintercept = 0, lty = 2) + facet_wrap(~ country, ncol = 1) +
+#   theme_classic() + labs(x = 'Relative Error (Beta)', y = '', title = 'Error at t=10')
+# p2 <- ggplot(data = oStates.err.15) +
+#   geom_histogram(aes(x = beta.err, fill = outbreak), binwidth = 0.03, col = 'white') +
+#   geom_vline(xintercept = 0, lty = 2) + facet_wrap(~ country, ncol = 1) +
+#   theme_classic() + labs(x = 'Relative Error (Beta)', y = '', title = 'Error at t=15') +
+#   scale_x_continuous(limits = c(-1, 1))
+# p3 <- ggplot(data = oStates.err.20) +
+#   geom_histogram(aes(x = beta.err, fill = outbreak), binwidth = 0.05, col = 'white') +
+#   geom_vline(xintercept = 0, lty = 2) + facet_wrap(~ country, ncol = 1) +
+#   theme_classic() + labs(x = 'Relative Error (Beta)', y = '', title = 'Error at t=20')# +
+#   # scale_x_continuous(limits = c(-1, 1))
+# grid.arrange(p1, p2, p3, ncol = 3)
 
 p1 <- ggplot(data = oStates.err.10) +
   geom_histogram(aes(x = R0.err, fill = group), binwidth = 0.01, col = 'white') +#, fill = 'steelblue') +
@@ -600,20 +447,20 @@ p3 <- ggplot(data = oStates.err.20) +
 # scale_x_continuous(limits = c(-1, 1))
 grid.arrange(p1, p2, p3, ncol = 1)
 
-p1 <- ggplot(data = oStates.err.10) +
-  geom_histogram(aes(x = R0.err, fill = outbreak), binwidth = 0.02, col = 'white') +
-  geom_vline(xintercept = 0, lty = 2) + facet_wrap(~ country, ncol = 1) +
-  theme_classic() + labs(x = 'Relative Error (R0)', y = '', title = 'Error at t=10')
-p2 <- ggplot(data = oStates.err.15) +
-  geom_histogram(aes(x = R0.err, fill = outbreak), binwidth = 0.02, col = 'white') +
-  geom_vline(xintercept = 0, lty = 2) + facet_wrap(~ country, ncol = 1) +
-  theme_classic() + labs(x = 'Relative Error (R0)', y = '', title = 'Error at t=15')
-p3 <- ggplot(data = oStates.err.20) +
-  geom_histogram(aes(x = R0.err, fill = outbreak), binwidth = 0.02, col = 'white') +
-  geom_vline(xintercept = 0, lty = 2) + facet_wrap(~ country, ncol = 1) +
-  theme_classic() + labs(x = 'Relative Error (R0)', y = '', title = 'Error at t=20')# +
-  # scale_x_continuous(limits = c(-1, 1))
-grid.arrange(p1, p2, p3, ncol = 3)
+# p1 <- ggplot(data = oStates.err.10) +
+#   geom_histogram(aes(x = R0.err, fill = outbreak), binwidth = 0.02, col = 'white') +
+#   geom_vline(xintercept = 0, lty = 2) + facet_wrap(~ country, ncol = 1) +
+#   theme_classic() + labs(x = 'Relative Error (R0)', y = '', title = 'Error at t=10')
+# p2 <- ggplot(data = oStates.err.15) +
+#   geom_histogram(aes(x = R0.err, fill = outbreak), binwidth = 0.02, col = 'white') +
+#   geom_vline(xintercept = 0, lty = 2) + facet_wrap(~ country, ncol = 1) +
+#   theme_classic() + labs(x = 'Relative Error (R0)', y = '', title = 'Error at t=15')
+# p3 <- ggplot(data = oStates.err.20) +
+#   geom_histogram(aes(x = R0.err, fill = outbreak), binwidth = 0.02, col = 'white') +
+#   geom_vline(xintercept = 0, lty = 2) + facet_wrap(~ country, ncol = 1) +
+#   theme_classic() + labs(x = 'Relative Error (R0)', y = '', title = 'Error at t=20')# +
+#   # scale_x_continuous(limits = c(-1, 1))
+# grid.arrange(p1, p2, p3, ncol = 3)
 
 p1 <- ggplot(data = oStates.err.10) +
   geom_histogram(aes(x = Re.err, fill = group), binwidth = 0.01, col = 'white') +#, fill = 'steelblue') +
@@ -662,7 +509,7 @@ grid.arrange(p1, p2, p3, ncol = 3)
 # for things like R0, oev_base 1e4 seems best
 
 dev.off()
-
+rm(list=ls())
 
 
 
