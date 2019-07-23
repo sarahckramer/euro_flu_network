@@ -12,8 +12,8 @@ for (i in 1:length(synth.runs.RATES)) {
 }
 
 # Prescribe OEV parameters:
-oev_base <- 5e4 # 1e4, 1e5, 1e6
-oev_denom <- 5.0 # 5, 10, 20
+oev_base <- 1e4 # 1e4, 1e5, 1e6
+oev_denom <- 10.0 # 5, 10, 20
 
 # Calculate "old" OEV format:
 source('code/functions/calc_obsvars.R')
@@ -52,7 +52,7 @@ for (i in 1:length(synth.runs.RATES)) {
 matplot(synth.runs.RATES[[1]], pch = 20, col = viridis(21), cex = 0.8, type = 'b', lty = 1)
 
 # Save results:
-save(synth.runs.RATES, file = 'syntheticTests/syntheticData/synth_07-14_RATES_wError_5e4_5.RData')
+save(synth.runs.RATES, file = 'syntheticTests/syntheticData/tmp_exp_1.75/synth_07-14_RATES_wError_1e4_10.RData')
 
 
 

@@ -219,11 +219,11 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     }
     xnew <- x
     
-    if (any.pushed.negative) {
-      do.reprobing <- TRUE
-    } else {
-      do.reprobing <- FALSE
-    }
+    # if (any.pushed.negative) {
+    #   do.reprobing <- TRUE
+    # } else {
+    #   do.reprobing <- FALSE
+    # }
     
     # # Finally, reduce S and I in "empty" compartments to zero
     # to.zero <- (1:(dim(xpost)[1]))[!((1:dim(xpost)[1]) %in% to.adjust)]
@@ -236,12 +236,15 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     # (any alp > 0.9; 5 countries obs < 500; divergence?)
     print('')
     print(any(alps[, tt] > 0.9))
+    print(any(alps[, tt] > 0.95))
+    print(any(alps[, tt] > 0.98))
     # print(any(alps[, tt] < 0.3)) # detect low OEV before divergence occurs? - but this would really only be true if collapse was occurring, not gradual divergence
-    print(any(obs_i[tt, ] > 500 & (rowMeans(obs_ens) > 1.2 * obs_i[tt, ] | rowMeans(obs_ens) < 0.8 * obs_i[tt, ])))
-    print(which(obs_i[tt, ] > 500 & (rowMeans(obs_ens) > 1.2 * obs_i[tt, ] | rowMeans(obs_ens) < 0.8 * obs_i[tt, ])))
+    print(any(obs_i[tt, ] > 500 & (rowMeans(obs_ens) > 1.5 * obs_i[tt, ] | rowMeans(obs_ens) < 0.5 * obs_i[tt, ])))
+    # print(which(obs_i[tt, ] > 500 & (rowMeans(obs_ens) > 1.2 * obs_i[tt, ] | rowMeans(obs_ens) < 0.8 * obs_i[tt, ])))
     # first and third tend to be true early on; first stops being true around tt == 10, but last one is always true...; 30% - a few weeks near peak where only a few countries; 50% - still always true, but sometimes just for one country
     # seems like, to use this third one, we have to first get it to a state where it's not constantly diverging so much?
     # stop adjusting below 0 after tt == 13! Use this somehow? Then also if any alp > 0.95? Or if >5 diverge by 20%?
+    print('')
     
     # REPROBING
     # alp > c(0.80, 0.85, 0.90, 0.95); mean or median? (once reprobing in effect, median can be much higher!); what percent? (c(0.02, 0.05, 0.10))
@@ -254,7 +257,7 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
       # if (mean(alp) > 0.85) {
       print('Reprobing...')
       
-      rpnum <- ceiling(0.05 * num_ens) # 2%? 5%?
+      rpnum <- ceiling(0.02 * num_ens) # 2%? 5%?
       rpid <- sample(1:num_ens, rpnum)
       
       parms.reprobe <- t(lhs(rpnum, param.bound))

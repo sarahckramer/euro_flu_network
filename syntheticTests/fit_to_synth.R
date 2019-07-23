@@ -5,7 +5,6 @@
 
 # Questions for Sen: Any issues with parameters not fitting well? What modifications did you make to the model? I0 randomly initiated everywhere or only in one/some locations?
 
-
 # [x] Try reinitiating/reprobing
 # [x] Check Sen's paper
 # [x] Check Sen's code - different start conditions (more narrow S, D up to 12, R0mn lowest at 1.0)
@@ -21,7 +20,7 @@
     # [] Proportional random movement (~0-5%)
     # [x] For fitting: draw all S and I from LHS
     # [x] Use j-2 and j for first two points
-    # [] Recode EAKF to loop through each country (like Sen), rather than using matrices?
+    # [x] Recode EAKF to loop through each country (like Sen), rather than using matrices?
 
 ### Read in libraries
 library("truncnorm"); library("tgp"); library("MASS"); library(reshape2); require(plyr)
@@ -61,7 +60,7 @@ theta_up <- c(L_up, D_up, Rmx_up, Rmn_up, airScale_up)
 param.bound <- cbind(theta_low, theta_up)
 
 ### Initial state variable values
-S0_low <- 0.30; S0_up <- 1.00 # proportion of population
+S0_low <- 0.50; S0_up <- 0.90 # proportion of population
 I0_low <- 0; I0_up <- 0.001 # proportion of population
 
 ### Parameters for the filters

@@ -4,15 +4,15 @@ m = o = oState = alps = NULL
 
 # Loop through files:
 for (i in 1:350) {
-  test.file <- paste0('syntheticTests/outputs/cluster/071519/added_loop/outputMet', i, '_I0range.csv')
+  test.file <- paste0('syntheticTests/outputs/cluster/071519/loop_reduceS0_reduceI0/outputMet', i, '_loop_S0I0range.csv')
   if (file.exists(test.file)) {
     
     # print(i)
     m.temp <- read.csv(test.file)
-    o.temp <- read.csv(paste0('syntheticTests/outputs/cluster/071519/added_loop/outputOP', i, '_I0range.csv'))
-    load(paste0('syntheticTests/outputs/cluster/071519/added_loop/outputS', i, '_I0range.RData'))
-    load(paste0('syntheticTests/outputs/cluster/071519/added_loop/outputI', i, '_I0range.RData'))
-    load(paste0('syntheticTests/outputs/cluster/071519/added_loop/outputAlps', i, '_I0range.RData'))
+    o.temp <- read.csv(paste0('syntheticTests/outputs/cluster/071519/loop_reduceS0_reduceI0/outputOP', i, '_loop_S0I0range.csv'))
+    load(paste0('syntheticTests/outputs/cluster/071519/loop_reduceS0_reduceI0/outputS', i, '_loop_S0I0range.RData'))
+    load(paste0('syntheticTests/outputs/cluster/071519/loop_reduceS0_reduceI0/outputI', i, '_loop_S0I0range.RData'))
+    load(paste0('syntheticTests/outputs/cluster/071519/loop_reduceS0_reduceI0/outputAlps', i, '_loop_S0I0range.RData'))
 
     m <- rbind(m, m.temp); o <- rbind(o, o.temp)
     
@@ -46,10 +46,10 @@ alps$country <- countries[alps$country]
 # alps<- alps[alps$outbreak %in% c(1, 6, 9, 13) & alps$oev_base != 1e6, ]
 
 # Save compiled files:
-write.csv(m, file = 'syntheticTests/outputs/cluster/071519/outputMet_loop.csv', row.names = FALSE)
-write.csv(o, file = 'syntheticTests/outputs/cluster/071519/outputOP_loop.csv', row.names = FALSE)
-write.csv(oState, file = 'syntheticTests/outputs/cluster/071519/outputOPStates_loop.csv', row.names = FALSE)
-write.csv(alps, file = 'syntheticTests/outputs/cluster/071519/outputAlps_loop.csv', row.names = FALSE)
+write.csv(m, file = 'syntheticTests/outputs/cluster/071519/outputMet_loop_reduceS0I0.csv', row.names = FALSE)
+write.csv(o, file = 'syntheticTests/outputs/cluster/071519/outputOP_loop_reduceS0I0.csv', row.names = FALSE)
+write.csv(oState, file = 'syntheticTests/outputs/cluster/071519/outputOPStates_loop_reduceS0I0.csv', row.names = FALSE)
+write.csv(alps, file = 'syntheticTests/outputs/cluster/071519/outputAlps_loop_reduceS0I0.csv', row.names = FALSE)
 
 # # Delete component files:
 # for (i in 1:24) {
