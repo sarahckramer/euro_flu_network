@@ -161,13 +161,18 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     
     ### FIX 1: Don't allow obsprior to be <0 - set to 0?
     # QUESTION: Don't do this yet? Sen hadn't corrected for aphysicalities yet
+    if (tt == 1) {
+      print(any(x < 0))
+      print(any(obs_ens < 0))
+    }
+    
     x[which(x < 0, arr.ind = T)] <- 0 # CHECK
     obs_ens[which(obs_ens < 0, arr.ind = T)] <- 0 # CHECK
     xprior[,, tt] <- x
     obsprior[,, tt] <- obs_ens
     
     # Loop through observations:
-    any.pushed.negative <- FALSE
+    #any.pushed.negative <- FALSE
     for (loc in 1:n) { # for (loc in n:1) { # to test for sensitivity to loop order
       # Get variances:
       obs_var <- obs_vars[tt, loc]
@@ -187,6 +192,7 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
       # POTENTIALLY CONDITION ON THIS!
       alps[loc, tt] <- alp
       print(paste0(countries[loc], ': ', round(alp, 3)))
+      print(prior_var)
       
       dy <- post_mean + alp * (obs_ens[loc, ] - prior_mean) - obs_ens[loc, ] # no NAs in synthetic data, so don't have to worry about that
       
@@ -203,10 +209,10 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
       obs_ens[loc, ] <- obs_ens[loc, ] + dy
       
       # print(any(x < 0)) # QUESTION: Is this and the next line a problem?
-      if (any(obs_ens < 0)) {
-        print(countries[loc])
-        any.pushed.negative <- TRUE
-      }
+      # if (any(obs_ens < 0)) {
+      #   print(countries[loc])
+      #   any.pushed.negative <- TRUE
+      # }
       # for (div.check.count in 1:n) {
       #   if (any(obs_ens[div.check.count, ] < 0)) {
       #     print(countries[div.check.count])

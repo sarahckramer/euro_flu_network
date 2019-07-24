@@ -2,7 +2,6 @@
 # This is just to plot out preliminary results
 # Eventually run in cluster and get full output files
 
-
 # Questions for Sen: Any issues with parameters not fitting well? What modifications did you make to the model? I0 randomly initiated everywhere or only in one/some locations?
 
 # [x] Try reinitiating/reprobing
@@ -21,6 +20,15 @@
     # [x] For fitting: draw all S and I from LHS
     # [x] Use j-2 and j for first two points
     # [x] Recode EAKF to loop through each country (like Sen), rather than using matrices?
+
+# Using alp, 0.95 is sometimes hit before t=10, and 0.9 is often hit in this time period; both again before 20 and on
+    # although 0.98 not until after main peak has passed
+# 50% error hit sometimes before 15, and much of the time after
+
+# Any reason to tune oev_base more so that it better matches up with prior_var at tt=1? Right now it's quite a bit smaller
+    # But 1e5 oev_base basically does this, and it doesn't have a strong impact on fit
+    # It does look like SE always has a relatively low initial alp - why is prior_var so large for SE?
+    # Actually not always! But does have a tendency to be on the low side
 
 ### Read in libraries
 library("truncnorm"); library("tgp"); library("MASS"); library(reshape2); require(plyr)
@@ -72,7 +80,7 @@ oev_base <- 1e4; oev_denom <- 10.00
 # OEVs look more like those calculated from Aim1 if denominator is 10 (although I know this isn't a great test)
 
 num_ens <- 300 # use 300 for ensemble filters, 10000 for particle filters
-num_runs <- 1
+num_runs <- 3
 
 ### Specify the country for which we are performing a forecast
 countries <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'FR', 'DE', 'HU', 'IE', 'IT',
