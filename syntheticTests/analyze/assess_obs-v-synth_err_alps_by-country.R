@@ -3,7 +3,7 @@
 # Can also use this code to determine which oev_base/oev_denom/lambda combos lead to collapse
 
 # Read in "alps":
-alps <- read.csv('syntheticTests/outputs/cluster/071519/outputAlps_loop_reduceS0I0.csv')
+alps <- read.csv('syntheticTests/outputs/cluster/072319/outputAlps_loop_reduceS0_reprobeEven.csv')
 # alps <- alps[alps$oev_base != 1e6, ]
 
 # Plot alps over each outbreak by country:

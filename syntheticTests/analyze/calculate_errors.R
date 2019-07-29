@@ -1,8 +1,10 @@
 
+library(reshape2)
+
 # Read in results:
-m <- read.csv('syntheticTests/outputs/cluster/071519/outputMet_loop_reduceS0I0.csv')
-o <- read.csv('syntheticTests/outputs/cluster/071519/outputOP_loop_reduceS0I0.csv')
-oStates <- read.csv('syntheticTests/outputs/cluster/071519/outputOPStates_loop_reduceS0I0.csv')
+m <- read.csv('syntheticTests/outputs/cluster/072319/outputMet_loop_reduceS0_reprobeEven.csv')
+o <- read.csv('syntheticTests/outputs/cluster/072319/outputOP_loop_reduceS0_reprobeEven.csv')
+oStates <- read.csv('syntheticTests/outputs/cluster/072319/outputOPStates_loop_reduceS0_reprobeEven.csv')
 
 # Check what combos ran:
 table(m$oev_base, m$oev_denom)
@@ -189,7 +191,7 @@ oStates.err$outbreak <- factor(oStates.err$outbreak)
 
 # Write new files as list (m, o, o.err, oStates, oStates.err)
 res <- list(m, o, o.err, oStates, oStates.err)
-save(res, file = 'syntheticTests/outputs/cluster/071519/res_loop_S0I0range.RData')
+save(res, file = 'syntheticTests/outputs/cluster/072319/res_loop_S0range_reprobeEven.RData')
 
 # true.epi.params <- list(true.betas, true.R0, true.Re)
 # save(true.epi.params, file = 'syntheticTests/outputs/cluster/071519/true_betaR0Re.RData')

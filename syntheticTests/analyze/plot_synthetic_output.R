@@ -1,11 +1,11 @@
 
 library(ggplot2); library(gridExtra)
 
-pdf('syntheticTests/outputs/cluster/model_fit_072219_loop_S0I0_Truth.pdf',
-    width = 16, height = 12)
+# pdf('syntheticTests/outputs/cluster/model_fit_072519_loop_S0_reprobeEven.pdf',
+#     width = 16, height = 12)
 
 # Read in results:
-load('syntheticTests/outputs/cluster/071519/res_loop_S0I0range.RData')
+load('syntheticTests/outputs/cluster/071519/res_loop_S0range.RData')
 
 m <- res[[1]]
 o <- res[[2]]
@@ -47,15 +47,6 @@ for (outbreak in 1:length(to.keep)) {
   print(p1)
   
 }
-
-# Outbreak 1: Generally looks the best of all of them; some collapse w/ 1e4/10; undershoots IE, PL, SI, SK; see CZ - tries to increase, pulled back down, trouble increasing later
-    # most of these (except SI) are fairly small and late (also has issues with very small late peaks, but I figure this might be inevitable?); SI early but very high
-# Outbreak 6: Undershooting peaks in AT, BE, ES, NL, PL; 1e5/20 gets closest to hitting them, but still misses; seeing some collapse w/ 1e4/10
-    # BE very late and low - one of (the?) last to peak; same with NL; both ES and PL are fairly late and small; AT is mid-way and medium-sized, so not sure what's happening here - SK peaks same time but a little lower?
-# Outbreak 9: Trouble w/ UK, FR, PL; seems like there's too much error in the obs. early on, even with higher lambda
-    # all 3 relatively late, and PL is still pretty high; FR is smallest of the 3 (and gets overshot); UK and FR actually pretty close, though; overshoots HU: also very late and small
-# Outbreak 13: Difficulty w/ FR, BE, DE, IE (difficulty reaching peak intensity); seems to do better with countries w/ larger outbreaks; consistently overshoots IT and undershoots many others; no obvious best combo
-    # interesting that it overshoot IT - this is the second, later very large peak (DK similar time but slightly smaller); other troublesome ones are late and are lower in peak intensity
 
 # Here I took out some of the combos that lead to collapse beforehand, but it might be worth exploring 1e4/20 and 1e4/higher lambdas?
 # Restructure OEV form so that lower relative error on lower obs. (so, something greater than squaring?)
@@ -327,17 +318,20 @@ oStates.err.15 <- oStates.err[oStates.err$week == 15, ]
 oStates.err.20 <- oStates.err[oStates.err$week == 20, ]
 
 p1 <- ggplot(data = oStates.err.10) +
-  geom_histogram(aes(x = S.err, fill = group), binwidth = 0.02, col = 'white') +#, fill = 'steelblue') +
+  geom_histogram(aes(x = S.err, fill = outbreak), binwidth = 0.02, col = 'white') +#, fill = 'steelblue') +
   geom_vline(xintercept = 0, lty = 2) +
-  theme_classic() + labs(x = 'Relative Error (S)', y = '', title = 'Error at t=10')
+  theme_classic() + labs(x = 'Relative Error (S)', y = '', title = 'Error at t=10') +
+  scale_fill_brewer(palette = 'Set1', guide = FALSE)
 p2 <- ggplot(data = oStates.err.15) +
-  geom_histogram(aes(x = S.err, fill = group), binwidth = 0.02, col = 'white') +#, fill = 'steelblue') +
+  geom_histogram(aes(x = S.err, fill = outbreak), binwidth = 0.02, col = 'white') +#, fill = 'steelblue') +
   geom_vline(xintercept = 0, lty = 2) +
-  theme_classic() + labs(x = 'Relative Error (S)', y = '', title = 'Error at t=15')
+  theme_classic() + labs(x = 'Relative Error (S)', y = '', title = 'Error at t=15') +
+  scale_fill_brewer(palette = 'Set1', guide = FALSE)
 p3 <- ggplot(data = oStates.err.20) +
-  geom_histogram(aes(x = S.err, fill = group), binwidth = 0.02, col = 'white') +#, fill = 'steelblue') +
+  geom_histogram(aes(x = S.err, fill = outbreak), binwidth = 0.02, col = 'white') +#, fill = 'steelblue') +
   geom_vline(xintercept = 0, lty = 2) +
-  theme_classic() + labs(x = 'Relative Error (S)', y = '', title = 'Error at t=20')# +
+  theme_classic() + labs(x = 'Relative Error (S)', y = '', title = 'Error at t=20') +
+  scale_fill_brewer(palette = 'Set1', guide = FALSE)# +
   # scale_x_continuous(limits = c(-1, 1))
 grid.arrange(p1, p2, p3, ncol = 1)
 
@@ -418,17 +412,20 @@ grid.arrange(p1, p2, p3, ncol = 1)
 # grid.arrange(p1, p2, p3, ncol = 3)
 
 p1 <- ggplot(data = oStates.err.10) +
-  geom_histogram(aes(x = R0.err, fill = group), binwidth = 0.01, col = 'white') +#, fill = 'steelblue') +
+  geom_histogram(aes(x = R0.err, fill = outbreak), binwidth = 0.01, col = 'white') +#, fill = 'steelblue') +
   geom_vline(xintercept = 0, lty = 2) +
-  theme_classic() + labs(x = 'Relative Error (R0)', y = '', title = 'Error at t=10')
+  theme_classic() + labs(x = 'Relative Error (R0)', y = '', title = 'Error at t=10') +
+  scale_fill_brewer(palette = 'Set1', guide = FALSE)
 p2 <- ggplot(data = oStates.err.15) +
-  geom_histogram(aes(x = R0.err, fill = group), binwidth = 0.02, col = 'white') +#, fill = 'steelblue') +
+  geom_histogram(aes(x = R0.err, fill = outbreak), binwidth = 0.02, col = 'white') +#, fill = 'steelblue') +
   geom_vline(xintercept = 0, lty = 2) +
-  theme_classic() + labs(x = 'Relative Error (R0)', y = '', title = 'Error at t=15')
+  theme_classic() + labs(x = 'Relative Error (R0)', y = '', title = 'Error at t=15') +
+  scale_fill_brewer(palette = 'Set1', guide = FALSE)
 p3 <- ggplot(data = oStates.err.20) +
-  geom_histogram(aes(x = R0.err, fill = group), binwidth = 0.02, col = 'white') +#, fill = 'steelblue') +
+  geom_histogram(aes(x = R0.err, fill = outbreak), binwidth = 0.02, col = 'white') +#, fill = 'steelblue') +
   geom_vline(xintercept = 0, lty = 2) +
-  theme_classic() + labs(x = 'Relative Error (R0)', y = '', title = 'Error at t=20')# +
+  theme_classic() + labs(x = 'Relative Error (R0)', y = '', title = 'Error at t=20') +
+  scale_fill_brewer(palette = 'Set1', guide = FALSE)# +
   # scale_x_continuous(limits = c(-1, 1))
 grid.arrange(p1, p2, p3, ncol = 1)
 
@@ -463,17 +460,20 @@ grid.arrange(p1, p2, p3, ncol = 1)
 # grid.arrange(p1, p2, p3, ncol = 3)
 
 p1 <- ggplot(data = oStates.err.10) +
-  geom_histogram(aes(x = Re.err, fill = group), binwidth = 0.01, col = 'white') +#, fill = 'steelblue') +
+  geom_histogram(aes(x = Re.err, fill = outbreak), binwidth = 0.01, col = 'white') +#, fill = 'steelblue') +
   geom_vline(xintercept = 0, lty = 2) +
-  theme_classic() + labs(x = 'Relative Error (Re)', y = '', title = 'Error at t=10')
+  theme_classic() + labs(x = 'Relative Error (Re)', y = '', title = 'Error at t=10') +
+  scale_fill_brewer(palette = 'Set1', guide = FALSE)
 p2 <- ggplot(data = oStates.err.15) +
-  geom_histogram(aes(x = Re.err, fill = group), binwidth = 0.02, col = 'white') +#, fill = 'steelblue') +
+  geom_histogram(aes(x = Re.err, fill = outbreak), binwidth = 0.02, col = 'white') +#, fill = 'steelblue') +
   geom_vline(xintercept = 0, lty = 2) +
-  theme_classic() + labs(x = 'Relative Error (Re)', y = '', title = 'Error at t=15')
+  theme_classic() + labs(x = 'Relative Error (Re)', y = '', title = 'Error at t=15') +
+  scale_fill_brewer(palette = 'Set1', guide = FALSE)
 p3 <- ggplot(data = oStates.err.20) +
-  geom_histogram(aes(x = Re.err, fill = group), binwidth = 0.02, col = 'white') +#, fill = 'steelblue') +
+  geom_histogram(aes(x = Re.err, fill = outbreak), binwidth = 0.02, col = 'white') +#, fill = 'steelblue') +
   geom_vline(xintercept = 0, lty = 2) +
-  theme_classic() + labs(x = 'Relative Error (Re)', y = '', title = 'Error at t=20')# +
+  theme_classic() + labs(x = 'Relative Error (Re)', y = '', title = 'Error at t=20') +
+  scale_fill_brewer(palette = 'Set1', guide = FALSE)# +
   # scale_x_continuous(limits = c(-1, 1))
 grid.arrange(p1, p2, p3, ncol = 1)
 

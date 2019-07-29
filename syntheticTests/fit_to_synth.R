@@ -53,7 +53,7 @@ output_header <- c('outbreak','run','oev_base', 'oev_denom','lambda', 'week', 'L
                    'D', 'D_sd', 'R0max', 'R0max_sd', 'R0min', 'R0min_sd', 'airScale', 'airScale_sd')
 
 ### Ensemble member numbers kept (for now):
-to.keep <- c(1, 6)#, 9, 13)
+to.keep <- c(1, 6, 9, 13)
 
 ### Global variables
 dt <- 1 # time step for SIRS integration
@@ -80,7 +80,7 @@ oev_base <- 1e4; oev_denom <- 10.00
 # OEVs look more like those calculated from Aim1 if denominator is 10 (although I know this isn't a great test)
 
 num_ens <- 300 # use 300 for ensemble filters, 10000 for particle filters
-num_runs <- 3
+num_runs <- 1
 
 ### Specify the country for which we are performing a forecast
 countries <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'FR', 'DE', 'HU', 'IE', 'IT',
@@ -162,7 +162,7 @@ for (outbreak in 1:length(to.keep)) {
   for (run in 1:num_runs) {
     par(mfrow = c(3, 2), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
     res <- EAKF_rFC(num_ens, tmstep, param.bound, obs_i, ntrn, obs_vars, tm.ini, tm.range,
-                    do.reprobing = FALSE)
+                    do.reprobing = TRUE)
 
     print(table(res[[1]][, 13]))
     print(table(res[[1]][, 14]))

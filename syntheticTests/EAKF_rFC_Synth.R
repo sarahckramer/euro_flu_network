@@ -29,27 +29,27 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
   # Determine which compartments need to be monitored
   # Others are always zero
   pos.comp <- which(t.comm > 0, arr.ind = TRUE)
-  destinations <- vector('list', n)
+  # destinations <- vector('list', n)
   pos.in.vector <- c()
-  count.by.pos <- c()
-  main.comp.val <- c()
+  # count.by.pos <- c()
+  # main.comp.val <- c()
   # rows.by.country <- vector('list', n)
   # start <- 1
   for (i in 1:n) {
     dests <- as.vector(pos.comp[, 2][pos.comp[, 1] == i])
     dests <- sort(c(dests, i))
-    destinations[[i]] <- dests
+    # destinations[[i]] <- dests
     pos.in.vector <- c(pos.in.vector, dests + n * (i - 1))
-    count.by.pos <- c(count.by.pos, rep(i, length(dests)))
-    main.comp.val <- c(main.comp.val, rep(i + n * (i - 1), length(dests)))
+    # count.by.pos <- c(count.by.pos, rep(i, length(dests)))
+    # main.comp.val <- c(main.comp.val, rep(i + n * (i - 1), length(dests)))
     # rows.by.country[[i]] <- start:(start + length(dests) - 1)
     # start <- start + length(dests)
   }; rm(dests)
   # num_comp <- length(unlist(rows.by.country))
   pos.in.vector <- sort(pos.in.vector)
-  count.by.pos <- countries[count.by.pos]
-  count.by.pos <- as.data.frame(cbind(count.by.pos, pos.in.vector, main.comp.val))
-  names(count.by.pos) <- c('country', 'pos', 'main')
+  # count.by.pos <- countries[count.by.pos]
+  # count.by.pos <- as.data.frame(cbind(count.by.pos, pos.in.vector, main.comp.val))
+  # names(count.by.pos) <- c('country', 'pos', 'main')
   # Probably best to keep large matrices, as it's easier to draw from SIR results
   # Just don't use the zeros in updating everything
   ##########################################################################################
@@ -140,7 +140,7 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
   
   #### Begin looping through observations
   #### Training process
-  # to.adjust <- c(pos.in.vector, pos.in.vector + n ** 2, pos.in.vector + n ** 2 * 2, param.indices)
+  to.adjust <- c(pos.in.vector, pos.in.vector + n ** 2, pos.in.vector + n ** 2 * 2, param.indices)
   for (tt in 1:ntrn) {
     
     # Update state variables and parameters, then integrate forward
@@ -150,29 +150,24 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     inflat <- diag(x = rep(lambda, n ** 2 * 3 + 5), n ** 2 * 3 + 5, n ** 2 * 3 + 5)
     inflat.obs <- diag(x = rep(lambda, n), n, n)
     xmn <- rowMeans(xprior[,, tt]); obs_ens.mn <- rowMeans(obs_ens)
-    x <- inflat %*% (xprior[,, tt] - xmn %*% matrix(1, 1, num_ens)) + xmn %*% matrix(1, 1, num_ens)
-    obs_ens <- inflat.obs %*% (obsprior[,, tt] - obs_ens.mn %*% matrix(1, 1, num_ens)) + obs_ens.mn %*% matrix(1, 1, num_ens)
+    x <- inflat %*% (xprior[,, tt] - (xmn %*% matrix(1, 1, num_ens))) + (xmn %*% matrix(1, 1, num_ens))
+    obs_ens <- inflat.obs %*% (obsprior[,, tt] - (obs_ens.mn %*% matrix(1, 1, num_ens))) + (obs_ens.mn %*% matrix(1, 1, num_ens))
     
-    # # Compartments w/o people should always be zero - alert if not:
-    # not.to.adjust <- (1:dim(xprior)[1])[!((1:dim(xprior)[1]) %in% to.adjust)]
-    # if (any(x[not.to.adjust, ] != 0)) {
-    #   print('Empty compartment(s) w/ > 0!')
-    # }
+    # Compartments w/o people should always be zero - alert if not:
+    not.to.adjust <- (1:dim(xprior)[1])[!((1:dim(xprior)[1]) %in% to.adjust)]
+    if (any(x[not.to.adjust, ] != 0)) {
+      print('Empty compartment(s) w/ > 0!')
+    }
     
     ### FIX 1: Don't allow obsprior to be <0 - set to 0?
     # QUESTION: Don't do this yet? Sen hadn't corrected for aphysicalities yet
-    if (tt == 1) {
-      print(any(x < 0))
-      print(any(obs_ens < 0))
-    }
-    
+    # And yes, some do dip below 0 already
     x[which(x < 0, arr.ind = T)] <- 0 # CHECK
     obs_ens[which(obs_ens < 0, arr.ind = T)] <- 0 # CHECK
     xprior[,, tt] <- x
     obsprior[,, tt] <- obs_ens
     
     # Loop through observations:
-    #any.pushed.negative <- FALSE
     for (loc in 1:n) { # for (loc in n:1) { # to test for sensitivity to loop order
       # Get variances:
       obs_var <- obs_vars[tt, loc]
@@ -191,8 +186,7 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
       alp <- sqrt(obs_var / (obs_var + prior_var))
       # POTENTIALLY CONDITION ON THIS!
       alps[loc, tt] <- alp
-      print(paste0(countries[loc], ': ', round(alp, 3)))
-      print(prior_var)
+      print(paste0(countries[loc], ':  ', round(alp, 3), '  ', obs_var / prior_var))
       
       dy <- post_mean + alp * (obs_ens[loc, ] - prior_mean) - obs_ens[loc, ] # no NAs in synthetic data, so don't have to worry about that
       
@@ -211,7 +205,6 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
       # print(any(x < 0)) # QUESTION: Is this and the next line a problem?
       # if (any(obs_ens < 0)) {
       #   print(countries[loc])
-      #   any.pushed.negative <- TRUE
       # }
       # for (div.check.count in 1:n) {
       #   if (any(obs_ens[div.check.count, ] < 0)) {
@@ -223,13 +216,8 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
       x <- Fn_checkxnobounds(x, S0.indices, I0.indices, param.indices) # this alone sets the "empty" compartments to 1.0; also, nothing to check newI? (okay, b/c makes sure don't go below 0)
       obs_ens[loc, obs_ens[loc, ] < 0] <- 0 # so we do ensure these aren't wild as we go, though
     }
-    xnew <- x
     
-    # if (any.pushed.negative) {
-    #   do.reprobing <- TRUE
-    # } else {
-    #   do.reprobing <- FALSE
-    # }
+    xnew <- x
     
     # # Finally, reduce S and I in "empty" compartments to zero
     # to.zero <- (1:(dim(xpost)[1]))[!((1:dim(xpost)[1]) %in% to.adjust)]
@@ -238,67 +226,50 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     # }
     # # xnew[to.zero, ] <- 0
     
-    # Check potential reprobing conditions:
-    # (any alp > 0.9; 5 countries obs < 500; divergence?)
-    print('')
-    print(any(alps[, tt] > 0.9))
-    print(any(alps[, tt] > 0.95))
-    print(any(alps[, tt] > 0.98))
-    # print(any(alps[, tt] < 0.3)) # detect low OEV before divergence occurs? - but this would really only be true if collapse was occurring, not gradual divergence
-    print(any(obs_i[tt, ] > 500 & (rowMeans(obs_ens) > 1.5 * obs_i[tt, ] | rowMeans(obs_ens) < 0.5 * obs_i[tt, ])))
-    # print(which(obs_i[tt, ] > 500 & (rowMeans(obs_ens) > 1.2 * obs_i[tt, ] | rowMeans(obs_ens) < 0.8 * obs_i[tt, ])))
-    # first and third tend to be true early on; first stops being true around tt == 10, but last one is always true...; 30% - a few weeks near peak where only a few countries; 50% - still always true, but sometimes just for one country
-    # seems like, to use this third one, we have to first get it to a state where it's not constantly diverging so much?
-    # stop adjusting below 0 after tt == 13! Use this somehow? Then also if any alp > 0.95? Or if >5 diverge by 20%?
-    print('')
-    
     # REPROBING
-    # alp > c(0.80, 0.85, 0.90, 0.95); mean or median? (once reprobing in effect, median can be much higher!); what percent? (c(0.02, 0.05, 0.10))
+    # do.reprobing controls whether reprobing is considered at all; condition for reprobing is inside if-loop
     if (do.reprobing) {
       
-      # Option to try re-initiating if high divergence early on; but this isn't something that it makes sense to do midway through an epidemic
-      # And by the time the large majority of countries have divergence, we're already well into the epidemic in at least some countries
-      
-      # if (sum(abs(obs_i[tt] - rowMeans(obs_ens)) > 0.2*obs_i[tt] & obs_i[tt, ] > 0) > 17) { # using this one seems to result at reprobing all through the peak...; granted, this was for a total reinit, right?
-      # if (mean(alp) > 0.85) {
-      print('Reprobing...')
-      
-      rpnum <- ceiling(0.02 * num_ens) # 2%? 5%?
-      rpid <- sample(1:num_ens, rpnum)
-      
-      parms.reprobe <- t(lhs(rpnum, param.bound))
-      
-      S0.reprobe = I0.reprobe = vector('list', rpnum)
-      for (ir in 1:rpnum) {
-        S0.reprobe[[ir]] <- matrix(parms.reprobe[1:(n ** 2), ir], nrow = n, ncol = n, byrow = T) * N
-        I0.reprobe[[ir]] <- matrix(parms.reprobe[1:(n ** 2) + (n ** 2), ir], nrow = n, ncol = n, byrow = T) * N
-        # S0.reprobe[[ir]] = I0.reprobe[[ir]] = matrix(0, nrow = n, ncol = n)
-        # 
-        # diag(S0.reprobe[[ir]]) <- parms.reprobe[1:n, ir]
-        # S0.reprobe[[ir]][S0.reprobe[[ir]] == 0] <- sapply(1:n, function(jx) {
-        #   rnorm(n - 1, mean = S0.reprobe[[ir]][jx, jx], sd = 0.05)
-        # })
-        # S0.reprobe[[ir]] <- t(S0.reprobe[[ir]])
-        # S0.reprobe[[ir]] <- S0.reprobe[[ir]] * N
-        # S0.reprobe[[ir]] <- as.vector(t(S0.reprobe[[ir]]))
-        # 
-        # diag(I0.reprobe[[ir]]) <- parms.reprobe[(1:n) + n, ir]
-        # I0.reprobe[[ir]] <- sweep(N / rowSums(N), 1, diag(I0.reprobe[[ir]]), '*')
-        # I0.reprobe[[ir]] <- I0.reprobe[[ir]] * N
-        # I0.reprobe[[ir]] <- as.vector(t(I0.reprobe[[ir]]))
-      }
-      S0.reprobe <- matrix(unlist(S0.reprobe), ncol = rpnum, byrow = F)
-      I0.reprobe <- matrix(unlist(I0.reprobe), ncol = rpnum, byrow = F)
-      parms.reprobe <- parms.reprobe[(dim(parms.reprobe)[1] - 4):(dim(parms.reprobe)[1]), ]
-      # S0.indices go row by row - so full first row, then on to second row, etc.
-      
-      xnew[S0.indices, rpid] <- S0.reprobe # dim 441 6
-      xnew[I0.indices, rpid] <- I0.reprobe
-      xnew[param.indices, rpid] <- parms.reprobe
-      
-      xnew[xnew < 0] <- 0
-      xnew <- Fn_checkxnobounds(xnew, S0.indices, I0.indices, param.indices)
-      # }
+      if (any(alps[, tt] > 0.9)) {
+      # if (any(alps[, tt] > 0.95)) {
+      # if (tt %% 2 == 0) { # even weeks only - so every other week
+      # if (tt %in% c(1:43)) { # dummy condition - reprobe every week
+        
+        print('Reprobing...')
+        
+        rpnum <- ceiling(0.05 * num_ens) # 2%? 5%?
+        rpid <- sample(1:num_ens, rpnum)
+        
+        parms.reprobe <- t(lhs(rpnum, param.bound))
+        
+        S0.reprobe = I0.reprobe = vector('list', rpnum)
+        for (ir in 1:rpnum) {
+          S0.reprobe[[ir]] <- matrix(parms.reprobe[1:(n ** 2), ir], nrow = n, ncol = n, byrow = T) * N
+          I0.reprobe[[ir]] <- matrix(parms.reprobe[1:(n ** 2) + (n ** 2), ir], nrow = n, ncol = n, byrow = T) * N
+        }
+        
+        # to get matrices in proper format for adding back to xnew, need to transpose before unlisting
+        S0.reprobe <- lapply(1:rpnum, function(ix) {
+          t(S0.reprobe[[ix]])
+        })
+        I0.reprobe <- lapply(1:rpnum, function(ix) {
+          t(I0.reprobe[[ix]])
+        })
+        
+        S0.reprobe <- matrix(unlist(S0.reprobe), ncol = rpnum, byrow = F)
+        I0.reprobe <- matrix(unlist(I0.reprobe), ncol = rpnum, byrow = F)
+        parms.reprobe <- parms.reprobe[(dim(parms.reprobe)[1] - 4):(dim(parms.reprobe)[1]), ]
+        # S0.indices go row by row - so full first row, then on to second row, etc.
+        
+        xnew[S0.indices, rpid] <- S0.reprobe # dim 400 6
+        xnew[I0.indices, rpid] <- I0.reprobe
+        xnew[param.indices, rpid] <- parms.reprobe
+        
+        # xnew[xnew < 0] <- 0
+        xnew[which(xnew < 0, arr.ind = TRUE)] <- 0
+        xnew <- Fn_checkxnobounds(xnew, S0.indices, I0.indices, param.indices)
+        
+      } # end of all conditional loops
       
     }
     
@@ -323,7 +294,7 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     I0.temp <- lapply(1:num_ens, function(ix) {
       matrix(xpost[I0.indices, ix, tt], ncol = n, byrow = TRUE)
     })
-    D.temp <- xpost[param.indices[2], , tt]; L.temp <- xpost[param.indices[1], , tt];
+    D.temp <- xpost[param.indices[2],, tt]; L.temp <- xpost[param.indices[1],, tt];
     airScale.temp <- xpost[param.indices[5],, tt]
     
     Sr_tmp <- sapply(1:300, function(ix) {
