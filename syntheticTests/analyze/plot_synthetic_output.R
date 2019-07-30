@@ -1,11 +1,11 @@
 
 library(ggplot2); library(gridExtra)
 
-# pdf('syntheticTests/outputs/cluster/model_fit_072519_loop_S0_reprobeEven.pdf',
-#     width = 16, height = 12)
+pdf('syntheticTests/outputs/cluster/model_fit_072519_loop_S0_rev.pdf',
+    width = 16, height = 12)
 
 # Read in results:
-load('syntheticTests/outputs/cluster/071519/res_loop_S0range.RData')
+load('syntheticTests/outputs/cluster/072319/res_loop_S0range_rev.RData')
 
 m <- res[[1]]
 o <- res[[2]]
