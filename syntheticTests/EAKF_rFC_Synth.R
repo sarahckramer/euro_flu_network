@@ -141,6 +141,7 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
   #### Begin looping through observations
   #### Training process
   to.adjust <- c(pos.in.vector, pos.in.vector + n ** 2, pos.in.vector + n ** 2 * 2, param.indices)
+  
   for (tt in 1:ntrn) {
     
     # Update state variables and parameters, then integrate forward

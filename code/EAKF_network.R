@@ -9,7 +9,7 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     do.reprobing <- FALSE
   }
   
-  to.check <- c(7, 9, 11, 19, 21) # difficult to look at 21 countries at once - assess visually for these 5
+  to.check <- c(7, 10, 18, 19, 20) # difficult to look at 21 countries at once - assess visually for these 5
   
   num_times <- floor(length(tm.range) / tmstep)
   nfc <- nsn - ntrn # number of weeks for forecasting
@@ -20,35 +20,19 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
   # Determine which compartments need to be monitored
   # Others are always zero
   pos.comp <- which(t.comm > 0, arr.ind = TRUE)
-  destinations <- vector('list', n)
   pos.in.vector <- c()
-  count.by.pos <- c()
-  main.comp.val <- c()
-  # rows.by.country <- vector('list', n)
-  # start <- 1
   for (i in 1:n) {
     dests <- as.vector(pos.comp[, 2][pos.comp[, 1] == i])
     dests <- sort(c(dests, i))
-    destinations[[i]] <- dests
     pos.in.vector <- c(pos.in.vector, dests + n * (i - 1))
-    count.by.pos <- c(count.by.pos, rep(i, length(dests)))
-    main.comp.val <- c(main.comp.val, rep(i + n * (i - 1), length(dests)))
-    # rows.by.country[[i]] <- start:(start + length(dests) - 1)
-    # start <- start + length(dests)
   }; rm(dests)
-  # num_comp <- length(unlist(rows.by.country))
   pos.in.vector <- sort(pos.in.vector)
-  count.by.pos <- countries[count.by.pos]
-  count.by.pos <- as.data.frame(cbind(count.by.pos, pos.in.vector, main.comp.val))
-  names(count.by.pos) <- c('country', 'pos', 'main')
-  # Probably best to keep large matrices, as it's easier to draw from SIR results
-  # Just don't use the zeros in updating everything
   ##########################################################################################
   
   # So <- matrix(0, n ** 2 * 2 + 5, num_ens) # last 5 rows are parameters
   xprior <- array(0, c(n ** 2 * 3 + 5, num_ens, ntrn + 1)) # add newI for each compartment, too
   xpost <- array(0, c(n ** 2 * 3 + 5, num_ens, ntrn))
-  fcast <- array(0, c(n ** 2 * 3, num_ens, nfc)) # fcast: S, I, newI
+  # fcast <- array(0, c(n ** 2 * 3, num_ens, nfc)) # fcast: S, I, newI
   
   obsprior <- array(NA, c(n, num_ens, ntrn + 1))
   obspost <- array(NA, c(n, num_ens, ntrn))
@@ -60,24 +44,14 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
   param.indices <- (max(newI.indices) + 1):(max(newI.indices) + 5) # where the epi parameters are stored
   
   ### Set initial conditions based on input parameters
-  param.bound <- cbind(c(rep(S0_low, n), rep(I0_low, n), theta_low),
-                       c(rep(S0_up, n), rep(I0_up, n), theta_up))
+  param.bound <- cbind(c(rep(S0_low, n ** 2), rep(I0_low, n ** 2), theta_low),
+                       c(rep(S0_up, n ** 2), rep(I0_up, n ** 2), theta_up))
   parms <- t(lhs(num_ens, param.bound))
   
   S0.temp = I0.temp = vector('list', num_ens)
   for (i in 1:num_ens) {
-    S0.temp[[i]] = I0.temp[[i]] = matrix(0, nrow = n, ncol = n)
-    
-    diag(S0.temp[[i]]) <- parms[1:n, i]
-    S0.temp[[i]][S0.temp[[i]] == 0] <- sapply(1:n, function(jx) {
-      rnorm(n - 1, mean = S0.temp[[i]][jx, jx], sd = 0.05)
-    })
-    S0.temp[[i]] <- t(S0.temp[[i]])
-    S0.temp[[i]] <- S0.temp[[i]] * N
-    
-    diag(I0.temp[[i]]) <- parms[(1:n) + n, i]
-    I0.temp[[i]] <- sweep(N / rowSums(N), 1, diag(I0.temp[[i]]), '*')
-    I0.temp[[i]] <- I0.temp[[i]] * N
+    S0.temp[[i]] <- matrix(parms[1:(n ** 2), i], nrow = n, ncol = n, byrow = T) * N
+    I0.temp[[i]] <- matrix(parms[1:(n ** 2) + (n ** 2), i], nrow = n, ncol = n, byrow = T) * N
   }
   parms <- parms[(dim(parms)[1] - 4):(dim(parms)[1]), ]
   
@@ -129,7 +103,7 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
   obs_ens <- lapply(1:n, function(ix) {
     colSums(Sr_tmp_newI[1:n + n * (ix - 1), ]) # adding up all new infecteds LIVING in each country
   })
-  obs_ens <- t(matrix(unlist(obs_ens), ncol = n, byrow = F))
+  obs_ens <- t(matrix(unlist(obs_ens), ncol = n, byrow = F)) # each row is a single country
   
   # Convert to rate per 100,000
   for (i in 1:n) {
@@ -140,11 +114,9 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
   
   alps <- matrix(NA, nrow = n, ncol = ntrn) # record ratios of obs_var to obs+prior var
   
-  #### Begin looping through observations
-  #### Training process
-  # par(mfrow = c(6, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+  ### Begin looping through observations
+  ### Training process
   to.adjust <- c(pos.in.vector, pos.in.vector + n ** 2, pos.in.vector + n ** 2 * 2, param.indices)
-  # par(mfrow = c(5, 4), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
   
   for (tt in 1:ntrn) {
     # Update state variables and parameters, then integrate forward
@@ -153,14 +125,14 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     if (updates) {
       print('Inflating variances...')
     }
+    
     # inflate all states and parameters
     inflat <- diag(x = rep(lambda, n ** 2 * 3 + 5), n ** 2 * 3 + 5, n ** 2 * 3 + 5)
     inflat.obs <- diag(x = rep(lambda, n), n, n)
     xmn <- rowMeans(xprior[,, tt]); obs_ens.mn <- rowMeans(obs_ens)
-    xprior[,, tt] <- inflat %*% (xprior[,, tt] - xmn %*% matrix(1, 1, num_ens)) + xmn %*% matrix(1, 1, num_ens)
-    obs_ens <- inflat.obs %*% (obsprior[,, tt] - obs_ens.mn %*% matrix(1, 1, num_ens)) + obs_ens.mn %*% matrix(1, 1, num_ens)
+    x <- inflat %*% (xprior[,, tt] - (xmn %*% matrix(1, 1, num_ens))) + (xmn %*% matrix(1, 1, num_ens))
+    obs_ens <- inflat.obs %*% (obsprior[,, tt] - (obs_ens.mn %*% matrix(1, 1, num_ens))) + (obs_ens.mn %*% matrix(1, 1, num_ens))
     # so we subtract the mean from the prior, inflate, then add the mean back in?
-    # QUESTION: All xprior with no people in compartment are still zero, right?
     # QUESTION: Any xprior < 0?
     
     # CHECK: No obsprior should be <0, right??
@@ -170,251 +142,81 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     }
     
     ### FIX 1: Don't allow obsprior to be <0 - set to 0?
+    x[which(x < 0, arr.ind = T)] <- 0
     obs_ens[which(obs_ens < 0, arr.ind = T)] <- 0
+    xprior[,, tt] <- x
     obsprior[,, tt] <- obs_ens
     
     if (updates) {
-      print('Calculating prior/post vars...')
+      print('Looping through observations...')
     }
-    ####  Get the variance of the ensemble
-    obs_var <- obs_vars[tt, ];
-    # QUESTION:
-    obs_var[obs_var == 0 & !is.na(obs_var)] <- NA
-    prior_var <- unlist(lapply(1:n, function(ix) { # for each country (ix)
-      var(obsprior[ix,, tt])
-    }))
-    post_var <- prior_var * obs_var / (prior_var + obs_var)
-    # basically, if var between ens mems is low compared to obs var, var in ens will dominate
-    # as obs_var gets comparatively lower, post_var also gets lower
-    # ranges from 0 to prior_var
+    
+    # Loop through observations:
+    for (loc in 1:n) { # for (loc in n:1) { # to test for sensitivity to loop order
+      
+      # Check that data point is not NA, and obs_var not 0:
+      obs_var <- obs_vars[tt, loc]
+      
+      if (!is.na(obs_i[tt, loc]) & !is.na(obs_var) & obs_var > 0) { # otherwise, don't fit with this point
+        prior_var <- var(obs_ens[loc, ])
+        post_var <- prior_var * (obs_var / (prior_var + obs_var))
+        
+        if (prior_var == 0) {
+          post_var <- 0
+          prior_var <- 1e-3
+        }
+        
+        prior_mean <- mean(obs_ens[loc, ])
+        post_mean <- post_var * (prior_mean / prior_var + obs_i[tt, loc] / obs_var)
+        
+        # Compute alpha and adjust distribution to conform to posterior moments:
+        alp <- sqrt(obs_var / (obs_var + prior_var))
+        alps[loc, tt] <- alp
+        if (updates) {
+          print(paste0(countries[loc], ':  ', round(alp, 3)))
+        }
+        # print(paste0(countries[loc], ':  ', round(alp, 3)))#, '  ', obs_var / prior_var))
+        
+        dy <- post_mean + alp * (obs_ens[loc, ] - prior_mean) - obs_ens[loc, ] # no NAs, since this is still in the if-loop
+        
+        # Get covariance of the prior state space and the observations, and loop over each state variable:
+        rr <- NULL
+        for (j in 1:dim(x)[1]) { # so here, we're not doing only "to.adjust" - QUESTION
+          C <- cov(x[j, ], obs_ens[loc, ]) / prior_var # this will be 0 for empty compartments
+          rr <- append(rr, C)
+        }
+        dx <- rr %*% t(dy)
+        
+        # Get adjusted ensemble and obs_ens:
+        x <- x + dx # QUESTION: then using the updated x and obs_ens to update further - isn't this a little not genuine?
+        obs_ens[loc, ] <- obs_ens[loc, ] + dy
+        
+        # if (any(obs_ens < 0)) {
+        #   print(countries[loc])
+        # }
+        
+        x[which(x < 0, arr.ind = TRUE)] <- 0 # try - set this to 1.0 instead of 0, like in Fn_checkxnobounds?
+        x <- Fn_checkxnobounds(x, S0.indices, I0.indices, param.indices) # this alone sets the "empty" compartments to 1.0; also, nothing to check newI? (okay, b/c makes sure don't go below 0)
+        obs_ens[loc, obs_ens[loc, ] < 0] <- 0 # so we do ensure these aren't wild as we go, though
+        
+      }
+      # CHECK: Any points where all obs_var either NA or 0?
+      
+    }
+    
+    xnew <- x
     
     if (updates) {
-      print(prior_var); print(''); print(post_var); print('')
-      print('Calculating prior/post means...')
-    }
-    if (any(prior_var == 0)) {
-      print('prior_var = 0!')
-      post_var[prior_var == 0] <- 0
-      prior_var[prior_var == 0] <- 1e-3
-    }
-    
-    prior_mean <- unlist(lapply(1:n, function(ix) {
-      mean(obsprior[ix,, tt])
-    }))
-    
-    # QUESITON: What was this line for?
-    # prior_var[prior_mean == prior_var & prior_mean == 0] <- 1.0
-    # looks like this is for where prior_var is 0 - we already fixed this above
-    
-    post_mean <- post_var * (prior_mean / prior_var + as.vector(obs_i[tt, ]) / obs_var)
-    # post_mean[is.na(post_mean)] <- 0 # QUESTION: Un-comment this line? - no, I think this is fine - NAs aren't 0s
-    
-    if (updates) {
-      print(prior_mean); print(''); print(post_mean); print('')
-    }
-    
-    #### Compute alpha and adjust distribution to conform to posterior moments
-    alp <- sqrt(obs_var / (obs_var + prior_var))
-    # higher if more relative uncertainty in obs
-    # by tt=2, prior_var is already really high...
-    # print(alp) # very small at tt=19, b/c prior_var is so high
-    alps[, tt] <- alp
-    # early prior_var for IS is HUGE
-    
-    plot(alp, pch = 20, cex = 1.25, xaxt = 'n', ylab = 'alp', ylim = c(0, 1), main = tt)
-    axis(side = 1, at = 1:n, labels = countries)
-    
-    if (updates) {
-      print('Calculating updates...')
-    }
-    alp.mat <- matrix(0, n, n); diag(alp.mat) <- alp
-    dy <- as.numeric(post_mean) + alp.mat %*% (obsprior[,, tt] - prior_mean) - obsprior[,, tt]
-    
-    # dy.check <- lapply(1:n, function(ix) {
-    #   as.numeric(post_mean[ix]) + alp[ix] * (obsprior[ix,, tt] - prior_mean[ix]) - obsprior[ix,, tt]
-    # })
-    # dy.check <- t(matrix(unlist(dy.check), ncol = n))
-    # print(all.equal(dy, dy.check))
-    
-    dy.full <- dy; #dy <- dy[!is.na(obs_i[tt, ]), ]
-    # dy <- dy[-which(is.na(post_mean)), ] # QUESTION: potentially problematic if NO NAs in post_mean
-    dy <- dy[which(!is.na(post_mean)), ]
-    # QUESTION: Is this correct?
-    
-    # print(dy.full[to.check, 1:8])
-    
-    rr <- NULL
-    # to.adjust <- c(pos.in.vector, pos.in.vector + n ** 2, pos.in.vector + n ** 2 * 2, param.indices)
-    
-    # QUESTION: some in xprior (say, j = 7) have higher values than allowed (so more S then N) - change now, or after updating?
-    for (j in to.adjust) {
-      # C <- unlist(lapply((1:n)[!is.na(obs_i[tt, ])], function(ix) {
-      #   cov(xprior[j,, tt], obsprior[ix,, tt]) / prior_var[ix]
-      # }))
-      C <- unlist(lapply((1:n)[which(!is.na(post_mean))], function(ix) {
-        cov(xprior[j,, tt], obsprior[ix,, tt]) / prior_var[ix]
-      }))
-      # C <- unlist(lapply((1:n)[-which(is.na(post_mean))], function(ix) {
-      #   cov(xprior[j,, tt], obsprior[ix,, tt]) / prior_var[ix]
-      # }))
-      rr <- rbind(rr, C)
-    }
-    #rr[is.na(rr)] <- 0 # QUESTION
-    # print(which(rr == 0, arr.ind = TRUE))
-    
-    dx <- rr %*% dy
-    
-    # print(which(dx == 0, arr.ind = TRUE))
-    # print(which(is.na(dx), arr.ind = TRUE))
-    # print('')
-    
-    ######################################
-    # only one to.adjust line before loop
-    # obs_ens vs. obsprior
-    ######################################
-    
-    # # Based on Sen's code:
-    # rownames(rr) <- NULL
-    # dx.temp.ALL <- matrix(0, dim(xprior)[1], num_ens)
-    # for (i in (1:n)[!is.na(obs_i[tt, ])]) { # loop through all locations (countries)
-    #   dy.temp <- as.numeric(post_mean[i]) + alp[i] * (obs_ens[i, ] - prior_mean[i]) - obs_ens[i, ]
-    #   
-    #   rr.temp <- matrix(0, dim(xprior)[1], 1)
-    #   for (j in 1:(dim(rr.temp)[1])) {
-    #     A <- cov(xprior[j,, tt], obs_ens[i, ])
-    #     rr.temp[j, ] <- A / prior_var[i]
-    #   }
-    #   
-    #   dx.temp <- rr.temp %*% dy.temp
-    #   dx.temp.ALL <- dx.temp.ALL + dx.temp
-    #   
-    #   
-    #   i <- which((1:n)[!is.na(obs_i[tt, ])] == i)
-    #   
-    #   print(all.equal(dy.temp, dy[i, ]))
-    #   print(all.equal(rr.temp[to.adjust, ], rr[, i]))
-    #   # print(all.equal(dx.temp[to.adjust, ], dx))
-    #   print('')
-    # }
-    # dx.temp.ALL <- dx.temp.ALL[to.adjust, ]
-    # rownames(dx) <- NULL
-    # print(all.equal(dx.temp.ALL, dx))
-    # # These seem to all be the same!
-    
-    if (updates) {
-      print('Updating states/params...')
-    }
-    
-    ###  Get the new ensemble and save prior and posterior
-    xnew <- xprior[,, tt] # QUESTION: again, why <0??
-    xnew[to.adjust, ] <- xprior[to.adjust,, tt] + dx
-    obs_ens <- obs_ens + dy.full
-    
-    xnew[xnew < 0] <- 0 # QUESTION: might be redundant with checkbounds lower
-    # No, b/c checkbounds would set negatives to 1 - we want to either make them 0, or do something else
-    # Reinitiating not a great idea b/c gets rid of everything we know in the middle of the epidemic
-    obs_ens[obs_ens < 0] <- 0 # QUESTION (This is in Sen's code, too; what about previous line?)
-    
-    # print(xnew[1324:1328, 1:5])
-    # print(obs_ens[to.check, 1:8])
-    
-    # print(rowMeans(xprior[param.indices,, tt])); print(rowMeans(xnew[param.indices, ]))
-    
-    # Corrections to data aphysicalities
-    xnew <- Fn_checkxnobounds(xnew, S0.indices, I0.indices, param.indices)
-    
-    if (any(xnew[newI.indices, ] < 0)) {
-      print('Cumulative inc. < 0!')
-    }
-    
-    # Finally, reduce S and I in "empty" compartments to zero
-    to.zero <- (1:(dim(xpost)[1]))[!((1:dim(xpost)[1]) %in% to.adjust)]
-    if (any(xnew == 1.0)) {
-      print ('1s in xnew!')
-    }
-    # xnew[to.zero, ] <- 0
-    
-    if (updates) {
-      print(xnew[1324:1328, 1:5])
-      # print(obs_ens[to.check, 1:8])
+      print(rowMeans(xprior[param.indices,, tt]))
+      print(rowMeans(xnew[param.indices, ]))
       
       print(rowMeans(obs_ens[to.check, ]))
       print(obs_i[tt, to.check])
     }
     
-    ### REPROBING HERE ###
-    # print(alp) # will be very high (~= 1) if prior_var negligible/obs_var >> prior_var
-    # print(prior_var) # looking for when this gets very small
-    # print(post_var) # if obs_var >> prior_var, this will be similar to prior_var (or if prior_var negligible)
-    # Although I think we should do this regardless of divergence - alp doesn't get near one until time 25-26ish, but model isn't fitting DE/IS/etc. already by time 18 or so (2010-11)
-    
-    # # if(abs(obs_i[tt] - mean(xpost[H,,tt])) > 0.2*obs_i[tt]) {} # divergence; from Wan's HK fitting code; if mean of ensembles differing from obs by >20%
-    # print('')
-    # # print(obs_i[tt, ])
-    # # print(dim(obs_ens))
-    # # print(rowMeans(obs_ens))
-    # div.df <- as.data.frame(t(rbind(abs(obs_i[tt, ] - rowMeans(obs_ens)),
-    #             0.2 * obs_i[tt, ],
-    #             abs(obs_i[tt, ] - rowMeans(obs_ens)) > (0.2 * obs_i[tt, ]) & obs_i[tt, ] > 0 & !is.na(obs_i[tt, ]))))
-    # names(div.df) <- c('Obs', 'Mean Fit', 'Divergence')
-    # div.df$Divergence <- div.df$Divergence == 1
-    # # print(div.df)
-    # print(div.df[div.df$Divergence, ])
-    # print('')
-    # # Reprobe just for certain countries? But that's only if we're basing when to reprobe on divergence, and not just doing it all the time
-    # # Seems many countries are "diverging" after the peak
-    
-    # %%%%reprobing
-    # rpnum=round(rp*num_ens);
-    # r=randperm(num_ens);
-    # rpid=r(1:rpnum);
-    # xnew(:,rpid)=initialization_m(Nij,xmin,xmax,rpnum);
-    # xnew = checkbound(xnew,Nij);
-    # %%%%%%%%%%%%%
-    
-    if (do.reprobing) {
-      rpnum <- ceiling(0.02 * num_ens) # 2%? 5%?
-      rpid <- sample(1:num_ens, rpnum)
-      
-      parms.reprobe <- t(lhs(rpnum, param.bound))
-      S0.reprobe = I0.reprobe = vector('list', rpnum)
-      for (ir in 1:rpnum) {
-        S0.reprobe[[ir]] = I0.reprobe[[ir]] = matrix(0, nrow = n, ncol = n)
-        
-        diag(S0.reprobe[[ir]]) <- parms.reprobe[1:n, ir]
-        S0.reprobe[[ir]][S0.reprobe[[ir]] == 0] <- sapply(1:n, function(jx) {
-          rnorm(n - 1, mean = S0.reprobe[[ir]][jx, jx], sd = 0.05)
-        })
-        S0.reprobe[[ir]] <- t(S0.reprobe[[ir]])
-        S0.reprobe[[ir]] <- S0.reprobe[[ir]] * N
-        S0.reprobe[[ir]] <- as.vector(t(S0.reprobe[[ir]]))
-        
-        diag(I0.reprobe[[ir]]) <- parms.reprobe[(1:n) + n, ir]
-        I0.reprobe[[ir]] <- sweep(N / rowSums(N), 1, diag(I0.reprobe[[ir]]), '*')
-        I0.reprobe[[ir]] <- I0.reprobe[[ir]] * N
-        I0.reprobe[[ir]] <- as.vector(t(I0.reprobe[[ir]]))
-      }
-      S0.reprobe <- matrix(unlist(S0.reprobe), ncol = rpnum, byrow = F)
-      I0.reprobe <- matrix(unlist(I0.reprobe), ncol = rpnum, byrow = F)
-      parms.reprobe <- parms.reprobe[(dim(parms.reprobe)[1] - 4):(dim(parms.reprobe)[1]), ]
-      
-      # S0.indices go row by row - so full first row, then on to second row, etc.
-      
-      xnew[S0.indices, rpid] <- S0.reprobe # dim 441 6
-      xnew[I0.indices, rpid] <- I0.reprobe
-      # xnew[newI.indices, rpid] # could draw from normal dist. around observations, but then that shouldn't be in the posterior, right?
-      # and it doesn't matter what's here, b/c model will just get run forward using S/I/params
-      # QUESTION: Should this be done at the beginning of the loop instead?
-      xnew[param.indices, rpid] <- parms.reprobe
-      
-      xnew[xnew < 0] <- 0
-      xnew <- Fn_checkxnobounds(xnew, S0.indices, I0.indices, param.indices)
-    }
-    
     # Store posteriors:
     xpost[,, tt] <- xnew
     obspost[,, tt] <- obs_ens
-    # print(which(obspost[,, tt] < 0, arr.ind = TRUE))
     
     #  Integrate forward one time step
     b <- log(xpost[param.indices[3],, tt] - xpost[param.indices[4],, tt])
@@ -480,12 +282,12 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     # Plot training progress:
     if (tt > 1) {
       # par(mfrow = c(4, 4), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-      obs.red.toPlot <- obs_i[, c(7, 9, 11, 19, 21)] # DE, IS, IT, ES, UK
+      obs.red.toPlot <- obs_i[, to.check] # DE, IT, ES, SE, UK
       obs.post.toPlot <- t(apply(obspost[,, 1:tt], c(1, 3), mean))
       matplot(obs.red.toPlot, type = 'b', pch = 4, lty = 2,
               col = c("#FF0000FF", "#0000FFFF", "#00FF00FF", "#00FFFFFF", "#FF00FFFF"), cex = 0.75,
               xlab = 'Weeks from Outbreak Start', ylab = 'Syn+ Counts', main = tt)
-      matlines(obs.post.toPlot[, c(7, 9, 11, 19, 21)], type = 'b', pch = 20, lty = 1, cex = 0.8,
+      matlines(obs.post.toPlot[, to.check], type = 'b', pch = 20, lty = 1, cex = 0.8,
                col = c("#FF0000FF", "#0000FFFF", "#00FF00FF", "#00FFFFFF", "#FF00FFFF"))
       
       # print(obs.post.toPlot[, to.check])
@@ -506,23 +308,78 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     
   } # end of training
   
-  # For now, we just want to return: PT, PI, corr, rmse, newI, and params!
-  obspost_mean <- t(apply(obspost[,, 1:tt], c(1, 3), mean))
+  # For now, we just want to return: PT, PI, corr, rmse, newI, S, and params!
+  
+  # Get parameters (and parameter sd) over time:
   params.post <- xpost[param.indices,, 1:tt]
   params.post_mean <- t(apply(params.post, c(1, 3), mean))
+  params.post_sd <- t(apply(params.post, c(1, 3), sd))
+  # QUESTION: SD continues to increase near end of outbreak - okay?
   
+  params.post_df <- as.data.frame(cbind(params.post_mean, params.post_sd))
+  names(params.post_df) <- c('L', 'D', 'R0mx', 'R0mn', 'airScale', 'L_sd', 'D_sd', 'R0mx_sd', 'R0mn_sd', 'airScale_sd')
+  
+  # Get newI over time:
+  obspost_mean <- t(apply(obspost[,, 1:tt], c(1, 3), mean))
   obspost_mean <- as.data.frame(obspost_mean)
   names(obspost_mean) <- countries
   
-  params.post_mean <- as.data.frame(params.post_mean)
-  names(params.post_mean) <- c('L', 'D', 'R0mx', 'R0mn', 'airScale')
+  # Also get sd of "observations":
+  obspost_sd <- t(apply(obspost[,, 1:tt], c(1, 3), sd))
+  obspost_sd <- as.data.frame(obspost_sd)
+  names(obspost_mean) <- countries
   
-  pt = pt.obs = pi = pi.obs = corrs = rmses = c()
+  # Calculate country-level S and I over time:
+  s.post <- xpost[S0.indices,, ]
+  i.post <- xpost[I0.indices,, ]
+  
+  s.post.by.count <- array(0, c(n, num_ens, ntrn)) # last dimension should eventually be nsn instead!
+  i.post.by.count <- array(0, c(n, num_ens, ntrn)) # last dimension should eventually be nsn instead!
+  for (i in 1:n) {
+    country.vals <- (1:n) + n * (i - 1)
+    s.post.temp <- s.post[country.vals,, ]
+    i.post.temp <- i.post[country.vals,, ]
+    
+    for (j in 1:num_ens) {
+      s.post.by.count[i, j, ] <- colSums(s.post.temp[, j, ])
+      i.post.by.count[i, j, ] <- colSums(i.post.temp[, j, ])
+    }
+    
+  }
+  
+  # Get S/I and respective sd over time:
+  s.post_mean <- t(apply(s.post.by.count, c(1, 3), mean))
+  s.post_sd <- t(apply(s.post.by.count, c(1, 3), sd))
+  i.post_mean <- t(apply(i.post.by.count, c(1, 3), mean))
+  i.post_sd <- t(apply(i.post.by.count, c(1, 3), sd))
+  
+  for (i in 1:n) {
+    s.post_mean[, i] <- s.post_mean[, i] / rowSums(N)[i]
+    s.post_sd[, i] <- s.post_sd[, i] / rowSums(N)[i]
+    i.post_mean[, i] <- i.post_mean[, i] / rowSums(N)[i]
+    i.post_sd[, i] <- i.post_sd[, i] / rowSums(N)[i]
+  }
+  
+  s.post_mean <- as.data.frame(s.post_mean); names(s.post_mean) <- countries
+  s.post_sd <- as.data.frame(s.post_sd); names(s.post_sd) <- countries
+  i.post_mean <- as.data.frame(i.post_mean); names(i.post_mean) <- countries
+  i.post_sd <- as.data.frame(i.post_sd); names(i.post_sd) <- countries
+  
+  oStates <- as.data.frame(cbind(melt(t(s.post_mean)), melt(t(s.post_sd)), melt(t(i.post_mean)), melt(t(i.post_sd))))
+  oStates <- oStates[, c(1:3, 6, 9, 12)]
+  names(oStates) <- c('country', 'week', 'S', 'S_sd', 'I', 'I_sd')
+  oStates$week <- oStates$week + wk_start - 1
+  
+  # Calculate accuracy metrics:
+  pt = pt.obs = pi = pi.obs = ot = ot.obs = corrs = rmses = c()
   for (i in 1:n) {
     obs_temp <- obs_i[1:tt, i]
     pred_temp <- obspost_mean[, i]
     
     if (!all(is.na(obs_temp))) {
+      ot.obs <- c(ot.obs, findOnset(obs_temp, 500)$onset)
+      ot <- c(ot, findOnset(pred_temp, 500)$onset)
+      
       pt <- c(pt, which(pred_temp == max(pred_temp, na.rm = TRUE)))
       pt.obs <- c(pt.obs, which(obs_temp == max(obs_temp, na.rm = TRUE)))
       
@@ -533,15 +390,14 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
       rmses <- c(rmses, sqrt(mean((obs_temp - pred_temp) ** 2, na.rm = TRUE)))
       
     } else {
-      pt <- c(pt, NA)
-      pt.obs <- c(pt.obs, NA)
-      pi <- c(pi, NA)
-      pi.obs <- c(pi.obs, NA)
-      corrs <- c(corrs, NA)
-      rmses <- c(rmses, NA)
+      pt <- c(pt, NA); pt.obs <- c(pt.obs, NA)
+      pi <- c(pi, NA); pi.obs <- c(pi.obs, NA)
+      ot <- c(ot, NA); ot.obs <- c(ot.obs, NA)
+      corrs <- c(corrs, NA); rmses <- c(rmses, NA)
     }
   }
-  m <- as.data.frame(cbind(countries, pt, pt.obs, pi, pi.obs, corrs, rmses))
+  
+  m <- as.data.frame(cbind(countries, pt, pt.obs, pt - pt.obs, pi, pi.obs, pi - pi.obs, ot, ot.obs, ot - ot.obs, corrs, rmses))
   m$pt.acc = m$pi.acc = NA
   for (i in 1:n) {
     if (!is.na(pt[i])) {
@@ -563,7 +419,13 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
   }
   m$pt.acc <- factor(m$pt.acc); m$pi.acc <- factor(m$pi.acc)
   
-  res.list <- list(m, obspost_mean, params.post_mean)
+  # Melt alps to data frame to return:
+  rownames(alps) <- countries
+  alps <- as.data.frame(melt(alps))
+  names(alps) <- c('country', 'week', 'value')
+  
+  # Return results:
+  res.list <- list(m, params.post_df, oStates, alps)
   
   # #### Forecast
   # b <- log(xpost[param.indices[3],, ntrn] - xpost[param.indices[4],, ntrn])

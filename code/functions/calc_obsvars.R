@@ -55,7 +55,7 @@ calc_obsvars <- function(obs, oev_base, oev_denom) {#, oev_denom_tmp, tmp_exp) {
   return(vars.temp)
 }
 
-calc_obsvars_nTest <- function(obs, syn_dat, ntests, posprops, oev_base, oev_fact, oev_denom, tmp_exp) {
+calc_obsvars_nTest <- function(obs, syn_dat, ntests, posprops, oev_base, oev_denom, tmp_exp) {
   
   # Look at average of current and previous 2 proportion positive values:
   tmp <- matrix(0, nrow = nrow(posprops), ncol = ncol(posprops))
