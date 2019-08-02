@@ -2,17 +2,20 @@
 library(ggplot2)
 
 ### OBSERVED ###
-countries <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'FR', 'DE', 'HU', 'IS', 'IE', 'IT',
+countries <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'FR', 'DE', 'HU', 'IE', 'IT',
                'LU', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'UK')
 
 # Read in influenza data
 iliiso <- read.csv('data/WHO_data_05-09-19.csv') # in same order as "countries" vector
 iliiso[, 2:22][iliiso[, 2:22] < 1] <- NA
+iliiso <- iliiso[, c(1:9, 11:22)]
 iliiso.raw <- iliiso
 
 # "Original" scalings:
 scalings <- read.csv('data/scalings_frame_05-09-19.csv') # 1.3 for France in early seasons
-for (i in 2:22) {
+for (i in 2:21) {
+  # print(names(iliiso)[i])
+  # print(scalings[scalings$country == names(iliiso)[i], ])
   if (names(iliiso)[i] == 'France') {
     iliiso[1:283, i] <- iliiso[1:283, i] * 1.3
     iliiso[284:495, i] <- iliiso[284:495, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
@@ -28,22 +31,34 @@ iliiso.scale <- iliiso
 pop.size <- read.csv('data/popcounts_02-07.csv')
 pop.size <- pop.size[pop.size$country %in% countries, ]; pop.size$country <- factor(pop.size$country)
 pop.size <- pop.size[match(countries, pop.size$country), ]
-for (i in 2:22) {
+for (i in 2:21) {
   iliiso[, i] <- (iliiso[, i] * (pop.size$pop[i - 1] / 100000))
 }
 iliiso.count <- iliiso
 rm(iliiso, i)
 
 ### Calculate observed attack rates by season:
+source('code/functions/Util.R'); wk_start <- 40
+### CHECK THESE!!!:
 seasons <- list(79:121, 131:173, 183:225, 235:277, 287:329, 339:382, 392:434, 444:486)
 
-ars.raw = ars.scale = ars.count = vector('list', 21)
-for (i in 1:21) {
+ars.raw = ars.scale = ars.count = vector('list', 20)
+for (i in 1:20) {
   ars.temp.raw = ars.temp.scale = ars.temp.count = c()
   for (j in 1:length(seasons)) {
-    ars.temp.raw <- c(ars.temp.raw, sum(iliiso.raw[seasons[[j]], i + 1], na.rm = TRUE))
-    ars.temp.scale <- c(ars.temp.scale, sum(iliiso.scale[seasons[[j]], i + 1], na.rm = TRUE))
-    ars.temp.count <- c(ars.temp.count, sum(iliiso.count[seasons[[j]], i + 1], na.rm = TRUE))
+    # first check for onset:
+    if (!is.na(findOnset(iliiso.scale[seasons[[j]], i + 1], baseline = 500)$onset)) {
+      ars.temp.raw <- c(ars.temp.raw, sum(iliiso.raw[seasons[[j]], i + 1], na.rm = TRUE))
+      ars.temp.scale <- c(ars.temp.scale, sum(iliiso.scale[seasons[[j]], i + 1], na.rm = TRUE))
+      ars.temp.count <- c(ars.temp.count, sum(iliiso.count[seasons[[j]], i + 1], na.rm = TRUE))
+    } else {
+      ars.temp.raw <- c(ars.temp.raw, NA)
+      ars.temp.scale <- c(ars.temp.scale, NA)
+      ars.temp.count <- c(ars.temp.count, NA)
+    }
+    # ars.temp.raw <- c(ars.temp.raw, sum(iliiso.raw[seasons[[j]], i + 1], na.rm = TRUE))
+    # ars.temp.scale <- c(ars.temp.scale, sum(iliiso.scale[seasons[[j]], i + 1], na.rm = TRUE))
+    # ars.temp.count <- c(ars.temp.count, sum(iliiso.count[seasons[[j]], i + 1], na.rm = TRUE))
   }
   ars.temp.raw[ars.temp.raw == 0] <- NA
   ars.temp.scale[ars.temp.scale == 0] <- NA
@@ -55,10 +70,10 @@ for (i in 1:21) {
 
 # Convert list to data frame:
 countries.new <- c()
-for (i in 1:21) {
+for (i in 1:20) {
   countries.new <- c(countries.new, rep(countries[i], length(seasons)))
 }
-df.obs <- as.data.frame(cbind(countries.new, rep(c('2010-11', '2011-12', '2012-13', '2013-14', '2014-15', '2015-16', '2016-17', '2017-18'), 21),
+df.obs <- as.data.frame(cbind(countries.new, rep(c('2010-11', '2011-12', '2012-13', '2013-14', '2014-15', '2015-16', '2016-17', '2017-18'), 20),
                               unlist(ars.raw), unlist(ars.scale), unlist(ars.count)))
 names(df.obs) <- c('country', 'season', 'ar.raw', 'ar.scale', 'ar.count')
 df.obs <- df.obs[!is.na(df.obs$ar.raw) & !is.na(df.obs$ar.scale) & !is.na(df.obs$ar.count), ]
@@ -67,10 +82,13 @@ for (i in 3:5) {
 }
 rm(ars.count, ars.raw, ars.scale, iliiso.count, iliiso.raw, iliiso.scale, i, j, countries.new)
 
+# plot(log(aggregate(ar.raw ~ country, data = df.obs, FUN = mean)[, 2]), aggregate(ar.count ~ country, data = df.obs, FUN = mean)[, 2], pch = 20)
+# # the largest countries in raw data remain among largest in count, but for the most part countries with a range of AR in the raw data get similar AR in the count "data"
+
 ### SYNTHETIC ###
 # Read in synthetic "data" by country:
-load('syntheticTests/syntheticData/synth_06-26_COUNTS.RData')
-load('syntheticTests/syntheticData/synth_06-26_RATES.RData')
+load('syntheticTests/syntheticData/synth_07-14_COUNTS.RData')
+load('syntheticTests/syntheticData/synth_07-14_RATES.RData')
 # note that these are only the "realistic" runs, not all synthetic runs
 
 # Get range of attack rates:
@@ -81,58 +99,101 @@ ars.synth.rates <- lapply(1:length(synth.runs.COUNTS), function(ix) {
   rowSums(synth.runs.RATES[[ix]])
 })
 
+# Also find onsets:
+ot.synth <- c()
+for (i in 1:length(synth.runs.RATES)) {
+  ot.temp <- lapply(1:length(countries), function(ix) {
+    findOnset(synth.runs.RATES[[i]][ix, ], baseline = 500)$onset
+  })
+  ot.synth <- c(ot.synth, unlist(ot.temp))
+}
+
 # Convert list to data frame:
 countries.synth <- rep(countries, length(ars.synth.count))
-df.synth <- as.data.frame(cbind(countries.synth, unlist(ars.synth.count), unlist(ars.synth.rates)))
+df.synth <- as.data.frame(cbind(countries.synth, unlist(ars.synth.count), unlist(ars.synth.rates), ot.synth))
+df.synth <- df.synth[!is.na(df.synth$ot.synth), ]; df.synth <- df.synth[, 1:3]
 names(df.synth) <- c('country', 'ar.count', 'ar.rate')
 df.synth$ar.count <- as.numeric(as.character(df.synth$ar.count))
 df.synth$ar.rate <- as.numeric(as.character(df.synth$ar.rate))
 rm(ars.synth.count, ars.synth.rates, synth.runs.COUNTS, synth.runs.RATES, countries.synth)
 
-# ### PLOT ###
-# p1 <- ggplot(data = df.obs, aes(x = country, y = ar.scale)) + geom_boxplot(fill = 'gray90', outlier.shape = 4) +
-#   theme_classic() + theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 12), axis.text.y = element_text(size = 12), axis.title = element_text(size = 12)) +
-#   labs(x = '', y = 'Attack Rate') + scale_y_continuous(limits = c(0, 100000)) +
-#   geom_point(data = df.synth, aes(x = country, y = ar.rate), col = 'coral', size = 0.5)
-# print(p1)
-# 
-# p2 <- ggplot(data = df.obs, aes(x = country, y = ar.count)) + geom_boxplot(fill = 'gray90', outlier.shape = 4) +
-#   theme_classic() + theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 12), axis.text.y = element_text(size = 12), axis.title = element_text(size = 12)) +
-#   labs(x = '', y = 'Attack Rate') + #scale_y_continuous(limits = c(0, 100000)) +
-#   geom_point(data = df.synth, aes(x = country, y = ar.count), col = 'coral', size = 0.5)
-# print(p2)
-# 
-# p3 <- ggplot(data = df.obs, aes(x = country, y = log(ar.raw))) + #geom_boxplot(fill = 'gray90', outlier.shape = 4) +
-#   geom_point(col = 'black', size = 1.0) +
-#   theme_classic() + theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 12), axis.text.y = element_text(size = 12), axis.title = element_text(size = 12)) +
-#   labs(x = '', y = 'log(Attack Rate)') + #scale_y_continuous(limits = c(0, 100000)) +
-#   geom_point(data = df.synth, aes(x = country, y = log(ar.rate)), col = 'coral', size = 1.0, alpha = 0.5)
-# print(p3)
+# Want to know: How do our SCALED values compare to the RATES coming from the model runs? What scalings would transform our RAW data into appropriate RATES?
+# Secondary (just out of interest): How do our raw and "count" data compare to counts in the model runs?
 
-# Want a scaling that we can multiply raw observed data by to match up with the rates from the synthetic data
-    # So compare RAW OBS with SYNTH RATES (p3), and get better scalings from these
+### Plots:
 
-df.obs.red <- df.obs[, c(1, 3)]
-df.synth.red <- df.synth[, c(1, 3)]
-
-df.obs.red$obs <- 'obs'; df.synth.red$obs <- 'synth'
-names(df.obs.red)[2] <- 'ar'; names(df.synth.red)[2] <- 'ar'
-
+# Plot 1: SCALED data vs. synthetic RATES:
+df.obs$type <- 'obs'; df.synth$type <- 'synth'
+df.obs.red <- df.obs[, c(1, 4, 6)]
+df.synth.red <- df.synth[, c(1, 3:4)]
+names(df.obs.red)[2] = names(df.synth.red)[2] = 'ar'
 df.new <- rbind(df.obs.red, df.synth.red)
-df.new$obs <- factor(df.new$obs)
+df.new$type <- factor(df.new$type)
+levels(df.new$type) <- c('Obs. (Scaled)', 'Synth. (Rates)')
 
-p4 <- ggplot(data = df.new) + geom_boxplot(aes(x = country, y = log(ar), fill = obs), outlier.shape = 4) +
-  theme_classic() + theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 12), axis.text.y = element_text(size = 12), axis.title = element_text(size = 12)) +
+p1 <- ggplot(data = df.new) + geom_boxplot(aes(x = country, y = log(ar), fill = type), outlier.shape = 4) + theme_classic() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 12), axis.text.y = element_text(size = 12), axis.title = element_text(size = 12)) +
+  labs(x = '', y = 'log(Attack Rate)', fill = '')
+print(p1)
+# Note: This does not suggest that the model is wrong about the relative intensity in different countries - we don't know the true relative intensity in different countries
+# Some countries seem to already have decent scalings for this model, some are quite a bit off from what they might need to perform optimally (DK, RO, several others)
+    # Any evidence that these are the countries that end up performing more poorly in fitting/forecasts?
+
+# Plot 2: RAW data vs. synthetic RATES:
+# (New scalings will be whatever we multiply the raw data by to get similar ranges to the synthetic rates)
+df.obs.red <- df.obs[, c(1, 3, 6)]
+df.synth.red <- df.synth[, c(1, 3:4)]
+names(df.obs.red)[2] = names(df.synth.red)[2] = 'ar'
+df.new <- rbind(df.obs.red, df.synth.red)
+df.new$type <- factor(df.new$type)
+levels(df.new$type) <- c('Obs. (Raw)', 'Synth. (Rates)')
+
+p2 <- ggplot(data = df.new) + geom_boxplot(aes(x = country, y = log(ar), fill = type), outlier.shape = 4) + theme_classic() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 12), axis.text.y = element_text(size = 12), axis.title = element_text(size = 12)) +
+  labs(x = '', y = 'log(Attack Rate)', fill = '')
+print(p2)
+# Most need to be multiplied up, some are pretty close already (CZ, HR, HU, SK); later seasons in France as well as Germany need to come down
+
+# Plots 3 and 4: RAW data vs. synthetic COUNTS; "COUNT" data vs. synthetic COUNTS
+# (Which matches more closely?)
+df.obs.red <- df.obs[, c(1, 3, 6)]
+df.synth.red <- df.synth[, c(1:2, 4)]
+names(df.obs.red)[2] = names(df.synth.red)[2] = 'ar'
+df.new <- rbind(df.obs.red, df.synth.red)
+df.new$type <- factor(df.new$type)
+levels(df.new$type) <- c('Obs. (Raw)', 'Synth. (Counts)')
+
+p3 <- ggplot(data = df.new) + geom_boxplot(aes(x = country, y = log(ar), fill = type), outlier.shape = 4) + theme_classic() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 12), axis.text.y = element_text(size = 12), axis.title = element_text(size = 12)) +
+  labs(x = '', y = 'log(Attack Rate)', fill = '')
+print(p3)
+# looks to be more variation between countries in the observed data than in the model counts; but remember these are just the model runs selected for having similar ARs
+
+df.obs.red <- df.obs[, c(1, 5:6)]
+df.synth.red <- df.synth[, c(1:2, 4)]
+names(df.obs.red)[2] = names(df.synth.red)[2] = 'ar'
+df.new <- rbind(df.obs.red, df.synth.red)
+df.new$type <- factor(df.new$type)
+levels(df.new$type) <- c('Obs. ("Counts")', 'Synth. (Counts)')
+
+p4 <- ggplot(data = df.new) + geom_boxplot(aes(x = country, y = log(ar), fill = type), outlier.shape = 4) + theme_classic() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 12), axis.text.y = element_text(size = 12), axis.title = element_text(size = 12)) +
   labs(x = '', y = 'log(Attack Rate)', fill = '')
 print(p4)
-# p5 <- ggplot(data = df.new) + geom_boxplot(aes(x = country, y = ar, fill = obs), outlier.shape = 4) +
-#   theme_classic() + theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 12), axis.text.y = element_text(size = 12), axis.title = element_text(size = 12)) +
-#   labs(x = '', y = 'Attack Rate', fill = '')
-# print(p5)
-# p6 <- ggplot(data = df.new) + geom_boxplot(aes(x = country, y = ar, fill = obs), outlier.shape = 4) +
-#   theme_classic() + theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 12), axis.text.y = element_text(size = 12), axis.title = element_text(size = 12)) +
-#   labs(x = '', y = 'Attack Rate', fill = '') + scale_y_continuous(limits = c(0, 100000)) # synth have to be in this range
-# print(p6)
+# these are much closer, since they've already been scaled, of course
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # Calculate approximate new scalings:
 new.scaling.vals <- vector('list', length(countries))

@@ -212,7 +212,7 @@ for (run in 1:num_runs) {
   par(mfrow = c(3, 2), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
   for (param.index in 1:5) {
     plot(res[[2]][1:30, param.index], pch = 20, type = 'b', cex = 0.8,
-         xlab = 'Time Since Outbreak Start', ylab = names(res[[4]])[param.index],
+         xlab = 'Time Since Outbreak Start', ylab = names(res[[2]])[param.index],
          ylim = c(min(unlist(c(res[[2]][, param.index]))),
                   max(unlist(c(res[[2]][, param.index])))))
   }

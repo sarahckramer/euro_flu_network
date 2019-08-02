@@ -1,11 +1,11 @@
 
-library(ggplot2); library(gridExtra)
+library(ggplot2); library(gridExtra); library(viridis)
 
-pdf('syntheticTests/outputs/cluster/model_fit_072519_loop_S0_rev.pdf',
+pdf('syntheticTests/outputs/cluster/model_fit_072519_loop_S0_I0narrow.pdf',
     width = 16, height = 12)
 
 # Read in results:
-load('syntheticTests/outputs/cluster/072319/res_loop_S0range_rev.RData')
+load('syntheticTests/outputs/cluster/072319/res_loop_S0range_I0narrow.RData')
 
 m <- res[[1]]
 o <- res[[2]]
