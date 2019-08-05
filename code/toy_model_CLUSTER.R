@@ -20,16 +20,6 @@ source('code/functions/replaceLeadingLaggingNAs.R')
 ### Read in filter function
 source('code/EAKF_network.R')
 
-### Headers for output functions:
-metrics_header <- c('season', 'run', 'oev_base', 'oev_denom', 'lambda', 'country', 'pkwk', 'obs_pkwk',
-                    'delta_pkwk_mean', 'peak_intensity', 'obs_peak_int', 'intensity_err',
-                    'onset', 'onsetObs', 'delta_onset', 'corr', 'rmse', 'pi_acc', 'pt_acc')
-output_header <- c('season','run','oev_base', 'oev_denom','lambda', 'week', 'L', 'D', 'R0max', 'R0min',
-                   'airScale', 'L_sd', 'D_sd', 'R0max_sd', 'R0min_sd', 'airScale_sd')
-outputStates_header <- c('season','run','oev_base', 'oev_denom','lambda', 'country', 'week',
-                         'S', 'S_sd', 'I', 'I_sd')
-alps_header <- c('season','run','oev_base', 'oev_denom','lambda', 'country', 'week', 'value')
-
 ### Global variables:
 dt <- 1 # time step for SIRS integration
 tmstep <- 7 # data are weekly
@@ -63,6 +53,7 @@ oev_base <- oevBase_list[ceiling((task.index - 30) / 30) %% 2 + 1]
 oev_denom <- oevDenom_list[ceiling((task.index - 5) / 5) %% 6 + 1]
 lambda <- lambdaList[ceiling(task.index - 1) %% 5 + 1]
 # this is essentially an initial pass, to determine which combinations do really badly and shouldn't even be tried for forecasting
+print(paste(season, oev_base, oev_denom, lambda, sep = '_'))
 
 # # Check:
 # check <- unique(as.data.frame(cbind(season, oev_base, oev_denom, lambda)))
@@ -82,7 +73,7 @@ pop.size <- pop.size[pop.size$country %in% countries, ]; pop.size$country <- fac
 pop.size <- pop.size[match(countries, pop.size$country), ]
 
 ### Read in humidity data
-ah <- read.csv('../GLDAS_data/ah_Europe_07142019.csv')
+ah <- read.csv('data/ah_Europe_07142019.csv')
 AH <- rbind(ah[, count.indices], ah[, count.indices])
 
 ### Read in influenza data
@@ -107,10 +98,10 @@ scalings <- scalings[count.indices, ]
 # note: these are the "old" scalings
 for (i in 2:21) {
   if (names(iliiso)[i] == 'France') {
-    iliiso[1:283, i] <- iliiso[1:283, i] * 1.3
-    iliiso[284:495, i] <- iliiso[284:495, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
-    syn.dat[1:283, i] <- syn.dat[1:283, i] * 1.3
-    syn.dat[284:495, i] <- syn.dat[284:495, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
+    iliiso[1:286, i] <- iliiso[1:286, i] * 1.3
+    iliiso[287:495, i] <- iliiso[287:495, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
+    syn.dat[1:286, i] <- syn.dat[1:286, i] * 1.3
+    syn.dat[287:495, i] <- syn.dat[287:495, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
   } else {
     iliiso[, i] <- iliiso[, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
     syn.dat[, i] <- syn.dat[, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
@@ -127,10 +118,9 @@ for (i in 2:21) {
 ### Initialize output data frame
 outputMetrics <- NULL
 outputOP <- NULL
-outputOPStates <- NULL
-# outputDist <- NULL
-# outputEns <- NULL
-outputAlps <- NULL
+outputOPParams <- NULL
+outputDist <- NULL
+outputEns <- NULL
 
 ### Main fitting code:
 
@@ -158,8 +148,6 @@ syn_i <- syn.dat[weeks, (1:length(countries) + 1)]
 test_i <- test.dat[weeks, (1:length(countries) + 1)]
 pos_i <- pos.dat[weeks, (1:length(countries) + 1)]
 
-# matplot(obs_i, pch = 20, col = viridis(n), type = 'b', lty = 1, cex = 0.75)
-
 # Replace any leading or lagging NAs:
 for (count.index in 1:n) {
   obs_i[, count.index] <- replaceLeadLag(obs_i[, count.index])
@@ -172,17 +160,6 @@ for (count.index in 1:n) {
 
 # Replace 0s in test_i w/ NA (b/c can't divide by 0!):
 test_i[test_i == 0 & !is.na(test_i)] <- NA
-
-# Plot:
-pdf(paste('outputs/plots/plots', season, oev_base, oev_denom, lambda, '073019.pdf', sep = '_'),
-    width = 12, height = 7)
-
-par(mfrow = c(2, 2), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-matplot(obs_i, pch = 20, col = viridis(n), type = 'b', lty = 1, cex = 0.75)
-matplot(syn_i, pch = 20, col = viridis(n), type = 'b', lty = 1, cex = 0.75)
-matplot(pos_i, pch = 20, col = viridis(n), type = 'b', lty = 1, cex = 0.75)
-matplot(test_i, pch = 20, col = viridis(n), type = 'b', lty = 1, cex = 0.75)
-par(mfrow = c(1, 1), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 
 # Variance of syndromic+ data:
 obs_vars <- calc_obsvars_nTest(obs = obs_i, syn_dat = syn_i, ntests = test_i, posprops = pos_i, oev_base, oev_denom, tmp_exp = 2.0)
@@ -205,39 +182,34 @@ tm.range <- clim_start:clim_end
 ntrn <- 40
 
 # Fit!:
-for (run in 1:num_runs) {
-  res <- EAKF_rFC(num_ens, tmstep, param.bound, obs_i, ntrn, obs_vars, tm.ini, tm.range,
-                  updates = FALSE, do.reprobing = FALSE)
-  
-  par(mfrow = c(3, 2), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-  for (param.index in 1:5) {
-    plot(res[[2]][1:30, param.index], pch = 20, type = 'b', cex = 0.8,
-         xlab = 'Time Since Outbreak Start', ylab = names(res[[2]])[param.index],
-         ylim = c(min(unlist(c(res[[2]][, param.index]))),
-                  max(unlist(c(res[[2]][, param.index])))))
+for (ntrn in 5:30) {
+  print(ntrn)
+  for (run in 1:num_runs) {
+    res <- EAKF_rFC(num_ens, tmstep, param.bound, obs_i, ntrn, obs_vars, tm.ini, tm.range,
+                    updates = FALSE, do.reprobing = FALSE)
+    
+    outputMetrics <- rbind(outputMetrics, cbind(season, run, oev_base, oev_denom, lambda, scalings$gamma, res$metrics))
+    outputOP <- rbind(outputOP, cbind(season, run, oev_base, oev_denom, lambda, res$opStates))
+    outputOPParams <- rbind(outputOPParams, cbind(season, run, oev_base, oev_denom, lambda, res$trainParams))
+    outputDist = rbind(outputDist, cbind(season, run, oev_base, oev_denom, lambda, res$dist))
+    outputEns = rbind(outputEns, cbind(season, run, oev_base, oev_denom, lambda, res$ensembles))
   }
-  
-  outputMetrics <- rbind(outputMetrics, cbind(season, run, oev_base, oev_denom, lambda, res[[1]]))
-  outputOP <- rbind(outputOP, cbind(season, run, oev_base, oev_denom, lambda, wk_start:(ntrn + wk_start - 1), res[[2]]))
-  outputOPStates <- rbind(outputOPStates, cbind(season, run, oev_base, oev_denom, lambda, res[[3]]))
-  outputAlps <- rbind(outputAlps, cbind(season, run, oev_base, oev_denom, lambda, res[[4]]))
 }
 
-dev.off()
+colnames(outputMetrics)[6] <- 'scaling'
+# I actually think all the other colnames are fine as-is...
 
-### Change column names:
-names(outputMetrics) <- metrics_header
-names(outputOP) <- output_header
-names(outputOPStates) <- outputStates_header
-names(outputAlps) <- alps_header
+outputMetrics[outputMetrics[, 'country'] == 'FR' & outputMetrics[, 'season'] %in% seasons[1:4], 'scaling'] <- 1.3
+# FR has an alternative scaling for earlier
 
 ### Save results:
 print('Finished with loop; writing files...')
 
-write.csv(outputMetrics, file = paste('outputs/obs/outputMet', season, oev_base, oev_denom, lambda, '073019.csv', sep = '_'), row.names = FALSE)
-write.csv(outputOP, file = paste('outputs/obs/outputOP', season, oev_base, oev_denom, lambda, '073019.csv', sep = '_'), row.names = FALSE)
-write.csv(outputOPStates, file = paste('outputs/obs/outputOPStates', season, oev_base, oev_denom, lambda, '073019.csv', sep = '_'), row.names = FALSE)
-write.csv(outputAlps, file = paste('outputs/obs/outputAlps', season, oev_base, oev_denom, lambda, '073019.csv', sep = '_'), row.names = FALSE)
+write.csv(outputMetrics, file = paste('outputs/obs/outputMet', season, oev_base, oev_denom, lambda, '080519.csv', sep = '_'), row.names = FALSE)
+write.csv(outputOP, file = paste('outputs/obs/outputOP', season, oev_base, oev_denom, lambda, '080519.csv', sep = '_'), row.names = FALSE)
+write.csv(outputOPParams, file = paste('outputs/obs/outputOPParams', season, oev_base, oev_denom, lambda, '080519.csv', sep = '_'), row.names = FALSE)
+write.csv(outputDist, file = paste('outputs/obs/outputDist', season, oev_base, oev_denom, lambda, '080519.csv', sep = '_'), row.names = FALSE)
+write.csv(outputEns, file = paste('outputs/obs/outputEns', season, oev_base, oev_denom, lambda, '080519.csv', sep = '_'), row.names = FALSE)
 
 print('Done.')
 

@@ -140,7 +140,7 @@ findOnset <- function(values, baseline){
   if(length(above) > 2){
     for(i in 1:length(above)){
       if((above[i]+1) %in% above && (above[i]+2) %in% above){
-        onset = above[i] + wk_start - 1;
+        onset = above[i];# + wk_start - 1;
         break;
       }
     }
