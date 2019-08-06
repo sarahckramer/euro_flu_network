@@ -1,6 +1,5 @@
 
 ### Fit Network Model to Observed Data ###
-# So for now, leave forecasts out and simply FIT the model to the observation from each season
 
 ### Read in libraries
 library("truncnorm"); library("tgp"); library("MASS"); library(reshape2); require(plyr)
@@ -16,32 +15,6 @@ source('code/functions/replaceLeadingLaggingNAs.R')
 
 ### Read in filter function
 source('code/EAKF_network.R')
-
-### Headers for output functions:
-metrics_header <- c('season', 'run', 'oev_base', 'oev_denom', 'lambda', 'country', 'pkwk', 'obs_pkwk',
-                    'delta_pkwk_mean', 'peak_intensity', 'obs_peak_int', 'intensity_err',
-                    'onset', 'onsetObs', 'delta_onset', 'corr', 'rmse', 'pi_acc', 'pt_acc')
-# output_header <- c('season','run','oev_base', 'oev_denom','lambda', 'week', 'L', 'L_sd', 'D', 'D_sd',
-#                    'R0max', 'R0max_sd', 'R0min', 'R0min_sd', 'airScale', 'airScale_sd')
-output_header <- c('season','run','oev_base', 'oev_denom','lambda', 'week', 'L', 'D', 'R0max', 'R0min',
-                   'airScale', 'L_sd', 'D_sd', 'R0max_sd', 'R0min_sd', 'airScale_sd')
-outputStates_header <- c('season','run','oev_base', 'oev_denom','lambda', 'country', 'week',
-                         'S', 'S_sd', 'I', 'I_sd')
-alps_header <- c('season','run','oev_base', 'oev_denom','lambda', 'country', 'week', 'value')
-
-# metrics_header <- c('season', 'run', 'oev_base', 'oev_denom', 'lambda', 'scaling', 'country', 'fc_start',
-#                     'obs_pkwk', 'pkwk_mode', 'delta_pkwk_mode', 'pkwk_mean', 'delta_pkwk_mean',
-#                     'leadpkwk_mode', 'leadpkwk_mean', 'pkwk_sd', 'obs_peak_int', 'peak_intensity',
-#                     'intensity_err', 'peak_intensity_sd', 'totAttackObs', 'tot_attack', 'delta_AR',
-#                     'obs_1week', 'obs_2week', 'obs_3week', 'obs_4week', 'fcast_1week', 'fcast_2week',
-#                     'fcast_3week', 'fcast_4week', 'delta_1w', 'delta_2w', 'delta_3w', 'delta_4w',
-#                     'rmse', 'corr', 'rmse_fcast', 'corr_fcast', 'mape', 'wape', 'smape', 'onset',
-#                     'onset_sd', 'onsetObs')
-# output_header <- c('season', 'run', 'oev_base', 'oev_denom', 'lambda', 'results', 'fc_start', 'country',
-#                    'time', 'time_date', 'week', 'estimate', 'est_sd', 'S', 'S_sd', 'I', 'I_sd', 'L', 'L_sd',
-#                    'D', 'D_sd', 'R0max', 'R0max_sd', 'R0min', 'R0min_sd', 'observed')
-# dist_header <- c('season', 'run', 'oev_base', 'oev_denom', 'lambda', 'fc_start', 'metric', 'week',
-#                  'prob', 'country')
 
 ### Seasons:
 seasons <- c('2010-11', '2011-12', '2012-13', '2013-14', '2014-15', '2015-16', '2016-17', '2017-18')
@@ -210,7 +183,7 @@ tm.ini <- clim_start - 1 # the end of the former week
 tm.range <- clim_start:clim_end
 
 # Set ntrn:
-ntrn <- 15
+ntrn <- 30 # final ntrn
 
 # Run!:
 for (run in 1:num_runs) {

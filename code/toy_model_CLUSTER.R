@@ -182,19 +182,20 @@ tm.range <- clim_start:clim_end
 ntrn <- 40
 
 # Fit!:
-for (ntrn in 5:30) {
-  print(ntrn)
-  for (run in 1:num_runs) {
-    res <- EAKF_rFC(num_ens, tmstep, param.bound, obs_i, ntrn, obs_vars, tm.ini, tm.range,
-                    updates = FALSE, do.reprobing = FALSE)
-    
-    outputMetrics <- rbind(outputMetrics, cbind(season, run, oev_base, oev_denom, lambda, scalings$gamma, res$metrics))
-    outputOP <- rbind(outputOP, cbind(season, run, oev_base, oev_denom, lambda, res$opStates))
-    outputOPParams <- rbind(outputOPParams, cbind(season, run, oev_base, oev_denom, lambda, res$trainParams))
-    outputDist = rbind(outputDist, cbind(season, run, oev_base, oev_denom, lambda, res$dist))
-    outputEns = rbind(outputEns, cbind(season, run, oev_base, oev_denom, lambda, res$ensembles))
-  }
+# for (ntrn in 5:30) {
+# print(ntrn)
+ntrn <- 30
+for (run in 1:num_runs) {
+  res <- EAKF_rFC(num_ens, tmstep, param.bound, obs_i, ntrn, obs_vars, tm.ini, tm.range,
+                  updates = FALSE, do.reprobing = FALSE)
+  
+  outputMetrics <- rbind(outputMetrics, cbind(season, run, oev_base, oev_denom, lambda, scalings$gamma, res$metrics))
+  outputOP <- rbind(outputOP, cbind(season, run, oev_base, oev_denom, lambda, res$opStates))
+  outputOPParams <- rbind(outputOPParams, cbind(season, run, oev_base, oev_denom, lambda, res$trainParams))
+  outputDist = rbind(outputDist, cbind(season, run, oev_base, oev_denom, lambda, res$dist))
+  outputEns = rbind(outputEns, cbind(season, run, oev_base, oev_denom, lambda, res$ensembles))
 }
+# }
 
 colnames(outputMetrics)[6] <- 'scaling'
 # I actually think all the other colnames are fine as-is...

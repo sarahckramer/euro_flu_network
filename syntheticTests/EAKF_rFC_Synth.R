@@ -11,7 +11,6 @@
 # Maybe make a set of slides that goes through this whole process - would help with understanding
 # it, and with explaining it to others
 # Are we like one week ahead/behind or something?
-# Question for Sen: Was alp consistently lower than for single-state forecasts?
 
 EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_vars,
                      tm.ini = 273, tm.range = 273:500, do.reprobing = FALSE){

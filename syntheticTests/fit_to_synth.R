@@ -2,7 +2,8 @@
 # This is just to plot out preliminary results
 # Eventually run in cluster and get full output files
 
-# Questions for Sen: Any issues with parameters not fitting well? What modifications did you make to the model? I0 randomly initiated everywhere or only in one/some locations?
+# Questions for Sen: Any issues with parameters not fitting well? What modifications did you make to the model? I0 randomly initiated everywhere or only in
+# one/some locations? Was alp consistently lower than for single-state forecasts?
 
 # [x] Try reinitiating/reprobing
 # [x] Check Sen's paper
