@@ -2,12 +2,12 @@
 ### Assess patterns in synthetic "data" and compare to observed data
 
 ### Save all plots:
-pdf('syntheticTests/outputs/synthetic_runs_Comp_0626.pdf', width = 16, height = 10)
+pdf('syntheticTests/outputs/synthetic_runs_Comp_0806.pdf', width = 16, height = 10)
 
 ### Read in synthetic "data" ###
-countries <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'FR', 'DE', 'HU', 'IS', 'IE', 'IT',
+countries <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'FR', 'DE', 'HU', 'IE', 'IT',
                'LU', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'UK')
-load('syntheticTests/syntheticData/synth_06-26_RATES.RData')
+load('syntheticTests/syntheticData/synth_07-14_RATES.RData')
 
 # synth.runs.RATES <- synth.runs.RATES[c(2:3, 5:7, 11:14, 18:19, 21:22, 24, 26:27)]
 
@@ -51,9 +51,8 @@ m$pt <- m$pt + 39; m$ot <- m$ot + 39
 # Which countries/runs have no onset?
 m.noOnset <- m[is.na(m$ot), ]; m.noOnset$country <- factor(m.noOnset$country)
 print(length(unique(m.noOnset$run)))
-rev(sort(table(m.noOnset$country))) # mostly PT and FR; also IT, IE, ES, CZ
+rev(sort(table(m.noOnset$country))) # mostly PT; also once in: SK, SI, RO, IT, FR, ES (usually different)
 # obs: NL and SK in 13-14
-# for high I0, mostly PT, but IT, FR, UK, PL, HU, and HR all possible
 
 # Now remove those w/o onset for further analyses:
 m <- m[!is.na(m$ot), ]
@@ -63,7 +62,7 @@ m <- m[!is.na(m$ot), ]
 library(maps)
 data("world.cities")
 country.names <- c('Austria', 'Belgium', 'Croatia', 'Czechia', 'Denmark', 'France', 'Germany',
-                   'Hungary', 'Iceland', 'Ireland', 'Italy', 'Luxembourg', 'Netherlands',
+                   'Hungary', 'Ireland', 'Italy', 'Luxembourg', 'Netherlands',
                    'Poland', 'Portugal', 'Romania', 'Slovakia', 'Slovenia', 'Spain', 'Sweden',
                    'United Kingdom')
 world.cities <- world.cities[(world.cities$country.etc %in% c(country.names, 'Czech Republic', 'UK')) &
@@ -101,7 +100,7 @@ p3 <- ggplot(data = m) + geom_boxplot(aes(x = country, y = pt, fill = long)) +
   scale_y_continuous(breaks = seq(46, 68, by = 2)) +
   scale_fill_gradientn(colors = viridis(100))
 grid.arrange(p1, p2, p3, ncol = 1)
-# IS still too early, but not as extreme; is SE a problem?; geographical pattern less clear
+# doesn't look like there's a super clear geographical pattern, other than that ES and PT tend to be smaller and later; less corr. between measures than before?
 
 # Test correlation between median values in observed and simulated data:
 load('code/checks/analyzeDataRetro/outputs/median_metrics.RData')
@@ -117,11 +116,13 @@ med.m <- merge(med.m, obs.dist[[2]], by = 'country')
 med.m <- merge(med.m, obs.dist[[3]], by = 'country')
 
 cor.test(med.m$ar, med.m$ar_obs, method = 'spearman') # not sig
-cor.test(med.m$ot, med.m$ot_obs, method = 'spearman') # not sig; for high I0, borderline sig (p=0.05016) neg. relationship
+cor.test(med.m$ot, med.m$ot_obs, method = 'spearman') # not sig
 cor.test(med.m$pt, med.m$pt_obs, method = 'spearman') # not sig
+# so there are no relationships between the medians in the observed data and the synthetic data...
+# in particular looks like ES and PT actually tend to be earlier
 
 ### Look at range of AR, PT, OT by RUN ###
-# Overall, simulated outbreaks seem a bit larger than observed
+# Overall, simulated outbreaks seem a bit larger than observed - although this can be changed with scaling differently
 
 ### Assess synchrony ###
 # For each run, what is the range of peak timings?
@@ -134,7 +135,7 @@ for (i in 1:length(synth.runs.RATES)) {
   print(as.vector(quantile(m.temp$pt, prob = 0.975) - quantile(m.temp$pt, prob = 0.025)))
   # print('')
 }
-# these actually look pretty realistic, even if a bit wider than expected
+# these actually look pretty realistic
 
 # Calculate correlation coefficients between all pairs of countries for each run:
 cor.synch <- vector('list', length(levels(m$run)))
@@ -168,7 +169,7 @@ data("world.cities")
 world.cities <- world.cities[(world.cities$country.etc %in% c(country.names, 'Czech Republic', 'UK')) &
                                world.cities$capital == 1, ]
 world.cities$country.etc <- factor(world.cities$country.etc)
-levels(world.cities$country.etc) <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'FR', 'DE', 'HU', 'IS', 'IE', 'IT',
+levels(world.cities$country.etc) <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'FR', 'DE', 'HU', 'IE', 'IT',
                                       'LU', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'UK')
 
 dist.mat <- matrix(0, nrow = length(countries), ncol = length(countries))
@@ -187,7 +188,7 @@ print(isSymmetric(dist.mat))
 
 synch.dist <- 1 - cor.synch.AVG # make into distance matrix
 mantel(as.dist(synch.dist) ~ as.dist(dist.mat), nperm = 10000, mrank = TRUE)
-# synchrony and distance between capitals are significantly associated (mantelr = -0.3911778) (one-sided and two-sided sig)
+# synchrony and distance between capitals are not sig. associated
 
 # Is synchrony related to commuting flows?:
 load('formatTravelData/formattedData/comm_mat_by_year_05-07.RData')
@@ -228,7 +229,7 @@ mantel(as.dist(synch.dist) ~ as.dist(a.mean), nperm = 10000, mrank = TRUE)
 # not sig
 
 # Plot mean correlations as matrix:
-rownames(cor.synch.AVG) = colnames(cor.synch.AVG) = c('AT', 'BE', 'HR', 'CZ', 'DK', 'FR', 'DE', 'HU', 'IS', 'IE', 'IT',
+rownames(cor.synch.AVG) = colnames(cor.synch.AVG) = c('AT', 'BE', 'HR', 'CZ', 'DK', 'FR', 'DE', 'HU', 'IE', 'IT',
                                                       'LU', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'UK')
 cor.synch.AVG[upper.tri(cor.synch.AVG)] <- NA
 cor.synch.plot <- melt(cor.synch.AVG)
@@ -236,7 +237,7 @@ names(cor.synch.plot) <- c('c1', 'c2', 'corr')
 cor.synch.plot <- cor.synch.plot[!is.na(cor.synch.plot$corr), ]
 cor.synch.plot$corr[cor.synch.plot$corr == 1] <- NA
 
-# ranges from 0.5972 (old: 0.5164) to 0.9483 (vs. 0.4216 to 0.9487)
+# ranges from 0.6077 to 0.9354 (vs. 0.4216 to 0.9487)
 # so a little too synchronous
 p1 <- ggplot(cor.synch.plot, aes(x = c1, y = c2)) + geom_tile(aes(fill = corr), colour = 'white') +
   scale_fill_gradientn(colours = cividis(100), na.value = 'gray80') + theme_classic() +
@@ -286,13 +287,9 @@ plot(cor.synch.plot$dist, cor.synch.plot$corr, pch = 20, xlab = 'Distance (100 k
 ####################################################################################################
 ####################################################################################################
 
-### Look at parameters and initial states for early IS vs. not early IS ###
-# We've already removed these!
-# We've also already looked at parameters
-
 ### Plot parameter ranges:
-load('syntheticTests/syntheticData/params_06-26.RData')
-load('syntheticTests/syntheticData/initStates_06-26.RData')
+load('syntheticTests/syntheticData/params_07-14.RData')
+load('syntheticTests/syntheticData/initStates_07-14.RData')
 
 # select.parms <- select.parms[c(2:3, 5:7, 11:14, 18:19, 21:22, 24, 26:27), ]
 # init.states.SEL <- init.states.SEL[, c(2:3, 5:7, 11:14, 18:19, 21:22, 24, 26:27)]
@@ -307,17 +304,14 @@ hist(select.parms$airScale, xlab = 'airScale', main = '', breaks = 15)
 # also look at difference between R0mx and R0mn - determines how much impact humidity has
 
 # for init.states.SEL, rows are countries and columns are runs
-init.S <- init.states.SEL[1:21, ]; init.I <- init.states.SEL[22:42, ]
+init.S <- init.states.SEL[1:20, ]; init.I <- init.states.SEL[21:40, ]
 rownames(init.S) = rownames(init.I) = countries
 
 init.S.df <- melt(init.S); init.I.df <- melt(init.I)
-kruskal.test(value ~ Var1, data = init.S.df) # sig (p = 0.03465)
+kruskal.test(value ~ Var1, data = init.S.df) # sig (p = 0.02633)
 kruskal.test(value ~ Var1, data = init.I.df) # not sig
 which(posthoc.kruskal.nemenyi.test(value ~ Var1, data = init.S.df)$p.value < 0.05, arr.ind = TRUE) # none
 countries[c(9, 6, 12, 15, 21)] # sig between IS and: FR, LU, PT, UK
-# if reduced to p < 0.01, UK and IS are different
-# bonferroni: none sig
-# If we remove those starting in SE, there are no longer ANY sig differences here (kruskal still sig, but nothing pairwise)
 
 par(mfrow = c(2, 1), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 boxplot(init.S.df$value ~ init.S.df$Var1, col = 'lightblue2')
@@ -326,7 +320,7 @@ boxplot(init.I.df$value ~ init.I.df$Var1, col = 'lightblue2')
 ### Map out spatial patterns ###
 # List of countries:
 countries.europe <- c('Austria', 'Belarus', 'Belgium', 'Bulgaria', 'Croatia', 'Czech Republic', 'Denmark',
-                      'Estonia', 'Finland', 'France', 'Germany', 'Greece', 'Hungary', 'Iceland', 'Ireland',
+                      'Estonia', 'Finland', 'France', 'Germany', 'Greece', 'Hungary', 'Ireland',
                       'Italy', 'Latvia', 'Lithuania', 'Luxembourg', 'Netherlands', 'Norway', 'Poland',
                       'Portugal', 'Moldova', 'Romania', 'Serbia', 'Slovakia', 'Slovenia', 'Spain', 'Sweden',
                       'Switzerland', 'Ukraine', 'UK')
@@ -349,7 +343,7 @@ ditch_the_axes <- theme(
 # Change country levels in m:
 m$country <- factor(as.character(m$country))
 levels(m$country) <- c('Austria', 'Belgium', 'Czech Republic', 'Germany', 'Denmark', 'Spain',
-                       'France', 'Croatia', 'Hungary', 'Ireland', 'Iceland', 'Italy',
+                       'France', 'Croatia', 'Hungary', 'Ireland', 'Italy',
                        'Luxembourg', 'Netherlands', 'Poland', 'Portugal', 'Romania', 'Sweden',
                        'Slovenia', 'Slovakia', 'UK')
 
@@ -383,11 +377,10 @@ for (run in levels(m$run)) {
   }
   do.call('grid.arrange', c(p, nrow = 3))
 }
+# There actually are several where the outbreak occurs early in PT or ES, but there are also several where it's late
+# Which look most realistic? (more w-to-e): 1, 2?, 9, 11?, 13
+# A lot starting in NL or AT?
 
 dev.off()
-
-# Could also remove those starting in SE, but I think that's not worth doing right now
-      # This doesn't change much anyway
-# Keep eye on R0mn - should it be lower?
 
 
