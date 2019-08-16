@@ -729,7 +729,7 @@ e.pi.agg$group <- paste(e.pi.agg$oev_base, e.pi.agg$lambda, sep = '_'); e.pi.agg
 
 p1 <- ggplot(data = d.pt.agg) + geom_line(aes(x = leadpkwk_mean, y = score, group = group, col = group)) +
   facet_wrap(~ country) + theme_bw() + labs(x = 'Predicted Lead Week', y = 'Log Score (PT)')# +
-  # scale_color_viridis(discrete = TRUE)
+# scale_color_viridis(discrete = TRUE)
 print(p1)
 p2 <- ggplot(data = d.pt.agg) + geom_line(aes(x = leadpkwk_mean, y = score, group = group, col = group)) +
   facet_wrap(~ country, scales = 'free_y') + theme_bw() + labs(x = 'Predicted Lead Week', y = 'Log Score (PT)')# +
@@ -750,11 +750,417 @@ p2 <- ggplot(data = d.ot.agg) + geom_line(aes(x = leadonset5, y = score, group =
   facet_wrap(~ country, scales = 'free_y') + theme_bw() + labs(x = 'Predicted Lead Week', y = 'Log Score (OT)')
 print(p2)
 
-# Check calibration (can be left for later):
+# Look at MAEs:
+
+
+
+
+
+
+
+
+
+# Check calibration (method 2):
+# Start with PT:
+library(Hmisc)
+a.dist <- read.csv('code/gridSearch/outputs/outputDist_081219_PT.csv')
+
+wtd.quantile.new <- function(x) {
+  if (round(sum(x[, 2])) != 1) {
+    print('ERROR 1')
+  }
+  
+  if (any(round(x[, 2] * 300, 0) < 1)) {
+    print('ERROR 2')
+  }
+  
+  y <- wtd.quantile(x = x[, 1], weights = round(x[, 2] * 300, 0), probs = p)
+  return(y)
+}
+p <- c(0.005, 0.025, 0.05, 0.1, 0.25, 0.375, 0.625, 0.75, 0.9, 0.95, 0.975, 0.995)
+
+countries <- levels(a.dist$country) # note: different order than that in which forecasts run!
+a <- read.csv('code/gridSearch/outputs/outputMet_081219_pro.csv')
+a.red <- a[, c('country', 'season', 'run', 'oev_base', 'oev_denom', 'lambda', 'fc_start', 'obs_pkwk', 'onset5', 'onsetObs5', 'leadpkwk_mean', 'FWeek_pkwk')]
+
+a.dist <- merge(a.dist, a.red, by = c('country', 'season', 'run', 'oev_base', 'oev_denom', 'lambda', 'fc_start'))
+
+a.dist$bin <- a.dist$bin + 40 - 1
+a.dist$bin[a.dist$bin == 38] <- -1
+
+a.dist$delta_pkwk <- a.dist$bin - a.dist$obs_pkwk
+
+a.pkwk <- a.dist[a.dist$leadpkwk_mean >= -8 & a.dist$leadpkwk_mean < 4 & !is.na(a.dist$leadpkwk_mean) & !is.na(a.dist$onset5) & !is.na(a.dist$onsetObs5), ]
+# if it doesn't predict an onset, we're not interested in its predictions of peak timing
+a.pkwk$leadpkwk_bin <- cut(a.pkwk$leadpkwk_mean, c(-9, -7, -5, -3, -1, 1, 3))
+
+a.pkwk <- a.pkwk[a.pkwk$bin != -1, ]
+a.pkwk <- a.pkwk[a.pkwk$value > 0, ] # don't need weeks with 0% confidence
+
+a.pkwk$oev_base <- factor(a.pkwk$oev_base)
+a.pkwk$oev_denom <- factor(a.pkwk$oev_denom)
+a.pkwk$lambda <- factor(a.pkwk$lambda)
+levels(a.pkwk$lambda)[1] <- '1.00'
+
+dat.temp.all <- data.frame()
+for (lead in levels(a.pkwk$leadpkwk_bin)) {
+  print(lead)
+  
+  a.temp <- a.pkwk[a.pkwk$leadpkwk_bin == lead, ]# & a.pkwk$lambda == lam, ]
+  c1 <- split(a.temp[, c('bin', 'value')], a.temp[, c('country', 'season', 'run', 'fc_start', 'oev_base', 'oev_denom', 'lambda')])
+  c15 <- sapply(1:length(c1), function(ix) {
+    unlist(c1[ix])
+  })
+  c1 <- c1[lapply(c15, length) > 0]
+  c2 <- lapply(c1, wtd.quantile.new)
+  c3 <- as.data.frame(unlist(c2))
+  c35 <- matrix(unlist(strsplit(rownames(c3), split = '[.]')), nrow = length(c3$`unlist(c2)`), byrow = TRUE)
+  c4 <- cbind(c3, c35)
+  rownames(c4) <- NULL
+  c4 <- cbind(c4[, 1:7], paste(c4[, 8], c4[, 9], sep = '.'), paste(c4[, 10], c4[, 11], sep = '.'))
+  colnames(c4) <- c('value', 'country', 'season', 'run', 'fc_start', 'oev_base', 'oev_denom', 'lambda', 'quantile')
+  c5 <- dcast(c4, country + season + run + fc_start + oev_base + oev_denom + lambda ~ quantile, value.var = 'value')
+  # a.new <- merge(c5, unique(a.temp[, c(1:7, 11)]), by = c('country', 'season', 'run', 'fc_start', 'oev_base', 'oev_denom', 'lambda'))
+  a.new <- merge(c5, unique(a.temp[, c(1:2, 11)]), by = c('country', 'season'))
+  rm(c1, c15, c2, c3, c35, c4, c5)
+  
+  # Now check how often observed values fall into certain credible intervals for each lead/oev/lambda combo:
+  for (o1 in unique(a.new$oev_base)) {
+    # for (o2 in unique(a.new$oev_denom)) {
+      for (lam in unique(a.new$lambda)) {
+        a.new.temp <- a.new[a.new$oev_base == o1 & a.new$oev_denom == o2 & a.new$lambda == lam, ]
+        # print(dim(a.new.temp)) # this leaves us with very few runs... (should be more once I run the other seasons!)
+        
+        denom <- length(a.new.temp$country)
+        
+        if (denom > 0) {
+          
+          p25 <- sum(a.new.temp$obs_pkwk >= a.new.temp$`37.5%` & a.new.temp$obs_pkwk <= a.new.temp$`62.5%`)
+          p50 <- sum(a.new.temp$obs_pkwk >= a.new.temp$`25.0%` & a.new.temp$obs_pkwk <= a.new.temp$`75.0%`)
+          p80 <- sum(a.new.temp$obs_pkwk >= a.new.temp$`10.0%` & a.new.temp$obs_pkwk <= a.new.temp$`90.0%`)
+          p90 <- sum(a.new.temp$obs_pkwk >= a.new.temp$` 5.0%` & a.new.temp$obs_pkwk <= a.new.temp$`95.0%`)
+          p95 <- sum(a.new.temp$obs_pkwk >= a.new.temp$` 2.5%` & a.new.temp$obs_pkwk <= a.new.temp$`97.5%`)
+          p99 <- sum(a.new.temp$obs_pkwk >= a.new.temp$` 0.5%` & a.new.temp$obs_pkwk <= a.new.temp$`99.5%`)
+          
+          y <- c(p25 / denom, p50 / denom, p80 / denom, p90 / denom, p95 / denom, p99 / denom) * 100
+          
+          # also calculate RMSE for lead/oev/lambda combo:
+          rmse <- sqrt(sum((y - c(25, 50, 80, 90, 95, 99)) ** 2) / 6)
+          
+          dat.temp <- as.data.frame(cbind(c(25, 50, 80, 90, 95, 99), y, rep(lead, 6), rep(rmse, 6), rep(denom, 6), rep(o1, 6), rep(o2, 6), rep(lam, 6)))
+          dat.temp.all <- rbind(dat.temp.all, dat.temp)
+          
+        }
+        
+      }
+    # }
+  }
+  
+  # a.new.temp <- a.new
+  # denom <- length(a.new.temp$country)
+  # 
+  # p25 <- sum(a.new.temp$obs_pkwk >= a.new.temp$`37.5%` & a.new.temp$obs_pkwk <= a.new.temp$`62.5%`)
+  # p50 <- sum(a.new.temp$obs_pkwk >= a.new.temp$`25.0%` & a.new.temp$obs_pkwk <= a.new.temp$`75.0%`)
+  # p80 <- sum(a.new.temp$obs_pkwk >= a.new.temp$`10.0%` & a.new.temp$obs_pkwk <= a.new.temp$`90.0%`)
+  # p90 <- sum(a.new.temp$obs_pkwk >= a.new.temp$` 5.0%` & a.new.temp$obs_pkwk <= a.new.temp$`95.0%`)
+  # p95 <- sum(a.new.temp$obs_pkwk >= a.new.temp$` 2.5%` & a.new.temp$obs_pkwk <= a.new.temp$`97.5%`)
+  # p99 <- sum(a.new.temp$obs_pkwk >= a.new.temp$` 0.5%` & a.new.temp$obs_pkwk <= a.new.temp$`99.5%`)
+  # 
+  # y <- c(p25 / denom, p50 / denom, p80 / denom, p90 / denom, p95 / denom, p99 / denom) * 100
+  
+}
+
+for (i in c(1:2, 4:5)) {
+  dat.temp.all[, i] <- as.numeric(as.character(dat.temp.all[, i]))
+}
+dat.pt.temp <- dat.temp.all
+dat.pt.temp$metric <- 'Peak Timing'
+
+names(dat.pt.temp) <- c('quantile', 'y', 'lead', 'rmse', 'len', 'oev_base', 'oev_denom', 'lambda', 'metric')
+dat.pt.temp$group <- paste(dat.pt.temp$lead, dat.pt.temp$oev_base, dat.pt.temp$oev_denom, dat.pt.temp$lambda, sep = '_'); dat.pt.temp$group <- factor(dat.pt.temp$group)
+
+p1 <- ggplot(data = dat.pt.temp, aes(x = quantile, y = y, color = lead, group = group)) +
+  geom_abline(aes(intercept = 0, slope = 1), colour = 'gray80') +
+  geom_line() + geom_point(size = 4) +
+  labs(x = 'Prediction Interval', y = '% of Obs Within Interval', colour = 'Pred. Lead:') + theme_bw() +
+  theme(aspect.ratio = 1, legend.text = element_text(size = 12), axis.text = element_text(size = 10),
+        strip.text = element_text(size = 10), axis.title = element_text(size = 12),
+        legend.title = element_text(size = 12)) +
+  scale_color_brewer(palette = 'Set1') +
+  # scale_color_manual(values = c('#d73027', '#fdae61', '#fee08b')) +#, '#a6d96a', '#1a9850')) +
+  scale_x_continuous(limits = c(20, 100), breaks = c(20, 30, 40, 50, 60, 70, 80, 90, 100)) +
+  scale_y_continuous(limits = c(0, 100), breaks = c(0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100)) +
+  facet_grid(oev_base ~ lambda)
+p1
+# again, not really an impact of oev_denom - but check for PI/OT before merging them all
+
+# Now do OT:
+a.dist <- read.csv('code/gridSearch/outputs/outputDist_081219_OT.csv')
+a.dist <- merge(a.dist, a.red, by = c('country', 'season', 'run', 'oev_base', 'oev_denom', 'lambda', 'fc_start'))
+
+a.dist$bin <- a.dist$bin + 40 - 1
+a.dist$bin[a.dist$bin == 38] <- -1
+
+a.dist$delta_onwk <- a.dist$bin - a.dist$onsetObs5
+a.dist$leadonwk_mean <- a.dist$fc_start - a.dist$onset5
+
+a.onwk <- a.dist[a.dist$leadonwk_mean >= -6 & a.dist$leadonwk_mean < 4 & !is.na(a.dist$leadonwk_mean) & !is.na(a.dist$onset5) & !is.na(a.dist$onsetObs5), ]
+a.onwk$leadonwk_bin <- cut(a.onwk$leadonwk_mean, c(-7, -5, -3, -1, 1, 3))
+
+a.onwk <- a.onwk[a.onwk$bin != -1, ] # can only consider the weighted quantiles among ensemble members that actually predict an onset
+a.onwk <- a.onwk[a.onwk$value > 0, ] # don't need weeks with 0% confidence
+
+a.onwk$oev_base <- factor(a.onwk$oev_base)
+a.onwk$oev_denom <- factor(a.onwk$oev_denom)
+a.onwk$lambda <- factor(a.onwk$lambda)
+levels(a.onwk$lambda)[1] <- '1.00'
+
+wtd.quantile.onset <- function(x) {
+  # if (round(sum(x[, 2])) != 1) {
+  #   print('ERROR 1')
+  # }
+  
+  if (any(round(x[, 2] * 300, 0) < 1)) {
+    print('ERROR 2')
+  }
+  
+  tot.mem <- round(sum(x[, 2]) * 300, 0)
+  
+  y <- wtd.quantile(x = x[, 1], weights = round(x[, 2] * tot.mem, 0), probs = p) # does this actually make any difference?
+  return(y)
+}
+
+dat.temp.all <- data.frame()
+for (lead in levels(a.onwk$leadonwk_bin)) {
+  print(lead)
+  
+  a.temp <- a.onwk[a.onwk$leadonwk_bin == lead, ]
+  c1 <- split(a.temp[, c('bin', 'value')], a.temp[, c('country', 'season', 'run', 'fc_start', 'oev_base', 'oev_denom', 'lambda')])
+  c15 <- sapply(1:length(c1), function(ix) {
+    unlist(c1[ix])
+  })
+  c1 <- c1[lapply(c15, length) > 0]
+  c2 <- lapply(c1, wtd.quantile.onset)
+  c3 <- as.data.frame(unlist(c2))
+  c35 <- matrix(unlist(strsplit(rownames(c3), split = '[.]')), nrow = length(c3$`unlist(c2)`), byrow = TRUE)
+  c4 <- cbind(c3, c35)
+  rownames(c4) <- NULL
+  c4 <- cbind(c4[, 1:7], paste(c4[, 8], c4[, 9], sep = '.'), paste(c4[, 10], c4[, 11], sep = '.'))
+  colnames(c4) <- c('value', 'country', 'season', 'run', 'fc_start', 'oev_base', 'oev_denom', 'lambda', 'quantile')
+  c5 <- dcast(c4, country + season + run + fc_start + oev_base + oev_denom + lambda ~ quantile, value.var = 'value')
+  a.new <- merge(c5, unique(a.temp[, c(1:2, 13)]), by = c('country', 'season'))
+  rm(c1, c15, c2, c3, c35, c4, c5)
+  
+  # Now check how often observed values fall into certain credible intervals for each lead/oev/lambda combo:
+  for (o1 in unique(a.new$oev_base)) {
+    for (o2 in unique(a.new$oev_denom)) {
+      for (lam in unique(a.new$lambda)) {
+        a.new.temp <- a.new[a.new$oev_base == o1 & a.new$oev_denom == o2 & a.new$lambda == lam, ]
+        # print(dim(a.new.temp)) # this leaves us with very few runs... (should be more once I run the other seasons!)
+        
+        denom <- length(a.new.temp$country)
+        
+        if (denom > 0) {
+          
+          p25 <- sum(a.new.temp$onsetObs5 >= a.new.temp$`37.5%` & a.new.temp$onsetObs5 <= a.new.temp$`62.5%`)
+          p50 <- sum(a.new.temp$onsetObs5 >= a.new.temp$`25.0%` & a.new.temp$onsetObs5 <= a.new.temp$`75.0%`)
+          p80 <- sum(a.new.temp$onsetObs5 >= a.new.temp$`10.0%` & a.new.temp$onsetObs5 <= a.new.temp$`90.0%`)
+          p90 <- sum(a.new.temp$onsetObs5 >= a.new.temp$` 5.0%` & a.new.temp$onsetObs5 <= a.new.temp$`95.0%`)
+          p95 <- sum(a.new.temp$onsetObs5 >= a.new.temp$` 2.5%` & a.new.temp$onsetObs5 <= a.new.temp$`97.5%`)
+          p99 <- sum(a.new.temp$onsetObs5 >= a.new.temp$` 0.5%` & a.new.temp$onsetObs5 <= a.new.temp$`99.5%`)
+          
+          y <- c(p25 / denom, p50 / denom, p80 / denom, p90 / denom, p95 / denom, p99 / denom) * 100
+          
+          # also calculate RMSE for lead/oev/lambda combo:
+          rmse <- sqrt(sum((y - c(25, 50, 80, 90, 95, 99)) ** 2) / 6)
+          
+          dat.temp <- as.data.frame(cbind(c(25, 50, 80, 90, 95, 99), y, rep(lead, 6), rep(rmse, 6), rep(denom, 6), rep(o1, 6), rep(o2, 6), rep(lam, 6)))
+          dat.temp.all <- rbind(dat.temp.all, dat.temp)
+          
+        }
+        
+      }
+    }
+  }
+  
+  # a.new.temp <- a.new
+  # denom <- length(a.new.temp$country)
+  # 
+  # p25 <- sum(a.new.temp$obs_pkwk >= a.new.temp$`37.5%` & a.new.temp$obs_pkwk <= a.new.temp$`62.5%`)
+  # p50 <- sum(a.new.temp$obs_pkwk >= a.new.temp$`25.0%` & a.new.temp$obs_pkwk <= a.new.temp$`75.0%`)
+  # p80 <- sum(a.new.temp$obs_pkwk >= a.new.temp$`10.0%` & a.new.temp$obs_pkwk <= a.new.temp$`90.0%`)
+  # p90 <- sum(a.new.temp$obs_pkwk >= a.new.temp$` 5.0%` & a.new.temp$obs_pkwk <= a.new.temp$`95.0%`)
+  # p95 <- sum(a.new.temp$obs_pkwk >= a.new.temp$` 2.5%` & a.new.temp$obs_pkwk <= a.new.temp$`97.5%`)
+  # p99 <- sum(a.new.temp$obs_pkwk >= a.new.temp$` 0.5%` & a.new.temp$obs_pkwk <= a.new.temp$`99.5%`)
+  # 
+  # y <- c(p25 / denom, p50 / denom, p80 / denom, p90 / denom, p95 / denom, p99 / denom) * 100
+  
+}
+
+for (i in c(1:2, 4:5)) {
+  dat.temp.all[, i] <- as.numeric(as.character(dat.temp.all[, i]))
+}
+dat.ot.temp <- dat.temp.all
+dat.ot.temp$metric <- 'Onset Timing'
+
+names(dat.ot.temp) <- c('quantile', 'y', 'lead', 'rmse', 'len', 'oev_base', 'oev_denom', 'lambda', 'metric')
+dat.ot.temp$group <- paste(dat.ot.temp$lead, dat.ot.temp$oev_base, dat.ot.temp$oev_denom, dat.ot.temp$lambda, sep = '_'); dat.ot.temp$group <- factor(dat.ot.temp$group)
+# dat.ot.temp$lead <- factor(dat.ot.temp$lead, levels = levels(dat.ot.temp$lead)[5:1])
+
+p1 <- ggplot(data = dat.ot.temp, aes(x = quantile, y = y, color = lead, group = group)) +
+  geom_abline(aes(intercept = 0, slope = 1), colour = 'gray50', size = 1.0) +
+  geom_line() + geom_point(size = 4) +#geom_point(aes(size = len)) +
+  labs(x = 'Prediction Interval', y = '% of Obs Within Interval', colour = 'Pred. Lead:') + theme_bw() +
+  theme(aspect.ratio = 1, legend.text = element_text(size = 12), axis.text = element_text(size = 10),
+        strip.text = element_text(size = 10), axis.title = element_text(size = 12),
+        legend.title = element_text(size = 12)) +
+  scale_color_brewer(palette = 'Set1') +
+  # scale_color_manual(values = c('#d73027', '#fdae61', '#fee08b')) +#, '#a6d96a', '#1a9850')) +
+  scale_x_continuous(limits = c(20, 100), breaks = c(20, 30, 40, 50, 60, 70, 80, 90, 100)) +
+  scale_y_continuous(limits = c(0, 100), breaks = c(0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100)) +
+  facet_grid(oev_base ~ lambda)
+p1
+
+# Finally, PI:
+a.dist <- read.csv('code/gridSearch/outputs/outputEns_081219_PI.csv')
+a.int <- a.dist
+
+a.red <- a[, c('country', 'season', 'run', 'oev_base', 'oev_denom', 'lambda', 'scaling', 'fc_start', 'obs_peak_int', 'obs_pkwk', 'onset5', 'onsetObs5', 'leadpkwk_mean', 'FWeek_pkwk')]
+a.int <- merge(a.int, a.red, by = c('country', 'season', 'run', 'oev_base', 'oev_denom', 'lambda', 'fc_start'))
+
+a.int[, c(9:308)] <- a.int[, c(9:308)] / a.int[, 309]
+a.int$scaling <- NULL
+
+a.int <- a.int[a.int$leadpkwk_mean >= -8 & a.int$leadpkwk_mean < 4 & !is.na(a.int$leadpkwk_mean) & !is.na(a.int$onset5) & !is.na(a.int$onsetObs5),]
+a.int$leadpkwk_bin <- cut(a.int$leadpkwk_mean, c(-9, -7, -5, -3, -1, 1, 3))
+
+a.int$oev_base <- factor(a.int$oev_base)
+a.int$oev_denom <- factor(a.int$oev_denom)
+a.int$lambda <- factor(a.int$lambda)
+levels(a.int$lambda)[1] <- '1.00'
+
+dat.temp.all <- data.frame()
+for (lead in levels(a.int$leadpkwk_bin)) {
+  print(lead)
+  
+  a.temp <- a.int[a.int$leadpkwk_bin == lead, ]
+  len <- length(a.temp$country)
+  
+  if (len > 0) {
+    a.new <- sapply(1:length(a.temp$leadpkwk_mean), function(ix) {
+      quantile(a.temp[ix, 9:308], probs = p)
+    })
+    a.new <- t(a.new); a.new <- cbind(a.temp, a.new); a.new <- a.new[, -c(9:308)]
+    
+    
+    for (o1 in levels(a.temp$oev_base)) {
+      for (o2 in levels(a.temp$oev_denom)) {
+        for (lam in levels(a.temp$lambda)) {
+          a.new.temp <- a.new[a.new$oev_base == o1 & a.new$oev_denom == o2 & a.new$lambda == lam, ]
+          denom <- length(a.new.temp$country)
+          
+          if (denom > 0) {
+            p25 <- sum(a.new.temp$obs_peak_int >= a.new.temp$`37.5%` & a.new.temp$obs_peak_int <= a.new.temp$`62.5%`)
+            p50 <- sum(a.new.temp$obs_peak_int >= a.new.temp$`25%` & a.new.temp$obs_peak_int <= a.new.temp$`75%`)
+            p80 <- sum(a.new.temp$obs_peak_int >= a.new.temp$`10%` & a.new.temp$obs_peak_int <= a.new.temp$`90%`)
+            p90 <- sum(a.new.temp$obs_peak_int >= a.new.temp$`5%` & a.new.temp$obs_peak_int <= a.new.temp$`95%`)
+            p95 <- sum(a.new.temp$obs_peak_int >= a.new.temp$`2.5%` & a.new.temp$obs_peak_int <= a.new.temp$`97.5%`)
+            p99 <- sum(a.new.temp$obs_peak_int >= a.new.temp$`0.5%` & a.new.temp$obs_peak_int <= a.new.temp$`99.5%`)
+            
+            y <- c(p25 / denom, p50 / denom, p80 / denom, p90 / denom,
+                   p95 / denom, p99 / denom) * 100
+            rmse <- sqrt(sum((c(p25 / denom, p50 / denom, p80 / denom, p90 / denom,
+                                p95 / denom, p99 / denom) * 100 - c(25, 50, 80, 90, 95, 99)) ** 2) / 6)
+            
+            dat.temp <- as.data.frame(cbind(c(25, 50, 80, 90, 95, 99), y, rep(lead, 6), rep(rmse, 6), rep(denom, 6), rep(o1, 6), rep(o2, 6), rep(lam, 6)))
+            dat.temp.all <- rbind(dat.temp.all, dat.temp)
+          }
+          
+        }
+      }
+    }
+    
+  }
+  
+}
+
+for (i in c(1:2, 4:5)) {
+  dat.temp.all[, i] <- as.numeric(as.character(dat.temp.all[, i]))
+}
+dat.pi.temp <- dat.temp.all
+dat.pi.temp$metric <- 'Peak Intensity'
+
+names(dat.pi.temp) <- c('quantile', 'y', 'lead', 'rmse', 'len', 'oev_base', 'oev_denom', 'lambda', 'metric')
+dat.pi.temp$group <- paste(dat.pi.temp$lead, dat.pi.temp$oev_base, dat.pi.temp$oev_denom, dat.pi.temp$lambda, sep = '_'); dat.pi.temp$group <- factor(dat.pi.temp$group)
+
+p1 <- ggplot(data = dat.pi.temp, aes(x = quantile, y = y, color = lead, group = group)) +
+  geom_abline(aes(intercept = 0, slope = 1), colour = 'gray80') +
+  geom_line() + geom_point(size = 4) +
+  labs(x = 'Prediction Interval', y = '% of Obs Within Interval', colour = 'Pred. Lead:') + theme_bw() +
+  theme(aspect.ratio = 1, legend.text = element_text(size = 12), axis.text = element_text(size = 10),
+        strip.text = element_text(size = 10), axis.title = element_text(size = 12),
+        legend.title = element_text(size = 12)) +
+  scale_color_brewer(palette = 'Set1') +
+  # scale_color_manual(values = c('#d73027', '#fdae61', '#fee08b')) +#, '#a6d96a', '#1a9850')) +
+  scale_x_continuous(limits = c(20, 100), breaks = c(20, 30, 40, 50, 60, 70, 80, 90, 100)) +
+  scale_y_continuous(limits = c(0, 100), breaks = c(0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100)) +
+  facet_grid(oev_base ~ lambda)
+p1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+dat.fit <- rbind(dat.pt.temp, dat.pi.temp, dat.ot.temp)
+
+
+
+
+dat.fig <- rbind(dat.pt.temp, dat.pt.trop); dat.fig <- rbind(dat.fig, dat.pi.temp); dat.fig <- rbind(dat.fig, dat.pi.trop)
+dat.fig$metric <- factor(dat.fig$metric); dat.fig$metric <- relevel(dat.fig$metric, ref = 'Peak Timing')
+dat.fig$region <- factor(dat.fig$region)
+
+p2 <- ggplot(data = dat.fig, aes(x = V1, y = y, colour = V3)) +
+  geom_abline(aes(intercept = 0, slope = 1), colour = 'gray80') +
+  geom_line() + geom_point(size = 4) +
+  labs(x = 'Prediction Interval', y = '% of Obs within PI', colour = 'Pred. Lead:') + theme_bw() +
+  theme(aspect.ratio = 1, legend.text = element_text(size = 12), axis.text = element_text(size = 10),
+        strip.text = element_blank(), axis.title = element_text(size = 12),
+        legend.title = element_text(size = 12), strip.background = element_blank()) +
+  # scale_color_brewer(palette = 'Set1') +
+  scale_color_manual(values = c('#d73027', '#fdae61', '#fee08b')) +#, '#a6d96a', '#1a9850')) +
+  scale_x_continuous(limits = c(20, 100), breaks = c(20, 30, 40, 50, 60, 70, 80, 90, 100)) +
+  scale_y_continuous(limits = c(0, 100), breaks = c(0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100)) +
+  facet_grid(region ~ metric)
+dat.text <- data.frame(label = c('A', 'B', 'C', 'D'), region = c('Temperate', 'Temperate', 'Tropics', 'Tropics'),
+                       metric = c('Peak Timing', 'Peak Intensity', 'Peak Timing', 'Peak Intensity'))
+p2 + geom_text(data = dat.text, mapping = aes(x = 23, y = 96, label = label), size = 8, color = 'black')
+
+
+
+
+
+
 
 
 
 dev.off()
+
+
+
+
+
 
 # ################
 # ### FIGURE 3 ###
@@ -910,250 +1316,7 @@ dev.off()
 # dat.text <- data.frame(label = c('A', 'B', 'C', 'D'), V5 = c('temp_h', 'temp_h', 'trop', 'trop'),
 #                        metric = c('Peak Timing', 'Peak Intensity', 'Peak Timing', 'Peak Intensity'))
 # p1 + geom_text(data = dat.text, mapping = aes(x = 9.8, y = 0.97, label = label), size = 8, color = 'black')
-# 
-# ################
-# ### FIGURE 4 ###
-# ################
-# library(Hmisc)
-# a.dist <- read.csv('/Users/sarahkramer/Dropbox/spatial_model/forecasts/results/outputDist_TEMPERATE_new.csv')
-# 
-# wtd.quantile.new <- function(x) {
-#   if (round(sum(x[,2])) != 1) {
-#     print('ERROR1')
-#   }
-#   if (any(round(x[,2] * 300, 0) < 1)) {
-#     print('ERROR2')
-#   }
-#   y <- wtd.quantile(x = x[,1], weights = round(x[,2] * 300, 0), probs = p)
-#   return(y)
-# }
-# 
-# p <- c(0.005, 0.025, 0.05, 0.1, 0.25, 0.375, 0.625, 0.75, 0.9, 0.95, 0.975, 0.995)
-# 
-# a.pkwk <- a.dist[a.dist$metric == 'pw',]
-# a.pkwk$scaling <- NULL
-# 
-# countries <- levels(a.pkwk$country)
-# 
-# a.red <- a[, c('country', 'season', 'run', 'fc_start', 'obs_pkwk', 'onset5', 'onsetObs5', 'leadpkwk_mean')]
-# 
-# a.pkwk <- merge(a.pkwk, a.red, by = c('country', 'season', 'run', 'fc_start'))
-# a.pkwk$delta_pkwk <- a.pkwk$week - a.pkwk$obs_pkwk
-# a.pkwk$fweek_pkwk <- a.pkwk$fc_start - a.pkwk$obs_pkwk
-# 
-# a.pkwk <- a.pkwk[a.pkwk$leadpkwk_mean >= -6 & a.pkwk$leadpkwk_mean < 0 & !is.na(a.pkwk$leadpkwk_mean) & !is.na(a.pkwk$onset5) & !is.na(a.pkwk$onsetObs5),]
-# a.pkwk$leadpkwk_bin <- cut(a.pkwk$leadpkwk_mean, c(-7, -5, -3, -1))
-# 
-# a.pkwk <- a.pkwk[a.pkwk$week != -1,]
-# 
-# dat.temp.all <- data.frame()
-# for (lead in levels(a.pkwk$leadpkwk_bin)) {
-#   print(lead)
-#   
-#   a.temp <- a.pkwk[a.pkwk$leadpkwk_bin == lead & !is.na(a.pkwk$onset5),]
-#   c1 <- split(a.temp[, c('week', 'prob')], a.temp[, c('country', 'season', 'run', 'fc_start', 'oev', 'lambda')])
-#   c15 <- sapply(1:length(c1), function(ix) {
-#     unlist(c1[ix])
-#   })
-#   c1 <- c1[lapply(c15, length) > 0]
-#   c2 <- lapply(c1, wtd.quantile.new)
-#   c3 <- as.data.frame(unlist(c2))
-#   c35 <- matrix(unlist(strsplit(rownames(c3), split = '[.]')), nrow = length(c3$`unlist(c2)`), byrow = TRUE)
-#   c4 <- cbind(c3, c35)
-#   rownames(c4) <- NULL
-#   c4 <- cbind(c4[, 1:6], paste(c4[, 7], c4[, 8], sep='.'), paste(c4[, 9], c4[, 10], sep='.'))
-#   colnames(c4) <- c('value', 'country', 'season', 'run', 'fc_start', 'oev', 'lambda', 'quantile')
-#   c5 <- dcast(c4, country + season + run + fc_start + oev + lambda ~ quantile, value.var='value')
-#   a.new <- merge(c5, unique(a.temp[, c(1:6, 10)]), by=c('country', 'season', 'run', 'fc_start', 'oev', 'lambda'))
-#   rm(c1, c2, c3, c4, c5)
-#   
-#   # Okay! Now we can see how often (out of 13065 rows) the observed fall into certain CIs
-#   y <- c()
-#   rmses <- c()
-#   a.new.temp <- a.new
-#   len <- length(a.new.temp$country)
-#   
-#   p25 <- sum(a.new.temp$obs_pkwk >= a.new.temp$`37.5%` & a.new.temp$obs_pkwk <= a.new.temp$`62.5%`)
-#   p50 <- sum(a.new.temp$obs_pkwk >= a.new.temp$`25.0%` & a.new.temp$obs_pkwk <= a.new.temp$`75.0%`)
-#   p80 <- sum(a.new.temp$obs_pkwk >= a.new.temp$`10.0%` & a.new.temp$obs_pkwk <= a.new.temp$`90.0%`)
-#   p90 <- sum(a.new.temp$obs_pkwk >= a.new.temp$` 5.0%` & a.new.temp$obs_pkwk <= a.new.temp$`95.0%`)
-#   p95 <- sum(a.new.temp$obs_pkwk >= a.new.temp$` 2.5%` & a.new.temp$obs_pkwk <= a.new.temp$`97.5%`)
-#   p99 <- sum(a.new.temp$obs_pkwk >= a.new.temp$` 0.5%` & a.new.temp$obs_pkwk <= a.new.temp$`99.5%`)
-#   denom <- length(a.new.temp$country)
-#   
-#   y <- c(y, c(p25 / denom, p50 / denom, p80 / denom, p90 / denom, 
-#               p95 / denom, p99 / denom) * 100)
-#   
-#   # Also calculate RMSE for lead/oev/lambda combo:
-#   rmse = sqrt(sum((c(p25 / denom, p50 / denom, p80 / denom, p90 / denom, 
-#                      p95 / denom, p99 / denom) * 100 - c(25, 50, 80, 90, 95, 99)) ** 2) / 6)
-#   rmses <- c(rmses, rep(rmse, 6))
-#   
-#   dat.temp <- as.data.frame(cbind(c(25, 50, 80, 90, 95, 99), y, rep(lead, 6), rmses, rep(len, 6)))
-#   dat.temp.all <- rbind(dat.temp.all, dat.temp)
-# }
-# 
-# for (i in c(1:2, 4:5)) {
-#   dat.temp.all[, i] <- as.numeric(as.character(dat.temp.all[, i]))
-# }
-# 
-# dat.pt.temp <- dat.temp.all
-# dat.pt.temp$metric <- 'Peak Timing'; dat.pt.temp$region <- 'Temperate'
-# 
-# c.dist <- read.csv('/Users/sarahkramer/Dropbox/spatial_model/forecasts/results/outputDist_trop_nohumid_CONT.csv')
-# 
-# c.pkwk <- c.dist[c.dist$metric == 'pw',]
-# c.pkwk$scaling <- NULL
-# 
-# countries <- levels(c.pkwk$country)
-# 
-# c.red <- c[, c('country', 'run', 'fc_start', 'obs_pkwk', 'onset', 'onsetObs', 'leadpkwk_mean')]
-# 
-# c.pkwk <- merge(c.pkwk, c.red, by = c('country', 'run', 'fc_start'))
-# c.pkwk$delta_pkwk <- c.pkwk$week - c.pkwk$obs_pkwk
-# c.pkwk$fweek_pkwk <- c.pkwk$fc_start - c.pkwk$obs_pkwk
-# 
-# c.pkwk <- c.pkwk[c.pkwk$leadpkwk_mean >= -6 & c.pkwk$leadpkwk_mean < 0 & !is.na(c.pkwk$leadpkwk_mean) & !is.na(c.pkwk$onset) & !is.na(c.pkwk$onsetObs),]
-# c.pkwk$leadpkwk_bin <- cut(c.pkwk$leadpkwk_mean, c(-7, -5, -3, -1))
-# 
-# c.pkwk <- c.pkwk[c.pkwk$week != -1,]
-# 
-# dat.temp.all <- data.frame()
-# for (lead in levels(c.pkwk$leadpkwk_bin)) {
-#   print(lead)
-#   
-#   c.temp <- c.pkwk[c.pkwk$leadpkwk_bin == lead & !is.na(c.pkwk$onset),]
-#   c1 <- split(c.temp[, c('week', 'prob')], c.temp[, c('country', 'run', 'fc_start')])
-#   c15 <- sapply(1:length(c1), function(ix) {
-#     unlist(c1[ix])
-#   })
-#   c1 <- c1[lapply(c15, length) > 0]
-#   c2 <- lapply(c1, wtd.quantile.new)
-#   c3 <- as.data.frame(unlist(c2))
-#   c35 <- matrix(unlist(strsplit(rownames(c3), split = '[.]')), nrow = length(c3$`unlist(c2)`), byrow = TRUE)
-#   c4 <- cbind(c3, c35)
-#   rownames(c4) <- NULL
-#   c4 <- cbind(c4[, 1:4], paste(c4[, 5], c4[, 6], sep='.'))
-#   colnames(c4) <- c('value', 'country', 'run', 'fc_start', 'quantile')
-#   c5 <- dcast(c4, country + run + fc_start ~ quantile, value.var='value')
-#   c.new <- merge(c5, unique(c.temp[, c(1:3, 9)]), by=c('country', 'run', 'fc_start'))
-#   rm(c1, c2, c3, c4, c5)
-#   
-#   # Okay! Now we can see how often (out of 13065 rows) the observed fall into certain CIs
-#   y <- c()
-#   rmses <- c()
-#   a.new.temp <- c.new
-#   len <- length(a.new.temp$country)
-#   
-#   p25 <- sum(a.new.temp$obs_pkwk >= a.new.temp$`37.5%` & a.new.temp$obs_pkwk <= a.new.temp$`62.5%`)
-#   p50 <- sum(a.new.temp$obs_pkwk >= a.new.temp$`25.0%` & a.new.temp$obs_pkwk <= a.new.temp$`75.0%`)
-#   p80 <- sum(a.new.temp$obs_pkwk >= a.new.temp$`10.0%` & a.new.temp$obs_pkwk <= a.new.temp$`90.0%`)
-#   p90 <- sum(a.new.temp$obs_pkwk >= a.new.temp$` 5.0%` & a.new.temp$obs_pkwk <= a.new.temp$`95.0%`)
-#   p95 <- sum(a.new.temp$obs_pkwk >= a.new.temp$` 2.5%` & a.new.temp$obs_pkwk <= a.new.temp$`97.5%`)
-#   p99 <- sum(a.new.temp$obs_pkwk >= a.new.temp$` 0.5%` & a.new.temp$obs_pkwk <= a.new.temp$`99.5%`)
-#   denom <- length(a.new.temp$country)
-#   
-#   y <- c(y, c(p25 / denom, p50 / denom, p80 / denom, p90 / denom, 
-#               p95 / denom, p99 / denom) * 100)
-#   
-#   # Also calculate RMSE for lead/oev/lambda combo:
-#   rmse = sqrt(sum((c(p25 / denom, p50 / denom, p80 / denom, p90 / denom, 
-#                      p95 / denom, p99 / denom) * 100 - c(25, 50, 80, 90, 95, 99)) ** 2) / 6)
-#   rmses <- c(rmses, rep(rmse, 6))
-#   
-#   dat.temp <- as.data.frame(cbind(c(25, 50, 80, 90, 95, 99), y, rep(lead, 6), rmses, rep(len, 6)))
-#   dat.temp.all <- rbind(dat.temp.all, dat.temp)
-# }
-# 
-# for (i in c(1:2, 4:5)) {
-#   dat.temp.all[, i] <- as.numeric(as.character(dat.temp.all[, i]))
-# }
-# 
-# dat.pt.trop <- dat.temp.all
-# dat.pt.trop$metric <- 'Peak Timing'; dat.pt.trop$region <- 'Tropics'
-# 
-# a.dist <- read.csv('/Users/sarahkramer/Dropbox/spatial_model/forecasts/results/outputEns_TEMPERATE.csv')
-# c.dist <- read.csv('/Users/sarahkramer/Dropbox/spatial_model/forecasts/results/outputEns_trop_nohumid_CONT.csv')
-# 
-# # Temperate (w/ AH)
-# a.int <- a.dist
-# a.int[, c(9:308)] <- (a.int[, c(9:308)] / a.int[,4])
-# a.int$scaling <-NULL
-# 
-# countries <- levels(a.int$country)
-# p <- c(0.005, 0.025, 0.05, 0.1, 0.25, 0.375, 0.625, 0.75, 0.9, 0.95, 0.975, 0.995)
-# 
-# a.red <- a[, c('country', 'season', 'run', 'fc_start', 'obs_peak_int', 'obs_pkwk', 'onset5', 'onsetObs5', 'leadpkwk_mean')]
-# 
-# a.int <- merge(a.int, a.red, by = c('country', 'season', 'run', 'fc_start'))
-# a.int$fweek_pkwk <- a.int$fc_start - a.int$obs_pkwk
-# 
-# a.int <- a.int[a.int$leadpkwk_mean >= -6 & a.int$leadpkwk_mean < 0 & !is.na(a.int$leadpkwk_mean) & !is.na(a.int$onset5) & !is.na(a.int$onsetObs5),]
-# a.int$leadpkwk_bin <- cut(a.int$leadpkwk_mean, c(-7, -5, -3, -1))
-# 
-# dat.temp.all <- data.frame()
-# for (lead in levels(a.int$leadpkwk_bin)) {
-#   print(lead)
-#   
-#   a.temp <- a.int[a.int$leadpkwk_bin == lead & !is.na(a.int$onset5),]
-#   len <- length(a.temp$country)
-#   
-#   if (len > 0) {
-#     a.new <- sapply(1:length(a.temp$leadpkwk_mean), function(ix) {
-#       quantile(a.temp[ix, 8:307], probs = p)
-#     })
-#     a.new <- t(a.new); a.new <- cbind(a.temp, a.new); a.new <- a.new[, -c(8:307)]
-#     
-#     y <- c()
-#     rmses <- c()
-#     
-#     p25 <- sum(a.new$obs_peak_int >= a.new$`37.5%` & a.new$obs_peak_int <= a.new$`62.5%`)
-#     p50 <- sum(a.new$obs_peak_int >= a.new$`25%` & a.new$obs_peak_int <= a.new$`75%`)
-#     p80 <- sum(a.new$obs_peak_int >= a.new$`10%` & a.new$obs_peak_int <= a.new$`90%`)
-#     p90 <- sum(a.new$obs_peak_int >= a.new$`5%` & a.new$obs_peak_int <= a.new$`95%`)
-#     p95 <- sum(a.new$obs_peak_int >= a.new$`2.5%` & a.new$obs_peak_int <= a.new$`97.5%`)
-#     p99 <- sum(a.new$obs_peak_int >= a.new$`0.5%` & a.new$obs_peak_int <= a.new$`99.5%`)
-#     denom <- length(a.new$country)
-#     
-#     y <- c(y, c(p25 / denom, p50 / denom, p80 / denom, p90 / denom, 
-#                 p95 / denom, p99 / denom) * 100)
-#     rmse = sqrt(sum((c(p25 / denom, p50 / denom, p80 / denom, p90 / denom, 
-#                        p95 / denom, p99 / denom) * 100 - c(25, 50, 80, 90, 95, 99)) ** 2) / 6)
-#     
-#     dat.temp <- as.data.frame(cbind(c(25, 50, 80, 90, 95, 99), y, rep(lead, 6), rep(rmse, 6), rep(len, 6)))
-#   } else {
-#     dat.temp <- as.data.frame(cbind(c(25, 50, 80, 90, 95, 99), y = rep(NA, 6), rep(lead, 6), rep(NA, 6), rep(NA, 6)))
-#   }
-#   dat.temp.all <- rbind(dat.temp.all, dat.temp)
-# }
-# 
-# for (i in c(1:2, 4:5)) {
-#   dat.temp.all[, i] <- as.numeric(as.character(dat.temp.all[, i]))
-# }
-# 
-# dat.pi.temp <- dat.temp.all
-# dat.pi.temp$metric <- 'Peak Intensity'; dat.pi.temp$region <- 'Temperate'
-# 
-# names(dat.pi.temp)[4] <- 'rmses'; names(dat.pi.trop)[4] <- 'rmses'
-# dat.fig <- rbind(dat.pt.temp, dat.pt.trop); dat.fig <- rbind(dat.fig, dat.pi.temp); dat.fig <- rbind(dat.fig, dat.pi.trop)
-# dat.fig$metric <- factor(dat.fig$metric); dat.fig$metric <- relevel(dat.fig$metric, ref = 'Peak Timing')
-# dat.fig$region <- factor(dat.fig$region)
-# 
-# p2 <- ggplot(data = dat.fig, aes(x = V1, y = y, colour = V3)) +
-#   geom_abline(aes(intercept = 0, slope = 1), colour = 'gray80') +
-#   geom_line() + geom_point(size = 4) +
-#   labs(x = 'Prediction Interval', y = '% of Obs within PI', colour = 'Pred. Lead:') + theme_bw() +
-#   theme(aspect.ratio = 1, legend.text = element_text(size = 12), axis.text = element_text(size = 10),
-#         strip.text = element_blank(), axis.title = element_text(size = 12),
-#         legend.title = element_text(size = 12), strip.background = element_blank()) +
-#   # scale_color_brewer(palette = 'Set1') +
-#   scale_color_manual(values = c('#d73027', '#fdae61', '#fee08b')) +#, '#a6d96a', '#1a9850')) +
-#   scale_x_continuous(limits = c(20, 100), breaks = c(20, 30, 40, 50, 60, 70, 80, 90, 100)) +
-#   scale_y_continuous(limits = c(0, 100), breaks = c(0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100)) +
-#   facet_grid(region ~ metric)
-# dat.text <- data.frame(label = c('A', 'B', 'C', 'D'), region = c('Temperate', 'Temperate', 'Tropics', 'Tropics'),
-#                        metric = c('Peak Timing', 'Peak Intensity', 'Peak Timing', 'Peak Intensity'))
-# p2 + geom_text(data = dat.text, mapping = aes(x = 23, y = 96, label = label), size = 8, color = 'black')
+
 
 
 
