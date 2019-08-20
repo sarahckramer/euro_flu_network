@@ -200,20 +200,21 @@ for (ix in 1:num_ens) {
   
   # Continue searching if enough outbreaks:
   if (no.onset.count <= 2) {
-    # Get vectors of attack rates and peak timings:
-    pts = ars = c()
-    for (country in 1:n) {
-      pts <- c(pts, which.max(newI.ens[, country]))
-      ars <- c(ars, sum(newI.ens[, country]))
-    }
-    
-    # num.real.pt <- length(which(pts %in% c(13:25))) # rounding down
-    num.real.pt <- length(which(pts %in% c(14:25))) # 95% CI (obs_pkwk - 39)
-    num.real.ar <- length(which(ars >= 15000 & ars <= 50000))
-    
-    if (num.real.pt >= 18 & num.real.ar >= 15) {
-      ens.of.interest <- c(ens.of.interest, ix)
-    }
+    # # Get vectors of attack rates and peak timings:
+    # pts = ars = c()
+    # for (country in 1:n) {
+    #   pts <- c(pts, which.max(newI.ens[, country]))
+    #   ars <- c(ars, sum(newI.ens[, country]))
+    # }
+    # 
+    # # num.real.pt <- length(which(pts %in% c(13:25))) # rounding down
+    # num.real.pt <- length(which(pts %in% c(14:25))) # 95% CI (obs_pkwk - 39)
+    # num.real.ar <- length(which(ars >= 15000 & ars <= 50000))
+    # 
+    # if (num.real.pt >= 18 & num.real.ar >= 15) {
+    #   ens.of.interest <- c(ens.of.interest, ix)
+    # }
+    ens.of.interest <- c(ens.of.interest, ix)
   }
   
 }
@@ -405,8 +406,8 @@ for (i in 1:length(synth.runs.RATES)) {
   synth.runs.RATES[[i]] <- newI.ens
   synth.runs.COUNTS[[i]] <- newI.ens.count
 }
-# save(synth.runs.RATES, file = 'syntheticTests/syntheticData/synth_07-14_RATES.RData')
-# save(synth.runs.COUNTS, file = 'syntheticTests/syntheticData/synth_07-14_COUNTS.RData')
+save(synth.runs.RATES, file = 'syntheticTests/syntheticData/synth_07-14_RATES_all.RData')
+save(synth.runs.COUNTS, file = 'syntheticTests/syntheticData/synth_07-14_COUNTS_all.RData')
 
 # Save these initial conditions so that sensitivity to I0 can be assessed:
 # (Remember that this is an initial pass - might decide to do I0 in some other way)

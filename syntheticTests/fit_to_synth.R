@@ -17,7 +17,7 @@
     # [x] Look at beta, R0, Re, S (truth)
     # [x] Re-check humidity data; humidity data by population density?
     # [x] Remove IS
-    # [] Proportional random movement (~0-5%)
+    # [x] Proportional random movement (~0-5%)
     # [x] For fitting: draw all S and I from LHS
     # [x] Use j-2 and j for first two points
     # [x] Recode EAKF to loop through each country (like Sen), rather than using matrices?
