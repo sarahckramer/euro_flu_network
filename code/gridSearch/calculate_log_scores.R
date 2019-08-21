@@ -1,10 +1,10 @@
 
 ### Deal with PT and OT first - can use Dist:
-d.pt <- read.csv('code/gridSearch/outputs/outputDist_081219_PT.csv')
-d.ot <- read.csv('code/gridSearch/outputs/outputDist_081219_OT.csv')
+d.pt <- read.csv('code/gridSearch/outputs/outputDist_081919_PT.csv')
+d.ot <- read.csv('code/gridSearch/outputs/outputDist_081919_OT.csv')
 
 # Join observed values:
-m <- read.csv('code/gridSearch/outputs/outputMet_081219_pro.csv')
+m <- read.csv('code/gridSearch/outputs/outputMet_081919_pro.csv')
 m <- unique(m[, c(1, 8:9, 39)])
 
 d.pt <- merge(d.pt, m, by = c('season', 'country'))
@@ -41,7 +41,6 @@ for (i in 1:length(countries)) {
           for (run in levels(d.pt$run)) {
           
           d.temp <- d.pt[d.pt$country == countries[i] & d.pt$oev_base == o1 & d.pt$oev_denom == o2 & d.pt$lambda == l & d.pt$season == season & d.pt$run == run, ]
-          
           if (length(d.temp$season) > 0) {
             scores <- unlist(lapply(sort(unique(d.temp$fc_start)), function(ix) {
               log(sum(d.temp[d.temp$fc_start == ix, 'value']))
@@ -82,9 +81,9 @@ log.pt$score[log.pt$score == -Inf] <- -10
 log.ot$score[log.ot$score == -Inf] <- -10
 
 # Determine predicted and observed lead weeks:
-m <- read.csv('code/gridSearch/outputs/outputMet_081219_pro.csv')
+m <- read.csv('code/gridSearch/outputs/outputMet_081919_pro.csv')
 m$leadonset5 <- m$fc_start - m$onset5
-m <- unique(m[, c(1:5, 7:9, 15, 39, 92, 107, 118)])
+m <- unique(m[, c(1:5, 7:9, 15, 39, 92, 99, 110)])
 m <- m[!is.na(m$onsetObs5), ]
 
 log.pt <- merge(log.pt, m, by = c('season', 'country', 'run', 'oev_base', 'oev_denom', 'lambda', 'fc_start'))
@@ -101,14 +100,17 @@ write.csv(log.ot, file = 'code/gridSearch/outputs/logScores_ot.csv', row.names =
 rm(list = ls())
 
 ### For PI (within 25%) and 1-4 weeks (within 1%), use Ens:
-e <- read.csv('code/gridSearch/outputs/outputEns_081219_PI.csv')
+e <- read.csv('code/gridSearch/outputs/outputEns_081919_PI.csv')
 
 # Get observed peak intensity:
-m <- read.csv('code/gridSearch/outputs/outputMet_081219_pro.csv')
+m <- read.csv('code/gridSearch/outputs/outputMet_081919_pro.csv')
 # m <- m[!is.na(m$onsetObs5), ] # remove if no onset observed
 m <- unique(m[, c(1, 6, 8, 17, 39)])
 # and remove repeats:
-m <- m[c(1:20, 30:69), ]
+rows.to.remove <- c(29000, 29003, 29007, 29008, 29010, 29018, 79000, 79002, 40563, 40564, 40567, 40568, 40570, 40573, 40576, 40578, 40580)
+m <- m[!(rownames(m) %in% rows.to.remove), ]
+# m <- m[c(1:20, 30:69), ]
+# I guess these happened b/c I had some from when I ran everything straight through, and some from when they were split into 3 parts?
 
 e <- merge(e, m, by = c('season', 'country'))
 e <- e[!is.na(e$onsetObs5), ]
@@ -139,10 +141,10 @@ e$score <- scores
 e <- e[, c(1:8, 310, 312)]
 
 # Get lead weeks:
-m <- read.csv('code/gridSearch/outputs/outputMet_081219_pro.csv')
+m <- read.csv('code/gridSearch/outputs/outputMet_081919_pro.csv')
 m$leadonset5 <- m$fc_start - m$onset5
 m <- m[!is.na(m$onsetObs5), ] # remove if no onset observed
-m <- unique(m[, c(1:5, 7:8, 15, 92, 107, 118)])
+m <- unique(m[, c(1:5, 7:8, 15, 92, 99, 110)])
 
 e <- merge(e, m, by = c('season', 'country', 'run', 'oev_base', 'oev_denom', 'lambda', 'fc_start'))
 
@@ -151,13 +153,13 @@ write.csv(e, file = 'code/gridSearch/outputs/logScores_pi.csv', row.names = FALS
 rm(list = ls())
 
 # Now 1-4 weeks:
-e1 <- read.csv('code/gridSearch/outputs/outputEns_081219_1wk.csv')
-e2 <- read.csv('code/gridSearch/outputs/outputEns_081219_2wk.csv')
-e3 <- read.csv('code/gridSearch/outputs/outputEns_081219_3wk.csv')
-e4 <- read.csv('code/gridSearch/outputs/outputEns_081219_4wk.csv')
+e1 <- read.csv('code/gridSearch/outputs/outputEns_081919_1wk.csv')
+e2 <- read.csv('code/gridSearch/outputs/outputEns_081919_2wk.csv')
+e3 <- read.csv('code/gridSearch/outputs/outputEns_081919_3wk.csv')
+e4 <- read.csv('code/gridSearch/outputs/outputEns_081919_4wk.csv')
 
 # Get appropriate values for that week:
-m <- read.csv('code/gridSearch/outputs/outputMet_081219_pro.csv')
+m <- read.csv('code/gridSearch/outputs/outputMet_081919_pro.csv')
 # m <- m[!is.na(m$onsetObs5), ] # remove if no onset observed
 m1 <- unique(m[, c(1:8, 25, 39)])
 m2 <- unique(m[, c(1:8, 26, 39)])
@@ -206,11 +208,12 @@ for (i in 9:308) {
 
 # For each row, determine how many of the 300 ensemble members are within 5% of the observed value:
 scores1 <- sapply(1:dim(e1)[1], function(ix) {
-  log(length(which(e1[ix, 9:308] < 1.05 * e1$obs_1week[ix])) / 300)
+  log(length(which(e1[ix, 9:308] < 1.10 * e1$obs_1week[ix])) / 300)
   # log(length(which(e1[ix, 9:308] > 0.95 * e1$obs_1week[ix] & e1[ix, 9:308] < 1.05 * e1$obs_1week[ix])) / 300)
 })
 scores1[scores1 == -Inf] <- -10
 e1$scores <- scores1
+hist(scores1)
 
 # # or else just remove where obs is 0 entirely?? or change to 1?
 # e1$obs_1week_1 <- e1$obs_1week
@@ -228,22 +231,25 @@ e1$scores <- scores1
 # scores1.comp3[scores1.comp3 == -Inf] <- -10
 
 scores2 <- sapply(1:dim(e2)[1], function(ix) {
-  log(length(which(e2[ix, 9:308] < 1.05 * e2$obs_2week[ix])) / 300)
+  log(length(which(e2[ix, 9:308] < 1.10 * e2$obs_2week[ix])) / 300)
 })
 scores2[scores2 == -Inf] <- -10
 e2$scores <- scores2
+hist(scores2)
 
 scores3 <- sapply(1:dim(e3)[1], function(ix) {
-  log(length(which(e3[ix, 9:308] < 1.05 * e3$obs_3week[ix])) / 300)
+  log(length(which(e3[ix, 9:308] < 1.10 * e3$obs_3week[ix])) / 300)
 })
 scores3[scores3 == -Inf] <- -10
 e3$scores <- scores3
+hist(scores3)
 
 scores4 <- sapply(1:dim(e4)[1], function(ix) {
-  log(length(which(e4[ix, 9:308] < 1.05 * e4$obs_4week[ix])) / 300)
+  log(length(which(e4[ix, 9:308] < 1.10 * e4$obs_4week[ix])) / 300)
 })
 scores4[scores4 == -Inf] <- -10
 e4$scores <- scores4
+hist(scores4)
 
 # Reduce appropriately:
 e1 <- e1[, c(1:8, 310, 312)]
@@ -252,7 +258,7 @@ e3 <- e3[, c(1:8, 310, 312)]
 e4 <- e4[, c(1:8, 310, 312)]
 
 # Get lead weeks (just to plot all things by consistent x-axis):
-m <- read.csv('code/gridSearch/outputs/outputMet_081219_pro.csv')
+m <- read.csv('code/gridSearch/outputs/outputMet_081919_pro.csv')
 m <- m[!is.na(m$onsetObs5), ] # remove if no onset observed
 m <- unique(m[, c(1:5, 7:8, 15, 92)])
 

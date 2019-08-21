@@ -177,7 +177,6 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
         if (updates) {
           print(paste0(countries[loc], ':  ', round(alp, 3)))
         }
-        # print(paste0(countries[loc], ':  ', round(alp, 3)))#, '  ', obs_var / prior_var))
         
         dy <- post_mean + alp * (obs_ens[loc, ] - prior_mean) - obs_ens[loc, ] # no NAs, since this is still in the if-loop
         
@@ -208,7 +207,6 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
         # x[S0.indices, ][which(x[S0.indices, ] < 0, arr.ind = TRUE)] <- runif(length(x[which(x < 0, arr.ind = TRUE)]), 0.5, 0.9) * pop.size$pop[loc]
         # x[I0.indices, ][which(x[I0.indices, ] < 0, arr.ind = TRUE)] <- runif(length(x[which(x < 0, arr.ind = TRUE)]), 0, 0.001) * pop.size$pop[loc]
         # x[S0.indices, ][which(x[S0.indices, ] < 0, arr.ind = TRUE)] <- runif(length(x[which(x < 0, arr.ind = TRUE)]), 0, 0.001) * pop.size$pop[loc]
-        
         # Could be an interesting idea, but need to get the correct pop size by compartment, not country; unless we only want to correct obs_ens this way and not x?
         
       }

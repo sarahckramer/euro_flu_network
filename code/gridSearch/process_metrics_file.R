@@ -8,7 +8,7 @@ north.ili <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'HU', 'IE', 'IT', 'NL', 'PL', 'PT',
 north.ari <- c('LU', 'UK', 'DE', 'SI', 'FR')
 
 # Read in results
-m <- read.csv('code/gridSearch/outputs/outputMet_081219.csv')
+m <- read.csv('code/gridSearch/outputs/outputMet_081919.csv')
 
 # Re-code any magnitudes by scaling
 m$obs_peak_int <- round(m$obs_peak_int/m$scaling, digits=4)
@@ -19,16 +19,16 @@ m$totAttackObs <- m$totAttackObs/m$scaling
 m$delta_AR <- m$delta_AR/m$scaling
 m$obs_1week <- m$obs_1week/m$scaling
 m$fcast_1week <- m$fcast_1week/m$scaling
-m$delta_1w <- m$delta_1w/m$scaling
+# m$delta_1w <- m$delta_1w/m$scaling # these are already relative differences
 m$obs_2week <- m$obs_2week/m$scaling
 m$fcast_2week <- m$fcast_2week/m$scaling
-m$delta_2w <- m$delta_2w/m$scaling
+# m$delta_2w <- m$delta_2w/m$scaling
 m$obs_3week <- m$obs_3week/m$scaling
 m$fcast_3week <- m$fcast_3week/m$scaling
-m$delta_3w <- m$delta_3w/m$scaling
+# m$delta_3w <- m$delta_3w/m$scaling
 m$obs_4week <- m$obs_4week/m$scaling
 m$fcast_4week <- m$fcast_4week/m$scaling
-m$delta_4w <- m$delta_4w/m$scaling
+# m$delta_4w <- m$delta_4w/m$scaling
 
 # Calculate relevant metrics
 m$FWeek_pkwk <- m$fc_start - m$obs_pkwk
@@ -36,10 +36,10 @@ m$FWeek_pkwk_bin <- cut(m$FWeek_pkwk, c(-Inf, -10, -7, -4, -1, 2, 5, 8, Inf))
 m$abs_delta_pkwk_mean <- abs(m$delta_pkwk_mean)
 m$abs_delta_peak_int <- abs(m$intensity_err) + m$obs_peak_int
 m$abs_delta_AR <- abs(m$delta_AR) + m$totAttackObs
-m$abs_delta_1w <- abs(m$delta_1w) + m$obs_1week
-m$abs_delta_2w <- abs(m$delta_2w) + m$obs_2week
-m$abs_delta_3w <- abs(m$delta_3w) + m$obs_3week
-m$abs_delta_4w <- abs(m$delta_4w) + m$obs_4week
+# m$abs_delta_1w <- abs(m$delta_1w) + m$obs_1week
+# m$abs_delta_2w <- abs(m$delta_2w) + m$obs_2week
+# m$abs_delta_3w <- abs(m$delta_3w) + m$obs_3week
+# m$abs_delta_4w <- abs(m$delta_4w) + m$obs_4week
 
 # Bin peak intensity by accuracy
 # Binnings are going to leave out instances where:
@@ -66,29 +66,29 @@ m$abs_delta_AR_bin[m$abs_delta_AR < 1.5 * m$totAttackObs & m$abs_delta_AR >= 1.3
 m$abs_delta_AR_bin[m$abs_delta_AR >= 1.5 * m$totAttackObs] <- '5'
 m$abs_delta_AR_bin <- factor(m$abs_delta_AR_bin)
 
-# Bin week 1 intensity by accuracy (ignoring NAs and 0s as true values)
-m$abs_delta_1w_bin[m$abs_delta_1w < 1.05*m$obs_1week & !is.na(m$obs_1week) & m$obs_1week != 0] <- '1'
-m$abs_delta_1w_bin[m$abs_delta_1w >= 1.05*m$obs_1week & m$abs_delta_1w < 1.1*m$obs_1week &
-                     !is.na(m$obs_1week) & m$obs_1week != 0] <- '2'
-m$abs_delta_1w_bin[m$abs_delta_1w >= 1.1*m$obs_1week & !is.na(m$obs_1week) & m$obs_1week != 0] <- '3'
-
-# Bin week 2 intensity by accuracy (ignoring NAs and 0s as true values)
-m$abs_delta_2w_bin[m$abs_delta_2w < 1.05*m$obs_2week & !is.na(m$obs_2week) & m$obs_2week != 0] <- '1'
-m$abs_delta_2w_bin[m$abs_delta_2w >= 1.05*m$obs_2week & m$abs_delta_2w < 1.1*m$obs_2week &
-                     !is.na(m$obs_2week) & m$obs_2week != 0] <- '2'
-m$abs_delta_2w_bin[m$abs_delta_2w >= 1.1*m$obs_2week & !is.na(m$obs_2week) & m$obs_2week != 0] <- '3'
-
-# Bin week 3 intensity by accuracy (ignoring NAs and 0s as true values)
-m$abs_delta_3w_bin[m$abs_delta_3w < 1.05*m$obs_3week & !is.na(m$obs_3week) & m$obs_3week != 0] <- '1'
-m$abs_delta_3w_bin[m$abs_delta_3w >= 1.05*m$obs_3week & m$abs_delta_3w < 1.1*m$obs_3week &
-                     !is.na(m$obs_3week) & m$obs_3week != 0] <- '2'
-m$abs_delta_3w_bin[m$abs_delta_3w >= 1.1*m$obs_3week & !is.na(m$obs_3week) & m$obs_3week != 0] <- '3'
-
-# Bin week 4 intensity by accuracy (ignoring NAs and 0s as true values)
-m$abs_delta_4w_bin[m$abs_delta_4w < 1.05*m$obs_4week & !is.na(m$obs_4week) & m$obs_4week != 0] <- '1'
-m$abs_delta_4w_bin[m$abs_delta_4w >= 1.05*m$obs_4week & m$abs_delta_4w < 1.1*m$obs_4week &
-                     !is.na(m$obs_4week) & m$obs_4week != 0] <- '2'
-m$abs_delta_4w_bin[m$abs_delta_4w >= 1.1*m$obs_4week & !is.na(m$obs_4week) & m$obs_4week != 0] <- '3'
+# # Bin week 1 intensity by accuracy (ignoring NAs and 0s as true values)
+# m$abs_delta_1w_bin[m$abs_delta_1w < 1.05*m$obs_1week & !is.na(m$obs_1week) & m$obs_1week != 0] <- '1'
+# m$abs_delta_1w_bin[m$abs_delta_1w >= 1.05*m$obs_1week & m$abs_delta_1w < 1.1*m$obs_1week &
+#                      !is.na(m$obs_1week) & m$obs_1week != 0] <- '2'
+# m$abs_delta_1w_bin[m$abs_delta_1w >= 1.1*m$obs_1week & !is.na(m$obs_1week) & m$obs_1week != 0] <- '3'
+# 
+# # Bin week 2 intensity by accuracy (ignoring NAs and 0s as true values)
+# m$abs_delta_2w_bin[m$abs_delta_2w < 1.05*m$obs_2week & !is.na(m$obs_2week) & m$obs_2week != 0] <- '1'
+# m$abs_delta_2w_bin[m$abs_delta_2w >= 1.05*m$obs_2week & m$abs_delta_2w < 1.1*m$obs_2week &
+#                      !is.na(m$obs_2week) & m$obs_2week != 0] <- '2'
+# m$abs_delta_2w_bin[m$abs_delta_2w >= 1.1*m$obs_2week & !is.na(m$obs_2week) & m$obs_2week != 0] <- '3'
+# 
+# # Bin week 3 intensity by accuracy (ignoring NAs and 0s as true values)
+# m$abs_delta_3w_bin[m$abs_delta_3w < 1.05*m$obs_3week & !is.na(m$obs_3week) & m$obs_3week != 0] <- '1'
+# m$abs_delta_3w_bin[m$abs_delta_3w >= 1.05*m$obs_3week & m$abs_delta_3w < 1.1*m$obs_3week &
+#                      !is.na(m$obs_3week) & m$obs_3week != 0] <- '2'
+# m$abs_delta_3w_bin[m$abs_delta_3w >= 1.1*m$obs_3week & !is.na(m$obs_3week) & m$obs_3week != 0] <- '3'
+# 
+# # Bin week 4 intensity by accuracy (ignoring NAs and 0s as true values)
+# m$abs_delta_4w_bin[m$abs_delta_4w < 1.05*m$obs_4week & !is.na(m$obs_4week) & m$obs_4week != 0] <- '1'
+# m$abs_delta_4w_bin[m$abs_delta_4w >= 1.05*m$obs_4week & m$abs_delta_4w < 1.1*m$obs_4week &
+#                      !is.na(m$obs_4week) & m$obs_4week != 0] <- '2'
+# m$abs_delta_4w_bin[m$abs_delta_4w >= 1.1*m$obs_4week & !is.na(m$obs_4week) & m$obs_4week != 0] <- '3'
 
 # Calculate absolute value of onset timing error
 m$FWeek_onwk <- m$fc_start - m$onsetObs5
@@ -127,7 +127,7 @@ m$accurate_on[!(m$abs_delta_onset %in% c(0,1))] <- 'no'
 m$accurate_on <- factor(m$accurate_on)
 
 # Write new metrics file
-write.csv(m, file = 'code/gridSearch/outputs/outputMet_081219_pro.csv', row.names = F)
+write.csv(m, file = 'code/gridSearch/outputs/outputMet_081919_pro.csv', row.names = F)
 
 # Clear environment
 rm(list=ls())

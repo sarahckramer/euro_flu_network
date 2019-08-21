@@ -205,10 +205,9 @@ colnames(outputMetrics)[6] <- 'scaling'
 outputMetrics[outputMetrics[, 'country'] == 'FR' & outputMetrics[, 'season'] %in% seasons[1:4], 'scaling'] <- 1.3
 # FR has an alternative scaling for earlier
 
-write.csv(outputMetrics, file = 'outputMetrics_check.csv', row.names = FALSE)
+# write.csv(outputMetrics, file = 'outputMetrics_check.csv', row.names = FALSE)
 
 
 # Different countries have different oev at different times, and this doesn't always match up with
 # what the ensemble members are doing
-# Scale data to have similar AR? I guess rather scale to be similar to AR in synthetic outbreaks
 
