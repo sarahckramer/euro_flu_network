@@ -32,7 +32,7 @@ rm(iliiso)
 
 ### Calculate observed attack rates by season:
 source('code/functions/Util.R'); wk_start <- 40
-seasons <- list(79:121, 131:173, 183:225, 235:277, 287:329, 339:382, 392:434, 444:486) # weeks 40 through 30 (same lenght as synthetic outbreaks)
+seasons <- list(79:121, 131:173, 183:225, 235:277, 287:329, 339:382, 392:434, 444:486) # weeks 40 through 30 (same length as synthetic outbreaks)
 
 ars.raw = ars.scale = vector('list', 20)
 for (i in 1:20) {
