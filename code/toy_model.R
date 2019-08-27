@@ -38,7 +38,7 @@ I0_low <- 0; I0_up <- 0.001 # proportion of population
 ### Parameters for the filters
 discrete <- FALSE # run the SIRS model continuously
 metricsonly <- FALSE # save all outputs
-lambda <- 1.03 # inflation factor for the ensemble filters c(1.00, 1.01, 1.02, 1.03, 1.05, 1.075?)
+lambda <- 1.02 # inflation factor for the ensemble filters c(1.00, 1.01, 1.02, 1.03, 1.05, 1.075?)
 oev_base <- 1e5; oev_denom <- 10.00
 
 num_ens <- 300 # use 300 for ensemble filters, 10000 for particle filters
@@ -160,13 +160,17 @@ matplot(test_i, pch = 20, col = viridis(n), type = 'b', lty = 1, cex = 0.75)
 par(mfrow = c(1, 1), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 
 # Variance of syndromic+ data:
-obs_vars <- calc_obsvars_nTest(obs = obs_i, syn_dat = syn_i, ntests = test_i, posprops = pos_i, oev_base, oev_denom, tmp_exp = 2.0)
+obs_vars <- calc_obsvars_nTest(obs = as.matrix(obs_i), syn_dat = as.matrix(syn_i), ntests = as.matrix(test_i), posprops = as.matrix(pos_i),
+                               oev_base, oev_denom, tmp_exp = 2.0)
 matplot(obs_vars, pch = 20, col = viridis(n), type = 'b', lty = 1, cex = 0.75)
 ### QUESTION: OEV is way higher for a couple of countries than most of the others - is this fair?
 # Scaled syn+ - also scale syn? Otherwise not sure the OEV would be appropriate for the rates we're fitting to
 # but not test#, b/c this should tell us something about error
 # but maybe do all of this somehow BEFORE scaling? or do we have to fit to counts, not rates?
 # AT DE PT pretty large, Luxembourg and Slovakia greatest; very small are FR, ES, SE (just for 2010-11 season)
+
+print(obs_vars[1:4, ])
+print(obs_i[which(obs_vars == 0 | is.na(obs_vars), arr.ind = TRUE)])
 
 # Get the first and last date of the simulation:
 clim_start <- as.numeric(start_date - as.Date(paste('20',
@@ -205,7 +209,7 @@ colnames(outputMetrics)[6] <- 'scaling'
 outputMetrics[outputMetrics[, 'country'] == 'FR' & outputMetrics[, 'season'] %in% seasons[1:4], 'scaling'] <- 1.3
 # FR has an alternative scaling for earlier
 
-# write.csv(outputMetrics, file = 'outputMetrics_check.csv', row.names = FALSE)
+write.csv(outputMetrics, file = 'code/checks/outputMetrics_1e5_remove.csv', row.names = FALSE)
 
 
 # Different countries have different oev at different times, and this doesn't always match up with

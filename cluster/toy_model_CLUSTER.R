@@ -42,18 +42,19 @@ metricsonly <- FALSE # save all outputs
 
 seasons <- c('2010-11', '2011-12', '2012-13', '2013-14', '2014-15', '2015-16', '2016-17', '2017-18')
 oevBase_list <- c(1e4, 1e5)
-oevDenom_list <- c(1.0, 2.0, 5.0, 10.0, 20.0, 50.0)
-lambdaList <- c(1.00, 1.01, 1.02, 1.03, 1.05)
+oevDenom_list <- c(1.0, 10.0, 50.0) #c(1.0, 2.0, 5.0, 10.0, 20.0, 50.0)
+lambdaList <- c(1.00, 1.02, 1.05)
+ntrnList <- 5:30
 
 cmd_args = commandArgs(trailingOnly = T)
-task.index=as.numeric(cmd_args[1]) # 1:480
+task.index=as.numeric(cmd_args[1]) # 1:3744 # 1:144 # 1:240 # 1:480
 
-season <- seasons[ceiling(task.index / 60)]
-oev_base <- oevBase_list[ceiling((task.index - 30) / 30) %% 2 + 1]
-oev_denom <- oevDenom_list[ceiling((task.index - 5) / 5) %% 6 + 1]
-lambda <- lambdaList[ceiling(task.index - 1) %% 5 + 1]
-# this is essentially an initial pass, to determine which combinations do really badly and shouldn't even be tried for forecasting
-print(paste(season, oev_base, oev_denom, lambda, sep = '_'))
+season <- seasons[ceiling(task.index / 468)]
+oev_base <- oevBase_list[ceiling((task.index - 234) / 234) %% 2 + 1]
+oev_denom <- oevDenom_list[ceiling((task.index - 78) / 78) %% 3 + 1]
+lambda <- lambdaList[ceiling((task.index - 26) / 26) %% 3 + 1]
+ntrn <- ntrnList[ceiling(task.index - 1) %% 26 + 1]
+print(paste(season, oev_base, oev_denom, lambda, ntrn, sep = '_'))
 
 # # Check:
 # check <- unique(as.data.frame(cbind(season, oev_base, oev_denom, lambda)))
@@ -162,7 +163,8 @@ for (count.index in 1:n) {
 test_i[test_i == 0 & !is.na(test_i)] <- NA
 
 # Variance of syndromic+ data:
-obs_vars <- calc_obsvars_nTest(obs = obs_i, syn_dat = syn_i, ntests = test_i, posprops = pos_i, oev_base, oev_denom, tmp_exp = 2.0)
+obs_vars <- calc_obsvars_nTest(obs = as.matrix(obs_i), syn_dat = as.matrix(syn_i), ntests = as.matrix(test_i), posprops = as.matrix(pos_i),
+                               oev_base, oev_denom, tmp_exp = 2.0)
 
 # Get the first and last date of the simulation:
 clim_start <- as.numeric(start_date - as.Date(paste('20',
@@ -178,13 +180,10 @@ clim_end <- as.numeric(end_date - as.Date(paste('20',
 tm.ini <- clim_start - 1 # the end of the former week
 tm.range <- clim_start:clim_end
 
-# Set ntrn:
-# ntrn <- 40
-
 # Fit!:
 # for (ntrn in 5:30) {
 # print(ntrn)
-ntrn <- 10
+# ntrn <- 10
 for (run in 1:num_runs) {
   res <- EAKF_rFC(num_ens, tmstep, param.bound, obs_i, ntrn, obs_vars, tm.ini, tm.range,
                   updates = FALSE, do.reprobing = FALSE)
@@ -197,6 +196,12 @@ for (run in 1:num_runs) {
 }
 # }
 
+print(head(outputMetrics))
+print(head(outputOP))
+print(head(outputOPParams))
+print(head(outputDist))
+print(head(outputEns))
+
 colnames(outputMetrics)[6] <- 'scaling'
 # I actually think all the other colnames are fine as-is...
 
@@ -206,11 +211,11 @@ outputMetrics[outputMetrics[, 'country'] == 'FR' & outputMetrics[, 'season'] %in
 ### Save results:
 print('Finished with loop; writing files...')
 
-write.csv(outputMetrics, file = paste('outputs/obs/outputMet', season, oev_base, oev_denom, lambda, '080519.csv', sep = '_'), row.names = FALSE)
-write.csv(outputOP, file = paste('outputs/obs/outputOP', season, oev_base, oev_denom, lambda, '080519.csv', sep = '_'), row.names = FALSE)
-write.csv(outputOPParams, file = paste('outputs/obs/outputOPParams', season, oev_base, oev_denom, lambda, '080519.csv', sep = '_'), row.names = FALSE)
-write.csv(outputDist, file = paste('outputs/obs/outputDist', season, oev_base, oev_denom, lambda, '080519.csv', sep = '_'), row.names = FALSE)
-write.csv(outputEns, file = paste('outputs/obs/outputEns', season, oev_base, oev_denom, lambda, '080519.csv', sep = '_'), row.names = FALSE)
+write.csv(outputMetrics, file = paste('outputs/obs/outputMet', season, oev_base, oev_denom, lambda, ntrn, '082719.csv', sep = '_'), row.names = FALSE)
+write.csv(outputOP, file = paste('outputs/obs/outputOP', season, oev_base, oev_denom, lambda, ntrn, '082719.csv', sep = '_'), row.names = FALSE)
+write.csv(outputOPParams, file = paste('outputs/obs/outputOPParams', season, oev_base, oev_denom, lambda, ntrn, '082719.csv', sep = '_'), row.names = FALSE)
+write.csv(outputDist, file = paste('outputs/obs/outputDist', season, oev_base, oev_denom, lambda, ntrn, '082719.csv', sep = '_'), row.names = FALSE)
+write.csv(outputEns, file = paste('outputs/obs/outputEns', season, oev_base, oev_denom, lambda, ntrn, '082719.csv', sep = '_'), row.names = FALSE)
 
 print('Done.')
 

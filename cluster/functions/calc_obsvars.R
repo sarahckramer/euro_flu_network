@@ -9,7 +9,9 @@ calc_obsvars <- function(obs, oev_base, oev_denom) {#, oev_denom_tmp, tmp_exp) {
     
     if (!is.na(obs[1, i])) {
       tmp[1, i] <- obs[1, i]
-    } # otherwise just leave as zero
+    } else {
+      tmp[1, i] <- NA
+    }
   }
   
   vars.temp <- tmp
@@ -57,6 +59,20 @@ calc_obsvars <- function(obs, oev_base, oev_denom) {#, oev_denom_tmp, tmp_exp) {
 
 calc_obsvars_nTest <- function(obs, syn_dat, ntests, posprops, oev_base, oev_denom, tmp_exp) {
   
+  # Inputs need to be matrices:
+  if (!is.matrix(obs)) {
+    obs <- as.matrix(obs, ncol = 1)
+  }
+  if (!is.matrix(syn_dat)) {
+    syn_dat <- as.matrix(syn_dat, ncol = 1)
+  }
+  if (!is.matrix(ntests)) {
+    ntests <- as.matrix(ntests, ncol = 1)
+  }
+  if (!is.matrix(posprops)) {
+    posprops <- as.matrix(posprops, ncol = 1)
+  }
+  
   # Look at average of current and previous 2 proportion positive values:
   tmp <- matrix(0, nrow = nrow(posprops), ncol = ncol(posprops))
   for (i in 1:dim(posprops)[2]) {
@@ -90,7 +106,9 @@ calc_obsvars_nTest <- function(obs, syn_dat, ntests, posprops, oev_base, oev_den
     tmp.test[2, i] <- mean(ntests[1:2, i], na.rm = TRUE)
     if (!is.na(ntests[1, i])) {
       tmp.test[1, i] <- ntests[1, i]
-    } # otherwise just leave as zero
+    } else {
+      tmp.test[1, i] <- NA
+    }
   }
   
   # NAs here are either NAs in data, or else leading/lagging 0s (which were originally NAs)
@@ -109,7 +127,7 @@ calc_obsvars_nTest <- function(obs, syn_dat, ntests, posprops, oev_base, oev_den
   # na.rows.to.check <- which(obs[na.now] > 0 & !is.na(obs[na.now]))
   # na.now[na.rows.to.check, ] # these are data during the first 2 weeks, where we don't have a previous two weeks to average over
   # just set error in first 2 weeks to oev_base
-  vars.temp[1:2, ] <- oev_base
+  # vars.temp[1:2, ] <- oev_base
   
   # Any NAs gained here are going to be the leading/lagging NAs that we didn't change to 0 in posprops b/c can't divide by 0
   # So basically, anything that's NA here is also NA in the data themselves
