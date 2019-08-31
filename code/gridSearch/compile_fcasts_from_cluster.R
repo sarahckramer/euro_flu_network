@@ -2,30 +2,26 @@
 # First get lists of possible oev/lambda values, to determine which were not successfully run:
 seasons <- c('2010-11', '2011-12', '2012-13', '2013-14', '2014-15', '2015-16', '2016-17', '2017-18')
 oevBase_list <- c(1e4, 1e5)
-oevDenom_list <- c(1.0, 2.0, 5.0, 10.0, 20.0, 50.0)
-lambdaList <- c(1.00, 1.01, 1.02, 1.03, 1.05)
+oevDenom_list <- c(1.0, 10.0, 50.0)
+lambdaList <- c(1.00, 1.02, 1.05)
 
 # Identify missing files:
 missing <- c()
-for (i in 1:180) {
-  season <- seasons[ceiling(i / 60)]
-  oev_base <- oevBase_list[ceiling((i - 30) / 30) %% 2 + 1]
-  oev_denom <- oevDenom_list[ceiling((i - 5) / 5) %% 6 + 1]
-  lambda <- lambdaList[ceiling(i - 1) %% 5 + 1]
+for (i in 1:144) {
+  season <- seasons[ceiling(i / 18)]
+  oev_base <- oevBase_list[ceiling((i - 9) / 9) %% 2 + 1]
+  oev_denom <- oevDenom_list[ceiling((i - 3) / 3) %% 3 + 1]
+  lambda <- lambdaList[ceiling(i - 1) %% 3 + 1]
   
-  if (!file.exists(paste0('code/gridSearch/outputs/fcasts_08092019/outputMet_', season, '_', oev_base, '_', oev_denom, '_', lambda, '_080519.csv'))) {
+  if (!file.exists(paste0('code/gridSearch/outputs/fcasts_08092019/outputMet_', season, '_', oev_base, '_', oev_denom, '_', lambda, '_080519_2.csv'))) {
     missing <- c(missing, i)
   }
   
 }
-# should be 98
+print(missing)
 
-# 2   4   5   6   7   9  10  15  17  18  19  20  24  26  29  30  32  33  34  35  37  38  40  41  42  44  51  53  54  55  57  58  59  61  63  65  66  67  68  70  72  73  78
-# 79  80  91  92  93  94  96  99 101 102 104 108 110 111 113 115 116 118 120 121 122 123 124 125 127 128 129 130 131 132 133 134 135 137 138 139 140 141 143 144 145 147 149
-# 153 160 161 167 168 169 172 174 176 177 179 180
+# 40-70, 129-131, 133
 
-# 2, 4-7, 9-10, 15, 17-20, 24, 26, 29-30, 32-35, 37-38, 40-42, 44, 51, 53-55, 57-59, 61, 63, 65-68, 70, 72-73, 78-80, 91-94, 96, 99, 101-102, 104, 108, 110-111,
-# 113, 115-116, 118, 120-125, 127-135, 137-141, 143-145, 147, 149
 rm(lambda, lambdaList, oev_base, oevBase_list, oev_denom, oevDenom_list, season, seasons)
 
 # Loop through all files and compile:
@@ -258,21 +254,54 @@ write.csv(d.ot, file = 'code/gridSearch/outputs/outputDist_081919_OT.csv', row.n
 # dim(unique(op[, c(1:5, 8)]))
 # # or just keep them all, as a record that slightly different training may have been done
 
+### Also for individual country forecasts:
+file.list <- list.files('code/individualCountries/outputs/', pattern = 'Met')
+met.list <- list()
+for (i in 1:length(file.list)) {
+  met.list[[i]] <- read.csv(paste0('code/individualCountries/outputs/', file.list[[i]]))
+}
+m <- NULL
+for (i in 1:length(file.list)) {
+  m <- rbind(m, met.list[[i]])
+}
+rm(met.list)
+write.csv(m, file = 'code/individualCountries/outputs/outputMet_082819.csv', row.names = FALSE)
 
+file.list <- list.files('code/individualCountries/outputs/', pattern = 'OP')
+op.list <- list()
+for (i in 1:length(file.list)) {
+  op.list[[i]] <- read.csv(paste0('code/individualCountries/outputs/', file.list[[i]]))
+}
+o <- NULL
+for (i in 1:length(file.list)) {
+  o <- rbind(o, op.list[[i]])
+}
+rm(op.list)
+write.csv(o, file = 'code/individualCountries/outputs/outputOP_082819.csv', row.names = FALSE)
 
+file.list <- list.files('code/individualCountries/outputs/', pattern = 'Dist')
+dist.list <- list()
+for (i in 1:length(file.list)) {
+  dist.list[[i]] <- read.csv(paste0('code/individualCountries/outputs/', file.list[[i]]))
+}
+dist <- NULL
+for (i in 1:length(file.list)) {
+  dist <- rbind(dist, dist.list[[i]])
+}
+rm(dist.list)
+write.csv(dist, file = 'code/individualCountries/outputs/outputDist_082819.csv', row.names = FALSE)
 
+d.pt <- dist[dist$metric == 'pw', ]
+d.ot <- dist[dist$metric == 'onset5', ]
 
+write.csv(d.pt, file = 'code/individualCountries/outputs/outputDist_082819_PT.csv', row.names = FALSE)
+write.csv(d.ot, file = 'code/individualCountries/outputs/outputDist_082819_OT.csv', row.names = FALSE)
 
-
-
-
-
-
-
-
-
-
-
+# write.csv(e.pi, file = 'code/gridSearch/outputs/outputEns_082819_PI.csv', row.names = FALSE)
+# write.csv(e1, file = 'code/gridSearch/outputs/outputEns_082819_1wk.csv', row.names = FALSE)
+# write.csv(e2, file = 'code/gridSearch/outputs/outputEns_082819_2wk.csv', row.names = FALSE)
+# write.csv(e3, file = 'code/gridSearch/outputs/outputEns_082819_3wk.csv', row.names = FALSE)
+# write.csv(e4, file = 'code/gridSearch/outputs/outputEns_082819_4wk.csv', row.names = FALSE)
 
 
 

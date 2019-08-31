@@ -1,7 +1,7 @@
 
 library(reshape2); library(ggplot2)
 
-pdf('code/gridSearch/plots/fcast_results_082119.pdf', width = 14, height = 9)
+# pdf('code/gridSearch/plots/fcast_results_082119.pdf', width = 14, height = 9)
 
 # Focus mainly on metrics file for now:
 m <- read.csv('code/gridSearch/outputs/outputMet_081919_pro.csv')

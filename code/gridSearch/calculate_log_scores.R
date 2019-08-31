@@ -112,6 +112,11 @@ m <- m[!(rownames(m) %in% rows.to.remove), ]
 # m <- m[c(1:20, 30:69), ]
 # I guess these happened b/c I had some from when I ran everything straight through, and some from when they were split into 3 parts?
 
+# Make sure scalings are correct for FR!
+
+
+
+# 
 e <- merge(e, m, by = c('season', 'country'))
 e <- e[!is.na(e$onsetObs5), ]
 
