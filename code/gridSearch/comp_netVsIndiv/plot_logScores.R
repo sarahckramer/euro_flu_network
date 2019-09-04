@@ -149,4 +149,4 @@ if (byWeek == 'Predicted') {
 } else {
   print('Error.')
 }
-
+rm(d.agg, d.temp, e.agg, e.temp, p1, p2, p3, wk)

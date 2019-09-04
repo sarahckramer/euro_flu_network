@@ -43,11 +43,6 @@ e$model <- 'Network'; e2$model <- 'Individual'
 # Remove if no onset:
 # Already done, except for 1-4 weeks, where might not be necessary?
 
-# Remove unecessary lambdas from network model results:
-d <- d[d$lambda %in% c(1.00, 1.02, 1.05), ]
-e.pi <- e.pi[e.pi$lambda %in% c(1.00, 1.02, 1.05), ]
-e <- e[e$lambda %in% c(1.00, 1.02, 1.05), ]
-
 # Compile:
 d <- rbind(d, d2)
 names(e.pi2)[8] <- 'metric'

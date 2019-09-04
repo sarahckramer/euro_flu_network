@@ -1,12 +1,11 @@
 
 # Read in metrics from both network and individual models:
-m <- read.csv('code/gridSearch/outputs/outputMet_081919_pro.csv')
+m <- read.csv('code/gridSearch/outputs/outputMet_090119_pro.csv')
 m2 <- read.csv('code/individualCountries/outputs/outputMet_082819_pro.csv')
 
 # Limit to needed columns:
 m <- m[, c(1:9, 12:13, 15, 17:19, 25:32, 39, 43, 47, 92:95, 97, 99:101)]
 m$leadonset5 <- m$fc_start - m$onset5
-m <- m[m$lambda %in% c(1.00, 1.02, 1.05), ]
 
 m2 <- m2[, c(2:3, 5:7, 4, 8, 1, 9, 12:13, 15, 17:19, 25:32, 39, 43, 47, 60:63, 65, 67:69)]
 m2$leadonset5 <- m2$fc_start - m2$onset5
@@ -14,23 +13,25 @@ m2$leadonset5 <- m2$fc_start - m2$onset5
 # Label by model type:
 m$model <- 'Network'; m2$model <- 'Individual'
 
-# # Check that observed values are the same for both files:
-# # CHANGE TO ALL!
-# m.check <- merge(m, m2, by = c('season', 'run', 'oev_base', 'oev_denom', 'lambda', 'country', 'fc_start'))
-# # for now, includes all runs 1-2 for both models
-# 
+# Check that observed values are the same for both files:
+m.check <- merge(m, m2, by = c('season', 'run', 'oev_base', 'oev_denom', 'lambda', 'country', 'fc_start'))#, all = T)
+# note that there are about 20,000 more entries in network model results than in individual model results; likely where there are no data, so individual forecasts can't be run
+
 # all.equal(m.check$obs_pkwk.x, m.check$obs_pkwk.y)
 # all.equal(m.check$obs_peak_int.x, m.check$obs_peak_int.y)
 # all.equal(m.check$onsetObs5.x, m.check$onsetObs5.y)
 # all.equal(m.check$FWeek_pkwk.x, m.check$FWeek_pkwk.y)
 # all.equal(m.check$FWeek_onwk.x, m.check$FWeek_onwk.y)
-# 
-# # Why aren't PIs and OTs equal?
+#
+# # Why aren't PIs equal?
 # m.check1 <- m.check[round(m.check$obs_peak_int.x, 1) != round(m.check$obs_peak_int.y, 1), c(1:7, 13, 34)]
 # # PIs have slight differences, but never past decimal point; original complications caused by wrong scaling values in df for FR
-# 
-# # m.check2 <- m.check[m.check$onsetObs5.x != m.check$onsetObs5.y, c(1:7, 16, 37)]
-# # # b/c wk_start not added to onset weeks!
+
+# Remove the "extra" rows from network model, for a fair comparison:
+m.new <- m.check[, 1:36]
+names(m.new)[9:36] <- names(m)[9:36]
+names(m.new)[8] <- 'scaling'
+m <- m.new; rm(m.new, m.check)
 
 # Remove if no onset:
 m <- m[!is.na(m$onsetObs5), ]; m2 <- m2[!is.na(m2$onsetObs5), ]
@@ -66,3 +67,4 @@ m$abs_err_1wk_perc <- (abs(m$fcast_1week - m$obs_1week) / m$obs_1week) * 100
 m$abs_err_2wk_perc <- (abs(m$fcast_2week - m$obs_2week) / m$obs_2week) * 100
 m$abs_err_3wk_perc <- (abs(m$fcast_3week - m$obs_3week) / m$obs_3week) * 100
 m$abs_err_4wk_perc <- (abs(m$fcast_4week - m$obs_4week) / m$obs_4week) * 100
+

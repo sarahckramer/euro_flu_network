@@ -8,7 +8,18 @@ north.ili <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'HU', 'IE', 'IT', 'NL', 'PL', 'PT',
 north.ari <- c('LU', 'UK', 'DE', 'SI', 'FR')
 
 # Read in results
-m <- read.csv('code/gridSearch/outputs/outputMet_081919.csv')
+m <- read.csv('code/gridSearch/outputs/outputMet_090119.csv')
+
+m <- read.csv('code/individualCountries/outputs/outputMet_082819.csv')
+names(m)[4] <- 'scaling'
+m$scaling[m$country == 'FR' & m$season %in% c('2010-11', '2011-12', '2012-13', '2013-14')] <- 1.3
+for (i in 37:44) {
+  m[, i] <- m[, i] + 40 - 1
+}
+
+# Are peak intensities still the same for all base/denom/lambda at this point?:
+m.check <- unique(m[, c(1, 8:9, 17)]) # yep!
+
 
 # Re-code any magnitudes by scaling
 m$obs_peak_int <- round(m$obs_peak_int/m$scaling, digits=4)
@@ -66,30 +77,6 @@ m$abs_delta_AR_bin[m$abs_delta_AR < 1.5 * m$totAttackObs & m$abs_delta_AR >= 1.3
 m$abs_delta_AR_bin[m$abs_delta_AR >= 1.5 * m$totAttackObs] <- '5'
 m$abs_delta_AR_bin <- factor(m$abs_delta_AR_bin)
 
-# # Bin week 1 intensity by accuracy (ignoring NAs and 0s as true values)
-# m$abs_delta_1w_bin[m$abs_delta_1w < 1.05*m$obs_1week & !is.na(m$obs_1week) & m$obs_1week != 0] <- '1'
-# m$abs_delta_1w_bin[m$abs_delta_1w >= 1.05*m$obs_1week & m$abs_delta_1w < 1.1*m$obs_1week &
-#                      !is.na(m$obs_1week) & m$obs_1week != 0] <- '2'
-# m$abs_delta_1w_bin[m$abs_delta_1w >= 1.1*m$obs_1week & !is.na(m$obs_1week) & m$obs_1week != 0] <- '3'
-# 
-# # Bin week 2 intensity by accuracy (ignoring NAs and 0s as true values)
-# m$abs_delta_2w_bin[m$abs_delta_2w < 1.05*m$obs_2week & !is.na(m$obs_2week) & m$obs_2week != 0] <- '1'
-# m$abs_delta_2w_bin[m$abs_delta_2w >= 1.05*m$obs_2week & m$abs_delta_2w < 1.1*m$obs_2week &
-#                      !is.na(m$obs_2week) & m$obs_2week != 0] <- '2'
-# m$abs_delta_2w_bin[m$abs_delta_2w >= 1.1*m$obs_2week & !is.na(m$obs_2week) & m$obs_2week != 0] <- '3'
-# 
-# # Bin week 3 intensity by accuracy (ignoring NAs and 0s as true values)
-# m$abs_delta_3w_bin[m$abs_delta_3w < 1.05*m$obs_3week & !is.na(m$obs_3week) & m$obs_3week != 0] <- '1'
-# m$abs_delta_3w_bin[m$abs_delta_3w >= 1.05*m$obs_3week & m$abs_delta_3w < 1.1*m$obs_3week &
-#                      !is.na(m$obs_3week) & m$obs_3week != 0] <- '2'
-# m$abs_delta_3w_bin[m$abs_delta_3w >= 1.1*m$obs_3week & !is.na(m$obs_3week) & m$obs_3week != 0] <- '3'
-# 
-# # Bin week 4 intensity by accuracy (ignoring NAs and 0s as true values)
-# m$abs_delta_4w_bin[m$abs_delta_4w < 1.05*m$obs_4week & !is.na(m$obs_4week) & m$obs_4week != 0] <- '1'
-# m$abs_delta_4w_bin[m$abs_delta_4w >= 1.05*m$obs_4week & m$abs_delta_4w < 1.1*m$obs_4week &
-#                      !is.na(m$obs_4week) & m$obs_4week != 0] <- '2'
-# m$abs_delta_4w_bin[m$abs_delta_4w >= 1.1*m$obs_4week & !is.na(m$obs_4week) & m$obs_4week != 0] <- '3'
-
 # Calculate absolute value of onset timing error
 m$FWeek_onwk <- m$fc_start - m$onsetObs5
 m$delta_onset <- m$onset5 - m$onsetObs5
@@ -127,7 +114,8 @@ m$accurate_on[!(m$abs_delta_onset %in% c(0,1))] <- 'no'
 m$accurate_on <- factor(m$accurate_on)
 
 # Write new metrics file
-write.csv(m, file = 'code/gridSearch/outputs/outputMet_081919_pro.csv', row.names = F)
+write.csv(m, file = 'code/gridSearch/outputs/outputMet_090119_pro.csv', row.names = F)
+# write.csv(m, file = 'code/individualCountries/outputs/outputMet_082819_pro.csv', row.names = F)
 
 # Clear environment
 rm(list=ls())

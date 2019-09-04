@@ -139,6 +139,8 @@ EAKF_rFC<-function(num_ens, tmstep, param.bound, obs_i=obs_i,ntrn=1,
     }
     
   }
+  # so if obs_Vars is 0 at ntrn, we don't get an updated xpost
+  
   # End of training
   
   ### Forecast:
