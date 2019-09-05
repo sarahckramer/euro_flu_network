@@ -65,8 +65,6 @@ print(p1)
 kruskal.test(s0s ~ counts, data = res) # sig
 posthoc.kruskal.nemenyi.test(s0s ~ counts, data = res) # PT vs. (RO, IS, DE, DK, CZ)
 
-
-
 # Look at fitted values of L, D, R0mx, R0mn at end of season:
 o$group <- paste(o$country, o$run, sep = '_')
 ggplot(data = o) + geom_line(aes(x = week, y = L, group = group, col = country)) +
