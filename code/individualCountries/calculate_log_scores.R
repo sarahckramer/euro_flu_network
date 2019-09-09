@@ -166,7 +166,7 @@ m2 <- unique(m[, c(1:8, 26, 39)])
 m3 <- unique(m[, c(1:8, 27, 39)])
 m4 <- unique(m[, c(1:8, 28, 39)])
 
-# Check scailng in FR:
+# Check scaling in FR:
 print(table(m$season[m$country == 'FR'], m$scaling[m$country == 'FR']))
 
 e1 <- merge(e1, m1, by = c('season', 'run', 'oev_base', 'oev_denom', 'lambda', 'fc_start', 'country'))
