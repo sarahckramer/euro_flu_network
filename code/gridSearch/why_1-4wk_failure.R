@@ -30,11 +30,11 @@ e1 <- e1[!is.na(e1$onsetObs5), ]
 e1.ind <- e1.ind[!is.na(e1.ind$onsetObs5), ]
 # already gone, b/c of how m was formatted
 
-### Un-scale ens:
-for (i in 10:309) {
-  e1[, i] <- e1[, i] / e1$scaling
-  e1.ind[, i] <- e1.ind[, i] / e1.ind$scaling
-}; rm(i)
+# ### Un-scale ens:
+# for (i in 10:309) {
+#   e1[, i] <- e1[, i] / e1$scaling
+#   e1.ind[, i] <- e1.ind[, i] / e1.ind$scaling
+# }; rm(i)
 
 ### Merge:
 e1$metric <- NULL; e1.ind$metrics <- NULL
@@ -79,42 +79,16 @@ log.1wk <- rbind(log.1wk, log.1wk.ind)
 log.1wk <- log.1wk[, c(1:7, 9, 12)]
 e1 <- merge(e1, log.1wk, by = c('season', 'run', 'oev_base', 'oev_denom', 'lambda', 'fc_start', 'country', 'model'))
 
-he### Explore!:
+### Explore!:
 boxplot(scores ~ model + oev_base, data = e1)
-boxplot(vars ~ model + oev_base, data = e1) # yes, there are outliers here
-boxplot(log(vars) ~ model + oev_base, data = e1) # maybe also outliers on the low end?
+boxplot(vars ~ model + oev_base, data = e1) # now we're seeing that these look to be lower
+boxplot(log(vars) ~ model + oev_base, data = e1) # definitely lower variances than the other combos
 
 e1.low <- e1[e1$scores == -10, ] # this means that literally none of the 300 are within the boundaries
 # this can't be due to increased ensemble variance alone - it's a complete miss
 boxplot(log(vars) ~ model + oev_base, data = e1.low) # same pattern as overall...
 
-table(e1.low$country) / table(e1$country) # most common seem to be DE, DK, HR
-
-# are these combos also inaccurate by MAE?
-boxplot(abs_err_1wk_perc ~ model + oev_base, data = e1)
-boxplot(log(abs_err_1wk_perc) ~ model + oev_base, data = e1)
-
-summary(e1$abs_err_1wk_perc)
-summary(e1.low$abs_err_1wk_perc) # somewhat more inaccurate, but significant overlap
-
 e1.base <- e1[e1$scores > -10, ]
-
-summary(e1.base$delta_pkwk_mean)
-summary(e1.low$delta_pkwk_mean)
-boxplot(e1.base$delta_pkwk_mean, e1.low$delta_pkwk_mean) # no difference
-
-summary(e1.base$leadpkwk_mean)
-boxplot(e1.base$leadpkwk_mean, e1.low$leadpkwk_mean) # no difference
-
-summary(e1.base$fc_start)
-boxplot(e1.base$fc_start, e1.low$fc_start) # less accurate ones tend to be later
-
-summary(e1.base$obs_pkwk)
-boxplot(e1.base$obs_pkwk, e1.low$obs_pkwk) # less accurate tend to have later peaks
-
-# summary(e1.base$obs_1week)
-table(e1.low$country, e1.low$season)
-table(e1.base$country, e1.base$season)
 
 e10 <- e1.low[e1.low$model == 'Network' & e1.low$oev_base == 1e4, ]
 e10.comp <- e1.base[e1.base$model == 'Network' & e1.base$oev_base == 1e4, ]
@@ -133,17 +107,17 @@ boxplot(e10$lambda, e10.comp$lambda) # less accurate are less likely to include 
 e10 <- e10[e10$lambda == 1.02 & e10$oev_denom == 10, ]
 e10.comp <- e10.comp[e10.comp$lambda == 1.02 & e10.comp$oev_denom == 10, ]
 
-# Look at unique country/season combos to see what differences are:
-e10.red <- unique(e10[, c(1, 7, 9)])
-e10.comp.red <- unique(e10.comp[, c(1, 7, 9)])
-
-e10.red$group <- paste(e10.red$country, e10.red$season, sep = '_'); e10.red$group <- factor(e10.red$group)
-e10.comp.red$group <- paste(e10.comp.red$country, e10.comp.red$season, sep = '_'); e10.comp.red$group <- factor(e10.comp.red$group)
-
-e10.comp.red <- e10.comp.red[!(e10.comp.red$group %in% levels(e10.red$group)), ]
-
-table(e10.red$obs_pkwk); table(e10.comp.red$obs_pkwk)
-# they don't even necessarily tend to be later - I'm not sure what the problem is
+# # Look at unique country/season combos to see what differences are:
+# e10.red <- unique(e10[, c(1, 7, 9)])
+# e10.comp.red <- unique(e10.comp[, c(1, 7, 9)])
+# 
+# e10.red$group <- paste(e10.red$country, e10.red$season, sep = '_'); e10.red$group <- factor(e10.red$group)
+# e10.comp.red$group <- paste(e10.comp.red$country, e10.comp.red$season, sep = '_'); e10.comp.red$group <- factor(e10.comp.red$group)
+# 
+# e10.comp.red <- e10.comp.red[!(e10.comp.red$group %in% levels(e10.red$group)), ]
+# 
+# table(e10.red$obs_pkwk); table(e10.comp.red$obs_pkwk)
+# # they don't even necessarily tend to be later - I'm not sure what the problem is
 
 ### Any correlations between scores and other metrics?
 e10 <- rbind(e10, e10.comp)
@@ -225,8 +199,12 @@ names(oevs) <- c('country', 'OEV')
 e10.red <- merge(e10.red, oevs, by = 'country')
 e10.red$OEV <- as.numeric(as.character(e10.red$OEV))
 e10.red$err.prop <- e10.red$vars / e10.red$OEV # if <<1, might be divergence
-boxplot(err.prop ~ country, data = e10.red) # if anything, tend to have way higher variance than OEV...
-# but then why would they have 0% accuracy? Surely some ensemble members would fall into the correct range
+boxplot(err.prop ~ country, data = e10.red) # don't necessarily have lower variance than others
+# HR has very low, but not terrible failure; SK and UK fail but have high var
+boxplot(scores ~ country, data = e10.red)
+boxplot(vars ~ country, data = e10.red)
+
+# Look at: AT (low error, low acc), HR (low error, decent acc), ES (high var, high acc), UK (high var, low acc)
 
 # Look at mean posterior - mean prior - is there adjustment?
     # I haven't been saving the priors, though, so we don't know this
@@ -245,7 +223,7 @@ e <- e[e$season == '2010-11' & e$oev_base == 1e4 & e$oev_denom == 10 & e$lambda 
 par(mfrow = c(2, 2), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 
 # AT:
-plot(obs_i$Austria, pch = 4, cex = 1.0, xlab = 'Week of Outbreak', ylab = 'Incidence', main = 'Austria (Low Variance, High Error)')
+plot(obs_i$Austria, pch = 4, cex = 1.0, xlab = 'Week of Outbreak', ylab = 'Incidence', main = 'Austria (Low Variance, Low Accuracy)')
 lines(o$Est[o$country == 'AT' & o$result == 'train' & o$fc_start == 60 & o$run == 1], type = 'b', pch = 20, col = 'gray50')
 lines(o$Est[o$country == 'AT' & o$result == 'train' & o$fc_start == 60 & o$run == 2], type = 'b', pch = 20, col = 'gray50')
 lines(o$Est[o$country == 'AT' & o$result == 'train' & o$fc_start == 60 & o$run == 3], type = 'b', pch = 20, col = 'gray50')
@@ -256,56 +234,101 @@ points(x = 61 - 40 + 1, y = o$Est[o$country == 'AT'& o$fc_start == 60 & o$result
 points(x = 61 - 40 + 1 + 0.25, y = o$Est[o$country == 'AT'& o$fc_start == 60 & o$result == 'fcast' & o$week == 61 & o$run == 2], col = 'coral', pch = 20)
 points(x = 61 - 40 + 1 - 0.25, y = o$Est[o$country == 'AT'& o$fc_start == 60 & o$result == 'fcast' & o$week == 61 & o$run == 3], col = 'coral', pch = 20)
 
-# DE:
-plot(obs_i$Germany, pch = 4, cex = 1.0, xlab = 'Week of Outbreak', ylab = 'Incidence', main = 'Germany (High Variance, High Error)')
-lines(o$Est[o$country == 'DE' & o$result == 'train' & o$fc_start == 60 & o$run == 1], type = 'b', pch = 20, col = 'gray50')
-lines(o$Est[o$country == 'DE' & o$result == 'train' & o$fc_start == 60 & o$run == 2], type = 'b', pch = 20, col = 'gray50')
-lines(o$Est[o$country == 'DE' & o$result == 'train' & o$fc_start == 60 & o$run == 3], type = 'b', pch = 20, col = 'gray50')
-points(x = rep(61 - 40 + 1, 300), e[e$country == 'DE' & e$fc_start == 60 & e$run == 1, 9:308], pch = 20, col = 'gray90', cex = 0.5)
-points(x = rep(61 - 40 + 1 + 0.25, 300), e[e$country == 'DE' & e$fc_start == 60 & e$run == 2, 9:308], pch = 20, col = 'gray90', cex = 0.5)
-points(x = rep(61 - 40 + 1 - 0.25, 300), e[e$country == 'DE' & e$fc_start == 60 & e$run == 3, 9:308], pch = 20, col = 'gray90', cex = 0.5)
-points(x = 61 - 40 + 1, y = o$Est[o$country == 'DE'& o$fc_start == 60 & o$result == 'fcast' & o$week == 61 & o$run == 1], col = 'coral', pch = 20)
-points(x = 61 - 40 + 1 + 0.25, y = o$Est[o$country == 'DE'& o$fc_start == 60 & o$result == 'fcast' & o$week == 61 & o$run == 2], col = 'coral', pch = 20)
-points(x = 61 - 40 + 1 - 0.25, y = o$Est[o$country == 'DE'& o$fc_start == 60 & o$result == 'fcast' & o$week == 61 & o$run == 3], col = 'coral', pch = 20)
+# UK:
+plot(obs_i$United.Kingdom, pch = 4, cex = 1.0, xlab = 'Week of Outbreak', ylab = 'Incidence', main = 'UK (High Variance, Low Accuracy)')
+lines(o$Est[o$country == 'UK' & o$result == 'train' & o$fc_start == 56 & o$run == 1], type = 'b', pch = 20, col = 'gray50')
+lines(o$Est[o$country == 'UK' & o$result == 'train' & o$fc_start == 56 & o$run == 2], type = 'b', pch = 20, col = 'gray50')
+lines(o$Est[o$country == 'UK' & o$result == 'train' & o$fc_start == 56 & o$run == 3], type = 'b', pch = 20, col = 'gray50')
+points(x = rep(57 - 40 + 1, 300), e[e$country == 'UK' & e$fc_start == 56 & e$run == 1, 9:308], pch = 20, col = 'gray90', cex = 0.5)
+points(x = rep(57 - 40 + 1 + 0.25, 300), e[e$country == 'UK' & e$fc_start == 56 & e$run == 2, 9:308], pch = 20, col = 'gray90', cex = 0.5)
+points(x = rep(57 - 40 + 1 - 0.25, 300), e[e$country == 'UK' & e$fc_start == 56 & e$run == 3, 9:308], pch = 20, col = 'gray90', cex = 0.5)
+points(x = 57 - 40 + 1, y = o$Est[o$country == 'UK'& o$fc_start == 56 & o$result == 'fcast' & o$week == 57 & o$run == 1], col = 'coral', pch = 20)
+points(x = 57 - 40 + 1 + 0.25, y = o$Est[o$country == 'UK'& o$fc_start == 56 & o$result == 'fcast' & o$week == 57 & o$run == 2], col = 'coral', pch = 20)
+points(x = 57 - 40 + 1 - 0.25, y = o$Est[o$country == 'UK'& o$fc_start == 56 & o$result == 'fcast' & o$week == 57 & o$run == 3], col = 'coral', pch = 20)
 # and here the error in the variance was much bigger than the OEV - was that true in the previous time steps, as well?
 
-# LU:
-plot(obs_i$Luxembourg, pch = 4, cex = 1.0, xlab = 'Week of Outbreak', ylab = 'Incidence', main = 'Luxembourg (Low Variance, Low Error)')
-lines(o$Est[o$country == 'LU' & o$result == 'train' & o$fc_start == 58 & o$run == 1], type = 'b', pch = 20, col = 'gray50')
-lines(o$Est[o$country == 'LU' & o$result == 'train' & o$fc_start == 58 & o$run == 2], type = 'b', pch = 20, col = 'gray50')
-lines(o$Est[o$country == 'LU' & o$result == 'train' & o$fc_start == 58 & o$run == 3], type = 'b', pch = 20, col = 'gray50')
-points(x = rep(59 - 40 + 1, 300), e[e$country == 'LU' & e$fc_start == 58 & e$run == 1, 9:308], pch = 20, col = 'gray90', cex = 0.5)
-points(x = rep(59 - 40 + 1 + 0.25, 300), e[e$country == 'LU' & e$fc_start == 58 & e$run == 2, 9:308], pch = 20, col = 'gray90', cex = 0.5)
-points(x = rep(59 - 40 + 1 - 0.25, 300), e[e$country == 'LU' & e$fc_start == 58 & e$run == 3, 9:308], pch = 20, col = 'gray90', cex = 0.5)
-points(x = 59 - 40 + 1, y = o$Est[o$country == 'LU'& o$fc_start == 58 & o$result == 'fcast' & o$week == 59 & o$run == 1], col = 'coral', pch = 20)
-points(x = 59 - 40 + 1 + 0.25, y = o$Est[o$country == 'LU'& o$fc_start == 58 & o$result == 'fcast' & o$week == 59 & o$run == 2], col = 'coral', pch = 20)
-points(x = 59 - 40 + 1 - 0.25, y = o$Est[o$country == 'LU'& o$fc_start == 58 & o$result == 'fcast' & o$week == 59 & o$run == 3], col = 'coral', pch = 20)
+# HR:
+plot(obs_i$Croatia, pch = 4, cex = 1.0, xlab = 'Week of Outbreak', ylab = 'Incidence', main = 'Croatia (Low Variance, Decent Accuracy)')
+lines(o$Est[o$country == 'HR' & o$result == 'train' & o$fc_start == 62 & o$run == 1], type = 'b', pch = 20, col = 'gray50')
+lines(o$Est[o$country == 'HR' & o$result == 'train' & o$fc_start == 62 & o$run == 2], type = 'b', pch = 20, col = 'gray50')
+lines(o$Est[o$country == 'HR' & o$result == 'train' & o$fc_start == 62 & o$run == 3], type = 'b', pch = 20, col = 'gray50')
+points(x = rep(63 - 40 + 1, 300), e[e$country == 'HR' & e$fc_start == 62 & e$run == 1, 9:308], pch = 20, col = 'gray90', cex = 0.5)
+points(x = rep(63 - 40 + 1 + 0.25, 300), e[e$country == 'HR' & e$fc_start == 62 & e$run == 2, 9:308], pch = 20, col = 'gray90', cex = 0.5)
+points(x = rep(63 - 40 + 1 - 0.25, 300), e[e$country == 'HR' & e$fc_start == 62 & e$run == 3, 9:308], pch = 20, col = 'gray90', cex = 0.5)
+points(x = 63 - 40 + 1, y = o$Est[o$country == 'HR'& o$fc_start == 62 & o$result == 'fcast' & o$week == 63 & o$run == 1], col = 'coral', pch = 20)
+points(x = 63 - 40 + 1 + 0.25, y = o$Est[o$country == 'HR'& o$fc_start == 62 & o$result == 'fcast' & o$week == 63 & o$run == 2], col = 'coral', pch = 20)
+points(x = 63 - 40 + 1 - 0.25, y = o$Est[o$country == 'HR'& o$fc_start == 62 & o$result == 'fcast' & o$week == 63 & o$run == 3], col = 'coral', pch = 20)
 
-# PL:
-plot(obs_i$Poland, pch = 4, cex = 1.0, xlab = 'Week of Outbreak', ylab = 'Incidence', main = 'Poland (High Variance, Low Error)')
-lines(o$Est[o$country == 'PL' & o$result == 'train' & o$fc_start == 60 & o$run == 1], type = 'b', pch = 20, col = 'gray50')
-lines(o$Est[o$country == 'PL' & o$result == 'train' & o$fc_start == 60 & o$run == 2], type = 'b', pch = 20, col = 'gray50')
-lines(o$Est[o$country == 'PL' & o$result == 'train' & o$fc_start == 60 & o$run == 3], type = 'b', pch = 20, col = 'gray50')
-points(x = rep(61 - 40 + 1, 300), e[e$country == 'PL' & e$fc_start == 60 & e$run == 1, 9:308], pch = 20, col = 'gray90', cex = 0.5)
-points(x = rep(61 - 40 + 1 + 0.25, 300), e[e$country == 'PL' & e$fc_start == 60 & e$run == 2, 9:308], pch = 20, col = 'gray90', cex = 0.5)
-points(x = rep(61 - 40 + 1 - 0.25, 300), e[e$country == 'PL' & e$fc_start == 60 & e$run == 3, 9:308], pch = 20, col = 'gray90', cex = 0.5)
-points(x = 61 - 40 + 1, y = o$Est[o$country == 'PL'& o$fc_start == 60 & o$result == 'fcast' & o$week == 61 & o$run == 1], col = 'coral', pch = 20)
-points(x = 61 - 40 + 1 + 0.25, y = o$Est[o$country == 'PL'& o$fc_start == 60 & o$result == 'fcast' & o$week == 61 & o$run == 2], col = 'coral', pch = 20)
-points(x = 61 - 40 + 1 - 0.25, y = o$Est[o$country == 'PL'& o$fc_start == 60 & o$result == 'fcast' & o$week == 61 & o$run == 3], col = 'coral', pch = 20)
+# ES:
+plot(obs_i$Spain, pch = 4, cex = 1.0, xlab = 'Week of Outbreak', ylab = 'Incidence', main = 'Spain (High Variance, High Accuracy)')
+lines(o$Est[o$country == 'ES' & o$result == 'train' & o$fc_start == 57 & o$run == 1], type = 'b', pch = 20, col = 'gray50')
+lines(o$Est[o$country == 'ES' & o$result == 'train' & o$fc_start == 57 & o$run == 2], type = 'b', pch = 20, col = 'gray50')
+lines(o$Est[o$country == 'ES' & o$result == 'train' & o$fc_start == 57 & o$run == 3], type = 'b', pch = 20, col = 'gray50')
+points(x = rep(58 - 40 + 1, 300), e[e$country == 'ES' & e$fc_start == 57 & e$run == 1, 9:308], pch = 20, col = 'gray90', cex = 0.5)
+points(x = rep(58 - 40 + 1 + 0.25, 300), e[e$country == 'ES' & e$fc_start == 57 & e$run == 2, 9:308], pch = 20, col = 'gray90', cex = 0.5)
+points(x = rep(58 - 40 + 1 - 0.25, 300), e[e$country == 'ES' & e$fc_start == 57 & e$run == 3, 9:308], pch = 20, col = 'gray90', cex = 0.5)
+points(x = 58 - 40 + 1, y = o$Est[o$country == 'ES'& o$fc_start == 57 & o$result == 'fcast' & o$week == 58 & o$run == 1], col = 'coral', pch = 20)
+points(x = 58 - 40 + 1 + 0.25, y = o$Est[o$country == 'ES'& o$fc_start == 57 & o$result == 'fcast' & o$week == 58 & o$run == 2], col = 'coral', pch = 20)
+points(x = 58 - 40 + 1 - 0.25, y = o$Est[o$country == 'ES'& o$fc_start == 57 & o$result == 'fcast' & o$week == 58 & o$run == 3], col = 'coral', pch = 20)
 
 # Think I need the scaled variances, not the unscaled one! To match up with OEVs!
 
 # What difference does oev_base 1e5 make?:
+o <- read.csv('code/gridSearch/outputs/outputOP_090119.csv')
+o <- o[o$season == '2010-11' & o$oev_denom == 10 & o$lambda == 1.02 & o$oev_base == 1e5, ]
+e1.red <- e1[e1$model == 'Network' & e1$oev_base == 1e5 & e1$oev_denom == 10 & e1$lambda == 1.02 & e1$season == '2010-11', ]
+e <- read.csv('code/gridSearch/outputs/outputEns_090119_1wk.csv')
+e <- e[e$season == '2010-11' & e$oev_base == 1e5 & e$oev_denom == 10 & e$lambda == 1.02, ]
 
+# AT:
+plot(obs_i$Austria, pch = 4, cex = 1.0, xlab = 'Week of Outbreak', ylab = 'Incidence', main = 'Austria (Low Variance, Low Accuracy)')
+lines(o$Est[o$country == 'AT' & o$result == 'train' & o$fc_start == 60 & o$run == 1], type = 'b', pch = 20, col = 'gray50')
+lines(o$Est[o$country == 'AT' & o$result == 'train' & o$fc_start == 60 & o$run == 2], type = 'b', pch = 20, col = 'gray50')
+lines(o$Est[o$country == 'AT' & o$result == 'train' & o$fc_start == 60 & o$run == 3], type = 'b', pch = 20, col = 'gray50')
+points(x = rep(61 - 40 + 1, 300), e[e$country == 'AT' & e$fc_start == 60 & e$run == 1, 9:308], pch = 20, col = 'gray90', cex = 0.5)
+points(x = rep(61 - 40 + 1 + 0.25, 300), e[e$country == 'AT' & e$fc_start == 60 & e$run == 2, 9:308], pch = 20, col = 'gray90', cex = 0.5)
+points(x = rep(61 - 40 + 1 - 0.25, 300), e[e$country == 'AT' & e$fc_start == 60 & e$run == 3, 9:308], pch = 20, col = 'gray90', cex = 0.5)
+points(x = 61 - 40 + 1, y = o$Est[o$country == 'AT'& o$fc_start == 60 & o$result == 'fcast' & o$week == 61 & o$run == 1], col = 'coral', pch = 20)
+points(x = 61 - 40 + 1 + 0.25, y = o$Est[o$country == 'AT'& o$fc_start == 60 & o$result == 'fcast' & o$week == 61 & o$run == 2], col = 'coral', pch = 20)
+points(x = 61 - 40 + 1 - 0.25, y = o$Est[o$country == 'AT'& o$fc_start == 60 & o$result == 'fcast' & o$week == 61 & o$run == 3], col = 'coral', pch = 20)
 
+# UK:
+plot(obs_i$United.Kingdom, pch = 4, cex = 1.0, xlab = 'Week of Outbreak', ylab = 'Incidence', main = 'UK (High Variance, Low Accuracy)')
+lines(o$Est[o$country == 'UK' & o$result == 'train' & o$fc_start == 56 & o$run == 1], type = 'b', pch = 20, col = 'gray50')
+lines(o$Est[o$country == 'UK' & o$result == 'train' & o$fc_start == 56 & o$run == 2], type = 'b', pch = 20, col = 'gray50')
+lines(o$Est[o$country == 'UK' & o$result == 'train' & o$fc_start == 56 & o$run == 3], type = 'b', pch = 20, col = 'gray50')
+points(x = rep(57 - 40 + 1, 300), e[e$country == 'UK' & e$fc_start == 56 & e$run == 1, 9:308], pch = 20, col = 'gray90', cex = 0.5)
+points(x = rep(57 - 40 + 1 + 0.25, 300), e[e$country == 'UK' & e$fc_start == 56 & e$run == 2, 9:308], pch = 20, col = 'gray90', cex = 0.5)
+points(x = rep(57 - 40 + 1 - 0.25, 300), e[e$country == 'UK' & e$fc_start == 56 & e$run == 3, 9:308], pch = 20, col = 'gray90', cex = 0.5)
+points(x = 57 - 40 + 1, y = o$Est[o$country == 'UK'& o$fc_start == 56 & o$result == 'fcast' & o$week == 57 & o$run == 1], col = 'coral', pch = 20)
+points(x = 57 - 40 + 1 + 0.25, y = o$Est[o$country == 'UK'& o$fc_start == 56 & o$result == 'fcast' & o$week == 57 & o$run == 2], col = 'coral', pch = 20)
+points(x = 57 - 40 + 1 - 0.25, y = o$Est[o$country == 'UK'& o$fc_start == 56 & o$result == 'fcast' & o$week == 57 & o$run == 3], col = 'coral', pch = 20)
+# and here the error in the variance was much bigger than the OEV - was that true in the previous time steps, as well?
 
+# HR:
+plot(obs_i$Croatia, pch = 4, cex = 1.0, xlab = 'Week of Outbreak', ylab = 'Incidence', main = 'Croatia (Low Variance, Decent Accuracy)')
+lines(o$Est[o$country == 'HR' & o$result == 'train' & o$fc_start == 62 & o$run == 1], type = 'b', pch = 20, col = 'gray50')
+lines(o$Est[o$country == 'HR' & o$result == 'train' & o$fc_start == 62 & o$run == 2], type = 'b', pch = 20, col = 'gray50')
+lines(o$Est[o$country == 'HR' & o$result == 'train' & o$fc_start == 62 & o$run == 3], type = 'b', pch = 20, col = 'gray50')
+points(x = rep(63 - 40 + 1, 300), e[e$country == 'HR' & e$fc_start == 62 & e$run == 1, 9:308], pch = 20, col = 'gray90', cex = 0.5)
+points(x = rep(63 - 40 + 1 + 0.25, 300), e[e$country == 'HR' & e$fc_start == 62 & e$run == 2, 9:308], pch = 20, col = 'gray90', cex = 0.5)
+points(x = rep(63 - 40 + 1 - 0.25, 300), e[e$country == 'HR' & e$fc_start == 62 & e$run == 3, 9:308], pch = 20, col = 'gray90', cex = 0.5)
+points(x = 63 - 40 + 1, y = o$Est[o$country == 'HR'& o$fc_start == 62 & o$result == 'fcast' & o$week == 63 & o$run == 1], col = 'coral', pch = 20)
+points(x = 63 - 40 + 1 + 0.25, y = o$Est[o$country == 'HR'& o$fc_start == 62 & o$result == 'fcast' & o$week == 63 & o$run == 2], col = 'coral', pch = 20)
+points(x = 63 - 40 + 1 - 0.25, y = o$Est[o$country == 'HR'& o$fc_start == 62 & o$result == 'fcast' & o$week == 63 & o$run == 3], col = 'coral', pch = 20)
 
-
-
-
-
-# How did variances in ensembles and OEVs compare for ALL countries over the entire period of interest? (56-63 fc_starts):
-
+# ES:
+plot(obs_i$Spain, pch = 4, cex = 1.0, xlab = 'Week of Outbreak', ylab = 'Incidence', main = 'Spain (High Variance, High Accuracy)')
+lines(o$Est[o$country == 'ES' & o$result == 'train' & o$fc_start == 57 & o$run == 1], type = 'b', pch = 20, col = 'gray50')
+lines(o$Est[o$country == 'ES' & o$result == 'train' & o$fc_start == 57 & o$run == 2], type = 'b', pch = 20, col = 'gray50')
+lines(o$Est[o$country == 'ES' & o$result == 'train' & o$fc_start == 57 & o$run == 3], type = 'b', pch = 20, col = 'gray50')
+points(x = rep(58 - 40 + 1, 300), e[e$country == 'ES' & e$fc_start == 57 & e$run == 1, 9:308], pch = 20, col = 'gray90', cex = 0.5)
+points(x = rep(58 - 40 + 1 + 0.25, 300), e[e$country == 'ES' & e$fc_start == 57 & e$run == 2, 9:308], pch = 20, col = 'gray90', cex = 0.5)
+points(x = rep(58 - 40 + 1 - 0.25, 300), e[e$country == 'ES' & e$fc_start == 57 & e$run == 3, 9:308], pch = 20, col = 'gray90', cex = 0.5)
+points(x = 58 - 40 + 1, y = o$Est[o$country == 'ES'& o$fc_start == 57 & o$result == 'fcast' & o$week == 58 & o$run == 1], col = 'coral', pch = 20)
+points(x = 58 - 40 + 1 + 0.25, y = o$Est[o$country == 'ES'& o$fc_start == 57 & o$result == 'fcast' & o$week == 58 & o$run == 2], col = 'coral', pch = 20)
+points(x = 58 - 40 + 1 - 0.25, y = o$Est[o$country == 'ES'& o$fc_start == 57 & o$result == 'fcast' & o$week == 58 & o$run == 3], col = 'coral', pch = 20)
+# so higher OEV_base allows variance of ensembles to remain larger, presumably b/c it can't yank things around as much
 
 
 
