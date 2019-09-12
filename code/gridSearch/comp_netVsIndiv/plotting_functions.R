@@ -238,7 +238,7 @@ format_calib_output <- function(d, met.name) {
   names(d) <- c('quantile', 'y', 'lead', 'rmse', 'len', 'oev_base', 'lambda', 'model', 'metric')
   d$lambda <- NULL
   
-  d$model <- factor(d$model, levels = levels(d$model)[2:1])
+  d$model <- factor(d$model, levels = levels(d$model)[c(3:4, 2, 1)])
   
   return(d)
 }
