@@ -33,6 +33,8 @@ for (country in levels(m$country)) {
 
 m <- read.csv('results/propRandTravel/outputMet_090919.csv')
 
+m <- read.csv('results/highOEVBase/outputMet_091619.csv')
+
 # Are peak intensities still the same for all base/denom/lambda at this point?:
 m.check <- unique(m[, c(1, 8:9, 17)]) # yep!
 
@@ -132,7 +134,8 @@ m$accurate_on <- factor(m$accurate_on)
 # write.csv(m, file = 'code/gridSearch/outputs/outputMet_090119_pro.csv', row.names = F)
 # write.csv(m, file = 'code/individualCountries/outputs/outputMet_082819_pro.csv', row.names = F)
 # write.csv(m, file = 'results/newScalings/outputMet_090919_pro.csv', row.names = F)
-write.csv(m, file = 'results/propRandTravel/outputMet_090919_pro.csv', row.names = F)
+# write.csv(m, file = 'results/propRandTravel/outputMet_090919_pro.csv', row.names = F)
+write.csv(m, file = 'results/highOEVBase/outputMet_090919_pro.csv', row.names = F)
 
 # Clear environment
 rm(list=ls())
