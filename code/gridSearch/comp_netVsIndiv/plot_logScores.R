@@ -3,6 +3,7 @@ if (byWeek == 'Predicted') {
   # Start with PT:
   # Think for most of these, we can collapse the lambdas, since they don't make much of a difference
   d.temp <- d[d$leadpkwk_mean >= -8 & d$leadpkwk_mean < 5 & d$metric == 'pt' & !is.na(d$leadonset5), ]
+  # d.temp <- d[d$leadpkwk_mean >= -8 & d$leadpkwk_mean < 5 & d$metric == 'pt', ]
   d.temp$group <- paste(d.temp$leadpkwk_mean, d.temp$model, sep = '_'); d.temp$group <- factor(d.temp$group)
   d.agg <- aggregate(score ~ leadpkwk_mean + oev_base + model, data = d.temp, FUN = median)
   
@@ -20,6 +21,7 @@ if (byWeek == 'Predicted') {
   
   # PI:
   e.temp <- e.pi[e.pi$leadpkwk_mean >= -8 & e.pi$leadpkwk_mean < 5 & !is.na(e.pi$leadonset5), ]
+  # e.temp <- e.pi[e.pi$leadpkwk_mean >= -8 & e.pi$leadpkwk_mean < 5, ]
   e.temp$group <- paste(e.temp$leadpkwk_mean, e.temp$model, sep = '_'); e.temp$group <- factor(e.temp$group)
   e.agg <- aggregate(score ~ leadpkwk_mean + oev_base + model, data = e.temp, FUN = median)
   
@@ -36,7 +38,8 @@ if (byWeek == 'Predicted') {
   grid.arrange(p1, p2, p3)
   
   # OT:
-  d.temp <- d[d$leadonset5 >= -6 & d$leadonset5 < 7 & d$metric == 'ot' & !is.na(d$leadonset5), ]
+  # d.temp <- d[d$leadonset5 >= -6 & d$leadonset5 < 7 & d$metric == 'ot' & !is.na(d$leadonset5), ]
+  d.temp <- d[((d$leadonset5 >= -6 & d$leadonset5 < 7) | is.na(d$leadonset5)) & d$metric == 'ot', ]
   d.temp$group <- paste(d.temp$leadonset5, d.temp$model, sep = '_'); d.temp$group <- factor(d.temp$group)
   d.agg <- aggregate(score ~ leadonset5 + oev_base + model, data = d.temp, FUN = median)
   
@@ -75,7 +78,8 @@ if (byWeek == 'Predicted') {
   
 } else if (byWeek == 'Observed') {
   # Start with PT:
-  d.temp <- d[d$FWeek_pkwk >= -8 & d$FWeek_pkwk < 5 & d$metric == 'pt' & !is.na(d$FWeek_onwk), ]
+  # d.temp <- d[d$FWeek_pkwk >= -8 & d$FWeek_pkwk < 5 & d$metric == 'pt' & !is.na(d$FWeek_onwk), ]
+  d.temp <- d[d$FWeek_pkwk >= -8 & d$FWeek_pkwk < 5 & d$metric == 'pt' & !is.na(d$leadonset5), ]
   d.temp$group <- paste(d.temp$FWeek_pkwk, d.temp$model, sep = '_'); d.temp$group <- factor(d.temp$group)
   d.agg <- aggregate(score ~ FWeek_pkwk + oev_base + model, data = d.temp, FUN = median)
   
@@ -92,7 +96,8 @@ if (byWeek == 'Predicted') {
   grid.arrange(p1, p2, p3)
   
   # PI:
-  e.temp <- e.pi[e.pi$FWeek_pkwk >= -8 & e.pi$FWeek_pkwk < 5 & !is.na(e.pi$FWeek_onwk), ]
+  # e.temp <- e.pi[e.pi$FWeek_pkwk >= -8 & e.pi$FWeek_pkwk < 5 & !is.na(e.pi$FWeek_onwk), ]
+  e.temp <- e.pi[e.pi$FWeek_pkwk >= -8 & e.pi$FWeek_pkwk < 5 & !is.na(e.pi$leadonset5), ]
   e.temp$group <- paste(e.temp$FWeek_pkwk, e.temp$model, sep = '_'); e.temp$group <- factor(e.temp$group)
   e.agg <- aggregate(score ~ FWeek_pkwk + oev_base + model, data = e.temp, FUN = median)
   

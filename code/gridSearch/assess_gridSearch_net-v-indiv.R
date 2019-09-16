@@ -3,7 +3,7 @@
 library(reshape2); library(ggplot2); library(gridExtra)
 
 # Save plots?:
-outputPlots <- TRUE
+outputPlots <- FALSE
 
 # Read in all plotting code:
 source('code/gridSearch/comp_netVsIndiv/plotting_functions.R')

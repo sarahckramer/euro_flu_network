@@ -220,6 +220,7 @@ e1.red <- e1[e1$model == 'Network' & e1$oev_base == 1e4 & e1$oev_denom == 10 & e
 e <- read.csv('code/gridSearch/outputs/outputEns_090119_1wk.csv')
 e <- e[e$season == '2010-11' & e$oev_base == 1e4 & e$oev_denom == 10 & e$lambda == 1.02, ]
 
+pdf('code/gridSearch/plots/example_1wk_fcasts.pdf', width = 18, height = 14)
 par(mfrow = c(2, 2), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 
 # AT:
@@ -330,7 +331,7 @@ points(x = 58 - 40 + 1 + 0.25, y = o$Est[o$country == 'ES'& o$fc_start == 57 & o
 points(x = 58 - 40 + 1 - 0.25, y = o$Est[o$country == 'ES'& o$fc_start == 57 & o$result == 'fcast' & o$week == 58 & o$run == 3], col = 'coral', pch = 20)
 # so higher OEV_base allows variance of ensembles to remain larger, presumably b/c it can't yank things around as much
 
-
+dev.off()
 
 
 
