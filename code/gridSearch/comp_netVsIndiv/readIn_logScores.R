@@ -1,14 +1,15 @@
 
 # Read in log scores from network model:
-d <- read.csv('code/gridSearch/outputs/logScores_pt_ot.csv')
-e.pi <- read.csv('code/gridSearch/outputs/logScores_pi.csv')
-e <- read.csv('code/gridSearch/outputs/logScores_1-4wk.csv')
+d <- read.csv('results/original/logScores_pt_ot.csv')
+e.pi <- read.csv('results/original/logScores_pi.csv')
+e <- read.csv('results/original/logScores_1-4wk.csv')
 
 # Read in log scores from individual models:
-d2 <- read.csv('code/individualCountries/outputs/logScores_pt_ot.csv')
-e.pi2 <- read.csv('code/individualCountries/outputs/logScores_pi.csv')
-e2 <- read.csv('code/individualCountries/outputs/logScores_1-4wk.csv')
+d2 <- read.csv('results/indivCountries/logScores_pt_ot.csv')
+e.pi2 <- read.csv('results/indivCountries/logScores_pi.csv')
+e2 <- read.csv('results/indivCountries/logScores_1-4wk.csv')
 names(e2)[8] <- 'metric'
+# THE NEW FILES HAVE ONLY OEV_DENOM 10 AND LAMBDA 1.02!!!
 
 # Add factor describing model:
 d$model <- 'Network'; d2$model <- 'Individual'
