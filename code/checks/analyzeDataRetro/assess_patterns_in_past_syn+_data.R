@@ -34,8 +34,8 @@ for (i in 1:length(season.breaks)) {
 
 ### Look at range of AR, PT, OT by country ###
 # Read in and format metrics files:
-m <- read.csv('/Users/sarahkramer/Dropbox/spatial_model/forecasts/results/outputMet_TEMPERATE_new_FIN.csv')
-m.1718 <- read.csv('/Users/sarahkramer/Dropbox/spatial_model/realtime_forecasts/outputMetrics_RT1718_onset.csv')
+m <- read.csv('C:/Users/Sarah/Dropbox/spatial_model/forecasts/results/outputMet_TEMPERATE_new_FIN.csv')
+m.1718 <- read.csv('C:/Users/Sarah/Dropbox/spatial_model/realtime_forecasts/outputMetrics_RT1718_onset.csv')
 
 m <- unique(m[, c('country', 'season', 'scaling', 'obs_pkwk', 'obs_peak_int', 'onsetObs5', 'totAttackObs')])
 m$obs_peak_int <- m$obs_peak_int * m$scaling; m$totAttackObs <- m$totAttackObs * m$scaling
@@ -104,7 +104,7 @@ world.cities <- world.cities[(world.cities$country.etc %in% c(countries, 'Czech 
                                world.cities$capital == 1, ]
 world.cities$country.etc <- factor(world.cities$country.etc)
 levels(world.cities$country.etc) <- levels(m$country)
-world.cities <- world.cities[, c('country.etc', 'long')]
+world.cities <- world.cities[, c('country.etc', 'long', 'lat')]
 m <- merge(m, world.cities, by.x = 'country', by.y = 'country.etc')
 rm(world.cities)
 
