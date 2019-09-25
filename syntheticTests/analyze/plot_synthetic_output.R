@@ -1,11 +1,11 @@
 
 library(ggplot2); library(gridExtra); library(viridis)
 
-pdf('syntheticTests/outputs/cluster/model_fit_072519_loop_S0_I0narrow.pdf',
-    width = 16, height = 12)
+# pdf('syntheticTests/outputs/cluster/model_fit_072519_loop_S0_I0narrow.pdf',
+#     width = 16, height = 12)
 
 # Read in results:
-load('syntheticTests/outputs/cluster/072319/res_loop_S0range_I0narrow.RData')
+load('syntheticTests/outputs/cluster/071519/res_loop_S0I0range.RData')
 
 m <- res[[1]]
 o <- res[[2]]
@@ -21,6 +21,7 @@ n <- length(countries)
 
 load('syntheticTests/syntheticData/synth_07-14_RATES.RData')
 to.keep <- c(1, 6, 9, 13)
+# to.keep <- c(6, 9)
 synth.runs.RATES <- synth.runs.RATES[to.keep]
 
 for (i in 1:length(synth.runs.RATES)) {
@@ -35,6 +36,9 @@ for (outbreak in 1:length(to.keep)) {
   obs_i$country <- countries[obs_i$country]
   
   oStates.temp <- oStates[oStates$outbreak == to.keep[outbreak], ]
+  # oStates.temp <- oStates[oStates$outbreak == to.keep[outbreak] & oStates$oev_base == 1e4 & oStates$oev_denom == 10 & oStates$lambda == 1.03 &
+  #                           oStates$country %in% c('DK', 'ES', 'FR', 'HR', 'HU', 'IE'), ]
+  # obs_i <- obs_i[obs_i$country %in% c('DK', 'ES', 'FR', 'HR', 'HU', 'IE'), ]
   
   p1 <- ggplot() +
     geom_line(data = oStates.temp, aes(x = week, y = newI, group = group.plot, col = group), lwd = 0.5, alpha = 0.5) +
@@ -44,7 +48,16 @@ for (outbreak in 1:length(to.keep)) {
     facet_wrap(~ country, scales = 'free_y') +
     theme_classic() + labs(x = 'Week', y = 'New Cases') +
     scale_color_viridis(discrete = T, option = 'D')
-  print(p1)
+  # pdf('syntheticTests/presentations/synthetic_fits_1e4_10_1.03_Inc.pdf', height = 8, width = 12)
+  # p1 <- ggplot() +
+  #   geom_line(data = oStates.temp, aes(x = week, y = newI, group = run), lwd = 0.5, col = 'steelblue2') +
+  #   geom_point(data = oStates.temp, aes(x = week, y = newI, group = run), col = 'steelblue2') +
+  #   geom_line(data = obs_i, aes(x = week, y = newI), lwd = 0.6) +
+  #   geom_point(data = obs_i, aes(x = week, y = newI), pch = 4, cex = 2) +
+  #   facet_wrap(~ country, scales = 'free_y', ncol = 3) +
+  #   theme_classic() + labs(x = 'Week', y = 'New Cases')
+  # print(p1)
+  # dev.off()
   
 }
 
@@ -95,10 +108,13 @@ for (outbreak in 1:length(to.keep)) {
 load('syntheticTests/syntheticData/params_07-14.RData')
 select.parms <- select.parms[to.keep, ]
 select.parms$L <- select.parms$L * 365
-select.parms <- as.data.frame(cbind(rep(c(1, 6, 9 , 13), 5), melt(select.parms)))
+select.parms <- as.data.frame(cbind(rep(c(1, 6, 9, 13), 5), melt(select.parms)))
+# select.parms <- as.data.frame(cbind(rep(c(6, 9), 5), melt(select.parms)))
 names(select.parms) <- c('outbreak', 'parameter', 'value')
 
 o.plot <- o[o$week <= 30, ]
+# o.plot <- o.plot[o.plot$oev_base == 1e4 & o.plot$oev_denom == 10 & o.plot$outbreak %in% to.keep & o.plot$lambda == 1.03, ]
+# o.plot <- o.plot[o.plot$oev_base == 1e4 & o.plot$oev_denom == 10 & o.plot$lambda == 1.03, ]
 
 p1 <- ggplot(data = o.plot) +
   geom_point(aes(x = week, y = L, col = group, shape = lambda, group = group.plot), size = 0.9) +
@@ -106,7 +122,7 @@ p1 <- ggplot(data = o.plot) +
   geom_hline(data = select.parms[select.parms$parameter == 'L', ], aes(yintercept = value), lwd = 1.0) +
   theme_classic() + labs(x = 'Week', y = 'L (days)') +
   facet_wrap(~ outbreak, ncol = 5, scales = 'free_y') +
-  scale_color_brewer(palette = 'Set1', guide = FALSE) +
+  scale_color_brewer(palette = 'Set2', guide = FALSE) +
   scale_shape_discrete(guide = FALSE) +
   scale_y_continuous(limits = c(365, 3650))
 # print(p1)
@@ -116,7 +132,7 @@ p2 <- ggplot(data = o.plot) +
   geom_hline(data = select.parms[select.parms$parameter == 'D', ], aes(yintercept = value), lwd = 1.0) +
   theme_classic() + labs(x = 'Week', y = 'D (days)') +
   facet_wrap(~ outbreak, ncol = 5, scales = 'free_y') +
-  scale_color_brewer(palette = 'Set1') +
+  scale_color_brewer(palette = 'Set2', guide = FALSE) +
   scale_shape_discrete(guide = FALSE) +
   scale_y_continuous(limits = c(2, 7))
 p3 <- ggplot(data = o.plot) +
@@ -125,7 +141,7 @@ p3 <- ggplot(data = o.plot) +
   geom_hline(data = select.parms[select.parms$parameter == 'R0mx', ], aes(yintercept = value), lwd = 1.0) +
   theme_classic() + labs(x = 'Week', y = 'R0max') +
   facet_wrap(~ outbreak, ncol = 5, scales = 'free_y') +
-  scale_color_brewer(palette = 'Set1', guide = FALSE) +
+  scale_color_brewer(palette = 'Set2', guide = FALSE) +
   scale_shape_discrete(guide = FALSE) +
   scale_y_continuous(limits = c(2.0, 4.0))
 p4 <- ggplot(data = o.plot) +
@@ -134,7 +150,8 @@ p4 <- ggplot(data = o.plot) +
   geom_hline(data = select.parms[select.parms$parameter == 'R0mn', ], aes(yintercept = value), lwd = 1.0) +
   theme_classic() + labs(x = 'Week', y = 'R0min') +
   facet_wrap(~ outbreak, ncol = 5, scales = 'free_y') +
-  scale_color_brewer(palette = 'Set1', guide = FALSE) +
+  scale_color_brewer(palette = 'Set2', guide = FALSE) +
+  scale_shape_discrete(guide = FALSE) +
   scale_y_continuous(limits = c(0.8, 1.2))
 p5 <- ggplot(data = o.plot) +
   geom_point(aes(x = week, y = airScale, col = group, shape = lambda, group = group.plot), size = 0.9) +
@@ -142,10 +159,69 @@ p5 <- ggplot(data = o.plot) +
   geom_hline(data = select.parms[select.parms$parameter == 'airScale', ], aes(yintercept = value), lwd = 1.0) +
   theme_classic() + labs(x = 'Week', y = 'airScale') +
   facet_wrap(~ outbreak, ncol = 5, scales = 'free_y') +
-  scale_color_brewer(palette = 'Set1', guide = FALSE) +
+  scale_color_brewer(palette = 'Set2', guide = FALSE) +
   scale_shape_discrete(guide = FALSE) +
   scale_y_continuous(limits = c(0.75, 1.25))
+
+# pdf('syntheticTests/presentations/synthetic_fits_1e4_10_1.03_ALL.pdf',
+#     width = 16, height = 12)
 grid.arrange(p1, p2, p3, p4, p5, ncol = 1)
+# dev.off()
+
+# # For presentations (limited):
+# o.plot$outbreak <- factor(o.plot$outbreak)
+# levels(o.plot$outbreak) <- c('Outbreak #1', 'Outbreak #2')
+# select.parms$outbreak <- factor(select.parms$outbreak)
+# levels(select.parms$outbreak) <- c('Outbreak #1', 'Outbreak #2')
+# p1 <- ggplot(data = o.plot) + geom_point(aes(x = week, y = L, group = group.plot), col = 'steelblue2', size = 1.0) +
+#   geom_line(aes(x = week, y = L, group = group.plot), col = 'steelblue2') +
+#   geom_hline(data = select.parms[select.parms$parameter == 'L', ], aes(yintercept = value), lwd = 1.2, lty = 2.0) +
+#   theme_classic() + labs(x = 'Week', y = 'L (days)') +
+#   facet_wrap(~ outbreak, ncol = 5, scales = 'free_y') +
+#   scale_color_brewer(palette = 'Set1', guide = FALSE) +
+#   scale_shape_discrete(guide = FALSE) +
+#   scale_y_continuous(limits = c(365, 3650))
+# p2 <- ggplot(data = o.plot) + geom_point(aes(x = week, y = D, group = group.plot), col = 'steelblue2', size = 1.0) +
+#   geom_line(aes(x = week, y = D, group = group.plot), col = 'steelblue2') +
+#   geom_hline(data = select.parms[select.parms$parameter == 'D', ], aes(yintercept = value), lwd = 1.2, lty = 2.0) +
+#   theme_classic() + labs(x = 'Week', y = 'D (days)') +
+#   facet_wrap(~ outbreak, ncol = 2, scales = 'free_y') +
+#   scale_color_brewer(palette = 'Set1', guide = FALSE) +
+#   scale_shape_discrete(guide = FALSE) +
+#   scale_y_continuous(limits = c(2, 7))
+# p3 <- ggplot(data = o.plot) + geom_point(aes(x = week, y = R0max, group = group.plot), col = 'steelblue2', size = 1.0) +
+#   geom_line(aes(x = week, y = R0max, group = group.plot), col = 'steelblue2') +
+#   geom_hline(data = select.parms[select.parms$parameter == 'R0mx', ], aes(yintercept = value), lwd = 1.2, lty = 2.0) +
+#   theme_classic() + labs(x = 'Week', y = 'R0max') +
+#   facet_wrap(~ outbreak, ncol = 2, scales = 'free_y') +
+#   scale_color_brewer(palette = 'Set1', guide = FALSE) +
+#   scale_shape_discrete(guide = FALSE) +
+#   scale_y_continuous(limits = c(2.0, 4.0))
+# p4 <- ggplot(data = o.plot) + geom_point(aes(x = week, y = R0min, group = group.plot), col = 'steelblue2', size = 1.0) +
+#   geom_line(aes(x = week, y = R0min, group = group.plot), col = 'steelblue2') +
+#   geom_hline(data = select.parms[select.parms$parameter == 'R0mn', ], aes(yintercept = value), lwd = 1.2, lty = 2.0) +
+#   theme_classic() + labs(x = 'Week', y = 'R0min') +
+#   facet_wrap(~ outbreak, ncol = 2, scales = 'free_y') +
+#   scale_color_brewer(palette = 'Set1', guide = FALSE) +
+#   scale_shape_discrete(guide = FALSE) +
+#   scale_y_continuous(limits = c(0.8, 1.2))
+# p5 <- ggplot(data = o.plot) + geom_point(aes(x = week, y = airScale, group = group.plot), col = 'steelblue2', size = 1.0) +
+#   geom_line(aes(x = week, y = airScale, group = group.plot), col = 'steelblue2') +
+#   geom_hline(data = select.parms[select.parms$parameter == 'airScale', ], aes(yintercept = value), lwd = 1.2, lty = 2.0) +
+#   theme_classic() + labs(x = 'Week', y = 'airScale') +
+#   facet_wrap(~ outbreak, ncol = 2, scales = 'free_y') +
+#   scale_color_brewer(palette = 'Set1', guide = FALSE) +
+#   scale_shape_discrete(guide = FALSE) +
+#   scale_y_continuous(limits = c(0.75, 1.25))
+# grid.arrange(p1, p2, p3, p4, p5, ncol = 1)
+# 
+# pdf('syntheticTests/presentations/synthetic_fits_1e4_10_1.03.pdf', width = 8, height = 7)
+# grid.arrange(p2, p3, p4, ncol = 1)
+# dev.off()
+# 
+# pdf('syntheticTests/presentations/synthetic_fits_1e4_10_1.03_unimportant.pdf', width = 8, height = 6)
+# grid.arrange(p1, p5, ncol = 1)
+# dev.off()
 
 # With loop, earlys params don't seem to have as much trouble anymore
 
@@ -241,6 +317,10 @@ for (outbreak in 1:length(to.keep)) {
 
 # Plot distribution of relative param error at t=15 and t=20:
 o.err <- o.err[o.err$week == 20, ]
+
+# for plotting:
+o.err <- o.err[o.err$oev_base == 1e4 & o.err$oev_denom == 10 & o.err$lambda == 1.03, ]
+o.err <- o.err[o.err$oev_base == 1e4 & o.err$oev_denom == 10 & o.err$lambda == 1.03 & o.err$outbreak %in% to.keep, ]
 
 # o.err$L.err[o.err$L.err > 2.0] <- NA
 # o.err$D.err[o.err$D.err > 2.0] <- NA
