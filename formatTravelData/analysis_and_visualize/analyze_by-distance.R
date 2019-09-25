@@ -1,5 +1,5 @@
 
-pdf('formatTravelData/outputs/by_dist.pdf', width = 10, height = 5)
+pdf('formatTravelData/outputs/by_dist_9-24.pdf', width = 10, height = 5)
 
 library(maps)
 library(reshape2)
@@ -21,7 +21,7 @@ a.rand <- apply(simplify2array(a.by.month), 1:2, mean); rm(a.by.month)
 countries <- rownames(a.rand)
 
 ### Load centroid data
-l <- read.csv('/Users/sarahkramer/Desktop/Lab/spatial_transmission/flight_data/data/raw_data/country_centroids_az8.csv')
+l <- read.csv('../travel_data_info/flight_data/raw_data/country_centroids_az8.csv')
 l <- l[, c(47, 67:68)]
 l <- l[(l$iso_a2 %in% countries | l$iso_a2 == 'GB') & !is.na(l$iso_a2), ]
 l$iso_a2 <- factor(l$iso_a2); levels(l$iso_a2)[8] <- 'UK'; l$iso_a2 <- factor(l$iso_a2)
@@ -73,6 +73,10 @@ df.rand$dist.cap <- df.rand$dist.cap / 10000
 df.rand <- df.rand[, c(1:2, 11:13)]
 df.rand$w <- log(df.rand$w)
 
+### Remove IS!
+df.rand <- df.rand[df.rand$source != 'IS' & df.rand$dest != 'IS', ]
+df.rand$source <- factor(df.rand$source); df.rand$dest <- factor(df.rand$dest)
+
 ### How is air travel weight related to travel distance?
 
 # Continuous distance
@@ -91,11 +95,11 @@ grid.arrange(p1, p2, ncol = 2)
 
 cor.test(df.rand$dist, df.rand$w, method = 'pearson')
 cor.test(df.rand$dist, df.rand$w, method = 'kendall')
-# neither sig
+# post sig pos, but weak
 
 cor.test(df.rand$dist.cap, df.rand$w, method = 'pearson')
 cor.test(df.rand$dist.cap, df.rand$w, method = 'kendall')
-# same, but pearson is borderline sig (p = 0.0519, cor = -0.09492421)
+# same
 
 # Discrete distance
 df.rand$dist.disc = df.rand$dist.cap.disc = NA
@@ -130,7 +134,7 @@ kruskal.test(w ~ dist.disc, data = df.rand) # sig
 kruskal.test(w ~ dist.cap.disc, data = df.rand) # sig
 
 posthoc.kruskal.nemenyi.test(w ~ dist.disc, data = df.rand) # 100-150 higher than all other categories
-posthoc.kruskal.nemenyi.test(w ~ dist.disc, data = df.rand) # same
+posthoc.kruskal.nemenyi.test(w ~ dist.cap.disc, data = df.rand) # same
 
 dev.off()
 
