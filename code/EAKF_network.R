@@ -179,6 +179,7 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
         }
         
         dy <- post_mean + alp * (obs_ens[loc, ] - prior_mean) - obs_ens[loc, ] # no NAs, since this is still in the if-loop
+        # how much to change value in each ensemble member so that posterior mean is post_mean
         
         # Get covariance of the prior state space and the observations, and loop over each state variable:
         rr <- NULL
@@ -187,6 +188,8 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
           rr <- append(rr, C)
         }
         dx <- rr %*% t(dy)
+        # multiplying each of 1205 covariance values by each of 300 obs_ens for this location
+        # so change value of each param/state j by: cov * dy / prior_var
         
         # Get adjusted ensemble and obs_ens:
         x <- x + dx # QUESTION: then using the updated x and obs_ens to update further - isn't this a little not genuine?
