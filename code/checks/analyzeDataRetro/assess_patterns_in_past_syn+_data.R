@@ -1,3 +1,6 @@
+library(viridis)
+library(ggplot2)
+library(gridExtra)
 
 ### Assess patterns in observed data
 
@@ -137,6 +140,37 @@ p3 <- ggplot(data = m) + geom_boxplot(aes(x = country, y = obs_pkwk, fill = long
 grid.arrange(p1, p2, p3, ncol = 1)
 # might be a bit of a tendency for OT/PT to happen sooner in west than east, but not super strong
 
+# Longitudinal pattern by season?:
+pdf('code/checks/analyzeDataRetro/outputs/longitudinal_trends.pdf', width = 8, height = 8)
+par(mfrow = c(4, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+for (season in unique(m$season)) {
+  print(season)
+  print(cor.test(m$long[m$season == season], m$onsetObs[m$season == season], method = 'kendall'))
+  print(cor.test(m$long[m$season == season], m$obs_pkwk[m$season == season], method = 'kendall'))
+  plot(m$long[m$season == season], m$onsetObs[m$season == season], xlab = 'Longitude', ylab = 'Onset Timing', main = season, pch = 20)
+  plot(m$long[m$season == season], m$obs_pkwk[m$season == season], xlab = 'Longitude', ylab = 'Peak Timing', main = season, pch = 20)
+  print(''); print('')
+}
+dev.off()
+# 10-11: sig w-e
+# 11-12: not sig, but trend (furthest east especially tend to be later)
+# 12-13: not sig, mostly flat (but very furthest east do still seem to be latest?) for PT, trend for OT
+# 13-14: not sig, but trend (almost sig)
+# 14-15: not sig, mostly flat
+# 15-16: not sig, flat; PT trending negative but not sig
+# 16-17: not sig, flat
+# 17-18: not sig, but trend (although looks pretty flat)
+# these broadly match up with reported qualitative assessments - 12-13 and 13-14 west to east; 15-16 east to west; no pattern for 11-12 and 16-17
+
+# Collect these ranges so we know what to look for as "realistic" patterns:
+ot.corrs = pt.corrs = c()
+for (season in unique(m$season)) {
+  ot.corrs <- c(ot.corrs, cor.test(m$long[m$season == season], m$onsetObs[m$season == season], method = 'kendall')$estimate)
+  pt.corrs <- c(pt.corrs, cor.test(m$long[m$season == season], m$obs_pkwk[m$season == season], method = 'kendall')$estimate)
+}
+obs.cors <- list(ot.corrs, pt.corrs)
+save(obs.cors, file = 'code/checks/analyzeDataRetro/outputs/observed_longitudinal_patterns.RData')
+
 # Test differences statistically?
 library(PMCMR); library(PMCMRplus)
 kruskal.test(totAttackObs ~ country, data = m)
@@ -190,6 +224,7 @@ print(isSymmetric(cor.synch.AVG))
 
 # Test average synchrony against distance using Mantel test:
 library(ecodist); library(geosphere)
+library(data.table)
 
 data("world.cities")
 world.cities <- world.cities[(world.cities$country.etc %in% c(countries, 'Czech Republic', 'UK')) &
@@ -345,6 +380,7 @@ levels(m$country) <- c('Austria', 'Belgium', 'Czech Republic', 'Germany', 'Denma
                        'Slovenia', 'Slovakia', 'UK')
 
 # Store onset week for each season:
+library(dplyr)
 library(dplyr)
 for (season in levels(m$season)) {
   m.temp <- m[m$season == season, c('country', 'onsetObs')]
