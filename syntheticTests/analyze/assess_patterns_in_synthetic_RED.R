@@ -4,12 +4,12 @@
 # Note: Results overwhelmingly similar for wide and original criteria 2
 
 ### Save all plots:
-pdf('syntheticTests/outputs/explore/patterns_redMod_s1_WIDE.pdf', width = 16, height = 10)
+pdf('syntheticTests/outputs/explore/patterns_redMod_s1_WE.pdf', width = 16, height = 10)
 # note: plot "realistic" only
 
 ### Read in synthetic "data" ###
 countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
-load('syntheticTests/syntheticData/synth_rates_REALISTIC_1000_redS1_widerPT.RData')
+load('syntheticTests/syntheticData/synth_rates_REALISTIC-WE_1000_redS1.RData')
 synth.runs.RATES <- synth.runs.RATES.realistic; rm(synth.runs.RATES.realistic)
 
 ### Plot synthetic runs ###
@@ -124,6 +124,7 @@ p3 <- ggplot(data = m) + geom_boxplot(aes(x = country, y = pt, fill = long)) +
 grid.arrange(p1, p2, p3, ncol = 1)
 # pattern doesn't seem super strong, but still looks pretty e-w, at least for PT; OT looks a little more neutral; little change with wider criteria
 # doesn't seem quite as extreme for all onsets, but I think we knew that; pattern still there
+# even w-e only don't fully capture the "correct" pattern
 
 # Plot by time since first onset/peak, too:
 ot.med <- aggregate(ot_order ~ country, data = m, FUN = median)
@@ -181,7 +182,7 @@ med.m <- merge(med.m, obs.dist[[3]], by = 'country')
 cor.test(med.m$ar, med.m$ar_obs, method = 'spearman') # almost sig negative, but AR can be scaled
 cor.test(med.m$ot, med.m$ot_obs, method = 'spearman') # not sig, but trends negative
 cor.test(med.m$pt, med.m$pt_obs, method = 'spearman') # not sig
-# before param change: 
+# w-e only: ot not correlated with observed, but pt is (rho = 0.609, p < 0.05)
 
 ### Assess synchrony ###
 # # For each run, what is the range of peak timings?

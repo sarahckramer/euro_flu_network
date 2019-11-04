@@ -54,6 +54,11 @@ Fn_dates=function(season){
     start_date <- as.Date('2018/10/6')
     end_date <- as.Date('2019/9/28')
     nsn <- 52
+  } else if (season=='2019-20') {
+    weeks <- 545:596
+    start_date <- as.Date('2019/10/5')
+    end_date <- as.Date('2020/9/26')
+    nsn <- 52
   } else {
     weeks=NA
   }
