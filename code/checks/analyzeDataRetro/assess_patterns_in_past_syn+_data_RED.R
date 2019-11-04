@@ -1,11 +1,8 @@
-library(viridis)
-library(ggplot2)
-library(gridExtra)
 
 ### Assess patterns in observed data
 
 ### Save all plots:
-pdf('code/checks/analyzeDataRetro/outputs/data_patterns_103119.pdf', width = 11, height = 10)
+pdf('code/checks/analyzeDataRetro/outputs/data_patterns_RED_103119.pdf', width = 11, height = 10)
 
 ### Plot data for each season ###
 # Read in data:
@@ -24,8 +21,8 @@ for (i in 2:22) {
   iliiso[, i][iliiso[, i] < 0] <- NA # replace negatives with NAs
 }
 
-# Remove Iceland:
-iliiso <- iliiso[, c(1:9, 11:22)]
+# Limit to countries of interest:
+iliiso <- iliiso[, c(1:3, 5, 7:9, 12:15, 18, 20)]
 
 # Plot data by season:
 season.names <- c('2010-11', '2011-12', '2012-13', '2013-14', '2014-15', '2015-16', '2016-17', '2017-18')
@@ -33,10 +30,9 @@ season.breaks <- list(79:110, 131:162, 183:214, 235:266, 287:318, 339:371, 392:4
 
 par(mfrow = c(4, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 for (i in 1:length(season.breaks)) {
-  matplot(iliiso[season.breaks[[i]], 2:21], type = 'b', pch = 20, lty = 1, col = viridis(20),
+  matplot(iliiso[season.breaks[[i]], 2:13], type = 'b', pch = 20, lty = 1, col = viridis(12),
           xlab = 'Weeks from Season Start', ylab = 'Syn+ Cases (Scaled)', main = season.names[i])
 }
-# already looks like these are later and maybe even more synchronous that in the simulated data
 
 ### Look at range of AR, PT, OT by country ###
 # Read in and format metrics files:
@@ -54,10 +50,8 @@ m.1718$obs_peak_int <- m.1718$obs_peak_int * m.1718$scaling; m.1718$season <- '2
 m.1718 <- m.1718[, c(1, 6, 3:5)]
 
 # Reduce all to countries being used in network model:
-countries <- c('Austria', 'Belgium', 'Croatia', 'Czechia', 'Denmark', 'France', 'Germany',
-               'Hungary', 'Ireland', 'Italy', 'Luxembourg', 'Netherlands',
-               'Poland', 'Portugal', 'Romania', 'Slovakia', 'Slovenia', 'Spain', 'Sweden',
-               'United Kingdom')
+countries <- c('Austria', 'Belgium', 'Czechia', 'France', 'Germany', 'Hungary', 'Italy',
+               'Luxembourg', 'Netherlands', 'Poland', 'Slovakia', 'Spain')
 m <- m[m$country %in% countries, ]; m$country <- factor(m$country)
 m.1718 <- m.1718[m.1718$country %in% countries, ]; m.1718$country <- factor(m.1718$country)
 
@@ -82,8 +76,7 @@ rm(m.1718)
 m <- m[!is.na(m$onsetObs), ]
 
 # Rename countries:
-levels(m$country) <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'FR', 'DE', 'HU', 'IE', 'IT', 'LU',
-                       'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'UK')
+levels(m$country) <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
 
 # # Plot range of AR, PT, OT by country:
 # p1 <- ggplot(data = m) + geom_boxplot(aes(x = country, y = totAttackObs), fill = 'lightblue2') +
@@ -108,7 +101,7 @@ levels(m$country) <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'FR', 'DE', 'HU', 'IE', 'IT
 # Plot organized by median (with color by capital longitude):
 library(maps)
 data("world.cities")
-world.cities <- world.cities[(world.cities$country.etc %in% c(countries, 'Czech Republic', 'UK')) &
+world.cities <- world.cities[(world.cities$country.etc %in% c(countries, 'Czech Republic')) &
                                world.cities$capital == 1, ]
 world.cities$country.etc <- factor(world.cities$country.etc)
 levels(world.cities$country.etc) <- levels(m$country)
@@ -150,13 +143,13 @@ m.new <- NULL
 for (ix in 1:length(levels(m$season))) {
   season <- levels(m$season)[ix]
   m.temp <- m[m$season == season, ]
-
+  
   min.ot <- min(m.temp$onsetObs)
   min.pt <- min(m.temp$obs_pkwk)
-
+  
   m.temp$ot_order <- m.temp$onsetObs - min.ot
   m.temp$pt_order <- m.temp$obs_pkwk - min.pt
-
+  
   m.new <- rbind(m.new, m.temp)
 }
 m.new <- as.data.frame(m.new)
@@ -180,10 +173,10 @@ p2 <- ggplot(data = m.new) + geom_boxplot(aes(x = country, y = pt_order, fill = 
   scale_y_continuous(breaks = seq(0, 10, by = 2)) +
   scale_fill_gradientn(colors = viridis(100))
 grid.arrange(p1, p2, ncol = 1)
-# very clear w-e pattern (although IT/LU tend to be quite early)
+# differences in order by OT/PT - especially DE tends to have early onset but later peak
+# pattern definitely still exists, but there are some exceptions
 
 # Longitudinal pattern by season?:
-# pdf('code/checks/analyzeDataRetro/outputs/longitudinal_trends.pdf', width = 8, height = 8)
 par(mfrow = c(4, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 for (season in unique(m$season)) {
   print(season)
@@ -193,25 +186,15 @@ for (season in unique(m$season)) {
   plot(m$long[m$season == season], m$obs_pkwk[m$season == season], xlab = 'Longitude', ylab = 'Peak Timing', main = season, pch = 20)
   print(''); print('')
 }
-# dev.off()
 # 10-11: sig w-e
-# 11-12: not sig, but trend (furthest east especially tend to be later)
+# 11-12: not sig, but trend (esp. for PT)
 # 12-13: not sig, mostly flat (but very furthest east do still seem to be latest?) for PT, trend for OT
-# 13-14: sig w-e
+# 13-14: sig w-e for OT, but not PT (trend)
 # 14-15: not sig, mostly flat
-# 15-16: not sig, flat; PT trending negative but not sig
+# 15-16: not sig, flat; PT trending negative and almost sig (p=0.06411)
 # 16-17: not sig, flat
-# 17-18: not sig, but trend (although looks pretty flat)
-# these broadly match up with reported qualitative assessments - 12-13 and 13-14 west to east; 15-16 east to west; no pattern for 11-12 and 16-17
-
-# # Collect these ranges so we know what to look for as "realistic" patterns:
-# ot.corrs = pt.corrs = c()
-# for (season in unique(m$season)) {
-#   ot.corrs <- c(ot.corrs, cor.test(m$long[m$season == season], m$onsetObs[m$season == season], method = 'kendall')$estimate)
-#   pt.corrs <- c(pt.corrs, cor.test(m$long[m$season == season], m$obs_pkwk[m$season == season], method = 'kendall')$estimate)
-# }
-# obs.cors <- list(ot.corrs, pt.corrs)
-# save(obs.cors, file = 'code/checks/analyzeDataRetro/outputs/observed_longitudinal_patterns.RData')
+# 17-18: not sig, flat
+# usually, but not always, w-e pattern stronger for OT, not PT
 
 # Test differences statistically?
 library(PMCMR); library(PMCMRplus)
@@ -220,7 +203,6 @@ kruskal.test(onsetObs ~ country, data = m)
 kruskal.test(obs_pkwk ~ country, data = m)
 kruskal.test(obs_peak_int ~ country, data = m)
 # none sig
-posthoc.kruskal.nemenyi.test(m$obs_peak_int, m$country, 'Tukey') # none sig when broken down to pairwise
 
 ### Assess synchrony ###
 # For each season, what is the range of peak timings:
@@ -266,33 +248,30 @@ print(isSymmetric(cor.synch.AVG))
 
 # Plot synchrony:
 # cor.synch.AVG <- cor.synch.AVG[c(1:8, 10:21), c(1:8, 10:21)]
-rownames(cor.synch.AVG) = colnames(cor.synch.AVG) = c('AT', 'BE', 'HR', 'CZ', 'DK', 'FR', 'DE', 'HU', 'IE', 'IT',
-                                                      'LU', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'UK')
+rownames(cor.synch.AVG) = colnames(cor.synch.AVG) = c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
 cor.synch.AVG[upper.tri(cor.synch.AVG)] <- NA
 cor.synch.plot <- melt(cor.synch.AVG)
 names(cor.synch.plot) <- c('c1', 'c2', 'corr')
 cor.synch.plot <- cor.synch.plot[!is.na(cor.synch.plot$corr), ]
 cor.synch.plot$corr[cor.synch.plot$corr == 1] <- NA
-# range 0.4216 - 0.9487 (mean 0.7859)
-# lowest are 0.4216 in PT (w/ SK), 0.434 (SK/IT), 0.498 in PL (w/ PT), 0.5282 in SK (w/ ES)
+# range from 0.4335 to 0.9487 (mean 0.7788); lowest are 0.434 and 0.528 (SK/IT and SK/ES)
+# lowest are 0.4216 in PT (w/ SK), 0.498 in PL (w/ PT), 0.5282 in SK (w/ ES)
 
 p3 <- ggplot(cor.synch.plot, aes(x = c1, y = c2)) + geom_tile(aes(fill = corr), colour = 'white') +
   scale_fill_gradientn(colours = cividis(100), na.value = 'gray80', limits = c(0.4, 0.95)) + theme_classic() +
   theme(axis.ticks = element_blank(), text = element_text(size = 16), axis.text.x = element_text(angle = 90, hjust = 1)) +
-  scale_x_discrete(expand = c(0, 0)) + scale_y_discrete(expand = c(0, 0)) +
+  scale_x_discrete(expand = c(0, 0)) + scale_y_discrete(expand = c(0, 0))
   labs(title = 'Average Synchrony', x = '', y = '', fill = 'Corr.')
 print(p3)
 
 # Test average synchrony against distance using Mantel test:
 library(ecodist); library(geosphere)
-library(data.table)
 
 data("world.cities")
-world.cities <- world.cities[(world.cities$country.etc %in% c(countries, 'Czech Republic', 'UK')) &
+world.cities <- world.cities[(world.cities$country.etc %in% c(countries, 'Czech Republic')) &
                                world.cities$capital == 1, ]
 world.cities$country.etc <- factor(world.cities$country.etc)
-levels(world.cities$country.etc) <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'FR', 'DE', 'HU', 'IE', 'IT',
-                                      'LU', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'UK')
+levels(world.cities$country.etc) <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
 
 dist.mat <- matrix(0, nrow = length(countries), ncol = length(countries))
 for (i in 1:(length(countries) - 1)) {
@@ -310,11 +289,10 @@ print(isSymmetric(dist.mat))
 
 synch.dist <- 1 - cor.synch.AVG # make into distance matrix
 mantel(as.dist(synch.dist) ~ as.dist(dist.mat), nperm = 10000, mrank = TRUE)
-# synchrony and distance between capitals are not significantly associated
+# synchrony and distance between capitals are not significantly associated; trends negative
 
 # Is synchrony related to commuting flows?:
-countries <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'FR', 'DE', 'HU', 'IE', 'IT',
-               'LU', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'UK')
+countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
 
 load('formatTravelData/formattedData/comm_mat_by_year_05-07.RData')
 t.comm <- apply(simplify2array(comm.by.year), 1:2, mean); rm(comm.by.year)
@@ -336,7 +314,7 @@ t.comm.sym[t.comm.sym == 0] <- 1.0
 t.comm.sym <- 1 / t.comm.sym # convert to distance
 
 mantel(as.dist(synch.dist) ~ as.dist(t.comm.sym), nperm = 10000, mrank = TRUE)
-# not sig, but close
+# sig positive - more commuting = more synchrony
 
 # Is synchrony related to air travel?:
 air.by.month <- vector('list', 12)
@@ -351,24 +329,7 @@ a.mean[a.mean == 0] <- 1.0
 a.mean <- 1 / a.mean # convert to distance
 
 mantel(as.dist(synch.dist) ~ as.dist(a.mean), nperm = 10000, mrank = TRUE)
-# not sig
-
-# # Plot mean correlations as matrix:
-# rownames(cor.synch.AVG) = colnames(cor.synch.AVG) = c('AT', 'BE', 'HR', 'CZ', 'DK', 'FR', 'DE', 'HU', 'IE', 'IT',
-#                                                       'LU', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'UK')
-# cor.synch.AVG[upper.tri(cor.synch.AVG)] <- NA
-# cor.synch.plot <- melt(cor.synch.AVG)
-# names(cor.synch.plot) <- c('c1', 'c2', 'corr')
-# cor.synch.plot <- cor.synch.plot[!is.na(cor.synch.plot$corr), ]
-# cor.synch.plot$corr[cor.synch.plot$corr == 1] <- NA
-#
-# # ranges from 0.4216 to 0.9487
-# p1 <- ggplot(cor.synch.plot, aes(x = c1, y = c2)) + geom_tile(aes(fill = corr), colour = 'white') +
-#   scale_fill_gradientn(colours = cividis(100), na.value = 'gray80') + theme_classic() +
-#   theme(axis.ticks = element_blank(), text = element_text(size = 16), axis.text.x = element_text(angle = 90, hjust = 1)) +
-#   scale_x_discrete(expand = c(0, 0)) + scale_y_discrete(expand = c(0, 0)) +
-#   labs(title = 'Average Synchrony', x = '', y = '', fill = 'Corr.')
-# p1
+# not sig, but one-way is borderline (p=0.0789)
 
 # Plot relationships between synchrony and c(distance, air, commuting):
 cor.synch <- 1 - synch.dist
@@ -440,10 +401,8 @@ ditch_the_axes <- theme(
 
 # Change country levels in m:
 m$country <- factor(as.character(m$country))
-levels(m$country) <- c('Austria', 'Belgium', 'Czech Republic', 'Germany', 'Denmark', 'Spain',
-                       'France', 'Croatia', 'Hungary', 'Ireland', 'Italy',
-                       'Luxembourg', 'Netherlands', 'Poland', 'Portugal', 'Romania', 'Sweden',
-                       'Slovenia', 'Slovakia', 'UK')
+levels(m$country) <- c('Austria', 'Belgium', 'Czech Republic', 'Germany', 'Spain', 'France', 'Hungary',
+                       'Italy', 'Luxembourg', 'Netherlands', 'Poland', 'Slovakia')
 
 # Store onset week for each season:
 library(dplyr)

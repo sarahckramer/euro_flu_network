@@ -2,9 +2,9 @@
 ### Determine what elements constitute a "realistic" free simulation, based on past data and past inferred parameters/initial conditions
 
 # Read in and format metrics files (should have calculated PT, AR, OT)
-m <- read.csv('/Users/sarahkramer/Dropbox/spatial_model/forecasts/results/outputMet_TEMPERATE_new_FIN.csv')
-m.1718 <- read.csv('/Users/sarahkramer/Dropbox/spatial_model/realtime_forecasts/outputMetrics_RT1718_onset.csv')
-m.1819 <- read.csv('/Users/sarahkramer/Dropbox/spatial_model/realtime_forecasts/outputMet_RT1819_onsets.csv')
+m <- read.csv('C://Users/Sarah/Dropbox/spatial_model/forecasts/results/outputMet_TEMPERATE_new_FIN.csv')
+m.1718 <- read.csv('C://Users/Sarah/Dropbox/spatial_model/realtime_forecasts/outputMetrics_RT1718_onset.csv')
+m.1819 <- read.csv('C://Users/Sarah/Dropbox/spatial_model/realtime_forecasts/outputMet_RT1819.csv')
 
 m <- unique(m[, c('country', 'season', 'scaling', 'obs_pkwk', 'obs_peak_int', 'onsetObs5', 'totAttackObs')])
 m$obs_peak_int <- m$obs_peak_int * m$scaling; m$totAttackObs <- m$totAttackObs * m$scaling
@@ -55,6 +55,9 @@ names(m)[5] <- 'onsetObs'
 m <- rbind(m, m2)
 m$season <- factor(m$season)
 rm(m2)
+
+# Remove IS:
+m <- m[m$country != 'Iceland', ]; m$country <- factor(m$country)
 
 # First calculate dists. of PT, OT, PI:
 pt.dists = ot.dists = pi.dists = vector('list', length(levels(m$season)))
@@ -132,4 +135,100 @@ for (i in 1:length(init.arrival)) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+### REDUCE TO 12 COUNTRIES ###
+m2 <- m[m$country %in% levels(m$country)[c(1:2, 4, 6:8, 10:13, 16, 18)], ]; m2$country <- factor(m2$country)
+
+# First calculate dists. of PT, OT:
+pt.dists = ot.dists = vector('list', length(levels(m2$season)))
+for (i in 1:length(pt.dists)) {
+  m.temp <- m2[m2$season == levels(m2$season)[i], ]
+  pt.dists[[i]] <- m.temp$obs_pkwk
+  ot.dists[[i]] <- m.temp$onsetObs
+  # pi.dists[[i]] <- m.temp$obs_peak_int
+}
+
+# Look at when PT occurs:
+par(mfrow = c(3, 3), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+for (i in 1:length(pt.dists)) {
+  hist(pt.dists[[i]], breaks = 5, xlab = 'Peak Week', main = levels(m$season)[i])
+  print(quantile(pt.dists[[i]], probs = c(0.025, 0.975)))
+}
+# can be pretty wide (~12 weeks) or very narrow (59-64), varies by season
+
+quantile(m2$obs_pkwk, probs = c(0, 0.025, 0.05, 0.95, 0.975, 1.0))
+# all between 52 and 67; 95% between 52(.525) and 64
+# 52:64 - 39 = 13:25
+
+# by season, how many are in this range?
+for (i in 1:length(pt.dists)) {
+  print(length(pt.dists[[i]][pt.dists[[i]] > 51 & pt.dists[[i]] < 65]) / length(pt.dists[[i]]))
+} # 100% for all except 11-12, where 90% (SK at 67)
+
+# so realistically, we want all but one in this range...
+
+# Missing OT?:
+m2[is.na(m2$onsetObs), ] # 2 in 13-14 (NL and SK), otherwise 0
+# for simplicity, allow only where ALL countries have outbreaks
+# or: allow up to 2 countries not to have onsets
+
+# Look at when OT occurs:
+quantile(m2$onsetObs, probs = c(0, 0.025, 0.05, 0.95, 0.975, 1.0), na.rm = TRUE)
+# all in 49:64, 95% in 49:61, 90% in 49:59
+for (i in 1:length(ot.dists)) {
+  hist(ot.dists[[i]], breaks = 5, xlab = 'Onset Week', main = levels(m$season)[i])
+  print(quantile(ot.dists[[i]], probs = c(0.025, 0.975), na.rm = T))
+}
+
+# by season, how many are in this range?
+for (i in 1:length(ot.dists)) {
+  print(length(ot.dists[[i]][ot.dists[[i]] > 48 & ot.dists[[i]] < 62]) / length(ot.dists[[i]]))
+} # 100% for all except 11-12, where 90% (SK at 64)
+# again, should be all but 1
+
+# could select on OT instead; but I imagine the results would be similar
+
+# How late after onset is peak?:
+quantile(m2$obs_pkwk - m2$onsetObs, na.rm = TRUE, probs = c(0, 0.025, 0.05, 0.5, 0.95, 0.975, 1.0))
+# 95% in 1-10 weeks; up to 12 weeks possible
+
+# Which countries have earliest OT each season? Which occur within a certain time frame?:
+early.onsets <- c()
+for (season in levels(m2$season)) {
+  m.temp <- m2[m2$season == season, ]
+  m.temp <- m.temp[!is.na(m.temp$onsetObs), ]
+  m.temp <- m.temp[order(m.temp$onsetObs), ]
+  early.cut <- quantile(m.temp$onsetObs, probs = 0.25)
+  print(as.vector(m.temp[m.temp$onsetObs <= early.cut, 1]))
+  early.onsets <- c(early.onsets, as.vector(m.temp[m.temp$onsetObs <= early.cut, 1]))
+}
+rev(sort(table(early.onsets)))
+# PT, ES, LU tend to be early in >50% of seasons
+length(unique(early.onsets)) # 11/12 countries CAN be in the earliest 25% to onset, though, so makes sense to explore seeding in each country
+# only SK is never in this range - could this cause issues?
+
+# Find initial countries for each outbreak:
+init.arrival <- vector('list', length(levels(m2$season)))
+for (i in 1:length(init.arrival)) {
+  m.temp <- m2[m2$season == levels(m2$season)[i], ]
+  init.arrival[[i]] <- as.vector(m.temp[m.temp$onsetObs == min(m.temp$onsetObs, na.rm = TRUE) & !is.na(m.temp$onsetObs), 'country'])
+}
+# 1 country (5 times); 2 (1 time); 3 (3 times)
+
+# 1 country: LU; LU; LU; IT; PL
+# 2 countries: IT NL
+# 3 countries: DE IT ES; IT LU ES; AT LU NL
+
+# out of 8 seasons:
+# LU: 5/8; IT: 4 / 8; PL: 1/8; NL: 2/8; DE: 1/8; ES: 2/8; AT: 1/8
+# never: BE, CZ, FR, HU, SK
 

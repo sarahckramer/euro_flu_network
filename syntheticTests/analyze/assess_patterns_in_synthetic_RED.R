@@ -1,17 +1,16 @@
 
 ### Assess patterns in synthetic "data" and compare to observed data
 
+# Note: Results overwhelmingly similar for wide and original criteria 2
+
 ### Save all plots:
-pdf('syntheticTests/outputs/explore/patterns_fullMod_s3.pdf', width = 16, height = 10)
+pdf('syntheticTests/outputs/explore/patterns_redMod_s1_WIDE.pdf', width = 16, height = 10)
 # note: plot "realistic" only
 
 ### Read in synthetic "data" ###
-countries <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'FR', 'DE', 'HU', 'IE', 'IT',
-               'LU', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'UK')
-load('syntheticTests/syntheticData/synth_rates_REALISTIC_1000_fullS3.RData')
+countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
+load('syntheticTests/syntheticData/synth_rates_REALISTIC_1000_redS1_widerPT.RData')
 synth.runs.RATES <- synth.runs.RATES.realistic; rm(synth.runs.RATES.realistic)
-
-# synth.runs.RATES <- synth.runs.RATES[c(2:3, 5:7, 11:14, 18:19, 21:22, 24, 26:27)]
 
 ### Plot synthetic runs ###
 par(mfrow = c(3, 3), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
@@ -73,14 +72,10 @@ rm(m.new, m.temp)
 # Which countries/runs have no onset?
 m.noOnset <- m[is.na(m$ot), ]; m.noOnset$country <- factor(m.noOnset$country)
 print(length(unique(m.noOnset$run)))
-rev(sort(table(m.noOnset$country))) # mostly PT, HR, FR in full (all 1000); when onset criteria met: SI, RO, PL, IT, HR; then PT, FR, HU, SK, NL, ES, UK; real: mostly SI, RO, PT
+rev(sort(table(m.noOnset$country))) # HU and FR most likely, but even then rarely; similar for wider, but more SK
 # obs: NL and SK in 13-14
-# PT  HR  FR  PL  ES  SI  RO  NL  UK  BE  DE  IT  HU  SK  CZ  AT  SE  IE  DK  LU 
-# 125 123 122 116 114 112 112 106 105 105 101  99  99  91  91  91  83  82  61  56 
-# SI RO PL IT HR PT FR HU SK NL ES UK SE CZ AT BE DE IE 
-# 24 23 21 20 20 17 16 15 14 13 11 10  9  9  9  8  6  1 
-# SI RO PT SK PL NL HU IT HR CZ SE FR BE AT UK ES DE 
-# 10  7  7  4  4  4  4  3  3  3  2  2  2  2  1  1  1 
+# HU FR SK IT CZ PL NL ES AT DE BE 
+# 6  6  4  4  4  3  3  3  3  2  2 
 # Before parameter change: Overwhelmingly PT missing onsets
 
 # Now remove those w/o onset for further analyses:
@@ -90,11 +85,9 @@ m <- m[!is.na(m$ot), ]
 # Plot with geographic information:
 library(maps)
 data("world.cities")
-country.names <- c('Austria', 'Belgium', 'Croatia', 'Czechia', 'Denmark', 'France', 'Germany',
-                   'Hungary', 'Ireland', 'Italy', 'Luxembourg', 'Netherlands',
-                   'Poland', 'Portugal', 'Romania', 'Slovakia', 'Slovenia', 'Spain', 'Sweden',
-                   'United Kingdom')
-world.cities <- world.cities[(world.cities$country.etc %in% c(country.names, 'Czech Republic', 'UK')) &
+country.names <- c('Austria', 'Belgium', 'Czechia', 'France', 'Germany', 'Hungary', 'Italy',
+                   'Luxembourg', 'Netherlands', 'Poland', 'Slovakia', 'Spain')
+world.cities <- world.cities[(world.cities$country.etc %in% c(country.names, 'Czech Republic')) &
                                world.cities$capital == 1, ]
 world.cities$country.etc <- factor(world.cities$country.etc)
 levels(world.cities$country.etc) <- countries
@@ -129,8 +122,8 @@ p3 <- ggplot(data = m) + geom_boxplot(aes(x = country, y = pt, fill = long)) +
   # scale_y_continuous(breaks = seq(46, 68, by = 2)) +
   scale_fill_gradientn(colors = viridis(100))
 grid.arrange(p1, p2, p3, ncol = 1)
-# even with "onsets," no strong pattern
-# for "realistic," looks more clearly e-w
+# pattern doesn't seem super strong, but still looks pretty e-w, at least for PT; OT looks a little more neutral; little change with wider criteria
+# doesn't seem quite as extreme for all onsets, but I think we knew that; pattern still there
 
 # Plot by time since first onset/peak, too:
 ot.med <- aggregate(ot_order ~ country, data = m, FUN = median)
@@ -143,17 +136,16 @@ m$country <- factor(m$country, levels = ot.med$country)
 p1 <- ggplot(data = m) + geom_boxplot(aes(x = country, y = ot_order, fill = long)) +
   theme_classic() + theme(axis.text = element_text(size = 10)) +
   labs(x = '', y = 'Onset (Weeks from First Onset)', fill = 'Long.') +
-  scale_y_continuous(breaks = seq(0, 10, by = 2)) +
+  scale_y_continuous(breaks = seq(0, 20, by = 2)) +
   scale_fill_gradientn(colors = viridis(100))
 m$country <- factor(m$country, levels = pt.med$country)
 p2 <- ggplot(data = m) + geom_boxplot(aes(x = country, y = pt_order, fill = long)) +
   theme_classic() + theme(axis.text = element_text(size = 10)) +
   labs(x = '', y = 'Peak (Weeks from First Peak)', fill = 'Long.') +
-  scale_y_continuous(breaks = seq(0, 10, by = 2)) +
+  scale_y_continuous(breaks = seq(0, 18, by = 2)) +
   scale_fill_gradientn(colors = viridis(100))
 grid.arrange(p1, p2, ncol = 1)
-# still no clear pattern emerging when looking at all with onset
-# realistic: e-w pattern still pretty clear
+# these, disappointingly, look even more e-w for both OT and PT
 
 # Longitudinal pattern by run:
 par(mfrow = c(4, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
@@ -186,23 +178,23 @@ med.m <- merge(med.m, obs.dist[[1]], by = 'country')
 med.m <- merge(med.m, obs.dist[[2]], by = 'country')
 med.m <- merge(med.m, obs.dist[[3]], by = 'country')
 
-cor.test(med.m$ar, med.m$ar_obs, method = 'spearman') # not sig
-cor.test(med.m$ot, med.m$ot_obs, method = 'spearman') # not sig
-cor.test(med.m$pt, med.m$pt_obs, method = 'spearman') # sig negative - so PT here negatively correlated w/ observed (although very narrow ranges)
-# before param change: negative relationship with onset and peak timings
+cor.test(med.m$ar, med.m$ar_obs, method = 'spearman') # almost sig negative, but AR can be scaled
+cor.test(med.m$ot, med.m$ot_obs, method = 'spearman') # not sig, but trends negative
+cor.test(med.m$pt, med.m$pt_obs, method = 'spearman') # not sig
+# before param change: 
 
 ### Assess synchrony ###
-# For each run, what is the range of peak timings?
-m$country <- factor(m$country, levels = countries)
-par(mfrow = c(3, 3), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-for (i in 1:length(synth.runs.RATES)) {
-  m.temp <- m[m$run == i, ]
-  hist(m.temp$pt, breaks = 21, xlab = 'PT', main = i)
-  # print(max(m.temp$pt) - min(m.temp$pt))
-  # print(as.vector(quantile(m.temp$pt, prob = 0.975) - quantile(m.temp$pt, prob = 0.025)))
-  # print('')
-}
-# these actually look pretty realistic
+# # For each run, what is the range of peak timings?
+# m$country <- factor(m$country, levels = countries)
+# par(mfrow = c(3, 3), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+# for (i in 1:length(synth.runs.RATES)) {
+#   m.temp <- m[m$run == i, ]
+#   hist(m.temp$pt, breaks = 21, xlab = 'PT', main = i)
+#   # print(max(m.temp$pt) - min(m.temp$pt))
+#   # print(as.vector(quantile(m.temp$pt, prob = 0.975) - quantile(m.temp$pt, prob = 0.025)))
+#   # print('')
+# }
+# # hard to tell with these, but I don't think they look bad
 
 # Calculate correlation coefficients between all pairs of countries for each run:
 cor.synch <- vector('list', length(levels(m$run)))
@@ -233,11 +225,10 @@ print(isSymmetric(cor.synch.AVG))
 library(ecodist); library(geosphere)
 
 data("world.cities")
-world.cities <- world.cities[(world.cities$country.etc %in% c(country.names, 'Czech Republic', 'UK')) &
+world.cities <- world.cities[(world.cities$country.etc %in% c(country.names, 'Czech Republic')) &
                                world.cities$capital == 1, ]
 world.cities$country.etc <- factor(world.cities$country.etc)
-levels(world.cities$country.etc) <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'FR', 'DE', 'HU', 'IE', 'IT',
-                                      'LU', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'UK')
+levels(world.cities$country.etc) <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
 
 dist.mat <- matrix(0, nrow = length(countries), ncol = length(countries))
 for (i in 1:(length(countries) - 1)) {
@@ -255,10 +246,11 @@ print(isSymmetric(dist.mat))
 
 synch.dist <- 1 - cor.synch.AVG # make into distance matrix
 mantel(as.dist(synch.dist) ~ as.dist(dist.mat), nperm = 10000, mrank = TRUE)
-# onset: distance-synchrony and distance between capitals sig. negatively associated -- so countries further away actually more in sync?
+# not sig, but close - countries further away actually more in-sync
+# interpretation note: distance-synchrony and distance between capitals sig. negatively associated -- so countries further away actually more in sync?
 
 # Is synchrony related to commuting flows?:
-load('formatTravelData/formattedData/comm_mat_by_year_05-07.RData')
+load('formatTravelData/formattedData/comm_mat_by_year_05-07_RELIABLE_ONLY.RData')
 t.comm <- apply(simplify2array(comm.by.year), 1:2, mean); rm(comm.by.year)
 t.comm <- t.comm[countries, countries]
 
@@ -278,7 +270,7 @@ t.comm.sym[t.comm.sym == 0] <- 1.0
 t.comm.sym <- 1 / t.comm.sym # convert to distance
 
 mantel(as.dist(synch.dist) ~ as.dist(t.comm.sym), nperm = 10000, mrank = TRUE)
-# not sig; was sig before param change
+# not sig
 
 # Is synchrony related to air travel?:
 air.by.month <- vector('list', 12)
@@ -296,15 +288,15 @@ mantel(as.dist(synch.dist) ~ as.dist(a.mean), nperm = 10000, mrank = TRUE)
 # not sig
 
 # Plot mean correlations as matrix:
-rownames(cor.synch.AVG) = colnames(cor.synch.AVG) = c('AT', 'BE', 'HR', 'CZ', 'DK', 'FR', 'DE', 'HU', 'IE', 'IT',
-                                                      'LU', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'UK')
+rownames(cor.synch.AVG) = colnames(cor.synch.AVG) = c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
 cor.synch.AVG[upper.tri(cor.synch.AVG)] <- NA
 cor.synch.plot <- melt(cor.synch.AVG)
 names(cor.synch.plot) <- c('c1', 'c2', 'corr')
 cor.synch.plot <- cor.synch.plot[!is.na(cor.synch.plot$corr), ]
 cor.synch.plot$corr[cor.synch.plot$corr == 1] <- NA
 
-# onset: ranges from 0.7000 to 0.9451 - so too synchronous
+# onset: ranges from 0.6822 to 0.9042 (mean 0.7924) - so too synchronous at lower end, but not synchronous enough for higher
+# lowest are 0.682177 (HU/IT)
 p1 <- ggplot(cor.synch.plot, aes(x = c1, y = c2)) + geom_tile(aes(fill = corr), colour = 'white') +
   scale_fill_gradientn(colours = cividis(100), na.value = 'gray80', limits = c(0.4, 0.95)) + theme_classic() +
   theme(axis.ticks = element_blank(), text = element_text(size = 16), axis.text.x = element_text(angle = 90, hjust = 1)) +
@@ -384,6 +376,10 @@ plot(cor.synch.plot$dist, cor.synch.plot$corr, pch = 20, xlab = 'Distance (100 k
 # boxplot(init.S.df$value ~ init.S.df$Var1, col = 'lightblue2')
 # boxplot(init.I.df$value ~ init.I.df$Var1, col = 'lightblue2')
 
+####################################################################################################
+####################################################################################################
+####################################################################################################
+
 ### Look at distribution of onsets/peaks by run ###
 par(mfrow = c(2, 1), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 boxplot(ot ~ run, data = m, col = 'lightblue2', xlab = 'Run', ylab = 'Onset Week')
@@ -414,10 +410,8 @@ ditch_the_axes <- theme(
 
 # Change country levels in m:
 m$country <- factor(as.character(m$country))
-levels(m$country) <- c('Austria', 'Belgium', 'Czech Republic', 'Germany', 'Denmark', 'Spain',
-                       'France', 'Croatia', 'Hungary', 'Ireland', 'Italy',
-                       'Luxembourg', 'Netherlands', 'Poland', 'Portugal', 'Romania', 'Sweden',
-                       'Slovenia', 'Slovakia', 'UK')
+levels(m$country) <- c('Austria', 'Belgium', 'Czechia', 'France', 'Germany', 'Hungary', 'Italy',
+                       'Luxembourg', 'Netherlands', 'Poland', 'Slovakia', 'Spain')
 
 # Store onset week for each run:
 library(dplyr)
