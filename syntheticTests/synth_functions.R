@@ -39,7 +39,7 @@ format_model_results <- function(m.res, num.ens, tmstep, tm.strt, tm.end, n, pop
   
 }
 
-run_model <- function(in.parms, in.ah, num.ens, n, N, tm.range, tmstep, tm.strt, tm.end, dt, pop.dat, s0.method = NULL) {
+run_model <- function(in.parms, in.ah, num.ens, n, N, tm.range, tmstep, tm.strt, tm.end, dt, pop.dat, s0.method = NULL, r0.mn = FALSE) {
   
   # Store country-level S0:
   s0.by.count <- NULL
@@ -50,8 +50,18 @@ run_model <- function(in.parms, in.ah, num.ens, n, N, tm.range, tmstep, tm.strt,
     S0.temp[[i]] = I0.temp[[i]] = matrix(0, nrow = n, ncol = n)
     
     if (s0.method == 'dist') {
-      diag(S0.temp[[i]]) <- rnorm(n, mean = in.parms[1, i], sd = 0.05)
-      diag(I0.temp[[i]]) <- in.parms[(1:n) + 1, i]
+      diag(S0.temp[[i]]) <- rnorm(n, mean = in.parms[1, i], sd = in.parms[2, i])
+      diag(I0.temp[[i]]) <- in.parms[(1:n) + 2, i]
+      
+      while (any(diag(S0.temp[[i]]) > 1)) {
+        diag(S0.temp[[i]])[which(diag(S0.temp[[i]]) > 1)] <- rnorm(length(which(diag(S0.temp[[i]]) > 1)),
+                                                                   mean = in.parms[1, i], sd = in.parms[2, i])
+      }
+      while (any(diag(S0.temp[[i]]) < 0)) {
+        diag(S0.temp[[i]])[which(diag(S0.temp[[i]]) < 0)] <- rnorm(length(which(diag(S0.temp[[i]]) < 0)),
+                                                                   mean = in.parms[1, i], sd = in.parms[2, i])
+      }
+      
     } else if (s0.method == 'lhs') {
       diag(S0.temp[[i]]) <- in.parms[1:n, i]
       diag(I0.temp[[i]]) <- in.parms[(1:n) + n, i]
@@ -65,6 +75,27 @@ run_model <- function(in.parms, in.ah, num.ens, n, N, tm.range, tmstep, tm.strt,
     S0.temp[[i]][S0.temp[[i]] == 0] <- sapply(1:n, function(jx) {
       rnorm(n - 1, mean = S0.temp[[i]][jx, jx], sd = 0.025)
     })
+    
+    while (any(S0.temp[[i]] > 1)) {
+      to.redraw <- which(S0.temp[[i]] > 1, arr.ind = TRUE)
+      for (ix.r in dim(to.redraw)[1]) {
+        S0.temp[[i]][to.redraw[ix.r, 1], to.redraw[ix.r, 2]] <-
+          rnorm(1, mean = S0.temp[[i]][to.redraw[ix.r, 2], to.redraw[ix.r, 2]], sd = 0.025)
+      }
+    }
+    while (any(S0.temp[[i]] < 0)) {
+      to.redraw <- which(S0.temp[[i]] < 0, arr.ind = TRUE)
+      for (ix.r in dim(to.redraw)[1]) {
+        S0.temp[[i]][to.redraw[ix.r, 1], to.redraw[ix.r, 2]] <-
+          rnorm(1, mean = S0.temp[[i]][to.redraw[ix.r, 2], to.redraw[ix.r, 2]], sd = 0.025)
+      }
+    }
+    
+    if (any(S0.temp[[i]] < 0)) {
+      print('Deal with negatives, too!')
+      print(i)
+    }
+    
     S0.temp[[i]] <- t(S0.temp[[i]])
     S0.temp[[i]] <- S0.temp[[i]] * N
     
@@ -75,17 +106,25 @@ run_model <- function(in.parms, in.ah, num.ens, n, N, tm.range, tmstep, tm.strt,
   # Get parameters:
   in.parms <- in.parms[(dim(in.parms)[1] - 4):(dim(in.parms)[1]), ]
   
-  print(dim(in.parms))
+  # print(dim(in.parms))
+  # in.parms[4, ] <- in.parms[3, ] - in.parms[4, ] # option to "replace" R0diff with R0mn, then use the original code
   
   beta.range <- tm.range[1]:(tail(tm.range, 1) + 2 * tmstep)
   AHpt <- in.ah[beta.range, ]
   AHpt <- as.matrix(AHpt, length(AHpt), n)
-  b <- log(in.parms[3, ] - in.parms[4, ])
   a <- -180
   
-  beta <- lapply(1:num.ens, function(ix) {
-    (exp(a * AHpt + b[ix]) + in.parms[4, ix]) / in.parms[2, ix]
-  })
+  if (r0.mn) { # use R0mn
+    b <- log(in.parms[3, ] - in.parms[4, ])
+    beta <- lapply(1:num.ens, function(ix) {
+      (exp(a * AHpt + b[ix]) + in.parms[4, ix]) / in.parms[2, ix]
+    })
+  } else { # use R0diff
+    b <- log(in.parms[4, ])
+    beta <- lapply(1:num_ens, function(ix) {
+      (exp(a * AHpt + b[ix]) + (in.parms[3, ix] - in.parms[4, ix])) / in.parms[2, ix]
+    })
+  }
   
   D.temp <- in.parms[2, ]; L.temp <- in.parms[1, ]; airScale.temp <- in.parms[5, ]
   
@@ -116,7 +155,7 @@ calc_metrics <- function(m) {
   for (run in 1:length(m)) {
     out.temp <- m[[run]]
     
-    for (count.index in 1:20) {
+    for (count.index in 1:length(countries)) {
       ot.temp <- findOnset(out.temp[count.index, ], 500)$onset + 40 - 1
       pt.temp <- which.max(out.temp[count.index, ]) + 40 - 1
       df <- rbind(df, c(countries[count.index], run, ot.temp, pt.temp))
@@ -142,11 +181,21 @@ check_realistic <- function(m) {
     if (length(which(is.na(df$ot[df$run == run]))) <= 2) {
       is.onset <- c(is.onset, T)
       
-      if (length(which(df$pt[df$run == run] %in% 52:64 & !is.na(df$pt[df$run == run]))) >= 17) {
+      if (length(which(!(df$pt[df$run == run] %in% 52:64) & !is.na(df$pt[df$run == run]))) < 2) { # if fewer than 2 (so, 0 or 1) have PT outside the range
+      # if (length(which(!(df$pt[df$run == run] %in% 50:66) & !is.na(df$pt[df$run == run]))) < 2) { # if fewer than 2 (so, 0 or 1) have PT outside the range
+        # for full model, change to fewer than 4 (0, 1, 2, 3)
         is.real <- c(is.real, T)
       } else {
         is.real <- c(is.real, F)
       }
+      
+      # if (length(which(df$pt[df$run == run] %in% 52:64 & !is.na(df$pt[df$run == run]))) >= 11) {
+      #   # for full model, change to greater than or equal to 17
+      #   # actually, might want to make this 1 lower than the non-NAs, or else expectation might be too high
+      #   is.real <- c(is.real, T)
+      # } else {
+      #   is.real <- c(is.real, F)
+      # }
       
     } else {
       is.onset <- c(is.onset, F)
@@ -164,6 +213,7 @@ check_realistic <- function(m) {
   return(list(df, is.onset, is.real))
 }
 
+
 attach_lat_long <- function(df, countries) {
   library(maps)
   data("world.cities")
@@ -171,9 +221,21 @@ attach_lat_long <- function(df, countries) {
                      'Hungary', 'Ireland', 'Italy', 'Luxembourg', 'Netherlands',
                      'Poland', 'Portugal', 'Romania', 'Slovakia', 'Slovenia', 'Spain', 'Sweden',
                      'United Kingdom')
+  
+  if (length(country.names) != length(countries)) {
+    country.names <- c('Austria', 'Belgium', 'Czechia', 'France', 'Germany', 'Hungary', 'Italy', 'Luxembourg',
+                       'Netherlands', 'Poland', 'Slovakia', 'Spain')
+  }
+  
   world.cities <- world.cities[(world.cities$country.etc %in% c(country.names, 'Czech Republic', 'UK')) &
                                  world.cities$capital == 1, ]
   world.cities$country.etc <- factor(world.cities$country.etc)
+  
+  if (length(levels(world.cities$country.etc)) != length(countries)) {
+    world.cities <- world.cities[world.cities$country.etc != 'UK', ]
+    world.cities$country.etc <- factor(world.cities$country.etc)
+  }
+  
   levels(world.cities$country.etc) <- countries
   world.cities <- world.cities[, c('country.etc', 'lat', 'long')]
   df <- merge(df, world.cities, by.x = 'country', by.y = 'country.etc')

@@ -18,6 +18,7 @@ c.out <- read.csv('formatTravelData/formattedData/commuting_number-out_05-07.csv
 c.out <- c.out[c.out$to == 'FOR', ]; c.out <- c.out[, 2:3]
 c.out <- c.out[c.out$country %in% countries, ]; c.out$country <- factor(c.out$country)
 
+res.all <- NULL
 for (i in 1:length(comm.by.year)) {
   # print(cbind(c.out, rowSums(comm.by.year[[i]])[-14] / 1000))
   res.temp <- NULL
@@ -26,7 +27,11 @@ for (i in 1:length(comm.by.year)) {
   }
   rats <- res.temp[, 1] / res.temp[, 2]
   print(summary(rats[rats != Inf]))
+  print(cbind(countries, rats))
   print('')
+  
+  res.temp <- cbind(countries, res.temp, unique(c1$YEAR)[i])
+  res.all <- rbind(res.all, res.temp)
 }
 
 c.out <- cbind(c.out, rowSums(comm.by.year[[6]])[-14] / 1000)
@@ -34,4 +39,4 @@ names(c.out) <- c('country', 'Xmean', 'rowSum')
 c.out$factor <- c.out$Xmean / c.out$rowSum
 c.out$factor[c.out$factor == Inf & !is.na(c.out$factor)] <- NA
 summary(c.out$factor) # ranges from 0.8 (so slightly smaller) to almost 5 times higher in outbound commuter data
-
+# but of course this will be different - doesn't include "other"

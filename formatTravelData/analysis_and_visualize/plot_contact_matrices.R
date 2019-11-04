@@ -14,7 +14,8 @@ library(gridExtra)
 library(dplyr)
 library(RColorBrewer)
 
-pdf('formatTravelData/outputs/travel_plots_09-24.pdf', width = 8, height = 7)
+# pdf('formatTravelData/outputs/travel_plots_09-24.pdf', width = 8, height = 7)
+pdf('syntheticTests/outputs/explore/commuting_network_w-oLowReliability.pdf', width = 8, height = 7)
 
 ### HEAT MAPS ###
 air.by.month <- vector('list', 12)
@@ -25,16 +26,13 @@ for (i in 1:12) {
 a.mean <- apply(simplify2array(air.by.month), 1:2, mean); rm(air.by.month)
 
 countries <- colnames(a.mean)
-countries <- countries[c(1:10, 12:21)]
-
-a.mean <- a.mean[countries, countries]
 
 a.temp <- melt(a.mean); names(a.temp) <- c('source', 'dest', 'w')
 a.temp$w[a.temp$w == 0] <- NA
 a.temp$w <- log(a.temp$w)
 
-a.temp$source <- factor(a.temp$source, levels(a.temp$source)[(c(16, 19, 9, 8, 18, 11, 14, 3, 1, 17, 5, 4, 12, 2, 13, 10, 20, 7, 6, 15))])
-a.temp$dest <- factor(a.temp$dest, levels(a.temp$dest)[rev(c(16, 19, 9, 8, 18, 11, 14, 3, 1, 17, 5, 4, 12, 2, 13, 10, 20, 7, 6, 15))])
+a.temp$source <- factor(a.temp$source, levels(a.temp$source)[(c(17, 20, 9, 8, 19, 12, 15, 3, 1, 18, 5, 4, 13, 2, 14, 10, 21, 7, 6, 16, 11))])
+a.temp$dest <- factor(a.temp$dest, levels(a.temp$dest)[rev(c(17, 20, 9, 8, 19, 12, 15, 3, 1, 18, 5, 4, 13, 2, 14, 10, 21, 7, 6, 16, 11))])
 
 leg.labs <- c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)
 p <- ggplot(a.temp, aes(x = dest, y = source)) + geom_tile(aes(fill = w), colour = 'white') +
@@ -48,10 +46,14 @@ print(p)
 ### NETWORKS ###
 # Read in data:
 load('formatTravelData/formattedData/comm_mat_by_year_05-07.RData')
+
+load('formatTravelData/formattedData/comm_mat_by_year_05-07_RELIABLE_ONLY.RData')
+comm.by.year <- comm.by.year2; rm(comm.by.year2)
+
 countries <- colnames(comm.by.year[[1]])
 
 # Set up latitude and longitude values:
-l <- read.csv('../../spatial_transmission/travel_data_info/flight_data/raw_data/country_centroids_az8.csv')
+l <- read.csv('../travel_data_info/flight_data/raw_data/country_centroids_az8.csv')
 l <- l[, c(47, 67:68)]
 l <- l[l$iso_a2 %in% c(countries, 'GB'), ]
 l$iso_a2 <- factor(l$iso_a2); levels(l$iso_a2)[8] <- 'UK'; l$iso_a2 <- factor(l$iso_a2)
@@ -141,35 +143,11 @@ p <- ggplot() + geom_polygon(data = eur, aes(x=long, y = lat, group = group, fil
                                            legend.text = element_text(size = 12),
                                            legend.key.height = unit(0.75, 'cm'),
                                            legend.key.width = unit(0.75, 'cm')) +
-  scale_fill_distiller(palette = 'PRGn', na.value = 'gray90', name = 'Net Commuter Inflow\n(in thousands)\n',
+  scale_fill_distiller(palette = 'PiYG', na.value = 'gray90', name = 'Net Commuter Inflow\n(in thousands)\n',
                        breaks = c(-100000, -50000, 0, 50000, 100000, 150000), 
                        labels = c('-100', '-50', '0', '50', '100', '150')) +
   labs(title = '')
 print(p)
 
 dev.off()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
