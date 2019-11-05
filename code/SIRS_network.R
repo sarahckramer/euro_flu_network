@@ -15,56 +15,78 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
   S.list[[1]] <- S0; I.list[[1]] <- I0
   newI.list[[1]] <- matrix(0, nrow = n, ncol = n)
   
+  # Set up times by month:
+  t.jan.orig <- c(1:31); t.feb.orig <- c(32:59); t.mar.orig <- c(60:90); t.apr.orig <- c(91:120); t.may.orig <- c(121:151); t.jun.orig <- c(152:181);
+  t.jul.orig <- c(182:212); t.aug.orig <- c(213:243); t.sep.orig <- c(244:273); t.oct.orig <- c(274:304); t.nov.orig <- c(305:334); t.dec.orig <- c(335:365)
+  
+  t.jan <- c(1:31); t.feb <- c(32:59); t.mar <- c(60:90); t.apr <- c(91:120); t.may <- c(121:151); t.jun <- c(152:181);
+  t.jul <- c(182:212); t.aug <- c(213:243); t.sep <- c(244:273); t.oct <- c(274:304); t.nov <- c(305:334); t.dec <- c(335:365)
+  
+  for (yr.later in seq(365, by = 365, length.out = 21)) {
+    t.jan <- c(t.jan, t.jan.orig + yr.later)
+    t.feb <- c(t.feb, t.feb.orig + yr.later)
+    t.mar <- c(t.mar, t.mar.orig + yr.later)
+    t.apr <- c(t.apr, t.apr.orig + yr.later)
+    t.may <- c(t.may, t.may.orig + yr.later)
+    t.jun <- c(t.jun, t.jun.orig + yr.later)
+    t.jul <- c(t.jul, t.jul.orig + yr.later)
+    t.aug <- c(t.aug, t.aug.orig + yr.later)
+    t.sep <- c(t.sep, t.sep.orig + yr.later)
+    t.oct <- c(t.oct, t.oct.orig + yr.later)
+    t.nov <- c(t.nov, t.nov.orig + yr.later)
+    t.dec <- c(t.dec, t.dec.orig + yr.later)
+  }
+  
   # run continuously
   for (t in tm_vec) {
     
     # First, choose t.rand by month:
     t.true <- t + tm.range[1] - 1
-    if (t.true %in% c(1:31, 1:31 + 365)) {
+    if (t.true %in% t.jan) {
       # print('January')
       load('formatTravelData/formattedData/air_1_05-07.RData')
       a.temp <- a.temp.sym[countries, countries]; rm(a.temp.sym)
-    } else if (t.true %in% c(32:59, 32:59 + 365)) {
+    } else if (t.true %in% t.feb) {
       # print('February')
       load('formatTravelData/formattedData/air_2_05-07.RData')
       a.temp <- a.temp.sym[countries, countries]; rm(a.temp.sym)
-    } else if (t.true %in% c(60:90, 60:90 + 365)) {
+    } else if (t.true %in% t.mar) {
       # print('March')
       load('formatTravelData/formattedData/air_3_05-07.RData')
       a.temp <- a.temp.sym[countries, countries]; rm(a.temp.sym)
-    } else if (t.true %in% c(91:120, 91:120 + 365)) {
+    } else if (t.true %in% t.apr) {
       # print('April')
       load('formatTravelData/formattedData/air_4_05-07.RData')
       a.temp <- a.temp.sym[countries, countries]; rm(a.temp.sym)
-    } else if (t.true %in% c(121:151, 121:151 + 365)) {
+    } else if (t.true %in% t.may) {
       # print('May')
       load('formatTravelData/formattedData/air_5_05-07.RData')
       a.temp <- a.temp.sym[countries, countries]; rm(a.temp.sym)
-    } else if (t.true %in% c(152:181, 152:181 + 365)) {
+    } else if (t.true %in% t.jun) {
       # print('June')
       load('formatTravelData/formattedData/air_6_05-07.RData')
       a.temp <- a.temp.sym[countries, countries]; rm(a.temp.sym)
-    } else if (t.true %in% c(182:212, 182:212 + 365)) {
+    } else if (t.true %in% t.jul) {
       # print('July')
       load('formatTravelData/formattedData/air_7_05-07.RData')
       a.temp <- a.temp.sym[countries, countries]; rm(a.temp.sym)
-    } else if (t.true %in% c(213:243, 213:243 + 365)) {
+    } else if (t.true %in% t.aug) {
       # print('August')
       load('formatTravelData/formattedData/air_8_05-07.RData')
       a.temp <- a.temp.sym[countries, countries]; rm(a.temp.sym)
-    } else if (t.true %in% c(244:273, 244:273 + 365)) {
+    } else if (t.true %in% t.sep) {
       # print('September')
       load('formatTravelData/formattedData/air_9_05-07.RData')
       a.temp <- a.temp.sym[countries, countries]; rm(a.temp.sym)
-    } else if (t.true %in% c(274:304, 274:304 + 365)) {
+    } else if (t.true %in% t.oct) {
       # print('October')
       load('formatTravelData/formattedData/air_10_05-07.RData')
       a.temp <- a.temp.sym[countries, countries]; rm(a.temp.sym)
-    } else if (t.true %in% c(305:334, 305:334 + 365)) {
+    } else if (t.true %in% t.nov) {
       # print('November')
       load('formatTravelData/formattedData/air_11_05-07.RData')
       a.temp <- a.temp.sym[countries, countries]; rm(a.temp.sym)
-    } else if (t.true %in% c(335:365, 335:365 + 365)) {
+    } else if (t.true %in% t.dec) {
       # print('December')
       load('formatTravelData/formattedData/air_12_05-07.RData')
       a.temp <- a.temp.sym[countries, countries]; rm(a.temp.sym)
