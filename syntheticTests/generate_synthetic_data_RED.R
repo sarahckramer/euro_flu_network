@@ -18,97 +18,17 @@ tmstep <- 7 #data is weekly
 wk_start <- 40
 
 ### Set parameters
-num_ens <- 1000
+num_ens <- 500
 tm_strt <- 273; tm_end <- 573; tm_step <- 1#; t <- 1 # 273 is first of October
 tm.range <- tm_strt:tm_end
 
 ### Parameter boundaries
-# D_low <- 2; L_low <- 1*365; Rmx_low <- 1.5; Rdiff_low <- 0; airScale_low <- 0.75
-# D_up <- 7; L_up <- 10*365; Rmx_up <- 3.0; Rdiff_up <- 1.5; airScale_up <- 1.25
-# S0_low <- 0.30; S0_up <- 0.90
-# sd_low <- 0.05; sd_up <- 0.20
-# I0_low <- 0; I0_up <- 0.0001 # start I0_up lower than in previous "round"
-# # and focus on "realistic" runs over geographically-"realistic"
-# 
-# D_low <- 2; L_low <- 1*365; Rmx_low <- 1.6; Rdiff_low <- 0; airScale_low <- 0.75
-# D_up <- 7; L_up <- 10*365; Rmx_up <- 2.8; Rdiff_up <- 1.25; airScale_up <- 1.25
-# S0_low <- 0.40; S0_up <- 0.90
-# sd_low <- 0.05; sd_up <- 0.20
-# I0_low <- 0; I0_up <- 0.0001
-# 
-# D_low <- 2; L_low <- 1*365; Rmx_low <- 1.6; Rdiff_low <- 0.2; airScale_low <- 0.75
-# D_up <- 7; L_up <- 10*365; Rmx_up <- 2.8; Rdiff_up <- 1.0; airScale_up <- 1.25
-# S0_low <- 0.45; S0_up <- 0.90
-# sd_low <- 0.05; sd_up <- 0.18
-# I0_low <- 0; I0_up <- 0.0001
-
-#####
-
-# D_low <- 2; L_low <- 1*365; Rmx_low <- 2.0; Rdiff_low <- 0.2; airScale_low <- 0.75
-# D_up <- 7; L_up <- 10*365; Rmx_up <- 2.8; Rdiff_up <- 1.0; airScale_up <- 1.25
-# S0_low <- 0.45; S0_up <- 0.85
-# sd_low <- 0.05; sd_up <- 0.18
-# I0_low <- 0; I0_up <- 0.00005
-# # 342/46, but no sig w-e/real; ~57% e-w
-# 
-# D_low <- 2; L_low <- 1*365; Rmx_low <- 2.0; Rdiff_low <- 0.2; airScale_low <- 0.75
-# D_up <- 7; L_up <- 10*365; Rmx_up <- 2.8; Rdiff_up <- 1.0; airScale_up <- 1.25
-# S0_low <- 0.55; S0_up <- 0.85
-# sd_low <- 0.05; sd_up <- 0.18
-# I0_low <- 0; I0_up <- 0.00005
-# # 409 onset, 53 (!) realistic; ~ 60% e-w, but ~36% of realistic are w-e (although none sig)
-# # option to get rid of highest L or lowest (<0.08) sd to make more w-e?
-#
 D_low <- 2; L_low <- 1*365; Rmx_low <- 2.0; Rdiff_low <- 0.2; airScale_low <- 0.75
 D_up <- 7; L_up <- 8*365; Rmx_up <- 2.8; Rdiff_up <- 1.0; airScale_up <- 1.25
 S0_low <- 0.55; S0_up <- 0.85
 sd_low <- 0.05; sd_up <- 0.18
 I0_low <- 0; I0_up <- 0.00005
 # 422 onset, 50 realistic (out of 500); ~60% e-w, but 42% realistic w-e, including 1 sig
-#
-# D_low <- 2; L_low <- 1*365; Rmx_low <- 2.0; Rdiff_low <- 0.2; airScale_low <- 0.75
-# D_up <- 7; L_up <- 8*365; Rmx_up <- 2.8; Rdiff_up <- 1.0; airScale_up <- 1.25
-# S0_low <- 0.55; S0_up <- 0.85
-# sd_low <- 0.08; sd_up <- 0.18
-# I0_low <- 0; I0_up <- 0.00005
-# # 418/43, only 35% of realistic are w-e, no sig - so above is actually better
-
-#####
-
-# # higher L (349, 28, ~60% e-w; keep in mind for later stages of parameter range narrowing?):
-# D_low <- 2; L_low <- 2*365; Rmx_low <- 2.0; Rdiff_low <- 0.5; airScale_low <- 0.75
-# D_up <- 7; L_up <- 10*365; Rmx_up <- 3.0; Rdiff_up <- 1.5; airScale_up <- 1.25
-# S0_low <- 0.50; S0_up <- 0.90
-# sd_low <- 0.05; sd_up <- 0.15
-# I0_low <- 0; I0_up <- 0.001
-# 
-# # cut out lowest sd (343, 28, ~65% e-w, but 35-36% of realistic w-e; no w-e sig/realistic; keep in mind - even up to 0.10?):
-# D_low <- 2; L_low <- 1*365; Rmx_low <- 2.0; Rdiff_low <- 0.5; airScale_low <- 0.75
-# D_up <- 7; L_up <- 10*365; Rmx_up <- 3.0; Rdiff_up <- 1.5; airScale_up <- 1.25
-# S0_low <- 0.50; S0_up <- 0.90
-# sd_low <- 0.08; sd_up <- 0.15
-# I0_low <- 0; I0_up <- 0.001
-
-####
-
-# here use R0mn:
-D_low <- 2; L_low <- 1*365; Rmx_low <- 2.0; Rdiff_low <- 1.0; airScale_low <- 0.75
-D_up <- 7; L_up <- 8*365; Rmx_up <- 2.8; Rdiff_up <- 2.0; airScale_up <- 1.25
-S0_low <- 0.55; S0_up <- 0.85
-sd_low <- 0.05; sd_up <- 0.18
-I0_low <- 0; I0_up <- 0.00005
-
-# "original" ranges (but keep I0 and S0_dist):
-D_low <- 2; L_low <- 1*365; Rmx_low <- 1.3; Rdiff_low <- 0.8; airScale_low <- 0.75
-D_up <- 7; L_up <- 10*365; Rmx_up <- 4.0; Rdiff_up <- 1.2; airScale_up <- 1.25
-S0_low <- 0.55; S0_up <- 0.85 # original: ~0.30-1.0, but can keep these for a more fair comparison?
-# S0_low <- 0.30; S0_up <- 1.00 # 185 / 51 - all realistic have S0 > 0.50; ~86% e-w; only 15-16% of realistic w-e
-sd_low <- 0.05; sd_up <- 0.18
-I0_low <- 0; I0_up <- 0.00005
-
-
-
-
 
 theta_low <- c(L_low, D_low, Rmx_low, Rdiff_low, airScale_low)
 theta_up <- c(L_up, D_up, Rmx_up, Rdiff_up, airScale_up)
@@ -303,26 +223,85 @@ ggplot(data = df.red, aes(x = R0mx, y = S0_sd)) + geom_point() + theme_classic()
 plot(df.red[df.red$real, 18:23])
 
 ################################################################################################################
-# Save relevant outbreaks so we can look at patterns:
-synth.runs.RATES <- res.rates
-save(synth.runs.RATES, file = 'syntheticTests/syntheticData/synth_rates_ALL_1000_redS3.RData')
+# # Save relevant outbreaks so we can look at patterns:
+# synth.runs.RATES <- res.rates
+# save(synth.runs.RATES, file = 'syntheticTests/syntheticData/synth_rates_ALL_1000_redS3.RData')
+# 
+# synth.runs.RATES.onset <- synth.runs.RATES[runs.onset]
+# synth.runs.RATES.realistic <- synth.runs.RATES[runs.realistic]
+# 
+# save(synth.runs.RATES.onset, file = 'syntheticTests/syntheticData/synth_rates_ONSET_1000_redS3.RData')
+# save(synth.runs.RATES.realistic, file = 'syntheticTests/syntheticData/synth_rates_REALISTIC_1000_redS3.RData')
+# 
+# # Save parameters and S0/I0, too:
+# s0.list <- t(res[[2]])
+# i0.list <- parms[3:14, ]
+# parms <- parms[c(1:2, 15:19), ]
+# 
+# parms.list <- list(parms, parms[, runs.onset], parms[, runs.realistic])
+# i0.list <- list(i0.list, i0.list[, runs.onset], i0.list[, runs.realistic])
+# s0.list <- list(s0.list, s0.list[, runs.onset], s0.list[, runs.realistic])
+# 
+# save(parms.list, file = 'syntheticTests/syntheticData/params_1000_redS3.RData')
+# save(i0.list, file = 'syntheticTests/syntheticData/I0_1000_redS3.Rdata')
+# save(s0.list, file = 'syntheticTests/syntheticData/S0_1000_redS3.Rdata')
 
-synth.runs.RATES.onset <- synth.runs.RATES[runs.onset]
-synth.runs.RATES.realistic <- synth.runs.RATES[runs.realistic]
+################################################################################################################
+################################################################################################################
+################################################################################################################
 
-save(synth.runs.RATES.onset, file = 'syntheticTests/syntheticData/synth_rates_ONSET_1000_redS3.RData')
-save(synth.runs.RATES.realistic, file = 'syntheticTests/syntheticData/synth_rates_REALISTIC_1000_redS3.RData')
+# Parameter boundary selection process:
 
-# Save parameters and S0/I0, too:
-s0.list <- t(res[[2]])
-i0.list <- parms[3:14, ]
-parms <- parms[c(1:2, 15:19), ]
+# D_low <- 2; L_low <- 1*365; Rmx_low <- 1.5; Rdiff_low <- 0; airScale_low <- 0.75
+# D_up <- 7; L_up <- 10*365; Rmx_up <- 3.0; Rdiff_up <- 1.5; airScale_up <- 1.25
+# S0_low <- 0.30; S0_up <- 0.90
+# sd_low <- 0.05; sd_up <- 0.20
+# I0_low <- 0; I0_up <- 0.0001 # start I0_up lower than in previous "round"
+# # and focus on "realistic" runs over geographically-"realistic"
+# 
+# D_low <- 2; L_low <- 1*365; Rmx_low <- 1.6; Rdiff_low <- 0; airScale_low <- 0.75
+# D_up <- 7; L_up <- 10*365; Rmx_up <- 2.8; Rdiff_up <- 1.25; airScale_up <- 1.25
+# S0_low <- 0.40; S0_up <- 0.90
+# sd_low <- 0.05; sd_up <- 0.20
+# I0_low <- 0; I0_up <- 0.0001
+# 
+# D_low <- 2; L_low <- 1*365; Rmx_low <- 1.6; Rdiff_low <- 0.2; airScale_low <- 0.75
+# D_up <- 7; L_up <- 10*365; Rmx_up <- 2.8; Rdiff_up <- 1.0; airScale_up <- 1.25
+# S0_low <- 0.45; S0_up <- 0.90
+# sd_low <- 0.05; sd_up <- 0.18
+# I0_low <- 0; I0_up <- 0.0001
 
-parms.list <- list(parms, parms[, runs.onset], parms[, runs.realistic])
-i0.list <- list(i0.list, i0.list[, runs.onset], i0.list[, runs.realistic])
-s0.list <- list(s0.list, s0.list[, runs.onset], s0.list[, runs.realistic])
+# D_low <- 2; L_low <- 1*365; Rmx_low <- 2.0; Rdiff_low <- 0.2; airScale_low <- 0.75
+# D_up <- 7; L_up <- 10*365; Rmx_up <- 2.8; Rdiff_up <- 1.0; airScale_up <- 1.25
+# S0_low <- 0.45; S0_up <- 0.85
+# sd_low <- 0.05; sd_up <- 0.18
+# I0_low <- 0; I0_up <- 0.00005
+# # 342/46, but no sig w-e/real; ~57% e-w
+# 
+# D_low <- 2; L_low <- 1*365; Rmx_low <- 2.0; Rdiff_low <- 0.2; airScale_low <- 0.75
+# D_up <- 7; L_up <- 10*365; Rmx_up <- 2.8; Rdiff_up <- 1.0; airScale_up <- 1.25
+# S0_low <- 0.55; S0_up <- 0.85
+# sd_low <- 0.05; sd_up <- 0.18
+# I0_low <- 0; I0_up <- 0.00005
+# # 409 onset, 53 (!) realistic; ~ 60% e-w, but ~36% of realistic are w-e (although none sig)
+# # option to get rid of highest L or lowest (<0.08) sd to make more w-e?
 
-save(parms.list, file = 'syntheticTests/syntheticData/params_1000_redS3.RData')
-save(i0.list, file = 'syntheticTests/syntheticData/I0_1000_redS3.Rdata')
-save(s0.list, file = 'syntheticTests/syntheticData/S0_1000_redS3.Rdata')
+#####
+
+# # higher L (349, 28, ~60% e-w; keep in mind for later stages of parameter range narrowing?):
+# D_low <- 2; L_low <- 2*365; Rmx_low <- 2.0; Rdiff_low <- 0.5; airScale_low <- 0.75
+# D_up <- 7; L_up <- 10*365; Rmx_up <- 3.0; Rdiff_up <- 1.5; airScale_up <- 1.25
+# S0_low <- 0.50; S0_up <- 0.90
+# sd_low <- 0.05; sd_up <- 0.15
+# I0_low <- 0; I0_up <- 0.001
+# 
+# # cut out lowest sd (343, 28, ~65% e-w, but 35-36% of realistic w-e; no w-e sig/realistic; keep in mind - even up to 0.10?):
+# D_low <- 2; L_low <- 1*365; Rmx_low <- 2.0; Rdiff_low <- 0.5; airScale_low <- 0.75
+# D_up <- 7; L_up <- 10*365; Rmx_up <- 3.0; Rdiff_up <- 1.5; airScale_up <- 1.25
+# S0_low <- 0.50; S0_up <- 0.90
+# sd_low <- 0.08; sd_up <- 0.15
+# I0_low <- 0; I0_up <- 0.001
+
+####
+
 
