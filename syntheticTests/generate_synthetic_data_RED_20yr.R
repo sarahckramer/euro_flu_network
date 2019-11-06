@@ -6,43 +6,44 @@ library("truncnorm"); library("tgp"); library("MASS"); library(reshape2); librar
 
 # ##########################################################################################
 # 
-# ### Set seed
-# set.seed(10489436)
-# 
-# ### Read in model function
-# source('code/SIRS_network.R')
-# 
-# ### Global variables
-# dt <- 1 # time step for SIRS integration
-# tmstep <- 7 #data is weekly
-# wk_start <- 40
-# 
-# ### Set parameters
-# num_ens <- 500
-# tm_strt <- 273; tm_end <- 273 + 365 * 20 - 1; tm_step <- 1#; t <- 1 # 273 is first of October
-# tm.range <- tm_strt:tm_end # should be length 7300 days, or 7300 / 365 = 20 years
-# 
-# ### Parameter boundaries
-# D_low <- 2; L_low <- 1*365; Rmx_low <- 2.0; Rdiff_low <- 0.2; airScale_low <- 0.75
-# D_up <- 7; L_up <- 8*365; Rmx_up <- 2.8; Rdiff_up <- 1.0; airScale_up <- 1.25
-# S0_low <- 0.55; S0_up <- 0.85
-# sd_low <- 0.05; sd_up <- 0.18
-# I0_low <- 0; I0_up <- 0.00005
-# 
-# # or do we want to start wider?
-# D_low <- 2; L_low <- 1*365; Rmx_low <- 1.5; Rdiff_low <- 0.0; airScale_low <- 0.75
-# D_up <- 7; L_up <- 8*365; Rmx_up <- 3.0; Rdiff_up <- 1.5; airScale_up <- 1.25
-# S0_low <- 0.30; S0_up <- 0.90
-# sd_low <- 0.05; sd_up <- 0.20
-# I0_low <- 0; I0_up <- 0.0001
-# # ASK!
-# 
-# ### Store boundaries
-# theta_low <- c(L_low, D_low, Rmx_low, Rdiff_low, airScale_low)
-# theta_up <- c(L_up, D_up, Rmx_up, Rdiff_up, airScale_up)
-# 
+### Set seed
+set.seed(10489436)
+
+### Read in model function
+source('code/SIRS_network.R')
+
+### Global variables
+dt <- 1 # time step for SIRS integration
+tmstep <- 7 #data is weekly
+wk_start <- 40
+
+### Set parameters
+num_ens <- 500
+tm_strt <- 273; tm_end <- 273 + 365 * 20 - 1; tm_step <- 1#; t <- 1 # 273 is first of October
+tm.range <- tm_strt:tm_end # should be length 7300 days, or 7300 / 365 = 20 years
+
+### Parameter boundaries
+D_low <- 2; L_low <- 1*365; Rmx_low <- 2.0; Rdiff_low <- 0.2; airScale_low <- 0.75
+D_up <- 7; L_up <- 8*365; Rmx_up <- 2.8; Rdiff_up <- 1.0; airScale_up <- 1.25
+S0_low <- 0.55; S0_up <- 0.85
+sd_low <- 0.05; sd_up <- 0.18
+I0_low <- 0; I0_up <- 0.00005
+
+# or do we want to start wider?
+D_low <- 2; L_low <- 1*365; Rmx_low <- 1.5; Rdiff_low <- 0.0; airScale_low <- 0.75
+D_up <- 7; L_up <- 8*365; Rmx_up <- 3.0; Rdiff_up <- 1.5; airScale_up <- 1.25
+S0_low <- 0.30; S0_up <- 0.90
+sd_low <- 0.05; sd_up <- 0.20
+I0_low <- 0; I0_up <- 0.0001
+# ASK!
+
+### Store boundaries
+theta_low <- c(L_low, D_low, Rmx_low, Rdiff_low, airScale_low)
+theta_up <- c(L_up, D_up, Rmx_up, Rdiff_up, airScale_up)
+
 # ### Specify the countries for which we are performing a forecast
-# countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
+countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
+n <- length(countries)
 # count.indices <- c(1:2, 4, 6:8, 11:14, 17, 19)
 # 
 # ### Set population sizes and # of countries used
@@ -70,14 +71,14 @@ library("truncnorm"); library("tgp"); library("MASS"); library(reshape2); librar
 # }
 # AH <- AH[1:7665, ] # 21 years
 # 
-# ### Set initial conditions based on input parameters
-# param.bound <- cbind(c(S0_low, sd_low, rep(I0_low, n), theta_low),
-#                      c(S0_up, sd_up, rep(I0_up, n), theta_up))
-# parms <- t(lhs(num_ens, param.bound))
+### Set initial conditions based on input parameters
+param.bound <- cbind(c(S0_low, sd_low, rep(I0_low, n), theta_low),
+                     c(S0_up, sd_up, rep(I0_up, n), theta_up))
+parms <- t(lhs(num_ens, param.bound))
 # 
-# ### Read in functions to run model/format results:
-# source('syntheticTests/synth_functions.R')
-# source('code/functions/Util.R')
+### Read in functions to run model/format results:
+source('syntheticTests/synth_functions.R')
+source('code/functions/Util.R')
 # 
 # ### Run model!
 # res <- run_model(parms, AH, num_ens, n, N, tm.range, tmstep, tm_strt, tm_end, dt, pop.size, s0.method = 'dist', r0.mn = FALSE) # time: 50 ~ 30minutes
@@ -286,7 +287,7 @@ for (run in levels(df.main$run)) {
   
 }
 too.early <- unique(c(ot.early, pt.early))
-# 31 too early, _?_ too late
+# 31 too early, 9 too late
 
 # parms.early <- parms[, as.numeric(as.character(too.early))]
 # # save(parms.early, file = 'syntheticTests/syntheticData/parms_earlyOutbreaks.RData')
