@@ -130,9 +130,9 @@ for (i in 1:length(res.rates)) {
 parms.noOnsets <- parms[, no.onsets]
 # save(parms.noOnsets, file = 'syntheticTests/syntheticData/parms_noOnsets.RData')
 
-# Any onsets in all 10 years:
+# Any onsets in 3/10 years:
 yr.breaks <- list(1:52, 53:104, 105:156, 157:208, 209:260, 261:312, 313:364, 365:416, 417:468, 469:520)
-onAll10 = onSporadic = c()
+onAtLeast3 = onSporadic = c()
 df.main <- NULL
 for (i in any.onsets) {
   res.temp <- t(res.rates[[i]])
@@ -167,20 +167,21 @@ for (i in any.onsets) {
     }
   }
   
-  if (all(each.yr.true)) {
-    onAll10 <- c(onAll10, i)
+  if (length(each.yr.true[each.yr.true]) >= 3) { # at least 3 years with ANY onsets
+    onAtLeast3 <- c(onAtLeast3, i)
   } else {
     onSporadic <- c(onSporadic, i)
   }
   
 }
 # 168 have onsets every year; 210 are more sporadic
+# but 341 have onsets in at least 3 years; 37 more sporadic
 parms.sporadic <- parms[, onSporadic]
-# save(parms.sporadic, file = 'syntheticTests/syntheticData/parms_onSporadic.RData')
+# save(parms.sporadic, file = 'syntheticTests/syntheticData/parms_onSporadic2.RData')
 
-# At least 8/12 countries have onsets in all 10 years:
+# At least 8/12 countries have onsets in 3/10 years:
 onsetsCheck = onsetsFew = c()
-for (i in onAll10) {
+for (i in onAtLeast3) {
   res.temp <- t(res.rates[[i]])
   # matplot(res.temp, type = 'b', pch = 20, col = viridis(12))
   colnames(res.temp) <- countries
@@ -191,14 +192,14 @@ for (i in onAll10) {
   for (yr in 1:10) {
     df.temp <- df[df$year == yr, ]
     
-    if (length(which(is.na(df.temp$ot))) < 5) { # at least 8/12 countries have onsets
+    if (length(which(is.na(df.temp$ot))) < 3) { # at least 10/12 countries have onsets
       each.yr.true <- c(each.yr.true, T)
     } else {
       each.yr.true <- c(each.yr.true, F)
     }
   }
   
-  if (all(each.yr.true)) {
+  if (length(each.yr.true[each.yr.true]) >= 3) {
     onsetsCheck <- c(onsetsCheck, i)
   } else {
     onsetsFew <- c(onsetsFew, i)
@@ -206,13 +207,15 @@ for (i in onAll10) {
   
 }
 # 118 check out; only 50 have too few some years
+# but 291 check out if only 3 expected; only 50 have too few
+# if 10/12, 263 check out, 78 too few
 parms.tooFew <- parms[, onsetsFew]
-# save(parms.tooFew, file = 'syntheticTests/syntheticData/parms_onFew.RData')
+# save(parms.tooFew, file = 'syntheticTests/syntheticData/parms_onFew2_10of12.RData')
 
 # Limit df.main to only those with appropriate onsets:
 df.main <- df.main[df.main$run %in% onsetsCheck, ]
 parms.crit1 <- parms[, onsetsCheck]
-# save(parms.crit1, file = 'syntheticTests/syntheticData/parms_Criteria1.RData')
+# save(parms.crit1, file = 'syntheticTests/syntheticData/parms_Criteria1_3of10_10of12.RData')
 
 # # Visualize outbreaks:
 # pdf('syntheticTests/outputs/explore/outbreak_plots_criteria1.pdf', width = 16, height = 10)
@@ -240,7 +243,7 @@ names(parms.df) <- c('S0_mean', 'S0_sd', 'L', 'D', 'R0mx', 'R0diff', 'aScale', '
 parms.df$group <- factor(parms.df$group)
 parms.df$group <- factor(parms.df$group, levels = levels(parms.df$group)[c(2:4, 1)])
 
-pdf('syntheticTests/outputs/explore/param_comp_criteria1.pdf', width = 16, height = 10)
+pdf('syntheticTests/outputs/explore/param_comp_criteria1_3of10_10of12.pdf', width = 16, height = 10)
 par(mfrow = c(2, 4), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 boxplot(S0_mean ~ group, data = parms.df, xlab = '', col = 'gray95')
 boxplot(S0_sd ~ group, data = parms.df, xlab = '', col = 'gray95')
@@ -250,65 +253,95 @@ boxplot(R0mx ~ group, data = parms.df, xlab = '', col = 'gray95')
 boxplot(R0diff ~ group, data = parms.df, xlab = '', col = 'gray95')
 boxplot(aScale ~ group, data = parms.df, xlab = '', col = 'gray95')
 # biggest players are L (cap ~4.74 yrs, or just do 1-5 years), R0mx, R0diff
+# 3/10: still selects for lower L, but not as strongly; also for higher R0mx (although both still span full ranges)
 dev.off()
 
-# Do they sync into the winter time?:
-# So remove those with late (past week 19) peaks, or that onset "at" 40
+# Remove individual years from df.main when onset not in at least 10/12 countries:
 df.main$run <- factor(df.main$run)
 
-ot.early = pt.early = summer.out =c()
+# runs.and.years <- NULL
+for (run in levels(df.main$run)) {
+  for (yr in 1:10) {
+    df <- df.main[df.main$run == run & df.main$year == yr, ]
+    if (length(df$ot[!is.na(df$ot)]) < 10) {
+      # runs.and.years <- rbind(runs.and.years, c(run, yr))
+      df.main <- df.main[!(df.main$run == run & df.main$year == yr), ]
+    }
+  }
+}
 
+# Which years have at least 10/12 PT in "realistic" range (vs. too early or too late)?:
+crit2 = too.late = too.early = out.double = c()
 for (run in levels(df.main$run)) {
   df <- df.main[df.main$run == run, ]
   
-  # if (any(df$ot == 40 & !is.na(df$ot))) {
-  #   print(run)
-  #   print(summary(df$ot))
-  #   print(summary(df$pt))
-  #   # check: 333, 304, 275, 268, 70, 36, 2
-  #   # all but 268 and 36 also have very early peaks
+  crit2.temp <- c()
+  
+  for (yr in 1:10) {
+    df.temp <- df[df$year == yr, ]
+    
+    if (length(df.temp$country) > 0) {
+      pt.temp <- df.temp$pt
+      count.pt <- length(pt.temp[!(pt.temp %in% 52:64) & !is.na(pt.temp)])
+      count.pt.early <- length(pt.temp[pt.temp < 52 & !is.na(pt.temp)])
+      count.pt.late <- length(pt.temp[pt.temp > 64 & !is.na(pt.temp)])
+      
+      if (count.pt < 2) { # want 11/12 countries to fall in this range
+        crit2.temp <- c(crit2.temp, 'yes')
+      } else if (count.pt.early > count.pt.late) {
+        crit2.temp <- c(crit2.temp, 'early')
+      } else if (count.pt.late > count.pt.early) {
+        crit2.temp <- c(crit2.temp, 'late')
+      } else {
+        print(run)
+      }
+      
+    } else {
+      crit2.temp <- c(crit2.temp, NA)
+    }
+    
+  }
+  
+  crit2.temp <- crit2.temp[!is.na(crit2.temp)]
+  
+  # if (any(crit2.temp == 'early') & any(crit2.temp == 'late')) {
+  #   print(crit2.temp)
   # }
   
-  if (all(df$ot == 40 | is.na(df$ot))) {
-    ot.early <- c(ot.early, run)
+  if (any(crit2.temp == 'yes')) { # can try all vs. any
+    crit2 <- c(crit2, run)
+  } else if (any(crit2.temp == 'early') & any(crit2.temp == 'late')) {
+    out.double <- c(out.double, run)
+  } else if (any(crit2.temp == 'early')) {
+    too.early <- c(too.early, run)
+  } else if (any(crit2.temp == 'late')) {
+    too.late <- c(too.late, run)
   }
-  if (all(df$pt < 52 | is.na(df$pt))) {
-    pt.early <- c(pt.early, run)
-  }
-  # look into: 124, 232, 240, 424, 460, 498 (but all very, very small fluctuations rather than real "outbreaks")
-  
-  if (any(df$pt > 72 & !is.na(df$pt))) {
-    # print(run)
-    summer.out <- c(summer.out, run)
-  }
-  # 36, 69, 129, 166, 268, 306, 319, 361, 467
-  # depends on the year: 69, 306, 319, 361, 467
-  # small summer followed by large winter: 36, 129, 166, 268
   
 }
-too.early <- unique(c(ot.early, pt.early))
-# 31 too early, 9 too late
+# still only 25 in crit2; 33 too early, 189 too late, 16 "double"
+# if using any instead of all: 116 crit2 (!); 31 too early, 112 too late, 4 "double" (not necessarily double, just sporadic)
+# many of the "too.early" ones are just really small oscillations; double aren't all double, some just have unusual patterns/vary by year
 
-# parms.early <- parms[, as.numeric(as.character(too.early))]
-# # save(parms.early, file = 'syntheticTests/syntheticData/parms_earlyOutbreaks.RData')
-
+# Plot out to explore:
 par(mfrow = c(5, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-for (run in summer.out) {
+for (run in out.double) {
   matplot(t(res.rates[[as.numeric(as.character(run))]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = run, xlab = 'Time', ylab = 'Inc.')
   abline(v = seq(0, 520, by = 52), lty = 2)
+  abline(v = seq(12, 520, by = 52), lty = 1, col = 'red', lwd = 2.0)
+  abline(v = seq(24, 520, by = 52), lty = 1, col = 'red', lwd = 2.0)
 }
-# remove the ones that have a small(er) summer-large winter, double outbreak pattern:
-double.out <- c(36, 129, 166, 268, 467) # note that, for some of these, the "winter" outbreak is pushed pretty late
-summer.out <- c(69, 306, 319, 361) # those with spring/summer peaks consistently
 
-parms.double <- parms[, double.out]
-parms.late <- parms[, summer.out]
-
-# save(parms.double, file = 'syntheticTests/syntheticData/parms_doubleOutbreaks.RData')
-# save(parms.late, file = 'syntheticTests/syntheticData/parms_lateOutbreaks.RData')
-
-df.main <- df.main[!(df.main$run %in% c(too.early, double.out, summer.out)), ]
-df.main$run <- factor(df.main$run)
+# Plot out runs with any outbreaks matching 2 criteria:
+pdf('syntheticTests/outputs/explore/outbreak_plots_criteria2_3of10.pdf', width = 16, height = 10)
+par(mfrow = c(5, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+for (run in crit2) {
+  matplot(t(res.rates[[as.numeric(as.character(run))]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = run, xlab = 'Time', ylab = 'Inc.')
+  abline(v = seq(0, 520, by = 52), lty = 2)
+  abline(v = seq(12, 520, by = 52), lty = 1, col = 'red', lwd = 2.0)
+  abline(v = seq(24, 520, by = 52), lty = 1, col = 'red', lwd = 2.0)
+}
+dev.off()
 
 # Check attack rates before proceeding:
 df.main$ar <- NA
@@ -323,86 +356,23 @@ for (run in levels(df.main$run)) {
   }
   
 }
-print(summary(df.main$ar)) # about right - tends to be between 10 and 40% of the population - not quite our 15-50%, but acceptable
+print(summary(df.main$ar)) # some very low - look at where < 10,000; look much better once NA onsets also have NA AR
 
-# Look at patterns of peak timings:
-crit2 = too.late = c()
-for (run in levels(df.main$run)) {
-  df <- df.main[df.main$run == run, ]
-  
-  crit2.temp <- c()
-  for (yr in 1:10) {
-    df.temp <- df[df$year == yr, ]
-    
-    if (length(df.temp$pt[!is.na(df.temp$pt) & !(df.temp$pt %in% 52:64)]) < 2) { # want 11/12 countries to fall into this range
-      crit2.temp <- c(crit2.temp, T)
-    } else {
-      crit2.temp <- c(crit2.temp, F)
-    }
-  }
-  
-  print(run)
-  print(crit2.temp)
-  
-  if (all(crit2.temp)) {
-    crit2 <- c(crit2, run)
-  } else {
-    too.late <- c(too.late, run)
-  }
-  # this is temporary! need to explore!
-  
-}
-# require all T: 16 work, 62 don't
-# require any T: 24 work, 54 don't
-# Any: 3, 26, 32, 83, 138, 140, 155, 162, 173, 174, 204, 222, 235, 252, 265, 271, 281, 283, 293, 357, 387, 421, 459, 475
-# All: 3, 83, 155, 162, 204, 235, 252, 265, 271, 281, 283, 293, 357, 387, 459, 475 (all the best are included here)
-# Removed: 26, 32, 138, 140, 173, 174, 222, 421
-borderline <- c(26, 32, 138, 140, 173, 174, 222, 421)
-# Still rare to find outbreaks where everything is well in this range; best are: 3, 83 (but pushing it), 162, 235, 265 (but small), 271, 293, 387, 459
-# And even then, why so much synchrony?
+df.main$ar[is.na(df.main$ot)] <- NA # make NA when no outbreak
 
-# Plot out to explore:
-par(mfrow = c(5, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-for (run in too.late) {
-  matplot(t(res.rates[[as.numeric(as.character(run))]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = run, xlab = 'Time', ylab = 'Inc.')
-  abline(v = seq(0, 520, by = 52), lty = 2)
-  abline(v = seq(12, 520, by = 52), lty = 1, col = 'red', lwd = 2.0)
-  abline(v = seq(24, 520, by = 52), lty = 1, col = 'red', lwd = 2.0)
-}
-# these really all are too late, except 275, 292
-
-pdf('syntheticTests/outputs/explore/outbreak_plots_criteria2.pdf', width = 16, height = 10)
-par(mfrow = c(5, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-for (run in crit2) {
-  matplot(t(res.rates[[as.numeric(as.character(run))]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = run, xlab = 'Time', ylab = 'Inc.')
-  abline(v = seq(0, 520, by = 52), lty = 2)
-  abline(v = seq(12, 520, by = 52), lty = 1, col = 'red', lwd = 2.0)
-  abline(v = seq(24, 520, by = 52), lty = 1, col = 'red', lwd = 2.0)
-}
-dev.off()
-
-par(mfrow = c(5, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-for (run in borderline) {
-  matplot(t(res.rates[[as.numeric(as.character(run))]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = run, xlab = 'Time', ylab = 'Inc.')
-  abline(v = seq(0, 520, by = 52), lty = 2)
-  abline(v = seq(12, 520, by = 52), lty = 1, col = 'red', lwd = 2.0)
-  abline(v = seq(24, 520, by = 52), lty = 1, col = 'red', lwd = 2.0)
-}
-# honestly these are verging on too late anyway
-
-
-too.early <- c(too.early, 275, 292)
-too.late <- too.late[!(too.late %in% c(275, 292))]
-too.late <- c(too.late, summer.out)
-
+# Save and look at parms by outbreak pattern:
+parms.double <- parms[, as.numeric(as.character(out.double))]
 parms.late <- parms[, as.numeric(as.character(too.late))]
 parms.early <- parms[, as.numeric(as.character(too.early))]
 
-# save(parms.early, file = 'syntheticTests/syntheticData/parms_earlyOutbreaks.RData')
-# save(parms.late, file = 'syntheticTests/syntheticData/parms_lateOutbreaks.RData')
+# save(parms.double, file = 'syntheticTests/syntheticData/parms_doubleOutbreaks_3of10.RData')
+# save(parms.late, file = 'syntheticTests/syntheticData/parms_lateOutbreaks_3of10.RData')
+# save(parms.early, file = 'syntheticTests/syntheticData/parms_earlyOutbreaks_3of10.RData')
 
-df.main <- df.main[df.main$run %in% crit2, ]
+df.main <- df.main[!(df.main$run %in% c(too.early, out.double, too.late)), ]
 df.main$run <- factor(df.main$run)
+
+# Now some with a little less synchrony, at least
 
 # Update parms.df:
 parms.double <- as.data.frame(t(parms.double[c(1:2, 15:19), ]))
@@ -445,7 +415,7 @@ parms.df.crit1 <- parms.df[parms.df$group %in% levels(parms.df$group)[5:8], ]; p
 # boxplot(R0diff ~ group, data = parms.df.desc, xlab = '', col = 'gray95')
 # boxplot(aScale ~ group, data = parms.df.desc, xlab = '', col = 'gray95')
 
-pdf('syntheticTests/outputs/explore/param_comp_criteria2.pdf', width = 16, height = 10)
+pdf('syntheticTests/outputs/explore/param_comp_criteria2_3of10.pdf', width = 16, height = 10)
 par(mfrow = c(2, 4), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 boxplot(S0_mean ~ group, data = parms.df.crit1, xlab = '', col = 'gray95')
 boxplot(S0_sd ~ group, data = parms.df.crit1, xlab = '', col = 'gray95')
@@ -454,32 +424,35 @@ boxplot(D ~ group, data = parms.df.crit1, xlab = '', col = 'gray95')
 boxplot(R0mx ~ group, data = parms.df.crit1, xlab = '', col = 'gray95')
 boxplot(R0diff ~ group, data = parms.df.crit1, xlab = '', col = 'gray95')
 boxplot(aScale ~ group, data = parms.df.crit1, xlab = '', col = 'gray95')
-# correct timing still seems to want higher D; but low-ish R0diff seems to be most important
+# correct timing and too late have similar ranges; too early tend to have low L/R0diff
 dev.off()
 
-# Look at geographical patterns:
-synch.ot = synch.pt = c() # number of weeks between latest and earliest onset/peak
-for (run in levels(df.main$run)) {
-  # print(run)
-  
-  for (yr in 1:10) {
-    df.temp <- df.main[df.main$run == run & df.main$year == yr, ]
-    # print(df.temp$pt)
-    # print(max(df.temp$ot) - min(df.temp$ot)) # for some outbreaks, onsets have a bit more range
-    synch.ot <- c(synch.ot, (max(df.temp$ot) - min(df.temp$ot)))
-    synch.pt <- c(synch.pt, (max(df.temp$pt) - min(df.temp$pt)))
-  }
-  
-}
-
-p1 <- ggplot() + geom_histogram(aes(x = synch.ot), bins = 6, col = 'black', fill = 'gray90') + theme_classic() +
-  labs(x = 'Onset Range (Latest - Earliest)', y = 'Count') + scale_x_continuous(breaks = 0:5)
-p2 <- ggplot() + geom_histogram(aes(x = synch.pt), bins = 5, col = 'black', fill = 'gray90') + theme_classic() +
-  labs(x = 'Peak Range (Latest - Earliest)', y = 'Count') + scale_x_continuous(breaks = 0:4)
-grid.arrange(p1, p2, ncol = 1)
-# vast majority are only 1-2 weeks away from each other
-
-# At this point, I'm not sure there's any need to assess geographic patterns?
+# # Look at geographical patterns:
+# synch.ot = synch.pt = c() # number of weeks between latest and earliest onset/peak
+# for (run in levels(df.main$run)) {
+#   # print(run)
+#   
+#   for (yr in 1:10) {
+#     df.temp <- df.main[df.main$run == run & df.main$year == yr, ]
+#     # print(df.temp$pt)
+#     # print(max(df.temp$ot) - min(df.temp$ot)) # for some outbreaks, onsets have a bit more range
+#     synch.ot <- c(synch.ot, (max(df.temp$ot) - min(df.temp$ot)))
+#     synch.pt <- c(synch.pt, (max(df.temp$pt) - min(df.temp$pt)))
+#   }
+#   
+# }
+# 
+# synch.ot <- synch.ot[synch.ot != -Inf & !is.na(synch.ot)]
+# synch.pt <- synch.pt[synch.pt != -Inf & !is.na(synch.pt)]
+# 
+# p1 <- ggplot() + geom_histogram(aes(x = synch.ot), bins = 6, col = 'black', fill = 'gray90') + theme_classic() +
+#   labs(x = 'Onset Range (Latest - Earliest)', y = 'Count') + scale_x_continuous(breaks = 0:5)
+# p2 <- ggplot() + geom_histogram(aes(x = synch.pt), bins = 5, col = 'black', fill = 'gray90') + theme_classic() +
+#   labs(x = 'Peak Range (Latest - Earliest)', y = 'Count') + scale_x_continuous(breaks = 0:4)
+# grid.arrange(p1, p2, ncol = 1)
+# # vast majority are only 1-2 weeks away from each other
+# 
+# # At this point, I'm not sure there's any need to assess geographic patterns?
 
 
 
