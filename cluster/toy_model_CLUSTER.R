@@ -1,6 +1,5 @@
 
-### Fit Network Model to Observed Data ###
-# So for now, leave forecasts out and simply FIT the model to the observation from each season
+### Fit Network Model to Observed Data and Run Forecasts ###
 
 ### Read in libraries
 library("truncnorm"); library("tgp"); library("MASS"); library(reshape2); require(plyr)
@@ -26,23 +25,22 @@ tmstep <- 7 # data are weekly
 wk_start <- 40
 
 ### Parameter boundaries
-D_low <- 1.5; L_low <- 1*365; Rmx_low <- 1.3; Rmn_low <- 0.8; airScale_low <- 0.75
-D_up <- 7; L_up <- 10*365; Rmx_up <- 4; Rmn_up <- 1.2; airScale_up <- 1.25
-theta_low <- c(L_low, D_low, Rmx_low, Rmn_low, airScale_low)
-theta_up <- c(L_up, D_up, Rmx_up, Rmn_up, airScale_up)
-param.bound <- cbind(theta_low, theta_up)
+D_low <- 2; L_low <- 1*365; Rmx_low <- 2.0; Rdiff_low <- 0.2; airScale_low <- 0.75
+D_up <- 7; L_up <- 8*365; Rmx_up <- 2.8; Rdiff_up <- 1.0; airScale_up <- 1.25
+S0_low <- 0.55; S0_up <- 0.85
+sd_low <- 0.05; sd_up <- 0.18
+I0_low <- 0; I0_up <- 0.00005
 
-### Initial state variable values
-S0_low <- 0.50; S0_up <- 0.90 # proportion of population
-I0_low <- 0; I0_up <- 0.001 # proportion of population
+theta_low <- c(L_low, D_low, Rmx_low, Rdiff_low, airScale_low)
+theta_up <- c(L_up, D_up, Rmx_up, Rdiff_up, airScale_up)
 
 ### Parameters for the filters
 discrete <- FALSE # run the SIRS model continuously
 metricsonly <- FALSE # save all outputs
 
-seasons <- c('2010-11', '2011-12', '2012-13', '2013-14', '2014-15', '2015-16', '2016-17', '2017-18')
-# oevBase_list <- c(1e4, 1e5)
-oevBase_list <- c(2e5, 5e5) # test higher OEV bases - does this stop 1-4 week predictions from failing after the peak? (note: will likely be very inaccurate for the most part)
+seasons <- c('2010-11', '2011-12', '2012-13', '2013-14', '2014-15', '2015-16', '2016-17', '2017-18') # ADD '2018-19'
+oevBase_list <- c(1e4, 1e5)
+# oevBase_list <- c(2e5, 5e5) # test higher OEV bases - does this stop 1-4 week predictions from failing after the peak? (note: will likely be very inaccurate for the most part)
 # oevDenom_list <- c(1.0, 10.0, 50.0) #c(1.0, 2.0, 5.0, 10.0, 20.0, 50.0)
 # lambdaList <- c(1.00, 1.02, 1.05)
 ntrnList <- 5:30
@@ -65,9 +63,8 @@ num_ens <- 300 # use 300 for ensemble filters, 10000 for particle filters
 num_runs <- 2
 
 ### Specify the country for which we are performing a forecast
-countries <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'FR', 'DE', 'HU', 'IE', 'IT',
-               'LU', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'UK')
-count.indices <- c(1:8, 10:21)
+countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
+count.indices <- c(1:2, 4, 6:8, 11:14, 17, 19)
 
 ### Set population sizes and # of countries used
 pop.size <- read.csv('data/popcounts_02-07.csv')
@@ -87,6 +84,7 @@ iliiso <- iliiso[, c(1, count.indices + 1)]
 test.dat <- read.csv('data/testCounts_052719.csv')
 syn.dat <- read.csv('data/synDatCounts_060519.csv')
 pos.dat <- read.csv('data/posProp_060519.csv')
+# ADD 18-19 - change these four files
 
 test.dat <- test.dat[, c(1, count.indices + 1)]
 syn.dat <- syn.dat[, c(1, count.indices + 1)]
@@ -94,11 +92,11 @@ pos.dat <- pos.dat[, c(1, count.indices + 1)]
 
 # syn.dat.raw <- syn.dat
 
-### Scale data:
+### Scale data: # ADD: new scalings
 scalings <- read.csv('data/scalings_frame_05-09-19.csv') # 1.3 for France in early seasons
 scalings <- scalings[count.indices, ]
 # note: these are the "old" scalings
-for (i in 2:21) {
+for (i in 2:13) {
   if (names(iliiso)[i] == 'France') {
     iliiso[1:286, i] <- iliiso[1:286, i] * 1.3
     iliiso[287:495, i] <- iliiso[287:495, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
@@ -146,7 +144,7 @@ outputEns <- NULL
 ### Main fitting code:
 
 # Get commuting data:
-load('formatTravelData/formattedData/comm_mat_by_year_05-07.RData')
+load('formatTravelData/formattedData/comm_mat_by_year_05-07_RELIABLE_ONLY.RData')
 t.comm <- comm.by.year[[which(seasons == season)]]
 t.comm <- t.comm[countries, countries]
 
@@ -156,6 +154,11 @@ diag(N) <- unlist(lapply(1:n, function(ix) {
   pop.size$pop[ix] - rowSums(N)[ix]
 }))
 # population and commuting data are COUNTS, not RATES
+
+### Set up parameter bounds:
+param.bound <- cbind(c(S0_low, sd_low, rep(I0_low, n), theta_low),
+                     c(S0_up, sd_up, rep(I0_up, n), theta_up))
+# param.bound <- cbind(theta_low, theta_up)
 
 # Get observations for current season:
 tmp <- Fn_dates(season)
@@ -185,6 +188,7 @@ test_i[test_i == 0 & !is.na(test_i)] <- NA
 # Variance of syndromic+ data:
 obs_vars <- calc_obsvars_nTest(obs = as.matrix(obs_i), syn_dat = as.matrix(syn_i), ntests = as.matrix(test_i), posprops = as.matrix(pos_i),
                                oev_base, oev_denom, tmp_exp = 2.0)
+# LU and DE look particularly uncertain
 
 # Get the first and last date of the simulation:
 clim_start <- as.numeric(start_date - as.Date(paste('20',
@@ -232,11 +236,11 @@ outputMetrics[outputMetrics[, 'country'] == 'FR' & outputMetrics[, 'season'] %in
 ### Save results:
 print('Finished with loop; writing files...')
 
-write.csv(outputMetrics, file = paste('outputs/obs/outputMet', season, oev_base, ntrn, 'higherBase_091319.csv', sep = '_'), row.names = FALSE)
-write.csv(outputOP, file = paste('outputs/obs/outputOP', season, oev_base, ntrn, 'higherBase_091319.csv', sep = '_'), row.names = FALSE)
-write.csv(outputOPParams, file = paste('outputs/obs/outputOPParams', season, oev_base, ntrn, 'higherBase_091319.csv', sep = '_'), row.names = FALSE)
-write.csv(outputDist, file = paste('outputs/obs/outputDist', season, oev_base, ntrn, 'higherBase_091319.csv', sep = '_'), row.names = FALSE)
-write.csv(outputEns, file = paste('outputs/obs/outputEns', season, oev_base, ntrn, 'higherBase_091319.csv', sep = '_'), row.names = FALSE)
+write.csv(outputMetrics, file = paste('outputs/obs/outputMet', season, oev_base, ntrn, '110719.csv', sep = '_'), row.names = FALSE)
+write.csv(outputOP, file = paste('outputs/obs/outputOP', season, oev_base, ntrn, '110719.csv', sep = '_'), row.names = FALSE)
+write.csv(outputOPParams, file = paste('outputs/obs/outputOPParams', season, oev_base, ntrn, '110719.csv', sep = '_'), row.names = FALSE)
+write.csv(outputDist, file = paste('outputs/obs/outputDist', season, oev_base, ntrn, '110719.csv', sep = '_'), row.names = FALSE)
+write.csv(outputEns, file = paste('outputs/obs/outputEns', season, oev_base, ntrn, '110719.csv', sep = '_'), row.names = FALSE)
 
 print('Done.')
 

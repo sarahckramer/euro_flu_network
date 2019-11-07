@@ -13,7 +13,7 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
   nfc <- nsn - ntrn # number of weeks for forecasting
   tstep <- seq(tm.ini + tmstep, nsn * tmstep + tm.ini, by = tmstep)
   
-  theta_low <- param.bound[, 1]; theta_up <- param.bound[, 2]
+  # theta_low <- param.bound[, 1]; theta_up <- param.bound[, 2]
   
   ##########################################################################################
   # Determine which compartments need to be monitored
@@ -43,28 +43,88 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
   newI.indices <- S0.indices + S0.indices[length(S0.indices)] * 2 # where newI are stored (in fcast) (only individual compartments)
   param.indices <- (max(newI.indices) + 1):(max(newI.indices) + 5) # where the epi parameters are stored
   
-  ### Set initial conditions based on input parameters
-  param.bound <- cbind(c(rep(S0_low, n ** 2), rep(I0_low, n ** 2), theta_low),
-                       c(rep(S0_up, n ** 2), rep(I0_up, n ** 2), theta_up))
+  # Do we continue to generate S0 as a distribution even when forecasting, or do we use LHS?
+  # Dist:
   parms <- t(lhs(num_ens, param.bound))
-  
   S0.temp = I0.temp = vector('list', num_ens)
   for (i in 1:num_ens) {
-    S0.temp[[i]] <- matrix(parms[1:(n ** 2), i], nrow = n, ncol = n, byrow = T) * N
-    I0.temp[[i]] <- matrix(parms[1:(n ** 2) + (n ** 2), i], nrow = n, ncol = n, byrow = T) * N
+    S0.temp[[i]] = I0.temp[[i]] = matrix(0, nrow = n, ncol = n)
+    
+    diag(S0.temp[[i]]) <- rnorm(n, mean = parms[1, i], sd = parms[2, i])
+    diag(I0.temp[[i]]) <- parms[(1:n) + 2, i]
+    
+    # ensure all between 0 and 1:
+    while (any(diag(S0.temp[[i]]) > 1)) {
+      diag(S0.temp[[i]])[which(diag(S0.temp[[i]]) > 1)] <- rnorm(length(which(diag(S0.temp[[i]]) > 1)),
+                                                                 mean = parms[1, i], sd = parms[2, i])
+    }
+    while (any(diag(S0.temp[[i]]) < 0)) {
+      diag(S0.temp[[i]])[which(diag(S0.temp[[i]]) < 0)] <- rnorm(length(which(diag(S0.temp[[i]]) < 0)),
+                                                                 mean = parms[1, i], sd = parms[2, i])
+    }
+    
+    # now same process for non-home-home compartments
+    S0.temp[[i]][S0.temp[[i]] == 0] <- sapply(1:n, function(jx) {
+      rnorm(n - 1, mean = S0.temp[[i]][jx, jx], sd = 0.025)
+    })
+    
+    while (any(S0.temp[[i]] > 1)) {
+      to.redraw <- which(S0.temp[[i]] > 1, arr.ind = TRUE)
+      for (ix.r in dim(to.redraw)[1]) {
+        S0.temp[[i]][to.redraw[ix.r, 1], to.redraw[ix.r, 2]] <-
+          rnorm(1, mean = S0.temp[[i]][to.redraw[ix.r, 2], to.redraw[ix.r, 2]], sd = 0.025)
+      }
+    }
+    while (any(S0.temp[[i]] < 0)) {
+      to.redraw <- which(S0.temp[[i]] < 0, arr.ind = TRUE)
+      for (ix.r in dim(to.redraw)[1]) {
+        S0.temp[[i]][to.redraw[ix.r, 1], to.redraw[ix.r, 2]] <-
+          rnorm(1, mean = S0.temp[[i]][to.redraw[ix.r, 2], to.redraw[ix.r, 2]], sd = 0.025)
+      }
+    }
+    
+    # Finish!
+    S0.temp[[i]] <- t(S0.temp[[i]])
+    S0.temp[[i]] <- S0.temp[[i]] * N
+    
+    I0.temp[[i]] <- sweep(N / rowSums(N), 1, diag(I0.temp[[i]]), '*')
+    I0.temp[[i]] <- I0.temp[[i]] * N
+    
   }
+  # QUESTION: I0 could still just be LHS; seed just "main" compartments?
   parms <- parms[(dim(parms)[1] - 4):(dim(parms)[1]), ]
+  
+  # # LHS:
+  # ### Set initial conditions based on input parameters
+  # param.bound <- cbind(c(rep(S0_low, n ** 2), rep(I0_low, n ** 2), theta_low),
+  #                      c(rep(S0_up, n ** 2), rep(I0_up, n ** 2), theta_up))
+  # parms <- t(lhs(num_ens, param.bound))
+  # 
+  # S0.temp = I0.temp = vector('list', num_ens)
+  # for (i in 1:num_ens) {
+  #   S0.temp[[i]] <- matrix(parms[1:(n ** 2), i], nrow = n, ncol = n, byrow = T) * N
+  #   I0.temp[[i]] <- matrix(parms[1:(n ** 2) + (n ** 2), i], nrow = n, ncol = n, byrow = T) * N
+  # }
+  # parms <- parms[(dim(parms)[1] - 4):(dim(parms)[1]), ]
   
   ### Calculate the reproductive number at time t BT1 and the transmission rate
   beta.range <- tm.range[1]:(tail(tm.range, 1) + 2 * tmstep)
   AHpt <- AH[beta.range, ]
   AHpt <- as.matrix(AHpt, length(AHpt), n)
-  b <- log(parms[3, ] - parms[4, ])
   a <- -180
   
+  # R0diff:
+  b <- log(parms[4, ])
   beta <- lapply(1:num_ens, function(ix) {
-    (exp(a * AHpt + b[ix]) + parms[4, ix]) / parms[2, ix]
+    (exp(a * AHpt + b[ix]) + (parms[3, ix] - parms[4, ix])) / parms[2, ix]
   })
+  
+  # # R0mn:  
+  # b <- log(parms[3, ] - parms[4, ])
+  # beta <- lapply(1:num_ens, function(ix) {
+  #   (exp(a * AHpt + b[ix]) + parms[4, ix]) / parms[2, ix]
+  # })
+
   tcurrent <- tm.ini
   
   ### Create vectors of initial parameters:
@@ -75,7 +135,8 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     propagateToySIRS(tm_strt = tcurrent + dt, tm_end = tcurrent + tmstep, dt,
                      S0 = S0.temp[[ix]], I0 = I0.temp[[ix]], N,
                      D = D.temp[ix], L = L.temp[ix], beta[[ix]],
-                     airScale = airScale.temp[ix], realdata = TRUE)
+                     airScale = airScale.temp[ix], realdata = TRUE,
+                     prohibAir = FALSE)
   })
   
   Sr_tmp_S <- lapply(1:num_ens, function(ix) {
@@ -229,12 +290,20 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     obspost[,, tt] <- obs_ens
     
     #  Integrate forward one time step
-    b <- log(xpost[param.indices[3],, tt] - xpost[param.indices[4],, tt])
     a <- -180
+    
+    b <-log(xpost[param.indices[4],, tt])
     beta <- lapply(1:num_ens, function(ix) {
-      (exp(a * AHpt + b[ix]) + xpost[param.indices[4], ix, tt]) /
+      (exp(a * AHpt + b[ix]) + (xpost[param.indices[3], ix, tt] - xpost[param.indices[4], ix, tt])) /
         xpost[param.indices[2], ix, tt]
     })
+    
+    # b <- log(xpost[param.indices[3],, tt] - xpost[param.indices[4],, tt])
+    # beta <- lapply(1:num_ens, function(ix) {
+    #   (exp(a * AHpt + b[ix]) + xpost[param.indices[4], ix, tt]) /
+    #     xpost[param.indices[2], ix, tt]
+    # })
+    
     tcurrent <- tm.ini + tmstep * tt
     
     # Draw S0 and I0 from xpost
@@ -252,7 +321,8 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
       propagateToySIRS(tm_strt = tcurrent + dt, tm_end = tcurrent + tmstep, dt,
                        S0 = S0.temp[[ix]], I0 = I0.temp[[ix]], N,
                        D = D.temp[ix], L = L.temp[ix], beta[[ix]],
-                       airScale = airScale.temp[ix], realdata = TRUE)
+                       airScale = airScale.temp[ix], realdata = TRUE,
+                       prohibAir = FALSE)
     })
     
     Sr_tmp_S <- lapply(1:num_ens, function(ix) {
@@ -288,12 +358,20 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
   } # end of training
   
   ### Forecast
-  b <- log(xpost[param.indices[3],, ntrn] - xpost[param.indices[4],, ntrn])
   a <- -180
+  
+  b <-log(xpost[param.indices[4],, ntrn])
   beta <- lapply(1:num_ens, function(ix) {
-    (exp(a * AHpt + b[ix]) + xpost[param.indices[4], ix, ntrn]) /
+    (exp(a * AHpt + b[ix]) + (xpost[param.indices[3], ix, ntrn] - xpost[param.indices[4], ix, ntrn])) /
       xpost[param.indices[2], ix, ntrn]
   })
+  
+  # b <- log(xpost[param.indices[3],, ntrn] - xpost[param.indices[4],, ntrn])
+  # beta <- lapply(1:num_ens, function(ix) {
+  #   (exp(a * AHpt + b[ix]) + xpost[param.indices[4], ix, ntrn]) /
+  #     xpost[param.indices[2], ix, ntrn]
+  # })
+  
   tcurrent <- tm.ini + tmstep * ntrn
   
   # Draw S0 and I0 from xpost
@@ -311,7 +389,8 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     propagateToySIRS(tm_strt = tcurrent + dt, tm_end = tcurrent + tmstep * nfc, dt,
                      S0 = S0.temp[[ix]], I0 = I0.temp[[ix]], N,
                      D = D.temp[ix], L = L.temp[ix], beta[[ix]],
-                     airScale = airScale.temp[ix], realdata = TRUE)
+                     airScale = airScale.temp[ix], realdata = TRUE,
+                     prohibAir = FALSE)
   })
   
   Sr_tmp_S <- lapply(1:num_ens, function(ix) {
@@ -349,7 +428,7 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
   rm(obs_ens)
   
   ### Plot fit and forecast:
-  par(mfrow = c(4, 5), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+  par(mfrow = c(4, 3), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
   for (i in (1:n)[!is.na(obs_i[tt, ])]) {
     obs.post.toPlot.ind <- colMeans(obspost[i,, 1:tt])
     obs.fcast.toPlot.ind <- colMeans(obsfcast[i,, 1:nfc])
@@ -426,7 +505,7 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
   params.post_sd <- t(apply(xpost[param.indices,, 1:ntrn], c(1, 3), sd))
   # QUESTION: SD continues to increase near end of outbreak - okay?
   params.post_df <- as.data.frame(cbind(params.post_mean, params.post_sd))
-  names(params.post_df) <- c('L', 'D', 'R0mx', 'R0mn', 'airScale', 'L_sd', 'D_sd', 'R0mx_sd', 'R0mn_sd', 'airScale_sd')
+  names(params.post_df) <- c('L', 'D', 'R0mx', 'R0diff', 'airScale', 'L_sd', 'D_sd', 'R0mx_sd', 'R0diff_sd', 'airScale_sd')
   
   ### Calculate metrics to return:
   Y <- rbind(obspost_mean, obsfcast_mean)

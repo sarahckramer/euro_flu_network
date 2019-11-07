@@ -57,11 +57,11 @@ Fn_checkxnobounds<-function(xnew, S.rows, I.rows, param.rows){
     }
   }
   
-  ug <- min(xnew[param.rows[3], ] - xnew[param.rows[4], ]) # Corrects if R0mx <= R0mn
+  ug <- min(xnew[param.rows[3], ] - xnew[param.rows[4], ]) # Corrects if R0mx < R0diff; OLD: R0mx <= R0mn
   if (ug <= 0) {
     for (jj in 1:n.ens) {
-      if (xnew[param.rows[3], jj] <= xnew[param.rows[4], jj]) {
-        xnew[param.rows[3], jj] <- xnew[param.rows[4], jj] + 0.01
+      if (xnew[param.rows[3], jj] < xnew[param.rows[4], jj]) {
+        xnew[param.rows[3], jj] <- xnew[param.rows[4], jj]# + 0.01
       }
     }
   }
