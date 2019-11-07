@@ -39,7 +39,7 @@ format_model_results <- function(m.res, num.ens, tmstep, tm.strt, tm.end, n, pop
   
 }
 
-run_model <- function(in.parms, in.ah, num.ens, n, N, tm.range, tmstep, tm.strt, tm.end, dt, pop.dat, s0.method = NULL, r0.mn = FALSE) {
+allocate_S0I0 <- function(in.parms, num.ens, n, N, s0.method = NULL) {
   
   # Store country-level S0:
   s0.by.count <- NULL
@@ -103,6 +103,11 @@ run_model <- function(in.parms, in.ah, num.ens, n, N, tm.range, tmstep, tm.strt,
     I0.temp[[i]] <- I0.temp[[i]] * N
   }
   
+  return(list(S0.temp, I0.temp, s0.by.count))
+}
+
+run_model <- function(in.parms, S0.in, I0.in, in.ah, num.ens, n, N, tm.range, tmstep, tm.strt, tm.end, dt, pop.dat, r0.mn = FALSE) {
+  
   # Get parameters:
   in.parms <- in.parms[(dim(in.parms)[1] - 4):(dim(in.parms)[1]), ]
   
@@ -127,6 +132,7 @@ run_model <- function(in.parms, in.ah, num.ens, n, N, tm.range, tmstep, tm.strt,
   }
   
   D.temp <- in.parms[2, ]; L.temp <- in.parms[1, ]; airScale.temp <- in.parms[5, ]
+  S0.temp <- S0.in; I0.temp <- I0.in
   
   # Run model:
   m <- sapply(1:num.ens, function(ix) {
@@ -139,7 +145,7 @@ run_model <- function(in.parms, in.ah, num.ens, n, N, tm.range, tmstep, tm.strt,
   
   # Re-format results:
   res.list <- format_model_results(m, num.ens, tmstep, tm.strt, tm.end, n, pop.dat)
-  res.list <- list(res.list, s0.by.count)
+  # res.list <- list(res.list, s0.by.count)
   
   # Return results:
   return(res.list)

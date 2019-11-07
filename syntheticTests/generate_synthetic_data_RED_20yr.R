@@ -5,7 +5,7 @@
 library("truncnorm"); library("tgp"); library("MASS"); library(reshape2); library(plyr); library(ggplot2); library(gridExtra); library(viridis)
 
 # ##########################################################################################
-# 
+
 ### Set seed
 set.seed(10489436)
 
@@ -18,7 +18,7 @@ tmstep <- 7 #data is weekly
 wk_start <- 40
 
 ### Set parameters
-num_ens <- 500
+num_ens <- 10000
 tm_strt <- 273; tm_end <- 273 + 365 * 20 - 1; tm_step <- 1#; t <- 1 # 273 is first of October
 tm.range <- tm_strt:tm_end # should be length 7300 days, or 7300 / 365 = 20 years
 
@@ -41,50 +41,53 @@ I0_low <- 0; I0_up <- 0.0001
 theta_low <- c(L_low, D_low, Rmx_low, Rdiff_low, airScale_low)
 theta_up <- c(L_up, D_up, Rmx_up, Rdiff_up, airScale_up)
 
-# ### Specify the countries for which we are performing a forecast
+### Specify the countries for which we are performing a forecast
 countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
 n <- length(countries)
-# count.indices <- c(1:2, 4, 6:8, 11:14, 17, 19)
-# 
-# ### Set population sizes and # of countries used
-# pop.size <- read.csv('data/popcounts_02-07.csv')
-# pop.size <- pop.size[pop.size$country %in% countries, ]; pop.size$country <- factor(pop.size$country)
-# pop.size <- pop.size[match(countries, pop.size$country), ]
-# 
-# ### Load commuting data
-# load('formatTravelData/formattedData/comm_mat_by_year_05-07_RELIABLE_ONLY.RData')
-# t.comm <- apply(simplify2array(comm.by.year), 1:2, mean); rm(comm.by.year)
-# t.comm <- t.comm[countries, countries]
-# 
-# ### Set country populations
-# N <- t.comm; n <- length(countries) # w/ commuting
-# diag(N) <- unlist(lapply(1:n, function(ix) {
-#   pop.size$pop[ix] - rowSums(N)[ix]
-# }))
-# # note: this now results in more home-home people than before, since there are fewer countries to commute to
-# 
-# ### Read in humidity data
-# ah <- read.csv('../GLDAS_data/ah_Europe_07142019.csv')
-# AH <- rbind(ah[, count.indices], ah[, count.indices])
-# for (i in 1:4) {
-#   AH <- rbind(AH, AH)
-# }
-# AH <- AH[1:7665, ] # 21 years
-# 
+count.indices <- c(1:2, 4, 6:8, 11:14, 17, 19)
+
+### Set population sizes and # of countries used
+pop.size <- read.csv('data/popcounts_02-07.csv')
+pop.size <- pop.size[pop.size$country %in% countries, ]; pop.size$country <- factor(pop.size$country)
+pop.size <- pop.size[match(countries, pop.size$country), ]
+
+### Load commuting data
+load('formatTravelData/formattedData/comm_mat_by_year_05-07_RELIABLE_ONLY.RData')
+t.comm <- apply(simplify2array(comm.by.year), 1:2, mean); rm(comm.by.year)
+t.comm <- t.comm[countries, countries]
+
+### Set country populations
+N <- t.comm; n <- length(countries) # w/ commuting
+diag(N) <- unlist(lapply(1:n, function(ix) {
+  pop.size$pop[ix] - rowSums(N)[ix]
+}))
+# note: this now results in more home-home people than before, since there are fewer countries to commute to
+
+### Read in humidity data
+ah <- read.csv('../GLDAS_data/ah_Europe_07142019.csv')
+AH <- rbind(ah[, count.indices], ah[, count.indices])
+for (i in 1:4) {
+  AH <- rbind(AH, AH)
+}
+AH <- AH[1:7665, ] # 21 years
+
 ### Set initial conditions based on input parameters
 param.bound <- cbind(c(S0_low, sd_low, rep(I0_low, n), theta_low),
                      c(S0_up, sd_up, rep(I0_up, n), theta_up))
 parms <- t(lhs(num_ens, param.bound))
-# 
+
+### RUN STOCHASTICALLY:
+discrete <- TRUE
+
 ### Read in functions to run model/format results:
 source('syntheticTests/synth_functions.R')
 source('code/functions/Util.R')
-# 
-# ### Run model!
-# res <- run_model(parms, AH, num_ens, n, N, tm.range, tmstep, tm_strt, tm_end, dt, pop.size, s0.method = 'dist', r0.mn = FALSE) # time: 50 ~ 30minutes
-# # res <- run_model(parms, AH, num_ens, n, N, tm.range, tmstep, tm_strt, tm_end, dt, pop.size, s0.method = 'dist', r0.mn = TRUE)
-# res.rates <- res[[1]][[1]]
-# 
+
+### Run model!
+init.states <- allocate_S0I0(parms, num_ens, n, N, s0.method = 'dist')
+res <- run_model(parms, init.states[[1]], init.states[[2]], AH, num_ens, n, N, tm.range, tmstep, tm_strt, tm_end, dt, pop.size, r0.mn = FALSE) # time: 50 ~ 30minutes
+res.rates <- res[[1]]
+
 # ### Save raw outputs:
 # # save(res.rates, file = 'syntheticTests/syntheticData/resRates_20yr_FULL_500.RData')
 # 
@@ -92,15 +95,15 @@ source('code/functions/Util.R')
 # for (i in 1:num_ens) {
 #   res.rates[[i]] <- res.rates[[i]][, 521:1043]
 # }
-# 
-# # ### Visualize outputs:
-# # par(mfrow = c(5, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-# # for (i in 1:num_ens) {
-# #   matplot(t(res.rates[[i]]), type = 'b', pch = 20, col = viridis(12), main = i, xlab = 'Time', ylab = 'Inc.')
-# #   # abline(v = seq(0, 1040, by = 52), lty = 2)
-# #   abline(v = seq(0, 520, by = 52), lty = 2)
-# # }
-# 
+
+### Visualize outputs:
+par(mfrow = c(5, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+for (i in 1:num_ens) {
+  matplot(t(res.rates[[i]]), type = 'b', pch = 20, col = viridis(12), main = i, xlab = 'Time', ylab = 'Inc.')
+  # abline(v = seq(0, 1040, by = 52), lty = 2)
+  abline(v = seq(0, 1040, by = 52), lty = 2)
+}
+
 # ### Save outputs with last 10 years only:
 # # save(res.rates, file = 'syntheticTests/syntheticData/resRates_20yr_last10_500.RData')
 load('syntheticTests/syntheticData/resRates_20yr_last10_500.RData')
