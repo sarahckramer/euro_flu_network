@@ -41,7 +41,8 @@ discrete <- FALSE # run the SIRS model continuously
 metricsonly <- FALSE # save all outputs
 
 seasons <- c('2010-11', '2011-12', '2012-13', '2013-14', '2014-15', '2015-16', '2016-17', '2017-18')
-oevBase_list <- c(1e4, 1e5)
+# oevBase_list <- c(1e4, 1e5)
+oevBase_list <- c(2e5, 5e5) # test higher OEV bases - does this stop 1-4 week predictions from failing after the peak? (note: will likely be very inaccurate for the most part)
 # oevDenom_list <- c(1.0, 10.0, 50.0) #c(1.0, 2.0, 5.0, 10.0, 20.0, 50.0)
 # lambdaList <- c(1.00, 1.02, 1.05)
 ntrnList <- 5:30
@@ -96,37 +97,16 @@ pos.dat <- pos.dat[, c(1, count.indices + 1)]
 ### Scale data:
 scalings <- read.csv('data/scalings_frame_05-09-19.csv') # 1.3 for France in early seasons
 scalings <- scalings[count.indices, ]
-# # note: these are the "old" scalings
-# for (i in 2:21) {
-#   if (names(iliiso)[i] == 'France') {
-#     iliiso[1:286, i] <- iliiso[1:286, i] * 1.3
-#     iliiso[287:495, i] <- iliiso[287:495, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
-#     syn.dat[1:286, i] <- syn.dat[1:286, i] * 1.3
-#     syn.dat[287:495, i] <- syn.dat[287:495, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
-#   } else {
-#     iliiso[, i] <- iliiso[, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
-#     syn.dat[, i] <- syn.dat[, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
-#   }
-#   
-#   iliiso[, i][iliiso[, i] < 0] <- NA # replace negatives with NAs
-#   syn.dat[, i][syn.dat[, i] < 0] <- NA
-#   pos.dat[, i][pos.dat[, i] < 0] <- NA
-#   test.dat[, i][test.dat[, i] < 0] <- NA
-# }
-# # iliiso.scale <- iliiso
-# # syn.dat.scale <- syn.dat
-
-# "new" scalings:
-load('data/scalings_temp_08-26-19_MEANS.RData') # names are in same order
+# note: these are the "old" scalings
 for (i in 2:21) {
   if (names(iliiso)[i] == 'France') {
-    iliiso[1:286, i] <- iliiso[1:286, i] * new.scalings.mean[[i - 1]][1]
-    iliiso[287:495, i] <- iliiso[287:495, i] * new.scalings.mean[[i - 1]][2]
-    syn.dat[1:286, i] <- syn.dat[1:286, i] * new.scalings.mean[[i - 1]][1]
-    syn.dat[287:495, i] <- syn.dat[287:495, i] * new.scalings.mean[[i - 1]][2]
+    iliiso[1:286, i] <- iliiso[1:286, i] * 1.3
+    iliiso[287:495, i] <- iliiso[287:495, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
+    syn.dat[1:286, i] <- syn.dat[1:286, i] * 1.3
+    syn.dat[287:495, i] <- syn.dat[287:495, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
   } else {
-    iliiso[, i] <- iliiso[, i] * new.scalings.mean[[i - 1]]
-    syn.dat[, i] <- syn.dat[, i] * new.scalings.mean[[i - 1]]
+    iliiso[, i] <- iliiso[, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
+    syn.dat[, i] <- syn.dat[, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
   }
   
   iliiso[, i][iliiso[, i] < 0] <- NA # replace negatives with NAs
@@ -134,6 +114,27 @@ for (i in 2:21) {
   pos.dat[, i][pos.dat[, i] < 0] <- NA
   test.dat[, i][test.dat[, i] < 0] <- NA
 }
+# iliiso.scale <- iliiso
+# syn.dat.scale <- syn.dat
+
+# # "new" scalings:
+# load('data/scalings_temp_08-26-19_MEANS.RData') # names are in same order
+# for (i in 2:21) {
+#   if (names(iliiso)[i] == 'France') {
+#     iliiso[1:286, i] <- iliiso[1:286, i] * new.scalings.mean[[i - 1]][1]
+#     iliiso[287:495, i] <- iliiso[287:495, i] * new.scalings.mean[[i - 1]][2]
+#     syn.dat[1:286, i] <- syn.dat[1:286, i] * new.scalings.mean[[i - 1]][1]
+#     syn.dat[287:495, i] <- syn.dat[287:495, i] * new.scalings.mean[[i - 1]][2]
+#   } else {
+#     iliiso[, i] <- iliiso[, i] * new.scalings.mean[[i - 1]]
+#     syn.dat[, i] <- syn.dat[, i] * new.scalings.mean[[i - 1]]
+#   }
+#   
+#   iliiso[, i][iliiso[, i] < 0] <- NA # replace negatives with NAs
+#   syn.dat[, i][syn.dat[, i] < 0] <- NA
+#   pos.dat[, i][pos.dat[, i] < 0] <- NA
+#   test.dat[, i][test.dat[, i] < 0] <- NA
+# }
 
 ### Initialize output data frame
 outputMetrics <- NULL
@@ -215,27 +216,27 @@ for (run in 1:num_runs) {
 }
 # }
 
-print(head(outputMetrics))
-print(head(outputOP))
-print(head(outputOPParams))
-print(head(outputDist))
-print(head(outputEns))
+#print(head(outputMetrics))
+#print(head(outputOP))
+#print(head(outputOPParams))
+#print(head(outputDist))
+#print(head(outputEns))
 
 colnames(outputMetrics)[6] <- 'scaling'
 # I actually think all the other colnames are fine as-is...
 
-# outputMetrics[outputMetrics[, 'country'] == 'FR' & outputMetrics[, 'season'] %in% seasons[1:4], 'scaling'] <- 1.3
-outputMetrics[outputMetrics[, 'country'] == 'FR' & outputMetrics[, 'season'] %in% seasons[1:4], 'scaling'] <- new.scalings.mean[[6]][2]
+outputMetrics[outputMetrics[, 'country'] == 'FR' & outputMetrics[, 'season'] %in% seasons[1:4], 'scaling'] <- 1.3
+# outputMetrics[outputMetrics[, 'country'] == 'FR' & outputMetrics[, 'season'] %in% seasons[1:4], 'scaling'] <- new.scalings.mean[[6]][1]
 # FR has an alternative scaling for earlier
 
 ### Save results:
 print('Finished with loop; writing files...')
 
-write.csv(outputMetrics, file = paste('outputs/obs/outputMet', season, oev_base, ntrn, 'newScale_090519.csv', sep = '_'), row.names = FALSE)
-write.csv(outputOP, file = paste('outputs/obs/outputOP', season, oev_base, ntrn, 'newScale_090519.csv', sep = '_'), row.names = FALSE)
-write.csv(outputOPParams, file = paste('outputs/obs/outputOPParams', season, oev_base, ntrn, 'newScale_090519.csv', sep = '_'), row.names = FALSE)
-write.csv(outputDist, file = paste('outputs/obs/outputDist', season, oev_base, ntrn, 'newScale_090519.csv', sep = '_'), row.names = FALSE)
-write.csv(outputEns, file = paste('outputs/obs/outputEns', season, oev_base, ntrn, 'newScale_090519.csv', sep = '_'), row.names = FALSE)
+write.csv(outputMetrics, file = paste('outputs/obs/outputMet', season, oev_base, ntrn, 'higherBase_091319.csv', sep = '_'), row.names = FALSE)
+write.csv(outputOP, file = paste('outputs/obs/outputOP', season, oev_base, ntrn, 'higherBase_091319.csv', sep = '_'), row.names = FALSE)
+write.csv(outputOPParams, file = paste('outputs/obs/outputOPParams', season, oev_base, ntrn, 'higherBase_091319.csv', sep = '_'), row.names = FALSE)
+write.csv(outputDist, file = paste('outputs/obs/outputDist', season, oev_base, ntrn, 'higherBase_091319.csv', sep = '_'), row.names = FALSE)
+write.csv(outputEns, file = paste('outputs/obs/outputEns', season, oev_base, ntrn, 'higherBase_091319.csv', sep = '_'), row.names = FALSE)
 
 print('Done.')
 
