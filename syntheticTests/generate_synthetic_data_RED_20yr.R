@@ -18,7 +18,7 @@ tmstep <- 7 #data is weekly
 wk_start <- 40
 
 ### Set parameters
-num_ens <- 10000
+num_ens <- 500
 tm_strt <- 273; tm_end <- 273 + 365 * 20 - 1; tm_step <- 1#; t <- 1 # 273 is first of October
 tm.range <- tm_strt:tm_end # should be length 7300 days, or 7300 / 365 = 20 years
 
@@ -108,6 +108,193 @@ for (i in 1:num_ens) {
 # # save(res.rates, file = 'syntheticTests/syntheticData/resRates_20yr_last10_500.RData')
 load('syntheticTests/syntheticData/resRates_20yr_last10_500.RData')
 
+######################################################################################################################################################
+
+### Look at pattern over 10 years for each of 500 deterministic runs:
+yr.breaks <- list(1:52, 53:104, 105:156, 157:208, 209:260, 261:312, 313:364, 365:416, 417:468, 469:520)
+get_10yr_avg <- function(obs) {
+  obs.avg <- matrix(0, nrow = nrow(obs), ncol = 52)
+  for (yr in 1:10) {
+    obs.avg <- obs.avg + obs[, yr.breaks[[yr]]]
+  }
+  obs.avg <- obs.avg / 10
+  return(obs.avg)
+}
+res.avg <- lapply(res.rates, get_10yr_avg)
+
+# Visualize:
+par(mfrow = c(5, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+for (run in 1:500) {
+  matplot(t(res.avg[[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = run, xlab = 'Time', ylab = 'Inc.')
+  abline(v = c(13, 25), lty = 1, col = 'red')
+}
+
+# How many with average peak within 52:64? (13:25)
+df <- NULL
+for (i in 1:500) {
+  res.temp <- t(res.avg[[i]])
+  for (count.index in 1:length(countries)) {
+    pt <- which(res.temp[, count.index] == max(res.temp[, count.index]))
+    if (length(pt) > 1) {
+      pt <- NA
+    }
+    df <- rbind(df, c(i, countries[count.index], pt))
+  }
+}
+df <- as.data.frame(df)
+names(df) <- c('run', 'country', 'pt')
+df$pt <- as.numeric(as.character(df$pt))
+
+# Remove if all 0:
+runs.to.remove <- c()
+for (run in 1:500) {
+  df.temp <- df[df$run == run, ]
+  if (all(is.na(df.temp$pt))) {
+    runs.to.remove <- c(runs.to.remove, run)
+  }
+}
+df <- df[!(df$run %in% runs.to.remove), ]
+df$run <- factor(df$run)
+
+# Now check that within 13:25:
+runs.in.range <- c()
+for (run in levels(df$run)) {
+  df.temp <- df[df$run == run, ]
+  if (length(df.temp$pt[df.temp$pt %in% 13:25]) >= 10) {
+    runs.in.range <- c(runs.in.range, run)
+  }
+}
+# 92 / 500 have average peaks in this range
+
+df <- df[df$run %in% runs.in.range, ]
+df$run <- factor(df$run)
+
+# Visualize just these:
+runs.in.range <- sort(as.numeric(as.character(runs.in.range)))
+par(mfrow = c(5, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+for (run in runs.in.range) {
+  matplot(t(res.avg[[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = run, xlab = 'Time', ylab = 'Inc.')
+  abline(v = c(13, 25), lty = 1, col = 'red')
+}
+
+# Compare params:
+parms.no <- as.data.frame(t(parms[c(1:2, 15:19), (1:500)[!((1:500) %in% runs.in.range)]]))
+parms.yes <- as.data.frame(t(parms[c(1:2, 15:19), runs.in.range]))
+
+colnames(parms.no) = colnames(parms.yes) = c('S0_mean', 'S0_sd', 'L', 'D', 'R0mx', 'R0diff', 'airScale')
+
+# parms.no <- melt(parms.no); parms.yes <- melt(parms.yes)
+# names(parms.no) = names(parms.yes) = c('run', 'param', 'value')
+parms.no$group <- 'No'; parms.yes$group <- 'Yes'
+
+parms.df <- rbind(parms.yes, parms.no)
+parms.df$group <- factor(parms.df$group)
+
+par(mfrow = c(2, 4), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+boxplot(S0_mean ~ group, data = parms.df, xlab = '', col = 'gray95')
+boxplot(S0_sd ~ group, data = parms.df, xlab = '', col = 'gray95')
+boxplot(L ~ group, data = parms.df, xlab = '', col = 'gray95')
+boxplot(D ~ group, data = parms.df, xlab = '', col = 'gray95')
+boxplot(R0mx ~ group, data = parms.df, xlab = '', col = 'gray95')
+boxplot(R0diff ~ group, data = parms.df, xlab = '', col = 'gray95')
+boxplot(airScale ~ group, data = parms.df, xlab = '', col = 'gray95')
+# not seeing any clear differences here
+
+# Add longitudes:
+library(maps)
+data("world.cities")
+country.names <- c('Austria', 'Belgium', 'Czechia', 'France', 'Germany', 'Hungary', 'Italy', 'Luxembourg',
+                   'Netherlands', 'Poland', 'Slovakia', 'Spain')
+
+world.cities <- world.cities[(world.cities$country.etc %in% c(country.names, 'Czech Republic')) &
+                               world.cities$capital == 1, ]
+world.cities$country.etc <- factor(world.cities$country.etc)
+
+levels(world.cities$country.etc) <- countries
+world.cities <- world.cities[, c('country.etc', 'lat', 'long')]
+df <- merge(df, world.cities, by.x = 'country', by.y = 'country.etc')
+
+# Now look at geographical direction of these outbreaks:
+df$corr = df$pval = NA
+for (run in levels(df$run)) {
+  corr.dat <- cor.test(df$long[df$run == run], df$pt[df$run == run], method = 'kendall')
+  df$corr[df$run == run] <- corr.dat$estimate
+  df$pval[df$run == run] <- corr.dat$p.value
+  # print(corr.dat$estimate)
+}
+# one run (124) with a simultaneous peak, but really it's just a very small oscillation
+df <- df[df$run != '124', ]
+df$run <- factor(df$run)
+
+df$pattern <- ifelse(df$corr > 0, 'westToEast', 'eastToWest')
+
+df$pattern2 <- df$pattern
+df$pattern2[df$pval > 0.05] <- 'noPatt'
+
+df$sig <- ifelse(df$pval < 0.05, 'yes', 'no')
+
+df$pattern <- factor(df$pattern)
+df$pattern2 <- factor(df$pattern2)
+df$sig <- factor(df$sig)
+
+df$patternSig <- paste(df$pattern, df$sig, sep = '_')
+df$patternSig <- factor(df$patternSig)
+
+table(df$pattern) / 12 # 23/91 (~25%)
+table(df$pattern2) / 12 # majority not sig (67/91); 6 are sig w-e, 18 sig e-w
+table(df$patternSig) / 12 # most e-w/no
+# 6/91 (~6.6%) sig w-e isn't bad
+
+runs.ew.sig <- sort(as.numeric(as.character(unique(df$run[df$patternSig == 'eastToWest_yes']))))
+runs.ew.not <- sort(as.numeric(as.character(unique(df$run[df$patternSig == 'eastToWest_no']))))
+runs.we.not <- sort(as.numeric(as.character(unique(df$run[df$patternSig == 'westToEast_no']))))
+runs.we.sig <- sort(as.numeric(as.character(unique(df$run[df$patternSig == 'westToEast_yes']))))
+
+pdf('syntheticTests/outputs/explore/outbreak_plots_and_averages_west-to-east.pdf', width = 16, height = 10)
+# Plot out w-e only:
+par(mfrow = c(5, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+for (run in c(runs.we.sig, runs.we.not)) {
+  matplot(t(res.avg[[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = run, xlab = 'Time', ylab = 'Inc.')
+  abline(v = c(13, 25), lty = 1, col = 'red')
+}
+# first 6 are sig; some of them don't have much of an outbreak pattern, and others are pretty synchronous
+
+# Plot out full ranges for these:
+par(mfrow = c(5, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+for (run in c(runs.we.sig, runs.we.not)) {
+  matplot(t(res.rates[[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = run, xlab = 'Time', ylab = 'Inc.')
+  abline(v = seq(0, 520, by = 52), lty = 2)
+  abline(v = seq(13, 520, by = 52), lty = 1, col = 'red', lwd = 2.0)
+  abline(v = seq(25, 520, by = 52), lty = 1, col = 'red', lwd = 2.0)
+}
+dev.off()
+
+# Compare parameters based on average geographical pattern:
+parms.ew.sig <- as.data.frame(t(parms[c(1:2, 15:19), runs.ew.sig]))
+parms.ew.not <- as.data.frame(t(parms[c(1:2, 15:19), runs.ew.not]))
+parms.we.not <- as.data.frame(t(parms[c(1:2, 15:19), runs.we.not]))
+parms.we.sig <- as.data.frame(t(parms[c(1:2, 15:19), runs.we.sig]))
+
+colnames(parms.ew.sig) = colnames(parms.ew.not) = colnames(parms.we.not) = colnames(parms.we.sig) = c('S0_mean', 'S0_sd', 'L', 'D', 'R0mx', 'R0diff', 'airScale')
+parms.ew.sig$group <- 'E-W Sig'; parms.ew.not$group <- 'E-W Not'; parms.we.not$group <- 'W-E Not'; parms.we.sig$group <- 'W-E Sig'
+
+parms.df2 <- rbind(parms.ew.sig, parms.ew.not, parms.we.not, parms.we.sig)
+parms.df2$group <- factor(parms.df2$group)
+parms.df2$group <- factor(parms.df2$group, levels = levels(parms.df2$group)[c(2, 1, 3:4)])
+
+pdf('syntheticTests/outputs/explore/param_comp_geo.pdf', width = 16, height = 10)
+par(mfrow = c(2, 4), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+boxplot(S0_mean ~ group, data = parms.df2, xlab = '', col = 'gray95')
+boxplot(S0_sd ~ group, data = parms.df2, xlab = '', col = 'gray95')
+boxplot(L ~ group, data = parms.df2, xlab = '', col = 'gray95')
+boxplot(D ~ group, data = parms.df2, xlab = '', col = 'gray95')
+boxplot(R0mx ~ group, data = parms.df2, xlab = '', col = 'gray95')
+boxplot(R0diff ~ group, data = parms.df2, xlab = '', col = 'gray95')
+boxplot(airScale ~ group, data = parms.df2, xlab = '', col = 'gray95')
+dev.off()
+
+######################################################################################################################################################
+
 ### Filter through to determine which runs are producing patterns of interest:
 
 # First, any onsets in any of the 10 years:
@@ -134,7 +321,6 @@ parms.noOnsets <- parms[, no.onsets]
 # save(parms.noOnsets, file = 'syntheticTests/syntheticData/parms_noOnsets.RData')
 
 # Any onsets in 3/10 years:
-yr.breaks <- list(1:52, 53:104, 105:156, 157:208, 209:260, 261:312, 313:364, 365:416, 417:468, 469:520)
 onAtLeast3 = onSporadic = c()
 df.main <- NULL
 for (i in any.onsets) {
@@ -341,8 +527,8 @@ par(mfrow = c(5, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 for (run in crit2) {
   matplot(t(res.rates[[as.numeric(as.character(run))]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = run, xlab = 'Time', ylab = 'Inc.')
   abline(v = seq(0, 520, by = 52), lty = 2)
-  abline(v = seq(12, 520, by = 52), lty = 1, col = 'red', lwd = 2.0)
-  abline(v = seq(24, 520, by = 52), lty = 1, col = 'red', lwd = 2.0)
+  abline(v = seq(13, 520, by = 52), lty = 1, col = 'red', lwd = 2.0)
+  abline(v = seq(25, 520, by = 52), lty = 1, col = 'red', lwd = 2.0)
 }
 dev.off()
 
