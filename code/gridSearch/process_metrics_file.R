@@ -8,7 +8,7 @@ north.ili <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'HU', 'IE', 'IT', 'NL', 'PL', 'PT',
 north.ari <- c('LU', 'UK', 'DE', 'SI', 'FR')
 
 # Read in results
-m <- read.csv('code/gridSearch/outputs/outputMet_090119.csv')
+m <- read.csv('results/outputMet_110919_oldOEV.csv')
 
 m <- read.csv('code/individualCountries/outputs/outputMet_082819.csv')
 names(m)[4] <- 'scaling'
@@ -131,11 +131,11 @@ m$accurate_on[!(m$abs_delta_onset %in% c(0,1))] <- 'no'
 m$accurate_on <- factor(m$accurate_on)
 
 # Write new metrics file
-# write.csv(m, file = 'code/gridSearch/outputs/outputMet_090119_pro.csv', row.names = F)
+write.csv(m, file = 'results/outputMet_110919_oldOEV_pro.csv', row.names = F)
 # write.csv(m, file = 'code/individualCountries/outputs/outputMet_082819_pro.csv', row.names = F)
 # write.csv(m, file = 'results/newScalings/outputMet_090919_pro.csv', row.names = F)
 # write.csv(m, file = 'results/propRandTravel/outputMet_090919_pro.csv', row.names = F)
-write.csv(m, file = 'results/highOEVBase/outputMet_090919_pro.csv', row.names = F)
+# write.csv(m, file = 'results/highOEVBase/outputMet_090919_pro.csv', row.names = F)
 
 # Clear environment
 rm(list=ls())

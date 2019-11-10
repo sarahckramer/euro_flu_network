@@ -4,10 +4,10 @@ library(reshape2); library(ggplot2)
 # pdf('code/gridSearch/plots/fcast_results_082119.pdf', width = 14, height = 9)
 
 # Focus mainly on metrics file for now:
-m <- read.csv('code/gridSearch/outputs/outputMet_081919_pro.csv')
+m <- read.csv('results/outputMet_110919_oldOEV_pro.csv')
 
 # Limit to needed columns:
-m <- m[, c(1:9, 12:13, 15, 17:19, 25:36, 39, 43, 47, 85:95, 97, 99:101, 105:106)]
+m <- m[, c(1:9, 12:13, 15, 17:19, 25:36, 39, 43, 47, 92:95, 97, 99:102, 104:106)]
 m$leadonset5 <- m$fc_start - m$onset5
 
 # Remove if no onset:
