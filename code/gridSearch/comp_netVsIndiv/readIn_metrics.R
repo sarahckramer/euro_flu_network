@@ -1,5 +1,7 @@
 
 # Read in metrics from both network and individual models:
+m <- read.csv(file = list.fi)
+
 m <- read.csv('results/original/outputMet_110819_pro.csv')
 m2 <- read.csv('code/individualCountries/outputs/outputMet_082819_pro.csv')
 
@@ -32,7 +34,7 @@ m2 <- m2[m2$country %in% levels(m$country), ]
 m2$country <- factor(m2$country)
 
 # And limit oev_denom/lambda:
-m2 <- m2[m2$oev_denom == 10 & m2$lambda == 1.02, ]
+m2 <- m2[m2$oev_denom == 1 & m2$lambda == 1.02, ]
 
 # Remove the "extra" rows from network model, for a fair comparison:
 m.new <- m.check[, 1:36]

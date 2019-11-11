@@ -168,6 +168,23 @@ if (byWeek == 'Predicted') {
     labs(x = 'Observed Lead Week', y = 'Median Log Score') + scale_x_continuous(breaks = -8:4)
   grid.arrange(p1, p2, p3)
   
+  # What if we remove where no onset is predicted?
+  d.temp <- d[d$FWeek_onwk >= -6 & d$FWeek_onwk < 7 & d$metric == 'ot' & !is.na(d$FWeek_onwk) & !is.na(d$leadonset5), ]
+  d.temp$group <- paste(d.temp$FWeek_onwk, d.temp$model, sep = '_'); d.temp$group <- factor(d.temp$group)
+  d.agg <- aggregate(score ~ FWeek_onwk + oev_base + model, data = d.temp, FUN = median)
+  
+  p1 <- ggplot(data = d.temp) + geom_boxplot(aes(x = FWeek_onwk, y = score, group = group, fill = model)) +
+    facet_wrap(~ oev_base, ncol = 2) + theme_bw() + scale_fill_brewer(palette = 'Set1') +
+    labs(x = 'Observed Lead Week', y = 'Log Score', title = 'Onset Timing') + scale_x_continuous(breaks = -8:4)
+  p2 <- ggplot(data = d.temp) + geom_boxplot(aes(x = FWeek_onwk, y = exp(score), group = group, fill = model)) +
+    facet_wrap(~ oev_base, ncol = 2) + theme_bw() + scale_fill_brewer(palette = 'Set1') +
+    labs(x = 'Observed Lead Week', y = 'e^(Log Score)') + scale_x_continuous(breaks = -8:4)
+  p3 <- ggplot(data = d.agg) + geom_line(aes(x = FWeek_onwk, y = score, col = model)) +
+    geom_point(aes(x = FWeek_onwk, y = score, col = model)) + facet_wrap(~oev_base) +
+    theme_bw() + scale_color_brewer(palette = 'Set1') +
+    labs(x = 'Observed Lead Week', y = 'Median Log Score') + scale_x_continuous(breaks = -8:4)
+  grid.arrange(p1, p2, p3)
+  
   # 1-4 weeks:
   for (wk in levels(e$metric)) {
     e.temp <- e[e$metric == wk & e$FWeek_pkwk >= -8 & e$FWeek_pkwk < 5, ]

@@ -1,10 +1,13 @@
 
+setwd('results/PROCESS/')
+getwd()
+
 ### Deal with PT and OT first - can use Dist:
-d.pt <- read.csv('results/outputDist_110919_oldOEV_pt.csv')
-d.ot <- read.csv('results/outputDist_110919_oldOEV_ot.csv')
+d.pt <- read.csv(file = list.files(pattern = '_pt'))
+d.ot <- read.csv(file = list.files(pattern = '_ot'))
 
 # Join observed values:
-m <- read.csv('results/outputMet_110919_oldOEV_pro.csv')
+m <- read.csv(file = list.files(pattern = '_pro'))
 m <- unique(m[, c(1, 8:9, 39)])
 
 d.pt <- merge(d.pt, m, by = c('season', 'country'))
@@ -81,7 +84,7 @@ log.pt$score[log.pt$score == -Inf] <- -10
 log.ot$score[log.ot$score == -Inf] <- -10
 
 # Determine predicted and observed lead weeks:
-m <- read.csv('results/outputMet_110919_oldOEV_pro.csv')
+m <- read.csv(file = list.files(pattern = '_pro'))
 m$leadonset5 <- m$fc_start - m$onset5
 m <- unique(m[, c(1:3, 7:9, 15, 39, 92, 99, 110)])
 m <- m[!is.na(m$onsetObs5), ]
@@ -94,16 +97,16 @@ log.pt$metric <- 'pt'
 log.ot$metric <- 'ot'
 
 # Save as "temporary" files:
-write.csv(log.pt, file = 'results/logScores_pt.csv', row.names = FALSE)
-write.csv(log.ot, file = 'results/logScores_ot.csv', row.names = FALSE)
+write.csv(log.pt, file = '../logScores_pt.csv', row.names = FALSE)
+write.csv(log.ot, file = '../logScores_ot.csv', row.names = FALSE)
 
 rm(list = ls())
 
 ### For PI (within 25%) and 1-4 weeks (within 1%), use Ens:
-e <- read.csv('results/original/outputEns_110819_PI.csv')
+e <- read.csv(file = list.files(pattern = '_PI'))
 
 # Get observed peak intensity:
-m <- read.csv('results/original/outputMet_110819_pro.csv')
+m <- read.csv(file = list.files(pattern = '_pro'))
 # m <- m[!is.na(m$onsetObs5), ] # remove if no onset observed
 m <- unique(m[, c(1, 6, 8, 17, 39)])
 
@@ -135,7 +138,7 @@ e$score <- scores
 e <- e[, c(1:4, 7:8, 310, 312)]
 
 # Get lead weeks:
-m <- read.csv('results/original/outputMet_110819_pro.csv')
+m <- read.csv(file = list.files(pattern = '_pro'))
 m$leadonset5 <- m$fc_start - m$onset5
 m <- m[!is.na(m$onsetObs5), ] # remove if no onset observed
 m <- unique(m[, c(1:3, 7:8, 15, 92, 99, 110)])
@@ -143,17 +146,17 @@ m <- unique(m[, c(1:3, 7:8, 15, 92, 99, 110)])
 e <- merge(e, m, by = c('season', 'country', 'run', 'oev_base', 'fc_start'))
 
 # Save as temporary file:
-write.csv(e, file = 'results/original/logScores_pi.csv', row.names = FALSE)
+write.csv(e, file = '../original/logScores_pi.csv', row.names = FALSE)
 rm(list = ls())
 
 # Now 1-4 weeks:
-e1 <- read.csv('results/original/outputEns_110819_1wk.csv')
-e2 <- read.csv('results/original/outputEns_110819_2wk.csv')
-e3 <- read.csv('results/original/outputEns_110819_3wk.csv')
-e4 <- read.csv('results/original/outputEns_110819_4wk.csv')
+e1 <- read.csv(file = list.files(pattern = '_1wk'))
+e2 <- read.csv(file = list.files(pattern = '_2wk'))
+e3 <- read.csv(file = list.files(pattern = '_3wk'))
+e4 <- read.csv(file = list.files(pattern = '_4wk'))
 
 # Get appropriate values for that week:
-m <- read.csv('results/original/outputMet_110819_pro.csv')
+m <- read.csv(file = list.files(pattern = '_pro'))
 # m <- m[!is.na(m$onsetObs5), ] # remove if no onset observed
 m1 <- unique(m[, c(1:8, 25, 39)])
 m2 <- unique(m[, c(1:8, 26, 39)])
@@ -236,7 +239,7 @@ e3 <- e3[, c(1:3, 6:8, 310, 312)]
 e4 <- e4[, c(1:3, 6:8, 310, 312)]
 
 # Get lead weeks (just to plot all things by consistent x-axis):
-m <- read.csv('results/original/outputMet_110819_pro.csv')
+m <- read.csv(file = list.files(pattern = '_pro'))
 m <- m[!is.na(m$onsetObs5), ] # remove if no onset observed
 m <- unique(m[, c(1:3, 7:8, 15, 92)])
 
@@ -246,27 +249,27 @@ e3 <- merge(e3, m, by = c('season', 'country', 'run', 'oev_base', 'fc_start'))
 e4 <- merge(e4, m, by = c('season', 'country', 'run', 'oev_base', 'fc_start'))
 
 # Save as temporary file:
-write.csv(e1, file = 'results/logScores_1wk.csv', row.names = FALSE)
-write.csv(e2, file = 'results/logScores_2wk.csv', row.names = FALSE)
-write.csv(e3, file = 'results/logScores_3wk.csv', row.names = FALSE)
-write.csv(e4, file = 'results/logScores_4wk.csv', row.names = FALSE)
+write.csv(e1, file = '../logScores_1wk.csv', row.names = FALSE)
+write.csv(e2, file = '../logScores_2wk.csv', row.names = FALSE)
+write.csv(e3, file = '../logScores_3wk.csv', row.names = FALSE)
+write.csv(e4, file = '../logScores_4wk.csv', row.names = FALSE)
 rm(list = ls())
 
 ### Compile files:
-d.pt <- read.csv('results/logScores_pt.csv')
-d.ot <- read.csv('results/logScores_ot.csv')
+d.pt <- read.csv('../logScores_pt.csv')
+d.ot <- read.csv('../logScores_ot.csv')
 
-e1 <- read.csv('results/logScores_1wk.csv')
-e2 <- read.csv('results/logScores_2wk.csv')
-e3 <- read.csv('results/logScores_3wk.csv')
-e4 <- read.csv('results/logScores_4wk.csv')
+e1 <- read.csv('../logScores_1wk.csv')
+e2 <- read.csv('../logScores_2wk.csv')
+e3 <- read.csv('../logScores_3wk.csv')
+e4 <- read.csv('../logScores_4wk.csv')
 
 d <- rbind(d.pt, d.ot)
 
 names(e1)[7] = names(e2)[7] = names(e3)[7] = names(e4)[7] <- 'obs_val'
 e <- rbind(e1, e2, e3, e4)
 
-write.csv(d, file = 'results/logScores_pt_ot.csv', row.names = FALSE)
-write.csv(e, file = 'results/logScores_1-4wk.csv', row.names = FALSE)
+write.csv(d, file = '../logScores_pt_ot.csv', row.names = FALSE)
+write.csv(e, file = '../logScores_1-4wk.csv', row.names = FALSE)
 rm(list = ls())
 
