@@ -43,7 +43,7 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
   newI.indices <- S0.indices + S0.indices[length(S0.indices)] * 2 # where newI are stored (in fcast) (only individual compartments)
   param.indices <- (max(newI.indices) + 1):(max(newI.indices) + 5) # where the epi parameters are stored
   
-  # Do we continue to generate S0 as a distribution even when forecasting, or do we use LHS?
+  # QUESTION: Do we continue to generate S0 as a distribution even when forecasting, or do we use LHS?
   # Dist:
   parms <- t(lhs(num_ens, param.bound))
   S0.temp = I0.temp = vector('list', num_ens)
@@ -256,9 +256,9 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
         #   print(countries[loc])
         # }
         
-        if (length(x[S0.indices, ][which(x[S0.indices, ] < 0, arr.ind = TRUE)]) > 0) {
-          print('Some S0 reduced below 0.')
-        }
+        # if (length(x[S0.indices, ][which(x[S0.indices, ] < 0, arr.ind = TRUE)]) > 0) {
+        #   print('Some S0 reduced below 0.')
+        # }
         x[which(x < 0, arr.ind = TRUE)] <- 0 # try - set this to 1.0 instead of 0, like in Fn_checkxnobounds?
         x <- Fn_checkxnobounds(x, S0.indices, I0.indices, param.indices) # this alone sets the "empty" compartments to 1.0; also, nothing to check newI? (okay, b/c makes sure don't go below 0)
         obs_ens[loc, obs_ens[loc, ] < 0] <- 0 # so we do ensure these aren't wild as we go, though
@@ -281,8 +281,8 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
       print(rowMeans(xprior[param.indices,, tt]))
       print(rowMeans(xnew[param.indices, ]))
       
-      print(rowMeans(obs_ens[to.check, ]))
-      print(obs_i[tt, to.check])
+      # print(rowMeans(obs_ens[to.check, ]))
+      # print(obs_i[tt, to.check])
     }
     
     # Store posteriors:
@@ -354,6 +354,33 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
       obs_ens[i, ] <- obs_ens[i, ] / pop.size$pop[i] * 100000
     }
     obsprior[,, tt + 1] <- obs_ens
+    
+    # Plot training progress:
+    if (tt > 1) {
+      # par(mfrow = c(1, 1), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+      # obs.red.toPlot <- obs_i#[, to.check] # DE, IT, ES, SE, UK
+      # obs.post.toPlot <- t(apply(obspost[,, 1:tt], c(1, 3), mean))
+      # matplot(obs.red.toPlot, type = 'b', pch = 4, lty = 2,
+      #         col = viridis(n), cex = 0.75,
+      #         xlab = 'Weeks from Outbreak Start', ylab = 'Syn+ Counts', main = tt)
+      # matlines(obs.post.toPlot, type = 'b', pch = 20, lty = 1, cex = 0.8,
+      #          col = viridis(12))
+      
+      # print(obs.post.toPlot[, to.check])
+      # print(obs_i[1:tt, to.check])
+      # Failure might occur sometimes b/c model cases go to infinity
+      
+      # if (tt > 1) {
+      #   par(mfrow = c(3, 4), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+      #   for (i in (1:n)[!is.na(obs_i[tt, ])]) {
+      #     obs.post.toPlot.ind <- colMeans(obspost[i,, 1:tt])
+      #     plot(obs_i[, i], type = 'b', pch = 4, lty = 2, col = 'gray40', cex = 0.75,
+      #          xlab = 'Wks from Start', ylab = 'Syn+ Counts', main = countries[i], 
+      #          ylim = c(0, max(max(obs_i[, i], na.rm = T), max(obs.post.toPlot.ind, na.rm = T))))
+      #     lines(obs.post.toPlot.ind, type = 'b', pch = 20, lty = 1, cex = 0.8, col = 'coral')
+      #   }
+      # }
+    }
     
   } # end of training
   

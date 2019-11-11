@@ -189,7 +189,7 @@ test_i[test_i == 0 & !is.na(test_i)] <- NA
 obs_vars <- calc_obsvars_nTest(obs = as.matrix(obs_i), syn_dat = as.matrix(syn_i), ntests = as.matrix(test_i), posprops = as.matrix(pos_i),
                                oev_base, oev_denom, tmp_exp = 2.0)
 # LU and DE look particularly uncertain
-obs_vars <- calc_obsvars(obs = as.matrix(obs_i), oev_base, oev_denom)
+# obs_vars <- calc_obsvars(obs = as.matrix(obs_i), oev_base, oev_denom)
 
 # Get the first and last date of the simulation:
 clim_start <- as.numeric(start_date - as.Date(paste('20',

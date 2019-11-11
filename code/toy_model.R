@@ -6,7 +6,7 @@ library("truncnorm"); library("tgp"); library("MASS"); library(reshape2); requir
 library(viridis)
 
 ### Read in model functions
-source('code/SIRS_network.R')
+source('cluster/SIRS_network.R')
 source('code/functions/Fn_initializations.R')
 source('code/functions/Fn_checkxnobounds.R')
 source('code/functions/Util.R')
@@ -14,7 +14,7 @@ source('code/functions/calc_obsvars.R')
 source('code/functions/replaceLeadingLaggingNAs.R')
 
 ### Read in filter function
-source('code/EAKF_network.R')
+source('cluster/EAKF_network.R')
 
 ### Seasons:
 seasons <- c('2010-11', '2011-12', '2012-13', '2013-14', '2014-15', '2015-16', '2016-17', '2017-18')
@@ -25,15 +25,14 @@ tmstep <- 7 # data are weekly
 wk_start <- 40
 
 ### Parameter boundaries
-D_low <- 1.5; L_low <- 1*365; Rmx_low <- 1.3; Rmn_low <- 0.8; airScale_low <- 0.75
-D_up <- 7; L_up <- 10*365; Rmx_up <- 4; Rmn_up <- 1.2; airScale_up <- 1.25
-theta_low <- c(L_low, D_low, Rmx_low, Rmn_low, airScale_low)
-theta_up <- c(L_up, D_up, Rmx_up, Rmn_up, airScale_up)
-param.bound <- cbind(theta_low, theta_up)
+D_low <- 2; L_low <- 1*365; Rmx_low <- 2.0; Rdiff_low <- 0.2; airScale_low <- 0.75
+D_up <- 7; L_up <- 8*365; Rmx_up <- 2.8; Rdiff_up <- 1.0; airScale_up <- 1.25
+S0_low <- 0.55; S0_up <- 0.85
+sd_low <- 0.05; sd_up <- 0.18
+I0_low <- 0; I0_up <- 0.00005
 
-### Initial state variable values
-S0_low <- 0.50; S0_up <- 0.90 # proportion of population
-I0_low <- 0; I0_up <- 0.001 # proportion of population
+theta_low <- c(L_low, D_low, Rmx_low, Rdiff_low, airScale_low)
+theta_up <- c(L_up, D_up, Rmx_up, Rdiff_up, airScale_up)
 
 ### Parameters for the filters
 discrete <- FALSE # run the SIRS model continuously
@@ -41,13 +40,20 @@ metricsonly <- FALSE # save all outputs
 lambda <- 1.02 # inflation factor for the ensemble filters c(1.00, 1.01, 1.02, 1.03, 1.05, 1.075?)
 oev_base <- 1e5; oev_denom <- 10.00
 
+# 1e4/10/1.1 (tends toward D = 8-10); 1e4/10/1.05 (doesn't get the blips as well, but looks better near end); 1e4/1/1.05 (gets some trailing up after outbreak...; fit R0diff much smaller (~0.2 vs. ~0.6));
+# 1e5/10/1.05 - has trounle keeping early values toward 0
+# 1e4/10/1.02 actually almost looks better, although not much change (R0diff ~ 0.34)
+# old OEV, 1e4/10/1.02: doesn't have early upticks, but totally misses outbreak in SK completely
+# old OEV, 1e5/10/1.02: maybe actually better, but still can't get SK
+# old OEV, 1e4/1/1.02: also misses SK; doesn't do well with CZ either
+# 1e4/10/1.02, keep NAs: 
+
 num_ens <- 300 # use 300 for ensemble filters, 10000 for particle filters
-num_runs <- 3
+num_runs <- 1
 
 ### Specify the country for which we are performing a forecast
-countries <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'FR', 'DE', 'HU', 'IE', 'IT',
-               'LU', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'UK')
-count.indices <- c(1:8, 10:21)
+countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
+count.indices <- c(1:2, 4, 6:8, 11:14, 17, 19)
 
 ### Set population sizes and # of countries used
 pop.size <- read.csv('data/popcounts_02-07.csv')
@@ -78,7 +84,7 @@ pos.dat <- pos.dat[, c(1, count.indices + 1)]
 scalings <- read.csv('data/scalings_frame_05-09-19.csv') # 1.3 for France in early seasons
 scalings <- scalings[count.indices, ]
 # note: these are the "old" scalings
-for (i in 2:21) {
+for (i in 2:13) {
   if (names(iliiso)[i] == 'France') {
     iliiso[1:286, i] <- iliiso[1:286, i] * 1.3
     iliiso[287:495, i] <- iliiso[287:495, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
@@ -105,8 +111,7 @@ outputDist <- NULL
 outputEns <- NULL
 
 ### Load commuting data:
-load('formatTravelData/formattedData/comm_mat_by_year_05-07.RData')
-
+load('formatTravelData/formattedData/comm_mat_by_year_05-07_RELIABLE_ONLY.RData')
 season.index <- 1
 
 ### Loop through seasons:
@@ -124,6 +129,10 @@ diag(N) <- unlist(lapply(1:n, function(ix) {
 }))
 # population and commuting data are COUNTS, not RATES
 
+### Set up parameter bounds:
+param.bound <- cbind(c(S0_low, sd_low, rep(I0_low, n), theta_low),
+                     c(S0_up, sd_up, rep(I0_up, n), theta_up))
+
 # Get observations for current season:
 tmp <- Fn_dates(season)
 weeks <- tmp$weeks + 3
@@ -136,7 +145,7 @@ syn_i <- syn.dat[weeks, (1:length(countries) + 1)]
 test_i <- test.dat[weeks, (1:length(countries) + 1)]
 pos_i <- pos.dat[weeks, (1:length(countries) + 1)]
 
-matplot(obs_i, pch = 20, col = viridis(n), type = 'b', lty = 1, cex = 0.75)
+# matplot(obs_i, pch = 20, col = viridis(n), type = 'b', lty = 1, cex = 0.75)
 
 # Replace any leading or lagging NAs:
 for (count.index in 1:n) {
@@ -152,17 +161,18 @@ for (count.index in 1:n) {
 test_i[test_i == 0 & !is.na(test_i)] <- NA
 
 # Plot:
-par(mfrow = c(2, 2), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-matplot(obs_i, pch = 20, col = viridis(n), type = 'b', lty = 1, cex = 0.75)
-matplot(syn_i, pch = 20, col = viridis(n), type = 'b', lty = 1, cex = 0.75)
-matplot(pos_i, pch = 20, col = viridis(n), type = 'b', lty = 1, cex = 0.75)
-matplot(test_i, pch = 20, col = viridis(n), type = 'b', lty = 1, cex = 0.75)
-par(mfrow = c(1, 1), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+# par(mfrow = c(2, 2), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+# matplot(obs_i, pch = 20, col = viridis(n), type = 'b', lty = 1, cex = 0.75)
+# matplot(syn_i, pch = 20, col = viridis(n), type = 'b', lty = 1, cex = 0.75)
+# matplot(pos_i, pch = 20, col = viridis(n), type = 'b', lty = 1, cex = 0.75)
+# matplot(test_i, pch = 20, col = viridis(n), type = 'b', lty = 1, cex = 0.75)
+# par(mfrow = c(1, 1), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 
 # Variance of syndromic+ data:
-obs_vars <- calc_obsvars_nTest(obs = as.matrix(obs_i), syn_dat = as.matrix(syn_i), ntests = as.matrix(test_i), posprops = as.matrix(pos_i),
-                               oev_base, oev_denom, tmp_exp = 2.0)
-matplot(obs_vars, pch = 20, col = viridis(n), type = 'b', lty = 1, cex = 0.75)
+# obs_vars <- calc_obsvars_nTest(obs = as.matrix(obs_i), syn_dat = as.matrix(syn_i), ntests = as.matrix(test_i), posprops = as.matrix(pos_i),
+#                                oev_base, oev_denom, tmp_exp = 2.0)
+obs_vars <- calc_obsvars(obs = as.matrix(obs_i), oev_base, oev_denom)
+# matplot(obs_vars, pch = 20, col = viridis(n), type = 'b', lty = 1, cex = 0.75)
 ### QUESTION: OEV is way higher for a couple of countries than most of the others - is this fair?
 # Scaled syn+ - also scale syn? Otherwise not sure the OEV would be appropriate for the rates we're fitting to
 # but not test#, b/c this should tell us something about error
@@ -192,7 +202,7 @@ ntrn <- 30 # final ntrn
 # Run!:
 for (run in 1:num_runs) {
   res <- EAKF_rFC(num_ens, tmstep, param.bound, obs_i, ntrn, obs_vars, tm.ini, tm.range,
-                  updates = FALSE, do.reprobing = FALSE)
+                  updates = TRUE, do.reprobing = FALSE)
   
   outputMetrics <- rbind(outputMetrics, cbind(season, run, oev_base, oev_denom, lambda, scalings$gamma, res$metrics))
   outputOP <- rbind(outputOP, cbind(season, run, oev_base, oev_denom, lambda, res$opStates))
@@ -209,7 +219,7 @@ colnames(outputMetrics)[6] <- 'scaling'
 outputMetrics[outputMetrics[, 'country'] == 'FR' & outputMetrics[, 'season'] %in% seasons[1:4], 'scaling'] <- 1.3
 # FR has an alternative scaling for earlier
 
-write.csv(outputMetrics, file = 'code/checks/outputMetrics_1e5_remove.csv', row.names = FALSE)
+# write.csv(outputMetrics, file = 'code/checks/outputMetrics_1e5_remove.csv', row.names = FALSE)
 
 
 # Different countries have different oev at different times, and this doesn't always match up with
