@@ -34,11 +34,12 @@ EAKF_rFC<-function(num_ens, tmstep, param.bound, obs_i=obs_i,ntrn=1,
   AHpt <- AH.count[beta.range]
   AHpt <- as.matrix(AHpt, length(AHpt), 1)
   ones1 <- matrix(1, length(AHpt), 1) # matrix of 1 to make the dimension match
-  b <- log(So[5, ] - So[6, ]); b <- ones1 %*% b # expand b to a matrix with each col for each ensemble member
+  # b <- log(So[5, ] - So[6, ]); b <- ones1 %*% b # expand b to a matrix with each col for each ensemble member
+  b <- log(So[6, ]); b <- ones1 %*% b
   a <- -180
   ones2 <- matrix(1, 1, num_ens)
   AHpt <- AHpt %*% ones2
-  BT1 <- exp(a * AHpt + b) + ones1 %*% So[6, ]
+  BT1 <- exp(a * AHpt + b) + ones1 %*% (So[5, ] - So[6, ])
   beta <- BT1 / (ones1 %*% So[4, ])
   tcurrent <- tm.ini
   
@@ -106,9 +107,9 @@ EAKF_rFC<-function(num_ens, tmstep, param.bound, obs_i=obs_i,ntrn=1,
       xpost[,, tt] <- xnew;
       
       # Integrate forward one time step
-      b <- log(xpost[5,, tt] - xpost[6,, tt]); b <- ones1 %*% b # expand b to a matrix with each col for each particle
+      b <- log(xpost[6,, tt]); b <- ones1 %*% b # expand b to a matrix with each col for each particle
       a <- -180
-      BT1 <- exp(a * AHpt + b) + ones1 %*% xpost[6,, tt]
+      BT1 <- exp(a * AHpt + b) + ones1 %*% (xpost[5,, tt] - xpost[6,, tt])
       beta <- BT1 / (ones1 %*% xpost[4,, tt])
       
       tcurrent <- tm.ini + tmstep * tt
@@ -123,9 +124,9 @@ EAKF_rFC<-function(num_ens, tmstep, param.bound, obs_i=obs_i,ntrn=1,
 
       #  Don't use xpost for propagating - use xprior that resulted from previous integration
       #  Integrate forward one time step
-      b <- log(xprior[5,, tt] - xprior[6,, tt]); b <- ones1 %*% b; # expand b to a matrix with each col for each particle
-      a <- -180;
-      BT1 <- exp(a * AHpt + b) + ones1 %*% xprior[6,, tt];
+      b <- log(xpost[6,, tt]); b <- ones1 %*% b # expand b to a matrix with each col for each particle
+      a <- -180
+      BT1 <- exp(a * AHpt + b) + ones1 %*% (xpost[5,, tt] - xpost[6,, tt])
       beta <- BT1 / (ones1 %*% xprior[4,, tt]); 
       tcurrent <- tm.ini + tmstep * tt;
       Sr_tmp <- propagateParSIR(tcurrent + dt, tcurrent + tmstep, dt, xprior[1,, tt], xprior[2,, tt], N,
@@ -142,9 +143,10 @@ EAKF_rFC<-function(num_ens, tmstep, param.bound, obs_i=obs_i,ntrn=1,
   # End of training
   
   ### Forecast:
-  b <- log(xpost[5,, ntrn] - xpost[6,, tt]); b <- ones1 %*% b
+  b <- log(xpost[6,, ntrn]); b <- ones1 %*% b # expand b to a matrix with each col for each particle
   a <- -180
-  BT1 <- exp(a * AHpt + b) + ones1 %*% xpost[6,, ntrn]
+  BT1 <- exp(a * AHpt + b) + ones1 %*% (xpost[5,, ntrn] - xpost[6,, ntrn])
+  
   beta <- BT1 / (ones1 %*% xpost[4,, ntrn]) 
   tcurrent <- tm.ini + tmstep * ntrn
   Sr_tmp <- propagateParSIR(tcurrent + dt, tcurrent + tmstep * nfc, dt, xpost[1,, ntrn], xpost[2,, ntrn], N,
@@ -468,8 +470,8 @@ EAKF_rFC<-function(num_ens, tmstep, param.bound, obs_i=obs_i,ntrn=1,
   out6 = cbind(c('pi', '1week', '2week', '3week', '4week'), rep(fc_start, 5), rbind(peakIntensities, nextILI))
   
   colnames(out1) = colnames(out2) = c('fc_start', 'time', 'week', 'result',
-                                      'S', 'I', 'L', 'D', 'R0max', 'R0min', 'Est',
-                                      'S_sd', 'I_sd', 'L_sd', 'D_sd', 'R0max_sd', 'R0min_sd', 'Est_sd')
+                                      'S', 'I', 'L', 'D', 'R0max', 'R0diff', 'Est',
+                                      'S_sd', 'I_sd', 'L_sd', 'D_sd', 'R0max_sd', 'R0diff_sd', 'Est_sd')
   out1 <- rbind(out1, out2)
   colnames(out3) = c('fc_start',
                      'obs_pkwk', 'pkwk_mode', 'delta_pkwk_mode', 'pkwk_mean', 'delta_pkwk_mean', 'leadpkwk_mode', 'leadpkwk_mean', 'pkwk_sd',

@@ -30,15 +30,18 @@ wk_start <- 40
 N <- 1e5 # population - since no longer split into compartments by commuting!
 
 ### Parameter boundaries
-D_low <- 1.5; L_low <- 1*365; Rmx_low <- 1.3; Rmn_low <- 0.8
-D_up <- 7; L_up <- 10*365; Rmx_up <- 4; Rmn_up <- 1.2
-theta_low <- c(L_low, D_low, Rmx_low, Rmn_low)
-theta_up <- c(L_up, D_up, Rmx_up, Rmn_up)
+D_low <- 2; L_low <- 1*365; Rmx_low <- 2.0; Rdiff_low <- 0.2; airScale_low <- 0.75
+D_up <- 7; L_up <- 8*365; Rmx_up <- 2.8; Rdiff_up <- 1.0; airScale_up <- 1.25
+
+# D_low <- 1.5; L_low <- 1*365; Rmx_low <- 1.3; Rmn_low <- 0.8
+# D_up <- 7; L_up <- 10*365; Rmx_up <- 4; Rmn_up <- 1.2
+theta_low <- c(L_low, D_low, Rmx_low, Rdiff_low)
+theta_up <- c(L_up, D_up, Rmx_up, Rdiff_up)
 param.bound <- cbind(theta_low, theta_up)
 
 ### Initial state variable values
-S0_low <- 0.50; S0_up <- 0.90 # proportion of population
-I0_low <- 0; I0_up <- 0.001 # proportion of population
+S0_low <- 0.55; S0_up <- 0.85
+I0_low <- 0; I0_up <- 0.00005
 
 ### Parameters for the filters
 discrete <- FALSE # run the SIRS model continuously
@@ -61,9 +64,8 @@ num_ens <- 300 # use 300 for ensemble filters, 10000 for particle filters
 num_runs <- 3
 
 ### Specify the country for which we are performing a forecast
-countries <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'FR', 'DE', 'HU', 'IE', 'IT',
-               'LU', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'UK')
-count.indices <- c(1:8, 10:21)
+countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
+count.indices <- c(1:2, 4, 6:8, 11:14, 17, 19)
 
 ### Read in humidity data
 ah <- read.csv('data/ah_Europe_07142019.csv')
@@ -86,7 +88,7 @@ pos.dat <- pos.dat[, c(1, count.indices + 1)]
 scalings <- read.csv('data/scalings_frame_05-09-19.csv') # 1.3 for France in early seasons
 scalings <- scalings[count.indices, ]
 # note: these are the "old" scalings
-for (i in 2:21) {
+for (i in 2:13) {
   if (names(iliiso)[i] == 'France') {
     iliiso[1:286, i] <- iliiso[1:286, i] * 1.3
     iliiso[287:495, i] <- iliiso[287:495, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
@@ -158,6 +160,7 @@ for (count.index in 1:length(countries)) {
       
       # Calculate OEV:
       obs_vars <- calc_obsvars_nTest(obs = obs_i, syn_dat = syn_i, ntests = test_i, posprops = pos_i, oev_base, oev_denom, tmp_exp = 2.0)
+      # obs_vars <- calc_obsvars(obs = obs_i, oev_base, oev_denom)
       # print(obs_vars[1:3, ])
       
       # Get the first and last date of the simulation
