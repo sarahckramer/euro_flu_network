@@ -8,32 +8,35 @@ north.ili <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'HU', 'IE', 'IT', 'NL', 'PL', 'PT',
 north.ari <- c('LU', 'UK', 'DE', 'SI', 'FR')
 
 # Read in results
-m <- read.csv('results/outputMet_110919_oldOEV.csv')
+setwd('results/PROCESS/')
+m <- read.csv(file = list.files(pattern = 'Met_'))
 
-m <- read.csv('code/individualCountries/outputs/outputMet_082819.csv')
-names(m)[4] <- 'scaling'
-m$scaling[m$country == 'FR' & m$season %in% c('2010-11', '2011-12', '2012-13', '2013-14')] <- 1.3
-for (i in 37:44) {
-  m[, i] <- m[, i] + 40 - 1
-}
-
-m <- read.csv('results/newScalings/outputMet_090919.csv')
-load('data/scalings_temp_08-26-19_MEANS.RData')
-for (country in levels(m$country)) {
-  gamma <- new.scalings.mean[[which(names(new.scalings.mean) == country)]]
-  
-  if (country != 'FR') {
-    m$scaling[m$country == country] <- gamma
-  } else {
-    m$scaling[m$country == country & m$season %in% levels(m$season)[1:4]] <- gamma[1]
-    m$scaling[m$country == country & m$season %in% levels(m$season)[5:8]] <- gamma[2]
-  }
-  
-}
-
-m <- read.csv('results/propRandTravel/outputMet_090919.csv')
-
-m <- read.csv('results/highOEVBase/outputMet_091619.csv')
+# m <- read.csv('results/outputMet_110919_oldOEV.csv')
+# 
+# m <- read.csv('code/individualCountries/outputs/outputMet_082819.csv')
+# names(m)[4] <- 'scaling'
+# m$scaling[m$country == 'FR' & m$season %in% c('2010-11', '2011-12', '2012-13', '2013-14')] <- 1.3
+# for (i in 37:44) {
+#   m[, i] <- m[, i] + 40 - 1
+# }
+# 
+# m <- read.csv('results/newScalings/outputMet_090919.csv')
+# load('data/scalings_temp_08-26-19_MEANS.RData')
+# for (country in levels(m$country)) {
+#   gamma <- new.scalings.mean[[which(names(new.scalings.mean) == country)]]
+#   
+#   if (country != 'FR') {
+#     m$scaling[m$country == country] <- gamma
+#   } else {
+#     m$scaling[m$country == country & m$season %in% levels(m$season)[1:4]] <- gamma[1]
+#     m$scaling[m$country == country & m$season %in% levels(m$season)[5:8]] <- gamma[2]
+#   }
+#   
+# }
+# 
+# m <- read.csv('results/propRandTravel/outputMet_090919.csv')
+# 
+# m <- read.csv('results/highOEVBase/outputMet_091619.csv')
 
 # Are peak intensities still the same for all base/denom/lambda at this point?:
 m.check <- unique(m[, c(1, 8:9, 17)]) # yep!
@@ -131,7 +134,7 @@ m$accurate_on[!(m$abs_delta_onset %in% c(0,1))] <- 'no'
 m$accurate_on <- factor(m$accurate_on)
 
 # Write new metrics file
-write.csv(m, file = 'results/outputMet_110919_oldOEV_pro.csv', row.names = F)
+write.csv(m, file = '../PROCESS/outputMet_110919_oldOEV_denom1_pro.csv', row.names = F)
 # write.csv(m, file = 'code/individualCountries/outputs/outputMet_082819_pro.csv', row.names = F)
 # write.csv(m, file = 'results/newScalings/outputMet_090919_pro.csv', row.names = F)
 # write.csv(m, file = 'results/propRandTravel/outputMet_090919_pro.csv', row.names = F)
