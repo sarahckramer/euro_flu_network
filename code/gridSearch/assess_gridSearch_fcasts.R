@@ -4,7 +4,7 @@ library(reshape2); library(ggplot2)
 # pdf('code/gridSearch/plots/fcast_results_082119.pdf', width = 14, height = 9)
 
 # Focus mainly on metrics file for now:
-m <- read.csv('results/outputMet_110919_oldOEV_pro.csv')
+m <- read.csv('results/original/outputMet_110819_pro.csv')
 
 # Limit to needed columns:
 m <- m[, c(1:9, 12:13, 15, 17:19, 25:36, 39, 43, 47, 92:95, 97, 99:102, 104:106)]
@@ -185,30 +185,30 @@ p1 <- ggplot(data = res, aes(x = lead, y = value, group = group)) + geom_line() 
 print(p1)
 
 ### Assess log scores for: PT, PI, OT, 1-4 weeks ahead:
-d <- read.csv('code/gridSearch/outputs/logScores_pt_ot.csv')
-e.pi <- read.csv('code/gridSearch/outputs/logScores_pi.csv')
-e <- read.csv('code/gridSearch/outputs/logScores_1-4wk.csv')
+d <- read.csv('results/original/logScores_pt_ot.csv')
+e.pi <- read.csv('results/original/logScores_pi.csv')
+e <- read.csv('results/original/logScores_1-4wk.csv')
 
 e.temp <- d[d$leadpkwk_mean >= -8 & d$leadpkwk_mean < 5 & d$metric == 'pt' & !is.na(d$leadonset5), ]
 p3 <- ggplot(data = e.temp) + geom_boxplot(aes(x = leadpkwk_mean, y = score, group = leadpkwk_mean), fill = 'gray90') +
-  facet_grid(lambda ~ oev_base) + theme_bw() + #scale_color_brewer(palette = 'Set1') +
+  facet_wrap(~ oev_base) + theme_bw() + #scale_color_brewer(palette = 'Set1') +
   labs(x = 'Predicted Lead Week', y = 'Log Score (PT)') + scale_x_continuous(breaks = -8:4)
 print(p3)
 # p4 <- ggplot(data = e.temp) + geom_boxplot(aes(x = leadpkwk_mean, y = exp(score), group = leadpkwk_mean), fill = 'gray90') +
 #   facet_grid(lambda ~ oev_base) + theme_bw() + #scale_color_brewer(palette = 'Set1') +
 #   labs(x = 'Predicted Lead Week', y = 'Proportion Accurate (PT)') + scale_x_continuous(breaks = -6:4)
 # print(p4)
-e.agg <- aggregate(score ~ leadpkwk_mean + oev_base + lambda, data = e.temp, FUN = median)
+e.agg <- aggregate(score ~ leadpkwk_mean + oev_base, data = e.temp, FUN = median)
 e.agg$lambda <- factor(e.agg$lambda)
-p6 <- ggplot(data = e.agg) + geom_line(aes(x = leadpkwk_mean, y = score, col = lambda)) +
-  geom_point(aes(x = leadpkwk_mean, y = score, col = lambda)) + facet_wrap(~oev_base) +
+p6 <- ggplot(data = e.agg) + geom_line(aes(x = leadpkwk_mean, y = score)) +
+  geom_point(aes(x = leadpkwk_mean, y = score)) + facet_wrap(~oev_base) +
   theme_bw() + scale_color_brewer(palette = 'Set1') +
   labs(x = 'Predicted Lead Week', y = 'Median Log Score (PT)') + scale_x_continuous(breaks = -8:4)
 print(p6)
 
 e.temp <- e.pi[e.pi$leadpkwk_mean >= -8 & e.pi$leadpkwk_mean < 5 & !is.na(e.pi$leadonset5), ]
 p3 <- ggplot(data = e.temp) + geom_boxplot(aes(x = leadpkwk_mean, y = score, group = leadpkwk_mean), fill = 'gray90') +
-  facet_grid(lambda ~ oev_base) + theme_bw() + #scale_color_brewer(palette = 'Set1') +
+  facet_wrap(~ oev_base) + theme_bw() + #scale_color_brewer(palette = 'Set1') +
   labs(x = 'Predicted Lead Week', y = 'Log Score (PI)') + scale_x_continuous(breaks = -8:4)# +
   # scale_y_continuous(breaks = exp(c(-10, -7.5, -5, -2.5, 0)), labels = c(-10, -7.5, -5, -2.5, 0))
 print(p3)
@@ -216,30 +216,30 @@ print(p3)
 #   facet_grid(lambda ~ oev_base) + theme_bw() + #scale_color_brewer(palette = 'Set1') +
 #   labs(x = 'Predicted Lead Week', y = 'Proportion Accurate (PI)') + scale_x_continuous(breaks = -6:4)
 # print(p4)
-e.agg <- aggregate(score ~ leadpkwk_mean + oev_base + lambda, data = e.temp, FUN = median)
-e.agg$lambda <- factor(e.agg$lambda)
-p6 <- ggplot(data = e.agg) + geom_line(aes(x = leadpkwk_mean, y = score, col = lambda)) +
-  geom_point(aes(x = leadpkwk_mean, y = score, col = lambda)) + facet_wrap(~oev_base) +
+e.agg <- aggregate(score ~ leadpkwk_mean + oev_base, data = e.temp, FUN = median)
+# e.agg$lambda <- factor(e.agg$lambda)
+p6 <- ggplot(data = e.agg) + geom_line(aes(x = leadpkwk_mean, y = score)) +
+  geom_point(aes(x = leadpkwk_mean, y = score)) + facet_wrap(~oev_base) +
   theme_bw() + scale_color_brewer(palette = 'Set1') +
   labs(x = 'Predicted Lead Week', y = 'Median Log Score (PI)') + scale_x_continuous(breaks = -8:4)
 print(p6)
 
 e.temp <- d[d$leadonset5 >= -6 & d$leadonset5 < 7 & !is.na(d$leadonset5) & d$metric == 'ot', ] # still subject to majority being NA!
 p3 <- ggplot(data = e.temp) + geom_boxplot(aes(x = leadonset5, y = score, group = leadonset5), fill = 'gray90') +
-  facet_grid(lambda ~ oev_base) + theme_bw() + #scale_color_brewer(palette = 'Set1') +
+  facet_wrap(~ oev_base) + theme_bw() + #scale_color_brewer(palette = 'Set1') +
   labs(x = 'Predicted Lead Week', y = 'Log Score (OT)') + scale_x_continuous(breaks = -6:6)
 print(p3)
-e.agg <- aggregate(score ~ leadonset5 + oev_base + lambda, data = e.temp, FUN = median)
-e.agg$lambda <- factor(e.agg$lambda)
-p6 <- ggplot(data = e.agg) + geom_line(aes(x = leadonset5, y = score, col = lambda)) +
-  geom_point(aes(x = leadonset5, y = score, col = lambda)) + facet_wrap(~oev_base) +
+e.agg <- aggregate(score ~ leadonset5 + oev_base, data = e.temp, FUN = median)
+# e.agg$lambda <- factor(e.agg$lambda)
+p6 <- ggplot(data = e.agg) + geom_line(aes(x = leadonset5, y = score)) +
+  geom_point(aes(x = leadonset5, y = score)) + facet_wrap(~oev_base) +
   theme_bw() + scale_color_brewer(palette = 'Set1') +
   labs(x = 'Predicted Lead Week', y = 'Median Log Score (OT)') + scale_x_continuous(breaks = -6:6)
 print(p6)
 
 for (wk in levels(e$metric)) {
   e.temp <- e[e$metric == wk & e$leadpkwk_mean >= -8 & e$leadpkwk_mean < 5, ]
-  names(e.temp)[10] <- 'score'
+  names(e.temp)[8] <- 'score'
   
   # p3 <- ggplot(data = e.temp) + geom_boxplot(aes(x = leadpkwk_mean, y = score, group = leadpkwk_mean), fill = 'gray90') +
   #   facet_grid(lambda ~ oev_base) + theme_bw() + #scale_color_brewer(palette = 'Set1') +
@@ -249,67 +249,67 @@ for (wk in levels(e$metric)) {
   #   facet_grid(lambda ~ oev_base) + theme_bw() + #scale_color_brewer(palette = 'Set1') +
   #   labs(x = 'Predicted Lead Week', y = paste0('Proportion Accurate (', wk, ')')) + scale_x_continuous(breaks = -6:4)
   # print(p4)
-  e.agg <- aggregate(score ~ leadpkwk_mean + oev_base + lambda, data = e.temp, FUN = median)
-  e.agg$lambda <- factor(e.agg$lambda)
-  p6 <- ggplot(data = e.agg) + geom_line(aes(x = leadpkwk_mean, y = score, col = lambda)) +
-    geom_point(aes(x = leadpkwk_mean, y = score, col = lambda)) + facet_wrap(~oev_base) +
+  e.agg <- aggregate(score ~ leadpkwk_mean + oev_base, data = e.temp, FUN = median)
+  # e.agg$lambda <- factor(e.agg$lambda)
+  p6 <- ggplot(data = e.agg) + geom_line(aes(x = leadpkwk_mean, y = score)) +
+    geom_point(aes(x = leadpkwk_mean, y = score)) + facet_wrap(~oev_base) +
     theme_bw() + scale_color_brewer(palette = 'Set1') +
     labs(x = 'Predicted Lead Week', y = paste0('Median Log Score (', wk, ')')) + scale_x_continuous(breaks = -8:4)
   print(p6)
 }
 
-# And now do all this by observed:
-e.temp <- d[d$FWeek_pkwk >= -8 & d$FWeek_pkwk < 5 & d$metric == 'pt' & !is.na(d$leadonset5), ]
-p3 <- ggplot(data = e.temp) + geom_boxplot(aes(x = FWeek_pkwk, y = score, group = FWeek_pkwk), fill = 'gray90') +
-  facet_grid(lambda ~ oev_base) + theme_bw() + #scale_color_brewer(palette = 'Set1') +
-  labs(x = 'Observed Lead Week', y = 'Log Score (PT)') + scale_x_continuous(breaks = -8:4)
-print(p3)
-e.agg <- aggregate(score ~ FWeek_pkwk + oev_base + lambda, data = e.temp, FUN = median)
-e.agg$lambda <- factor(e.agg$lambda)
-p6 <- ggplot(data = e.agg) + geom_line(aes(x = FWeek_pkwk, y = score, col = lambda)) +
-  geom_point(aes(x = FWeek_pkwk, y = score, col = lambda)) + facet_wrap(~oev_base) +
-  theme_bw() + scale_color_brewer(palette = 'Set1') +
-  labs(x = 'Observed Lead Week', y = 'Median Log Score (PT)') + scale_x_continuous(breaks = -8:4)
-print(p6)
-
-e.temp <- e.pi[e.pi$FWeek_pkwk >= -8 & e.pi$FWeek_pkwk < 5 & !is.na(e.pi$leadonset5), ]
-p3 <- ggplot(data = e.temp) + geom_boxplot(aes(x = FWeek_pkwk, y = score, group = FWeek_pkwk), fill = 'gray90') +
-  facet_grid(lambda ~ oev_base) + theme_bw() + #scale_color_brewer(palette = 'Set1') +
-  labs(x = 'Observed Lead Week', y = 'Log Score (PI)') + scale_x_continuous(breaks = -8:4)
-print(p3)
-e.agg <- aggregate(score ~ FWeek_pkwk + oev_base + lambda, data = e.temp, FUN = median)
-e.agg$lambda <- factor(e.agg$lambda)
-p6 <- ggplot(data = e.agg) + geom_line(aes(x = FWeek_pkwk, y = score, col = lambda)) +
-  geom_point(aes(x = FWeek_pkwk, y = score, col = lambda)) + facet_wrap(~oev_base) +
-  theme_bw() + scale_color_brewer(palette = 'Set1') +
-  labs(x = 'Observed Lead Week', y = 'Median Log Score (PI)') + scale_x_continuous(breaks = -8:4)
-print(p6)
-
-e.temp <- d[d$FWeek_onwk >= -6 & d$FWeek_onwk < 7 & !is.na(d$FWeek_onwk) & d$metric == 'ot', ] # here I want to see distribution, even among those that don't predict an onset!
-p3 <- ggplot(data = e.temp) + geom_boxplot(aes(x = FWeek_onwk, y = score, group = FWeek_onwk), fill = 'gray90') +
-  facet_grid(lambda ~ oev_base) + theme_bw() + #scale_color_brewer(palette = 'Set1') +
-  labs(x = 'Observed Lead Week', y = 'Log Score (OT)') + scale_x_continuous(breaks = -6:6)
-print(p3)
-e.agg <- aggregate(score ~ FWeek_onwk + oev_base + lambda, data = e.temp, FUN = median)
-e.agg$lambda <- factor(e.agg$lambda)
-p6 <- ggplot(data = e.agg) + geom_line(aes(x = FWeek_onwk, y = score, col = lambda)) +
-  geom_point(aes(x = FWeek_onwk, y = score, col = lambda)) + facet_wrap(~oev_base) +
-  theme_bw() + scale_color_brewer(palette = 'Set1') +
-  labs(x = 'Observed Lead Week', y = 'Median Log Score (OT)') + scale_x_continuous(breaks = -6:6)
-print(p6)
-
-for (wk in levels(e$metric)) {
-  e.temp <- e[e$metric == wk & e$FWeek_pkwk >= -8 & e$FWeek_pkwk < 5, ]
-  names(e.temp)[10] <- 'score'
-  
-  e.agg <- aggregate(score ~ FWeek_pkwk + oev_base + lambda, data = e.temp, FUN = median)
-  e.agg$lambda <- factor(e.agg$lambda)
-  p6 <- ggplot(data = e.agg) + geom_line(aes(x = FWeek_pkwk, y = score, col = lambda)) +
-    geom_point(aes(x = FWeek_pkwk, y = score, col = lambda)) + facet_wrap(~oev_base) +
-    theme_bw() + scale_color_brewer(palette = 'Set1') +
-    labs(x = 'Observed Lead Week', y = paste0('Median Log Score (', wk, ')')) + scale_x_continuous(breaks = -8:4)
-  print(p6)
-}
+# # And now do all this by observed:
+# e.temp <- d[d$FWeek_pkwk >= -8 & d$FWeek_pkwk < 5 & d$metric == 'pt' & !is.na(d$leadonset5), ]
+# p3 <- ggplot(data = e.temp) + geom_boxplot(aes(x = FWeek_pkwk, y = score, group = FWeek_pkwk), fill = 'gray90') +
+#   facet_grid(lambda ~ oev_base) + theme_bw() + #scale_color_brewer(palette = 'Set1') +
+#   labs(x = 'Observed Lead Week', y = 'Log Score (PT)') + scale_x_continuous(breaks = -8:4)
+# print(p3)
+# e.agg <- aggregate(score ~ FWeek_pkwk + oev_base + lambda, data = e.temp, FUN = median)
+# e.agg$lambda <- factor(e.agg$lambda)
+# p6 <- ggplot(data = e.agg) + geom_line(aes(x = FWeek_pkwk, y = score, col = lambda)) +
+#   geom_point(aes(x = FWeek_pkwk, y = score, col = lambda)) + facet_wrap(~oev_base) +
+#   theme_bw() + scale_color_brewer(palette = 'Set1') +
+#   labs(x = 'Observed Lead Week', y = 'Median Log Score (PT)') + scale_x_continuous(breaks = -8:4)
+# print(p6)
+# 
+# e.temp <- e.pi[e.pi$FWeek_pkwk >= -8 & e.pi$FWeek_pkwk < 5 & !is.na(e.pi$leadonset5), ]
+# p3 <- ggplot(data = e.temp) + geom_boxplot(aes(x = FWeek_pkwk, y = score, group = FWeek_pkwk), fill = 'gray90') +
+#   facet_grid(lambda ~ oev_base) + theme_bw() + #scale_color_brewer(palette = 'Set1') +
+#   labs(x = 'Observed Lead Week', y = 'Log Score (PI)') + scale_x_continuous(breaks = -8:4)
+# print(p3)
+# e.agg <- aggregate(score ~ FWeek_pkwk + oev_base + lambda, data = e.temp, FUN = median)
+# e.agg$lambda <- factor(e.agg$lambda)
+# p6 <- ggplot(data = e.agg) + geom_line(aes(x = FWeek_pkwk, y = score, col = lambda)) +
+#   geom_point(aes(x = FWeek_pkwk, y = score, col = lambda)) + facet_wrap(~oev_base) +
+#   theme_bw() + scale_color_brewer(palette = 'Set1') +
+#   labs(x = 'Observed Lead Week', y = 'Median Log Score (PI)') + scale_x_continuous(breaks = -8:4)
+# print(p6)
+# 
+# e.temp <- d[d$FWeek_onwk >= -6 & d$FWeek_onwk < 7 & !is.na(d$FWeek_onwk) & d$metric == 'ot', ] # here I want to see distribution, even among those that don't predict an onset!
+# p3 <- ggplot(data = e.temp) + geom_boxplot(aes(x = FWeek_onwk, y = score, group = FWeek_onwk), fill = 'gray90') +
+#   facet_grid(lambda ~ oev_base) + theme_bw() + #scale_color_brewer(palette = 'Set1') +
+#   labs(x = 'Observed Lead Week', y = 'Log Score (OT)') + scale_x_continuous(breaks = -6:6)
+# print(p3)
+# e.agg <- aggregate(score ~ FWeek_onwk + oev_base + lambda, data = e.temp, FUN = median)
+# e.agg$lambda <- factor(e.agg$lambda)
+# p6 <- ggplot(data = e.agg) + geom_line(aes(x = FWeek_onwk, y = score, col = lambda)) +
+#   geom_point(aes(x = FWeek_onwk, y = score, col = lambda)) + facet_wrap(~oev_base) +
+#   theme_bw() + scale_color_brewer(palette = 'Set1') +
+#   labs(x = 'Observed Lead Week', y = 'Median Log Score (OT)') + scale_x_continuous(breaks = -6:6)
+# print(p6)
+# 
+# for (wk in levels(e$metric)) {
+#   e.temp <- e[e$metric == wk & e$FWeek_pkwk >= -8 & e$FWeek_pkwk < 5, ]
+#   names(e.temp)[10] <- 'score'
+#   
+#   e.agg <- aggregate(score ~ FWeek_pkwk + oev_base + lambda, data = e.temp, FUN = median)
+#   e.agg$lambda <- factor(e.agg$lambda)
+#   p6 <- ggplot(data = e.agg) + geom_line(aes(x = FWeek_pkwk, y = score, col = lambda)) +
+#     geom_point(aes(x = FWeek_pkwk, y = score, col = lambda)) + facet_wrap(~oev_base) +
+#     theme_bw() + scale_color_brewer(palette = 'Set1') +
+#     labs(x = 'Observed Lead Week', y = paste0('Median Log Score (', wk, ')')) + scale_x_continuous(breaks = -8:4)
+#   print(p6)
+# }
 
 ### Explore accuracy (PT, PI, OT) by country:
 d <- d[!is.na(d$leadonset5), ]; e.pi <- e.pi[!is.na(e.pi$leadonset5), ]

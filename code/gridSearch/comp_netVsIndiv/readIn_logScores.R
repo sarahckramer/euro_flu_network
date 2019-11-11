@@ -5,16 +5,25 @@ e.pi <- read.csv('results/original/logScores_pi.csv')
 e <- read.csv('results/original/logScores_1-4wk.csv')
 
 # Read in log scores from individual models:
-d2 <- read.csv('results/indivCountries/logScores_pt_ot.csv')
-e.pi2 <- read.csv('results/indivCountries/logScores_pi.csv')
-e2 <- read.csv('results/indivCountries/logScores_1-4wk.csv')
+d2 <- read.csv('results/firstPass/indivCountries/logScores_pt_ot.csv')
+e.pi2 <- read.csv('results/firstPass/indivCountries/logScores_pi.csv')
+e2 <- read.csv('results/firstPass/indivCountries/logScores_1-4wk.csv')
 names(e2)[8] <- 'metric'
 # THE NEW FILES HAVE ONLY OEV_DENOM 10 AND LAMBDA 1.02!!!
+
+# Limit indiv files to correct countries:
+d2 <- d2[d2$country %in% levels(d$country), ]; d2$country <- factor(d2$country)
+e.pi2 <- e.pi2[e.pi2$country %in% levels(d$country), ]; e.pi2$country <- factor(e.pi2$country)
+e2 <- e2[e2$country %in% levels(d$country), ]; e2$country <- factor(e2$country)
 
 # Add factor describing model:
 d$model <- 'Network'; d2$model <- 'Individual'
 e.pi$model <- 'Network'; e.pi2$model <- 'Individual'
 e$model <- 'Network'; e2$model <- 'Individual'
+
+d2$oev_denom <- NULL; d2$lambda <- NULL
+e.pi2$oev_denom <- NULL; e.pi2$lambda <- NULL
+e2$oev_denom <- NULL; e2$lambda <- NULL
 
 # # Check that observed values are identical between the two!:
 # d.check <- merge(d, d2, by = c('season', 'run', 'oev_base', 'oev_denom', 'lambda', 'country', 'fc_start'))
@@ -46,7 +55,7 @@ e$model <- 'Network'; e2$model <- 'Individual'
 
 # Compile:
 d <- rbind(d, d2)
-names(e.pi2)[8] <- 'metric'
+names(e.pi2)[6] <- 'metric'
 e.pi <- rbind(e.pi, e.pi2)
 e <- rbind(e, e2)
 rm(d2, e.pi2, e2)

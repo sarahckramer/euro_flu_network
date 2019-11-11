@@ -100,10 +100,10 @@ write.csv(log.ot, file = 'results/logScores_ot.csv', row.names = FALSE)
 rm(list = ls())
 
 ### For PI (within 25%) and 1-4 weeks (within 1%), use Ens:
-e <- read.csv('results/outputEns_110919_oldOEV_PI.csv')
+e <- read.csv('results/original/outputEns_110819_PI.csv')
 
 # Get observed peak intensity:
-m <- read.csv('results/outputMet_110919_oldOEV_pro.csv')
+m <- read.csv('results/original/outputMet_110819_pro.csv')
 # m <- m[!is.na(m$onsetObs5), ] # remove if no onset observed
 m <- unique(m[, c(1, 6, 8, 17, 39)])
 
@@ -135,7 +135,7 @@ e$score <- scores
 e <- e[, c(1:4, 7:8, 310, 312)]
 
 # Get lead weeks:
-m <- read.csv('results/outputMet_110919_oldOEV_pro.csv')
+m <- read.csv('results/original/outputMet_110819_pro.csv')
 m$leadonset5 <- m$fc_start - m$onset5
 m <- m[!is.na(m$onsetObs5), ] # remove if no onset observed
 m <- unique(m[, c(1:3, 7:8, 15, 92, 99, 110)])
@@ -143,17 +143,17 @@ m <- unique(m[, c(1:3, 7:8, 15, 92, 99, 110)])
 e <- merge(e, m, by = c('season', 'country', 'run', 'oev_base', 'fc_start'))
 
 # Save as temporary file:
-write.csv(e, file = 'results/logScores_pi.csv', row.names = FALSE)
+write.csv(e, file = 'results/original/logScores_pi.csv', row.names = FALSE)
 rm(list = ls())
 
 # Now 1-4 weeks:
-e1 <- read.csv('results/outputEns_110919_oldOEV_1wk.csv')
-e2 <- read.csv('results/outputEns_110919_oldOEV_2wk.csv')
-e3 <- read.csv('results/outputEns_110919_oldOEV_3wk.csv')
-e4 <- read.csv('results/outputEns_110919_oldOEV_4wk.csv')
+e1 <- read.csv('results/original/outputEns_110819_1wk.csv')
+e2 <- read.csv('results/original/outputEns_110819_2wk.csv')
+e3 <- read.csv('results/original/outputEns_110819_3wk.csv')
+e4 <- read.csv('results/original/outputEns_110819_4wk.csv')
 
 # Get appropriate values for that week:
-m <- read.csv('results/outputMet_110919_oldOEV_pro.csv')
+m <- read.csv('results/original/outputMet_110819_pro.csv')
 # m <- m[!is.na(m$onsetObs5), ] # remove if no onset observed
 m1 <- unique(m[, c(1:8, 25, 39)])
 m2 <- unique(m[, c(1:8, 26, 39)])
@@ -236,13 +236,11 @@ e3 <- e3[, c(1:3, 6:8, 310, 312)]
 e4 <- e4[, c(1:3, 6:8, 310, 312)]
 
 # Get lead weeks (just to plot all things by consistent x-axis):
-m <- read.csv('results/outputMet_110919_oldOEV_pro.csv')
+m <- read.csv('results/original/outputMet_110819_pro.csv')
 m <- m[!is.na(m$onsetObs5), ] # remove if no onset observed
 m <- unique(m[, c(1:3, 7:8, 15, 92)])
 
 e1 <- merge(e1, m, by = c('season', 'country', 'run', 'oev_base', 'fc_start'))
-
-
 e2 <- merge(e2, m, by = c('season', 'country', 'run', 'oev_base', 'fc_start'))
 e3 <- merge(e3, m, by = c('season', 'country', 'run', 'oev_base', 'fc_start'))
 e4 <- merge(e4, m, by = c('season', 'country', 'run', 'oev_base', 'fc_start'))

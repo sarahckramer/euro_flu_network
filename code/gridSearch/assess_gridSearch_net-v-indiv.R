@@ -12,6 +12,8 @@ source('code/gridSearch/comp_netVsIndiv/plotting_functions.R')
 # Question: Include only points where forecasts are made in both "models" (so, remove "extra" 20,000), in order to do fair comparison? (Probably.)
 source('code/gridSearch/comp_netVsIndiv/readIn_metrics.R')
 
+### Can swap out original network results with any other network results; for individual, also try running: 1. with old OEV (old results), 2. with new param ranges ###
+
 # Question: Not seeing much impact at all of oev_denom, and relatively little of lambda - can we choose a single value?
 # Plot overall PT, PI, and OT by PREDICTED lead week:
 if (outputPlots) {
@@ -50,7 +52,6 @@ if (outputPlots) {
 source('code/gridSearch/comp_netVsIndiv/readIn_logScores.R')
 
 # Plot log scores for PT, PI, OT, 1-4 weeks, by PREDICTED lead week:
-# Question: Should 1-4 weeks be plotted some other way?
 # Question: Remove where obs are 0 for 1-4 weeks? Or where obs below some value?
 # Question: Remove where no onset predicted before calculating these?
 if (outputPlots) {

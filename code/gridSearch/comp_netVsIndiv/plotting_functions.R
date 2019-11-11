@@ -70,7 +70,7 @@ format_Dist <- function(d1, d2, m_red) {
   d.red$oev_base <- factor(d.red$oev_base)
   d.red$oev_denom <- factor(d.red$oev_denom)
   d.red$lambda <- factor(d.red$lambda)
-  levels(d.red$lambda)[1] <- '1.00'
+  levels(d.red$lambda)[1] <- '1.02'
   
   return(d.red)
 }
@@ -102,7 +102,7 @@ format_Dist_OT <- function(d1, d2, m_red) {
   d.red$oev_base <- factor(d.red$oev_base)
   d.red$oev_denom <- factor(d.red$oev_denom)
   d.red$lambda <- factor(d.red$lambda)
-  levels(d.red$lambda)[1] <- '1.00'
+  levels(d.red$lambda)[1] <- '1.02'
   
   return(d.red)
 }
@@ -126,7 +126,7 @@ format_Dist_qual <- function(d1, d2, m_red) {
   d.red$oev_base <- factor(d.red$oev_base)
   d.red$oev_denom <- factor(d.red$oev_denom)
   d.red$lambda <- factor(d.red$lambda)
-  levels(d.red$lambda)[1] <- '1.00'
+  levels(d.red$lambda)[1] <- '1.02'
   
   return(d.red)
 }
@@ -151,7 +151,7 @@ format_Dist_Wks <- function(d1, d2, m_red, met) {
   d$oev_base <- factor(d$oev_base)
   d$oev_denom <- factor(d$oev_denom)
   d$lambda <- factor(d$lambda)
-  levels(d$lambda)[1] <- '1.00'
+  levels(d$lambda)[1] <- '1.02'
   
   return(d)
 }
