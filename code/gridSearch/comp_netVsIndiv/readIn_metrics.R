@@ -1,15 +1,13 @@
 
 # Read in metrics from both network and individual models:
-m <- read.csv(file = list.fi)
-
-m <- read.csv('results/original/outputMet_110819_pro.csv')
-m2 <- read.csv('code/individualCountries/outputs/outputMet_082819_pro.csv')
+m <- read.csv(file = paste0(model1, list.files(path = model1, pattern = '_pro')))
+m2 <- read.csv(file = paste0(model2, list.files(path = model2, pattern = '_pro')))
 
 # Limit to needed columns:
-m <- m[, c(1:9, 12:13, 15, 17:19, 25:32, 39, 43, 47, 92:95, 97, 99:101)]
+m <- m[, c(1:9, 12:13, 15, 17:19, 25:32, 39, 43, 47, 60:63, 65, 67:69)]
 m$leadonset5 <- m$fc_start - m$onset5
 
-m2 <- m2[, c(2:3, 5:7, 4, 8, 1, 9, 12:13, 15, 17:19, 25:32, 39, 43, 47, 60:63, 65, 67:69)]
+m2 <- m2[, c(1:9, 12:13, 15, 17:19, 25:32, 39, 43, 47, 60:63, 65, 67:69)]
 m2$leadonset5 <- m2$fc_start - m2$onset5
 
 # Label by model type:
@@ -28,13 +26,6 @@ m.check <- merge(m, m2, by = c('season', 'run', 'oev_base', 'oev_denom', 'lambda
 # # Why aren't PIs equal?
 # m.check1 <- m.check[round(m.check$obs_peak_int.x, 1) != round(m.check$obs_peak_int.y, 1), c(1:7, 13, 34)]
 # # PIs have slight differences, but never past decimal point; original complications caused by wrong scaling values in df for FR
-
-# Limit indiv. countries to countries in network model:
-m2 <- m2[m2$country %in% levels(m$country), ]
-m2$country <- factor(m2$country)
-
-# And limit oev_denom/lambda:
-m2 <- m2[m2$oev_denom == 1 & m2$lambda == 1.02, ]
 
 # Remove the "extra" rows from network model, for a fair comparison:
 m.new <- m.check[, 1:36]
