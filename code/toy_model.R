@@ -38,7 +38,7 @@ theta_up <- c(L_up, D_up, Rmx_up, Rdiff_up, airScale_up)
 discrete <- FALSE # run the SIRS model continuously
 metricsonly <- FALSE # save all outputs
 lambda <- 1.02 # inflation factor for the ensemble filters c(1.00, 1.01, 1.02, 1.03, 1.05, 1.075?)
-oev_base <- 1e5; oev_denom <- 10.00
+oev_base <- 1e4; oev_denom <- 10.00
 
 # 1e4/10/1.1 (tends toward D = 8-10); 1e4/10/1.05 (doesn't get the blips as well, but looks better near end); 1e4/1/1.05 (gets some trailing up after outbreak...; fit R0diff much smaller (~0.2 vs. ~0.6));
 # 1e5/10/1.05 - has trounle keeping early values toward 0
@@ -46,7 +46,7 @@ oev_base <- 1e5; oev_denom <- 10.00
 # old OEV, 1e4/10/1.02: doesn't have early upticks, but totally misses outbreak in SK completely
 # old OEV, 1e5/10/1.02: maybe actually better, but still can't get SK
 # old OEV, 1e4/1/1.02: also misses SK; doesn't do well with CZ either
-# 1e4/10/1.02, keep NAs: 
+# 1e4/10/1.02, keep NAs: very similar but somehow less uptick at the end of the outbreak? actually, not necessarily
 
 num_ens <- 300 # use 300 for ensemble filters, 10000 for particle filters
 num_runs <- 1
@@ -169,9 +169,9 @@ test_i[test_i == 0 & !is.na(test_i)] <- NA
 # par(mfrow = c(1, 1), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 
 # Variance of syndromic+ data:
-# obs_vars <- calc_obsvars_nTest(obs = as.matrix(obs_i), syn_dat = as.matrix(syn_i), ntests = as.matrix(test_i), posprops = as.matrix(pos_i),
-#                                oev_base, oev_denom, tmp_exp = 2.0)
-obs_vars <- calc_obsvars(obs = as.matrix(obs_i), oev_base, oev_denom)
+obs_vars <- calc_obsvars_nTest(obs = as.matrix(obs_i), syn_dat = as.matrix(syn_i), ntests = as.matrix(test_i), posprops = as.matrix(pos_i),
+                               oev_base, oev_denom, tmp_exp = 2.0)
+# obs_vars <- calc_obsvars(obs = as.matrix(obs_i), oev_base, oev_denom)
 # matplot(obs_vars, pch = 20, col = viridis(n), type = 'b', lty = 1, cex = 0.75)
 ### QUESTION: OEV is way higher for a couple of countries than most of the others - is this fair?
 # Scaled syn+ - also scale syn? Otherwise not sure the OEV would be appropriate for the rates we're fitting to

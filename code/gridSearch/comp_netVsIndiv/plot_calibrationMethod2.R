@@ -7,13 +7,14 @@ p <- c(0.005, 0.025, 0.05, 0.1, 0.15, 0.20, 0.25, 0.375, 0.625, 0.75, 0.8, 0.85,
 
 ### Peak Timing ###
 # Read in and compile dist files (PT):
-a.dist <- read.csv('results/original/outputDist_110819_pt.csv')
-b.dist <- read.csv('code/individualCountries/outputs/outputDist_082819_PT.csv')
+a.dist <- read.csv(paste0(model1, list.files(path = model1, pattern = 'Dist.*_pt')))
+b.dist <- read.csv(paste0(model2, list.files(path = model2, pattern = 'Dist.*_PT')))
 m.red <- m[, c('country', 'season', 'run', 'oev_base', 'oev_denom', 'lambda', 'fc_start', 'obs_pkwk', 'onset5', 'onsetObs5', 'leadpkwk_mean', 'FWeek_pkwk', 'model')]
 
 b.dist <- b.dist[b.dist$country %in% levels(a.dist$country) & b.dist$lambda == 1.02 & b.dist$oev_denom == 10, ]
 
 d.pkwk <- format_Dist(a.dist, b.dist, m.red)
+d.pkwk$country <- factor(d.pkwk$country)
 countries <- levels(d.pkwk$country) # note: different order than that in which forecasts run!
 
 # Calculate calibration over all leads / models / OEVs / lambdas:
@@ -59,8 +60,8 @@ p5 <- ggplot(data = dat.pt.temp, aes(x = quantile, y = y, color = model, group =
 
 ### Onset Timing ###
 # Read in and compile dist files (PT):
-a.dist <- read.csv('results/original/outputDist_110819_ot.csv')
-b.dist <- read.csv('code/individualCountries/outputs/outputDist_082819_OT.csv')
+a.dist <- read.csv(paste0(model1, list.files(path = model1, pattern = 'Dist.*_ot')))
+b.dist <- read.csv(paste0(model2, list.files(path = model2, pattern = 'Dist.*_OT')))
 
 b.dist <- b.dist[b.dist$country %in% levels(a.dist$country) & b.dist$lambda == 1.02 & b.dist$oev_denom == 10, ]
 
@@ -109,8 +110,8 @@ p7 <- ggplot(data = dat.ot.temp, aes(x = quantile, y = y, color = model, group =
 
 ### Peak Intensity ###
 # Read in and compile files:
-a.dist <- read.csv('results/original/outputEns_110819_PI.csv')
-b.dist <- read.csv('code/individualCountries/outputs/outputEns_082819_PI.csv')
+a.dist <- read.csv(paste0(model1, list.files(path = model1, pattern = 'Ens.*_PI')))
+b.dist <- read.csv(paste0(model2, list.files(path = model2, pattern = 'Ens.*_PI')))
 m.red <- m[, c('country', 'season', 'run', 'oev_base', 'oev_denom', 'lambda', 'fc_start', 'scaling', 'obs_peak_int', 'obs_pkwk', 'onset5', 'onsetObs5', 'leadpkwk_mean', 'FWeek_pkwk', 'model')]
 
 b.dist <- b.dist[b.dist$country %in% levels(a.dist$country) & b.dist$lambda == 1.02 & b.dist$oev_denom == 10, ]
@@ -167,7 +168,7 @@ p6 <- ggplot(data = dat.pi.temp, aes(x = quantile, y = y, color = model, group =
   facet_grid(oev_base ~ lead)
 # print(p6)
 
-# grid.arrange(p1, p2, p3, ncol = 1)
+# grid.arrange(p5, p6, p7, ncol = 1)
 print(p5)
 print(p6)
 print(p7)
@@ -176,15 +177,15 @@ print(p7)
 rm(a.dist, b.dist, d.int, d.new, d.onwk, d.pkwk, d.temp1, d.temp2, dat.ot.temp, dat.pi.temp, dat.pt.temp, dat.temp, dat.temp.all)
 
 # Can we also look at calibration for the 1-4 week ahead predictions?:
-a1 <- read.csv('results/original/outputEns_110819_1wk.csv')
-a2 <- read.csv('results/original/outputEns_110819_2wk.csv')
-a3 <- read.csv('results/original/outputEns_110819_3wk.csv')
-a4 <- read.csv('results/original/outputEns_110819_4wk.csv')
+a1 <- read.csv(paste0(model1, list.files(path = model1, pattern = 'Ens.*_1wk')))
+a2 <- read.csv(paste0(model1, list.files(path = model1, pattern = 'Ens.*_2wk')))
+a3 <- read.csv(paste0(model1, list.files(path = model1, pattern = 'Ens.*_3wk')))
+a4 <- read.csv(paste0(model1, list.files(path = model1, pattern = 'Ens.*_4wk')))
 
-a1.ind <- read.csv('code/individualCountries/outputs/outputEns_082819_1wk.csv')
-a2.ind <- read.csv('code/individualCountries/outputs/outputEns_082819_2wk.csv')
-a3.ind <- read.csv('code/individualCountries/outputs/outputEns_082819_3wk.csv')
-a4.ind <- read.csv('code/individualCountries/outputs/outputEns_082819_4wk.csv')
+a1.ind <- read.csv(paste0(model2, list.files(path = model2, pattern = 'Ens.*_1wk')))
+a2.ind <- read.csv(paste0(model2, list.files(path = model2, pattern = 'Ens.*_2wk')))
+a3.ind <- read.csv(paste0(model2, list.files(path = model2, pattern = 'Ens.*_3wk')))
+a4.ind <- read.csv(paste0(model2, list.files(path = model2, pattern = 'Ens.*_4wk')))
 
 a1.ind <- a1.ind[a1.ind$country %in% levels(a1$country) & a1.ind$lambda == 1.02 & a1.ind$oev_denom == 10, ]; a1.ind$country <- factor(a1.ind$country)
 a2.ind <- a2.ind[a2.ind$country %in% levels(a1$country) & a2.ind$lambda == 1.02 & a2.ind$oev_denom == 10, ]; a2.ind$country <- factor(a2.ind$country)

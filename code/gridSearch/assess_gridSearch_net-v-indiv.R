@@ -85,7 +85,7 @@ rm(d, e.pi, e, byWeek)
 # }
 
 # Plot inferred parameter values at each time step (network only - individual allows parameter values to differ by country):
-o <- read.csv('results/original/outputOPParams_110819.csv')
+o <- read.csv(paste0(model1, list.files(path = model1, pattern = 'OPParams')))
 o$group <- paste(o$oev_base, o$oev_denom, o$lambda, o$season, o$run, o$fc_start, sep = '_')
 o$group <- factor(o$group)
 o$oev_base <- factor(o$oev_base)
