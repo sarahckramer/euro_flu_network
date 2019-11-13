@@ -16,7 +16,7 @@ m$model <- 'Network'; m2$model <- 'Individual'
 # # Check that observed values are the same for both files:
 m.check <- merge(m, m2, by = c('season', 'run', 'oev_base', 'oev_denom', 'lambda', 'country', 'fc_start'))#, all = T)
 # # note that there are about 20,000 more entries in network model results than in individual model results; likely where there are no data, so individual forecasts can't be run
-#
+# 
 # all.equal(m.check$obs_pkwk.x, m.check$obs_pkwk.y)
 # all.equal(m.check$obs_peak_int.x, m.check$obs_peak_int.y)
 # all.equal(m.check$onsetObs5.x, m.check$onsetObs5.y)

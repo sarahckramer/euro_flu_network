@@ -1,8 +1,8 @@
 
 # Read in log scores from network model:
 d <- read.csv(paste0(model1, list.files(path = model1, pattern = '_pt_ot')))
-e.pi <- read.csv(paste0(model1, list.files(path = model1, pattern = '_pi')))
-e <- read.csv(paste0(model1, list.files(path = model1, pattern = '_1-4wk')))
+e.pi <- read.csv(paste0(model1, list.files(path = model1, pattern = '_pi.csv')))
+e <- read.csv(paste0(model1, list.files(path = model1, pattern = '_1-4wk.csv')))
 
 d2 <- read.csv(paste0(model2, list.files(path = model2, pattern = '_pt_ot')))
 e.pi2 <- read.csv(paste0(model2, list.files(path = model2, pattern = '_pi')))

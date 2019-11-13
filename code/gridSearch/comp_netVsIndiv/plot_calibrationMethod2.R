@@ -8,7 +8,7 @@ p <- c(0.005, 0.025, 0.05, 0.1, 0.15, 0.20, 0.25, 0.375, 0.625, 0.75, 0.8, 0.85,
 ### Peak Timing ###
 # Read in and compile dist files (PT):
 a.dist <- read.csv(paste0(model1, list.files(path = model1, pattern = 'Dist.*_pt')))
-b.dist <- read.csv(paste0(model2, list.files(path = model2, pattern = 'Dist.*_PT')))
+b.dist <- read.csv(paste0(model2, list.files(path = model2, pattern = 'Dist.*_pt')))
 m.red <- m[, c('country', 'season', 'run', 'oev_base', 'oev_denom', 'lambda', 'fc_start', 'obs_pkwk', 'onset5', 'onsetObs5', 'leadpkwk_mean', 'FWeek_pkwk', 'model')]
 
 b.dist <- b.dist[b.dist$country %in% levels(a.dist$country) & b.dist$lambda == 1.02 & b.dist$oev_denom == 10, ]
@@ -59,9 +59,10 @@ p5 <- ggplot(data = dat.pt.temp, aes(x = quantile, y = y, color = model, group =
 # print(p5)
 
 ### Onset Timing ###
+# QUESTION: Do I keep in where onsets not predicted here?
 # Read in and compile dist files (PT):
 a.dist <- read.csv(paste0(model1, list.files(path = model1, pattern = 'Dist.*_ot')))
-b.dist <- read.csv(paste0(model2, list.files(path = model2, pattern = 'Dist.*_OT')))
+b.dist <- read.csv(paste0(model2, list.files(path = model2, pattern = 'Dist.*_ot')))
 
 b.dist <- b.dist[b.dist$country %in% levels(a.dist$country) & b.dist$lambda == 1.02 & b.dist$oev_denom == 10, ]
 

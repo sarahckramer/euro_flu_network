@@ -11,7 +11,7 @@ library(gtable); library(gridExtra); library(reshape2); library(stringr)
 dir.save <- 'code/gridSearch/plots/'
 
 # Read in results:
-output <- read.csv('results/original/outputOP_110819.csv')
+output <- read.csv('results/indiv_new/outputOP_111219_INDIV.csv')
 
 # First need to add observed to output data frame:
 iliiso <- read.csv('data/WHO_data_05-09-19.csv')
@@ -49,6 +49,7 @@ names(iliiso)[3] <- 'observed'
 output <- merge(output, iliiso, by.x = c('country', 'time2'), by.y = c('variable', 'time'))
 
 # Choose oev_base:
+output.full <- output
 output <- output[output$oev_base == 1e4, ]
 
 #### OUTPUT ####
@@ -81,7 +82,7 @@ for (season in seasons) {
   
   print('Graph list completed.')
   glist <- marrangeGrob(grobs = graphs, nrow = 1, ncol = 1)
-  ggsave(paste(dir.save, 'output_', season, '.pdf', sep = ''), glist, width = 18, height = 9, dpi = 600)
+  ggsave(paste(dir.save, 'output_', season, '_INDIV_1e4.pdf', sep = ''), glist, width = 18, height = 9, dpi = 600)
   print('Done.')
 }
 
