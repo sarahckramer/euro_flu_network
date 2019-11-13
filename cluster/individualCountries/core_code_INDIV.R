@@ -209,6 +209,7 @@ for (count.index in 1:length(countries)) {
   write.csv(outputEns, file = paste('code/individualCountries/outputs/outputEns_', country, '_', oev_base, '_', oev_denom, '_', lambda,'.csv', sep = ''), row.names = FALSE)
   
 }
+print('Forecasting completed.')
 
 ### Consolidate output ###
 metrics.all <- NULL
@@ -216,25 +217,27 @@ output.all <- NULL
 dist.all <- NULL
 ens.all <- NULL
 
-for (i in countries) {
+for (country in countries) {
     a <- read.csv(file = paste0('code/individualCountries/outputs/outputMet_', country, '_', oev_base, '_', oev_denom, '_', lambda, '.csv'))
     metrics.all <- rbind(metrics.all, a)
 }
-for (i in countries) {
+for (country in countries) {
     b <- read.csv(file = paste0('code/individualCountries/outputs/outputOP_', country, '_', oev_base, '_', oev_denom, '_', lambda, '.csv'))
     output.all <- rbind(output.all, b)
 }
-for (i in countries) {
+for (country in countries) {
     c <- read.csv(file = paste0('code/individualCountries/outputs/outputDist_', country, '_', oev_base, '_', oev_denom, '_', lambda, '.csv'))
     dist.all <- rbind(dist.all, c)
 }
-for (i in countries) {
+for (country in countries) {
     d <- read.csv(file = paste0('code/individualCountries/outputs/outputEns_', country, '_', oev_base, '_', oev_denom, '_', lambda, '.csv'))
     ens.all <- rbind(ens.all, d)
 }
+print('Results compiled.')
 
-write.csv(metrics.all, file = paste0(code/individualCountries/outputs/outputMet_', oev_base, '_', oev_denom, '_', lambda, '.csv'), row.names = FALSE)
-write.csv(output.all, file = paste0(code/individualCountries/outputs/outputOP_', oev_base, '_', oev_denom, '_', lambda, '.csv'), row.names = FALSE)
-write.csv(dist.all, file = paste0(code/individualCountries/outputs/outputDist_', oev_base, '_', oev_denom, '_', lambda, '.csv'), row.names = FALSE)
-write.csv(ens.all, file = paste0(code/individualCountries/outputs/outputEns_', oev_base, '_', oev_denom, '_', lambda, '.csv'), row.names = FALSE)
+write.csv(metrics.all, file = paste0('code/individualCountries/outputs/outputMet_', oev_base, '_', oev_denom, '_', lambda, '.csv'), row.names = FALSE)
+write.csv(output.all, file = paste0('code/individualCountries/outputs/outputOP_', oev_base, '_', oev_denom, '_', lambda, '.csv'), row.names = FALSE)
+write.csv(dist.all, file = paste0('code/individualCountries/outputs/outputDist_', oev_base, '_', oev_denom, '_', lambda, '.csv'), row.names = FALSE)
+write.csv(ens.all, file = paste0('code/individualCountries/outputs/outputEns_', oev_base, '_', oev_denom, '_', lambda, '.csv'), row.names = FALSE)
 
+print('Done.')

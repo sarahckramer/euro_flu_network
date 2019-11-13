@@ -256,9 +256,9 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
         #   print(countries[loc])
         # }
         
-        # if (length(x[S0.indices, ][which(x[S0.indices, ] < 0, arr.ind = TRUE)]) > 0) {
-        #   print('Some S0 reduced below 0.')
-        # }
+        if (length(x[S0.indices, ][which(x[S0.indices, ] < 0, arr.ind = TRUE)]) > 0) {
+          print('Some S0 reduced below 0.')
+        }
         x[which(x < 0, arr.ind = TRUE)] <- 0 # try - set this to 1.0 instead of 0, like in Fn_checkxnobounds?
         x <- Fn_checkxnobounds(x, S0.indices, I0.indices, param.indices) # this alone sets the "empty" compartments to 1.0; also, nothing to check newI? (okay, b/c makes sure don't go below 0)
         obs_ens[loc, obs_ens[loc, ] < 0] <- 0 # so we do ensure these aren't wild as we go, though
@@ -355,8 +355,8 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     }
     obsprior[,, tt + 1] <- obs_ens
     
-    # Plot training progress:
-    if (tt > 1) {
+    # # Plot training progress:
+    # if (tt > 1) {
       # par(mfrow = c(1, 1), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
       # obs.red.toPlot <- obs_i#[, to.check] # DE, IT, ES, SE, UK
       # obs.post.toPlot <- t(apply(obspost[,, 1:tt], c(1, 3), mean))
@@ -380,7 +380,7 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
       #     lines(obs.post.toPlot.ind, type = 'b', pch = 20, lty = 1, cex = 0.8, col = 'coral')
       #   }
       # }
-    }
+    # }
     
   } # end of training
   

@@ -2,7 +2,7 @@
 ### Run synthetic code for 20 years ###
 
 ### Read in libraries
-library("truncnorm"); library("tgp"); library("MASS"); library(reshape2); library(plyr); library(ggplot2); library(gridExtra); library(viridis)
+library("truncnorm"); library("tgp"); library("MASS"); library(reshape2); library(plyr); #library(ggplot2); library(gridExtra); library(viridis)
 
 ### Set directory:
 setwd('/ifs/scratch/msph/ehs/sck2165/global_forecasting/core/')
@@ -18,7 +18,7 @@ tmstep <- 7 # data are weekly
 wk_start <- 40
 
 ### Set parameters
-num_ens <- 100 # (100 x 100, or 200 x 50)
+num_ens <- 50 # (100 x 100, or 200 x 50)
 tm_strt <- 273; tm_end <- 273 + 365 * 20 - 1; tm_step <- 1#; t <- 1 # 273 is first of October
 tm.range <- tm_strt:tm_end # should be length 7300 days, or 7300 / 365 = 20 years
 
@@ -30,8 +30,10 @@ cmd_args = commandArgs(trailingOnly = T)
 task.index=as.numeric(cmd_args[1])
 range.to.use <- (1:50) + 50 * (task.index - 1)
 
-load('runs20yr/inputs/init_parms_10000.RData')
+load('code/runs20yr/inputs/init_parms_10000.RData')
 parms <- parms[, range.to.use]
+
+print(range.to.use)
 print(dim(parms))
 
 ### Specify the countries in the model
@@ -64,12 +66,15 @@ for (i in 1:4) {
 AH <- AH[1:7665, ] # 21 years
 
 ### Run model!
+print('Get initial states...')
 init.states <- allocate_S0I0(parms, num_ens, n, N, s0.method = 'dist')
+print('Begin running model...')
 res <- run_model(parms, init.states[[1]], init.states[[2]], AH, num_ens, n, N, tm.range, tmstep, tm_strt, tm_end, dt, pop.size, r0.mn = FALSE) # time: 50 ~ 30minutes
+print('Model run!')
 res.rates <- res[[1]]
 
 ### Save raw outputs:
-# save(res.rates, file = 'syntheticTests/syntheticData/resRates_20yr_FULL_500.RData')
+# save(res.rates, file = paste0('outputs/synth/resRates_20yr_FULL_', task.index,'.RData'))
 
 ### Remove the first 10 years for all runs:
 for (i in 1:num_ens) {

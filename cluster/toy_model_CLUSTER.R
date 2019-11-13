@@ -237,11 +237,11 @@ outputMetrics[outputMetrics[, 'country'] == 'FR' & outputMetrics[, 'season'] %in
 ### Save results:
 print('Finished with loop; writing files...')
 
-write.csv(outputMetrics, file = paste('outputs/obs/outputMet', season, oev_base, ntrn, '110719.csv', sep = '_'), row.names = FALSE)
-write.csv(outputOP, file = paste('outputs/obs/outputOP', season, oev_base, ntrn, '110719.csv', sep = '_'), row.names = FALSE)
-write.csv(outputOPParams, file = paste('outputs/obs/outputOPParams', season, oev_base, ntrn, '110719.csv', sep = '_'), row.names = FALSE)
-write.csv(outputDist, file = paste('outputs/obs/outputDist', season, oev_base, ntrn, '110719.csv', sep = '_'), row.names = FALSE)
-write.csv(outputEns, file = paste('outputs/obs/outputEns', season, oev_base, ntrn, '110719.csv', sep = '_'), row.names = FALSE)
+write.csv(outputMetrics, file = paste('outputs/obs/outputMet', season, oev_base, oev_denom, ntrn, '110819_oldOEV.csv', sep = '_'), row.names = FALSE)
+write.csv(outputOP, file = paste('outputs/obs/outputOP', season, oev_base, oev_denom, ntrn, '110819_oldOEV.csv', sep = '_'), row.names = FALSE)
+write.csv(outputOPParams, file = paste('outputs/obs/outputOPParams', season, oev_base, oev_denom, ntrn, '110819_oldOEV.csv', sep = '_'), row.names = FALSE)
+write.csv(outputDist, file = paste('outputs/obs/outputDist', season, oev_base, oev_denom, ntrn, '110819_oldOEV.csv', sep = '_'), row.names = FALSE)
+write.csv(outputEns, file = paste('outputs/obs/outputEns', season, oev_base, oev_denom, ntrn, '110819_oldOEV.csv', sep = '_'), row.names = FALSE)
 
 print('Done.')
 
