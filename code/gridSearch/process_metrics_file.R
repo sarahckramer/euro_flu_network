@@ -13,7 +13,7 @@ m <- read.csv(file = list.files(pattern = 'Met_'))
 
 # m <- read.csv('results/outputMet_110919_oldOEV.csv')
 # 
-# m <- read.csv('code/individualCountries/outputs/outputMet_082819.csv')
+# # m <- read.csv('code/individualCountries/outputs/outputMet_082819.csv')
 # names(m)[4] <- 'scaling'
 # m$scaling[m$country == 'FR' & m$season %in% c('2010-11', '2011-12', '2012-13', '2013-14')] <- 1.3
 # for (i in 37:44) {
@@ -33,10 +33,6 @@ m <- read.csv(file = list.files(pattern = 'Met_'))
 #   }
 #   
 # }
-# 
-# m <- read.csv('results/propRandTravel/outputMet_090919.csv')
-# 
-# m <- read.csv('results/highOEVBase/outputMet_091619.csv')
 
 # Are peak intensities still the same for all base/denom/lambda at this point?:
 m.check <- unique(m[, c(1, 8:9, 17)]) # yep!
@@ -134,7 +130,7 @@ m$accurate_on[!(m$abs_delta_onset %in% c(0,1))] <- 'no'
 m$accurate_on <- factor(m$accurate_on)
 
 # Write new metrics file
-write.csv(m, file = '../PROCESS/outputMet_110919_oldOEV_denom1_pro.csv', row.names = F)
+write.csv(m, file = '../PROCESS/outputMet_111219_INDIV_pro.csv', row.names = F)
 # write.csv(m, file = 'code/individualCountries/outputs/outputMet_082819_pro.csv', row.names = F)
 # write.csv(m, file = 'results/newScalings/outputMet_090919_pro.csv', row.names = F)
 # write.csv(m, file = 'results/propRandTravel/outputMet_090919_pro.csv', row.names = F)

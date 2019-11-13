@@ -30,7 +30,7 @@ for (i in 1:length(file.list)) {
   m <- rbind(m, met.list[[i]])
 }
 rm(met.list)
-write.csv(m, file = 'results/outputMet_110919_oldOEV_denom1.csv', row.names = FALSE)
+write.csv(m, file = 'results/outputMet_111219_INDIV.csv', row.names = FALSE)
 
 file.list <- list.files('results/raw/', pattern = 'OP_')
 op.list <- list()
@@ -42,7 +42,7 @@ for (i in 1:length(file.list)) {
   o <- rbind(o, op.list[[i]])
 }
 rm(op.list)
-write.csv(o, file = 'results/outputOP_110919_oldOEV_denom1.csv', row.names = FALSE)
+write.csv(o, file = 'results/outputOP_111219_INDIV.csv', row.names = FALSE)
 
 file.list <- list.files('results/raw/', pattern = 'OPParams')
 op.list <- list()
@@ -71,9 +71,9 @@ for (i in 1:length(file.list)) {
 rm(dist.list)
 d.pt <- dist[dist$metric == 'pw', ]
 d.ot <- dist[dist$metric == 'onset5', ]
-write.csv(dist, file = 'results/outputDist_110919_oldOEV_denom1.csv', row.names = FALSE)
-write.csv(d.pt, file = 'results/outputDist_110919_oldOEV_denom1_pt.csv', row.names = FALSE)
-write.csv(d.ot, file = 'results/outputDist_110919_oldOEV_denom1_ot.csv', row.names = FALSE)
+write.csv(dist, file = 'results/outputDist_111219_INDIV.csv', row.names = FALSE)
+write.csv(d.pt, file = 'results/outputDist_111219_INDIV_pt.csv', row.names = FALSE)
+write.csv(d.ot, file = 'results/outputDist_111219_INDIV_ot.csv', row.names = FALSE)
 
 file.list <- list.files('results/raw/', pattern = 'Ens_')
 ens.list <- list()
@@ -93,12 +93,12 @@ e1 <- e[e$metric == '1week', ]
 e2 <- e[e$metric == '2week', ]
 e3 <- e[e$metric == '3week', ]
 e4 <- e[e$metric == '4week', ]
-write.csv(e.pi, file = 'results/outputEns_110919_oldOEV_denom1_PI.csv', row.names = FALSE)
-write.csv(e1, file = 'results/outputEns_110919_oldOEV_denom1_1wk.csv', row.names = FALSE)
-write.csv(e2, file = 'results/outputEns_110919_oldOEV_denom1_2wk.csv', row.names = FALSE)
-write.csv(e3, file = 'results/outputEns_110919_oldOEV_denom1_3wk.csv', row.names = FALSE)
-write.csv(e4, file = 'results/outputEns_110919_oldOEV_denom1_4wk.csv', row.names = FALSE)
-write.csv(e, file = 'results/outputEns_110919_oldOEV_denom1.csv', row.names = FALSE)
+write.csv(e.pi, file = 'results/outputEns_111219_INDIV_PI.csv', row.names = FALSE)
+write.csv(e1, file = 'results/outputEns_111219_INDIV_1wk.csv', row.names = FALSE)
+write.csv(e2, file = 'results/outputEns_111219_INDIV_2wk.csv', row.names = FALSE)
+write.csv(e3, file = 'results/outputEns_111219_INDIV_3wk.csv', row.names = FALSE)
+write.csv(e4, file = 'results/outputEns_111219_INDIV_4wk.csv', row.names = FALSE)
+write.csv(e, file = 'results/outputEns_111219_INDIV.csv', row.names = FALSE)
 
 
 

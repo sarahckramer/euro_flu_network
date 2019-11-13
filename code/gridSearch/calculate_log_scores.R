@@ -141,12 +141,13 @@ e <- e[, c(1:4, 7:8, 310, 312)]
 m <- read.csv(file = list.files(pattern = '_pro'))
 m$leadonset5 <- m$fc_start - m$onset5
 m <- m[!is.na(m$onsetObs5), ] # remove if no onset observed
-m <- unique(m[, c(1:3, 7:8, 15, 92, 99, 110)])
+# m <- unique(m[, c(1:3, 7:8, 15, 92, 99, 110)])
+m <- unique(m[, c(1:3, 7:8, 15, 60, 67, 78)])
 
 e <- merge(e, m, by = c('season', 'country', 'run', 'oev_base', 'fc_start'))
 
 # Save as temporary file:
-write.csv(e, file = '../original/logScores_pi.csv', row.names = FALSE)
+write.csv(e, file = '../logScores_pi.csv', row.names = FALSE)
 rm(list = ls())
 
 # Now 1-4 weeks:
