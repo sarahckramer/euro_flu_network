@@ -42,7 +42,7 @@ for (i in 1:length(file.list)) {
   o <- rbind(o, op.list[[i]])
 }
 rm(op.list)
-write.csv(o, file = 'results/outputOP_111219_INDIV.csv', row.names = FALSE)
+write.csv(o, file = 'results/outputOP_111219_INDIV_FULL.csv', row.names = FALSE)
 
 file.list <- list.files('results/raw/', pattern = 'OPParams')
 op.list <- list()
@@ -71,7 +71,7 @@ for (i in 1:length(file.list)) {
 rm(dist.list)
 d.pt <- dist[dist$metric == 'pw', ]
 d.ot <- dist[dist$metric == 'onset5', ]
-write.csv(dist, file = 'results/outputDist_111219_INDIV.csv', row.names = FALSE)
+write.csv(dist, file = 'results/outputDist_111219_INDIV_FULL.csv', row.names = FALSE)
 write.csv(d.pt, file = 'results/outputDist_111219_INDIV_pt.csv', row.names = FALSE)
 write.csv(d.ot, file = 'results/outputDist_111219_INDIV_ot.csv', row.names = FALSE)
 
@@ -99,6 +99,35 @@ write.csv(e2, file = 'results/outputEns_111219_INDIV_2wk.csv', row.names = FALSE
 write.csv(e3, file = 'results/outputEns_111219_INDIV_3wk.csv', row.names = FALSE)
 write.csv(e4, file = 'results/outputEns_111219_INDIV_4wk.csv', row.names = FALSE)
 write.csv(e, file = 'results/outputEns_111219_INDIV.csv', row.names = FALSE)
+
+# or, for individual country ens files from cluster:
+e <- read.csv('results/raw/outputEns_111119_1wk.csv')
+e <- e[e$oev_denom == 10 & e$lambda == 1.02, ]
+write.csv(e, file = 'results/indiv_new/outputEns_111119_INDIV_1wk.csv', row.names = FALSE)
+
+e <- read.csv('results/raw/outputEns_111119_2wk.csv')
+e <- e[e$oev_denom == 10 & e$lambda == 1.02, ]
+write.csv(e, file = 'results/indiv_new/outputEns_111119_INDIV_2wk.csv', row.names = FALSE)
+
+e <- read.csv('results/raw/outputEns_111119_3wk.csv')
+e <- e[e$oev_denom == 10 & e$lambda == 1.02, ]
+write.csv(e, file = 'results/indiv_new/outputEns_111119_INDIV_3wk.csv', row.names = FALSE)
+
+e <- read.csv('results/raw/outputEns_111119_4wk.csv')
+e <- e[e$oev_denom == 10 & e$lambda == 1.02, ]
+write.csv(e, file = 'results/indiv_new/outputEns_111119_INDIV_4wk.csv', row.names = FALSE)
+
+e <- read.csv('results/raw/outputEns_111119_PI.csv')
+e <- e[e$oev_denom == 10 & e$lambda == 1.02, ]
+write.csv(e, file = 'results/indiv_new/outputEns_111119_INDIV_PI.csv', row.names = FALSE)
+rm(e)
+
+
+
+
+
+
+
 
 
 

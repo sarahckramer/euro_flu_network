@@ -14,11 +14,11 @@ m <- read.csv(file = list.files(pattern = 'Met_'))
 # m <- read.csv('results/outputMet_110919_oldOEV.csv')
 # 
 # # m <- read.csv('code/individualCountries/outputs/outputMet_082819.csv')
-# names(m)[4] <- 'scaling'
-# m$scaling[m$country == 'FR' & m$season %in% c('2010-11', '2011-12', '2012-13', '2013-14')] <- 1.3
-# for (i in 37:44) {
-#   m[, i] <- m[, i] + 40 - 1
-# }
+names(m)[4] <- 'scaling'
+m$scaling[m$country == 'FR' & m$season %in% c('2010-11', '2011-12', '2012-13', '2013-14')] <- 1.3
+for (i in 37:44) {
+  m[, i] <- m[, i] + 40 - 1
+}
 # 
 # m <- read.csv('results/newScalings/outputMet_090919.csv')
 # load('data/scalings_temp_08-26-19_MEANS.RData')

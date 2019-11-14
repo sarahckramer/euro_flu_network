@@ -1,7 +1,7 @@
 
 # ### METRICS ###
 # m <- read.csv('results/original/outputMet_110819_pro.csv')
-# m2 <- read.csv('results/indiv_new/outputMet_111219_INDIV_pro.csv')
+# m2 <- read.csv('results/PROCESS/outputMet_111219_INDIV_pro.csv')
 # 
 # # Limit indiv. countries to countries in network model:
 # m2 <- m2[m2$country %in% levels(m$country), ]
@@ -23,7 +23,7 @@
 # summary(names(m) == names(m2))
 # 
 # # write.csv(m, file = 'results/original/outputMet_110819_pro.csv', row.names = FALSE)
-# write.csv(m2, file = 'results/indiv_new/outputMet_111219_INDIV_pro.csv', row.names = FALSE)
+# write.csv(m2, file = 'results/PROCESS/outputMet_111219_INDIV_pro.csv', row.names = FALSE)
 # 
 # m <- read.csv('results/oldOEV_denom10/outputMet_110919_oldOEV_pro.csv')
 # m <- m[, c(1:52, 85:109)]
@@ -46,18 +46,20 @@
 # e.pi <- read.csv('results/original/logScores_pi.csv')
 # e <- read.csv('results/original/logScores_1-4wk.csv')
 # 
-# e.pi2 <- read.csv('results/indiv_orig/logScores_pi.csv')
-# e2 <- read.csv('results/indiv_orig/logScores_1-4wk.csv')
+# e.pi2 <- read.csv('results/indiv_new/logScores_pi.csv')
+# e2 <- read.csv('results/indiv_new/logScores_1-4wk.csv')
 # 
-# e.pi2 <- e.pi2[e.pi2$country %in% levels(e$country) & e.pi2$oev_denom == 10 & e.pi2$lambda == 1.02, ]
+# # e.pi2 <- e.pi2[e.pi2$country %in% levels(e$country) & e.pi2$oev_denom == 10 & e.pi2$lambda == 1.02, ]
 # e2 <- e2[e2$country %in% levels(e$country) & e2$oev_denom == 10 & e2$lambda == 1.02, ]
-# names(e.pi2)[8] = names(e2)[8] <- 'metric'
 # 
-# e.pi2$oev_denom <- NULL; e.pi2$lambda <- NULL
+# # e.pi2$oev_denom <- NULL; e.pi2$lambda <- NULL
+# e.pi2$scaling <- NULL
 # e2$oev_denom <- NULL; e2$lambda <- NULL
 # 
-# write.csv(e.pi2, file = 'results/indiv_orig/logScores_pi.csv', row.names = FALSE)
-# write.csv(e2, file = 'results/indiv_orig/logScores_1-4wk.csv', row.names = FALSE)
+# names(e.pi2)[6] = names(e2)[6] <- 'metric'
+# 
+# write.csv(e.pi2, file = 'results/indiv_new/logScores_pi.csv', row.names = FALSE)
+# write.csv(e2, file = 'results/indiv_new/logScores_1-4wk.csv', row.names = FALSE)
 
 
 
