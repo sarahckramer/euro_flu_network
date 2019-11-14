@@ -288,6 +288,7 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     # Store posteriors:
     xpost[,, tt] <- xnew
     obspost[,, tt] <- obs_ens
+    # QUESTION: If no data, obspost is just updated with the inflated prior, rather than just the prior - is this okay?
     
     #  Integrate forward one time step
     a <- -180
@@ -550,6 +551,15 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
   peakWeeks = peakIntensities = totalARs = onsets3 = onsets4 = onsets5 = onsets6 = ends3 = ends4 = ends5 = ends6 = matrix(NA, n, num_ens)
   nextILI <- obsfcast[,, 1:4] #array(NA, c(n, num_ens, 4))
   
+  ######################################################################################################
+  ### If data are NA, Y and Y.ens should also be NA! - peaks and onsets can't be weeks with no data! ###
+  nas.in.data <- which(is.na(obs_i), arr.ind = TRUE)
+  Y[nas.in.data] <- NA
+  for (ensmem in 1:num_ens) {
+    Y.ens[, ensmem, ][nas.in.data[, 2:1]] <- NA
+  }
+  ######################################################################################################
+  
   for (i in 1:n) {
     
     if (!all(is.na(obs_i[, i]))) {
@@ -559,8 +569,8 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
         yy <- Y.ens[i, ensmem, ]
         
         peakWeeks[i, ensmem] <- which.max(yy)
-        peakIntensities[i, ensmem] <- max(yy)
-        totalARs[i, ensmem] <- sum(yy[!is.na(obs_i[, i])])
+        peakIntensities[i, ensmem] <- max(yy, na.rm = TRUE)
+        totalARs[i, ensmem] <- sum(yy[!is.na(obs_i[, i])], na.rm = TRUE)
         
         onsets3[i, ensmem] <- findOnset(yy, 300)$onset
         ends3[i, ensmem] <- findOnset(yy, 300)$end
@@ -586,12 +596,12 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
       pkwk_var[i] <- var(peakWeeks[i, ], na.rm = TRUE)
       
       obs_peak_int[i] <- max(obs_i[, i], na.rm = TRUE)
-      peak_intensity[i] <- max(Y[, i])
+      peak_intensity[i] <- max(Y[, i], na.rm = TRUE)
       intensity_err[i] <- peak_intensity[i] - obs_peak_int[i]
       peak_intensity_var[i] <- var(peakIntensities[i, ], na.rm = TRUE)
       
       totAttackObs[i] <- sum(obs_i[, i], na.rm = TRUE)
-      tot_attack[i] <- sum(Y[!is.na(obs_i[, i]), i]) # sum predicted cases only where actual data NOT NA - otherwise adding in "extra" compared to observations
+      tot_attack[i] <- sum(Y[!is.na(obs_i[, i]), i], na.rm = TRUE) # sum predicted cases only where actual data NOT NA - otherwise adding in "extra" compared to observations
       ar_err[i] <- tot_attack[i] - totAttackObs[i]
       ar_var[i] <- var(totalARs[i, ], na.rm = TRUE)
       
