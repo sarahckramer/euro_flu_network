@@ -14,7 +14,7 @@ m2$leadonset5 <- m2$fc_start - m2$onset5
 m$model <- 'Network'; m2$model <- 'Individual'
 
 # # Check that observed values are the same for both files:
-m.check <- merge(m, m2, by = c('season', 'run', 'oev_base', 'oev_denom', 'lambda', 'country', 'fc_start'))#, all = T)
+m.check <- merge(m, m2, by = c('season', 'run', 'oev_base', 'country', 'fc_start'))#, all = T)
 # # note that there are about 20,000 more entries in network model results than in individual model results; likely where there are no data, so individual forecasts can't be run
 # 
 # all.equal(m.check$obs_pkwk.x, m.check$obs_pkwk.y)
@@ -30,6 +30,7 @@ m.check <- merge(m, m2, by = c('season', 'run', 'oev_base', 'oev_denom', 'lambda
 # Remove the "extra" rows from network model, for a fair comparison:
 m.new <- m.check[, 1:36]
 names(m.new)[9:36] <- names(m)[9:36]
+names(m.new)[6:7] <- names(m)[4:5]
 names(m.new)[8] <- 'scaling'
 m <- m.new; rm(m.new, m.check)
 

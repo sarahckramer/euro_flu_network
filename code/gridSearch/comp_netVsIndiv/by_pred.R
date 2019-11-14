@@ -1,4 +1,7 @@
 
+# set all lambdas equal, so that loops still work
+m$lambda <- 1.02; m$lambda <- factor(m$lambda)
+
 # Plot accuracy by predicted lead by model/oev_base/lambda:
 m.temp1 <- m[m$leadpkwk_mean >= -8 & m$leadpkwk_mean < 5 & !is.na(m$onset5), ]
 m.temp1$leadpkwk_mean <- factor(m.temp1$leadpkwk_mean)
