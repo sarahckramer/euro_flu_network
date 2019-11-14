@@ -124,9 +124,9 @@ EAKF_rFC<-function(num_ens, tmstep, param.bound, obs_i=obs_i,ntrn=1,
 
       #  Don't use xpost for propagating - use xprior that resulted from previous integration
       #  Integrate forward one time step
-      b <- log(xpost[6,, tt]); b <- ones1 %*% b # expand b to a matrix with each col for each particle
+      b <- log(xprior[6,, tt]); b <- ones1 %*% b # expand b to a matrix with each col for each particle
       a <- -180
-      BT1 <- exp(a * AHpt + b) + ones1 %*% (xpost[5,, tt] - xpost[6,, tt])
+      BT1 <- exp(a * AHpt + b) + ones1 %*% (xprior[5,, tt] - xprior[6,, tt])
       beta <- BT1 / (ones1 %*% xprior[4,, tt]); 
       tcurrent <- tm.ini + tmstep * tt;
       Sr_tmp <- propagateParSIR(tcurrent + dt, tcurrent + tmstep, dt, xprior[1,, tt], xprior[2,, tt], N,
