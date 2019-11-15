@@ -179,6 +179,8 @@ obs_vars <- calc_obsvars_nTest(obs = as.matrix(obs_i), syn_dat = as.matrix(syn_i
 # but maybe do all of this somehow BEFORE scaling? or do we have to fit to counts, not rates?
 # AT DE PT pretty large, Luxembourg and Slovakia greatest; very small are FR, ES, SE (just for 2010-11 season)
 
+# obs_vars <- obs_vars / 10
+
 print(obs_vars[1:4, ])
 print(obs_i[which(obs_vars == 0 | is.na(obs_vars), arr.ind = TRUE)])
 
