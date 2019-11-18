@@ -9,7 +9,7 @@ for (ix in 1:416) {
   oev_base <- oevBase_list[ceiling((ix - 26) / 26) %% 2 + 1]
   ntrn <- ntrnList[ceiling(ix - 1) %% 26 + 1]
   
-  if (!file.exists(paste0('results/raw/outputMet_', season, '_', oev_base, '_', ntrn, '_110719.csv'))) {
+  if (!file.exists(paste0('results/raw/outputMet_', season, '_', oev_base, '_10_', ntrn, '_111419.csv'))) {
     print(ix)
   }
 }
@@ -30,7 +30,7 @@ for (i in 1:length(file.list)) {
   m <- rbind(m, met.list[[i]])
 }
 rm(met.list)
-write.csv(m, file = 'results/outputMet_111219_INDIV.csv', row.names = FALSE)
+write.csv(m, file = 'results/outputMet_111819.csv', row.names = FALSE)
 
 file.list <- list.files('results/raw/', pattern = 'OP_')
 op.list <- list()
@@ -42,7 +42,7 @@ for (i in 1:length(file.list)) {
   o <- rbind(o, op.list[[i]])
 }
 rm(op.list)
-write.csv(o, file = 'results/outputOP_111219_INDIV_FULL.csv', row.names = FALSE)
+write.csv(o, file = 'results/outputOP_111819.csv', row.names = FALSE)
 
 file.list <- list.files('results/raw/', pattern = 'OPParams')
 op.list <- list()
@@ -54,7 +54,7 @@ for (i in 1:length(file.list)) {
   op <- rbind(op, op.list[[i]])
 }
 rm(op.list)
-write.csv(op, file = 'results/outputOPParams_110919_oldOEV_denom1.csv', row.names = FALSE)
+write.csv(op, file = 'results/outputOPParams_111819.csv', row.names = FALSE)
 
 file.list <- list.files('results/raw/', pattern = 'Dist')
 dist.list <- list()
@@ -71,9 +71,9 @@ for (i in 1:length(file.list)) {
 rm(dist.list)
 d.pt <- dist[dist$metric == 'pw', ]
 d.ot <- dist[dist$metric == 'onset5', ]
-write.csv(dist, file = 'results/outputDist_111219_INDIV_FULL.csv', row.names = FALSE)
-write.csv(d.pt, file = 'results/outputDist_111219_INDIV_pt.csv', row.names = FALSE)
-write.csv(d.ot, file = 'results/outputDist_111219_INDIV_ot.csv', row.names = FALSE)
+write.csv(dist, file = 'results/outputDist_111819.csv', row.names = FALSE)
+write.csv(d.pt, file = 'results/outputDist_111819_pt.csv', row.names = FALSE)
+write.csv(d.ot, file = 'results/outputDist_111819_ot.csv', row.names = FALSE)
 
 file.list <- list.files('results/raw/', pattern = 'Ens_')
 ens.list <- list()
@@ -93,12 +93,12 @@ e1 <- e[e$metric == '1week', ]
 e2 <- e[e$metric == '2week', ]
 e3 <- e[e$metric == '3week', ]
 e4 <- e[e$metric == '4week', ]
-write.csv(e.pi, file = 'results/outputEns_111219_INDIV_PI.csv', row.names = FALSE)
-write.csv(e1, file = 'results/outputEns_111219_INDIV_1wk.csv', row.names = FALSE)
-write.csv(e2, file = 'results/outputEns_111219_INDIV_2wk.csv', row.names = FALSE)
-write.csv(e3, file = 'results/outputEns_111219_INDIV_3wk.csv', row.names = FALSE)
-write.csv(e4, file = 'results/outputEns_111219_INDIV_4wk.csv', row.names = FALSE)
-write.csv(e, file = 'results/outputEns_111219_INDIV.csv', row.names = FALSE)
+write.csv(e.pi, file = 'results/outputEns_111819_PI.csv', row.names = FALSE)
+write.csv(e1, file = 'results/outputEns_111819_1wk.csv', row.names = FALSE)
+write.csv(e2, file = 'results/outputEns_111819_2wk.csv', row.names = FALSE)
+write.csv(e3, file = 'results/outputEns_111819_3wk.csv', row.names = FALSE)
+write.csv(e4, file = 'results/outputEns_111819_4wk.csv', row.names = FALSE)
+# write.csv(e, file = 'results/outputEns_111819.csv', row.names = FALSE)
 
 # or, for individual country ens files from cluster:
 e <- read.csv('results/raw/outputEns_111119_1wk.csv')
