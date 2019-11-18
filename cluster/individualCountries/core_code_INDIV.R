@@ -19,6 +19,7 @@ source('code/functions/replaceLeadingLaggingNAs.R')
 
 ### Read in filter function
 source('code/individualCountries/EAKF_indiv.R')
+# source('code/individualCountries/EAKF_indiv_R0mn.R')
 
 ### Seasons:
 seasons <- c('2010-11', '2011-12', '2012-13', '2013-14', '2014-15', '2015-16', '2016-17', '2017-18')
@@ -32,11 +33,14 @@ N <- 1e5 # population - since no longer split into compartments by commuting!
 ### Parameter boundaries
 D_low <- 2; L_low <- 1*365; Rmx_low <- 2.0; Rdiff_low <- 0.2; airScale_low <- 0.75
 D_up <- 7; L_up <- 8*365; Rmx_up <- 2.8; Rdiff_up <- 1.0; airScale_up <- 1.25
+theta_low <- c(L_low, D_low, Rmx_low, Rdiff_low)
+theta_up <- c(L_up, D_up, Rmx_up, Rdiff_up)
 
 # D_low <- 1.5; L_low <- 1*365; Rmx_low <- 1.3; Rmn_low <- 0.8
 # D_up <- 7; L_up <- 10*365; Rmx_up <- 4; Rmn_up <- 1.2
-theta_low <- c(L_low, D_low, Rmx_low, Rdiff_low)
-theta_up <- c(L_up, D_up, Rmx_up, Rdiff_up)
+# theta_low <- c(L_low, D_low, Rmx_low, Rmn_low)
+# theta_up <- c(L_up, D_up, Rmx_up, Rmn_up)
+
 param.bound <- cbind(theta_low, theta_up)
 
 ### Initial state variable values
