@@ -163,8 +163,8 @@ for (count.index in 1:length(countries)) {
       # # par(mfrow = c(6, 5), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
       
       # Calculate OEV:
-      obs_vars <- calc_obsvars_nTest(obs = obs_i, syn_dat = syn_i, ntests = test_i, posprops = pos_i, oev_base, oev_denom, tmp_exp = 2.0)
-      # obs_vars <- calc_obsvars(obs = obs_i, oev_base, oev_denom)
+      # obs_vars <- calc_obsvars_nTest(obs = obs_i, syn_dat = syn_i, ntests = test_i, posprops = pos_i, oev_base, oev_denom, tmp_exp = 2.0)
+      obs_vars <- calc_obsvars(obs = as.matrix(obs_i), oev_base, oev_denom)
       # print(obs_vars[1:3, ])
       
       # Get the first and last date of the simulation
