@@ -58,6 +58,10 @@ task.index=as.numeric(cmd_args[1]) # 1:144 # 1:240 # 1:480
 oev_base <- oevBaseList[ceiling((task.index - 9) / 9) %% 2 + 1]
 oev_denom <- oevDenomList[ceiling((task.index - 3) / 3) %% 3 + 1]
 lambda <- lambdaList[ceiling(task.index - 1) %% 3 + 1]
+
+# oev_denom <- 100
+# lamdba <- 1.05
+
 print(paste(oev_base, oev_denom, lambda, sep = '_'))
 
 num_ens <- 300 # use 300 for ensemble filters, 10000 for particle filters
