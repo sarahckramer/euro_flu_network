@@ -1,6 +1,6 @@
 
 # Read in metrics file:
-m <- read.csv('results/R0diff_OEVold/outputMet_111819_INDIV_R0diff-OEVold_FULL_pro.csv')
+m <- read.csv('results/R0min_OEVold/outputMet_111819_INDIV_R0min-OEVold_FULL_pro.csv')
 
 # Calculate predicted onset lead:
 m$leadonset5 <- m$fc_start - m$onset5
@@ -188,20 +188,43 @@ grid.arrange(p1, p2, p3, ncol = 1)
 # Overall best: 1e4/10/1.02 (differs by metric, but this seems to best capture everything)
 
 # Now reduce accordingly and save results:
-m <- read.csv('results/R0diff_OEVold/outputMet_111819_INDIV_R0diff-OEVold_FULL_pro.csv')
-o <- read.csv('results/R0diff_OEVold/outputOP_111819_INDIV_R0diff-OEVold_FULL.csv')
-d <- read.csv('results/R0diff_OEVold/outputDist_111819_INDIV_R0diff-OEVold_FULL.csv')
-d.pt
-d.ot
-e <- read.csv('results/R0diff_OEVold/outputEns_111119_PI.csv')
-e1 <- read.csv('results/R0diff_OEVold/outputEns_111119_1wk.csv')
-e2 <- read.csv('results/R0diff_OEVold/outputEns_111119_2wk.csv')
-e3 <- read.csv('results/R0diff_OEVold/outputEns_111119_3wk.csv')
-e4 <- read.csv('results/R0diff_OEVold/outputEns_111119_4wk.csv')
+m <- read.csv('results/R0min_OEVold/outputMet_111819_INDIV_R0min-OEVold_FULL_pro.csv')
+o <- read.csv('results/R0min_OEVold/outputOP_111819_INDIV_R0min-OEVold_FULL.csv')
+d <- read.csv('results/R0min_OEVold/outputDist_111819_INDIV_R0min-OEVold_FULL.csv')
 
+m <- m[m$oev_base == 1e4 & m$oev_denom == 10 & m$lambda == 1.02, ]
+o <- o[o$oev_base == 1e4 & o$oev_denom == 10 & o$lambda == 1.02, ]
+d <- d[d$oev_base == 1e4 & d$oev_denom == 10 & d$lambda == 1.02, ]
 
+table(d$metric)
+d.pt <- d[d$metric == 'pw', ]
+d.ot <- d[d$metric == 'onset5', ]
 
+write.csv(m, file = 'results/R0min_OEVold/outputMet_111819_INDIV_R0min-OEVold_pro.csv', row.names = FALSE)
+write.csv(o, file = 'results/R0min_OEVold/outputOP_111819_INDIV_R0min-OEVold.csv', row.names = FALSE)
+write.csv(d, file = 'results/R0min_OEVold/outputDist_111819_INDIV_R0min-OEVold.csv', row.names = FALSE)
+write.csv(d.pt, file = 'results/R0min_OEVold/outputDist_pt_111819_INDIV_R0min-OEVold.csv', row.names = FALSE)
+write.csv(d.ot, file = 'results/R0min_OEVold/outputDist_ot_111819_INDIV_R0min-OEVold.csv', row.names = FALSE)
 
+rm(list=ls())
+
+e <- read.csv('results/R0min_OEVold/outputEns_111119_PI.csv')
+e1 <- read.csv('results/R0min_OEVold/outputEns_111119_1wk.csv')
+e2 <- read.csv('results/R0min_OEVold/outputEns_111119_2wk.csv')
+e3 <- read.csv('results/R0min_OEVold/outputEns_111119_3wk.csv')
+e4 <- read.csv('results/R0min_OEVold/outputEns_111119_4wk.csv')
+
+e <- e[e$oev_base == 1e4 & e$oev_denom == 10 & e$lambda == 1.02, ]
+e1 <- e1[e1$oev_base == 1e4 & e1$oev_denom == 10 & e1$lambda == 1.02, ]
+e2 <- e2[e2$oev_base == 1e4 & e2$oev_denom == 10 & e2$lambda == 1.02, ]
+e3 <- e3[e3$oev_base == 1e4 & e3$oev_denom == 10 & e3$lambda == 1.02, ]
+e4 <- e4[e4$oev_base == 1e4 & e4$oev_denom == 10 & e4$lambda == 1.02, ]
+
+write.csv(e, file = 'results/R0min_OEVold/outputEns_111819_PI.csv', row.names = FALSE)
+write.csv(e1, file = 'results/R0min_OEVold/outputEns_111819_1wk.csv', row.names = FALSE)
+write.csv(e2, file = 'results/R0min_OEVold/outputEns_111819_2wk.csv', row.names = FALSE)
+write.csv(e3, file = 'results/R0min_OEVold/outputEns_111819_3wk.csv', row.names = FALSE)
+write.csv(e4, file = 'results/R0min_OEVold/outputEns_111819_4wk.csv', row.names = FALSE)
 
 
 
