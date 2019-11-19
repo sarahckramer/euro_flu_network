@@ -3,14 +3,14 @@
 library(reshape2); library(ggplot2); library(gridExtra)
 
 # Save plots?:
-outputPlots <- TRUE
+outputPlots <- FALSE
 
 # Read in all plotting code:
 source('code/gridSearch/comp_netVsIndiv/plotting_functions.R')
 
 # Set locations of 2 model results to be compared:
-model1 <- 'results/original/'
-model2 <- 'results/indiv_new/denom10lam102/'
+model1 <- 'results/original/fairComp/'
+model2 <- 'results/R0diff_OEVnew/denom10lam102/'
 
 # Read in and format metrics files:
 # Question: Include only points where forecasts are made in both "models" (so, remove "extra" 20,000), in order to do fair comparison? (Probably.)

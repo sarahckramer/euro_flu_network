@@ -86,7 +86,7 @@ log.ot$score[log.ot$score == -Inf] <- -10
 # Determine predicted and observed lead weeks:
 m <- read.csv(file = list.files(pattern = '_pro'))
 m$leadonset5 <- m$fc_start - m$onset5
-m <- unique(m[, c(1:3, 7:9, 15, 39, 92, 99, 110)])
+m <- unique(m[, c(1:3, 7:9, 15, 39, 60, 67, 78)])
 m <- m[!is.na(m$onsetObs5), ]
 
 log.pt <- merge(log.pt, m, by = c('season', 'country', 'run', 'oev_base', 'fc_start'))
@@ -242,7 +242,7 @@ e4 <- e4[, c(1:3, 6:8, 310, 312)]
 # Get lead weeks (just to plot all things by consistent x-axis):
 m <- read.csv(file = list.files(pattern = '_pro'))
 m <- m[!is.na(m$onsetObs5), ] # remove if no onset observed
-m <- unique(m[, c(1:3, 7:8, 15, 92)])
+m <- unique(m[, c(1:3, 7:8, 15, 60)])
 
 e1 <- merge(e1, m, by = c('season', 'country', 'run', 'oev_base', 'fc_start'))
 e2 <- merge(e2, m, by = c('season', 'country', 'run', 'oev_base', 'fc_start'))

@@ -13,26 +13,26 @@ m2$leadonset5 <- m2$fc_start - m2$onset5
 # Label by model type:
 m$model <- 'Network'; m2$model <- 'Individual'
 
-# # Check that observed values are the same for both files:
-m.check <- merge(m, m2, by = c('season', 'run', 'oev_base', 'country', 'fc_start'))#, all = T)
-# # note that there are about 20,000 more entries in network model results than in individual model results; likely where there are no data, so individual forecasts can't be run
+# # # Check that observed values are the same for both files:
+# m.check <- merge(m, m2, by = c('season', 'run', 'oev_base', 'country', 'fc_start'))#, all = T)
+# # # note that there are about 20,000 more entries in network model results than in individual model results; likely where there are no data, so individual forecasts can't be run
+# # 
+# # all.equal(m.check$obs_pkwk.x, m.check$obs_pkwk.y)
+# # all.equal(m.check$obs_peak_int.x, m.check$obs_peak_int.y)
+# # all.equal(m.check$onsetObs5.x, m.check$onsetObs5.y)
+# # all.equal(m.check$FWeek_pkwk.x, m.check$FWeek_pkwk.y)
+# # all.equal(m.check$FWeek_onwk.x, m.check$FWeek_onwk.y)
+# #
+# # # Why aren't PIs equal?
+# # m.check1 <- m.check[round(m.check$obs_peak_int.x, 1) != round(m.check$obs_peak_int.y, 1), c(1:7, 13, 34)]
+# # # PIs have slight differences, but never past decimal point; original complications caused by wrong scaling values in df for FR
 # 
-# all.equal(m.check$obs_pkwk.x, m.check$obs_pkwk.y)
-# all.equal(m.check$obs_peak_int.x, m.check$obs_peak_int.y)
-# all.equal(m.check$onsetObs5.x, m.check$onsetObs5.y)
-# all.equal(m.check$FWeek_pkwk.x, m.check$FWeek_pkwk.y)
-# all.equal(m.check$FWeek_onwk.x, m.check$FWeek_onwk.y)
-#
-# # Why aren't PIs equal?
-# m.check1 <- m.check[round(m.check$obs_peak_int.x, 1) != round(m.check$obs_peak_int.y, 1), c(1:7, 13, 34)]
-# # PIs have slight differences, but never past decimal point; original complications caused by wrong scaling values in df for FR
-
-# Remove the "extra" rows from network model, for a fair comparison:
-m.new <- m.check[, 1:36]
-names(m.new)[9:36] <- names(m)[9:36]
-names(m.new)[6:7] <- names(m)[4:5]
-names(m.new)[8] <- 'scaling'
-m <- m.new; rm(m.new, m.check)
+# # Remove the "extra" rows from network model, for a fair comparison:
+# m.new <- m.check[, 1:36]
+# names(m.new)[9:36] <- names(m)[9:36]
+# names(m.new)[6:7] <- names(m)[4:5]
+# names(m.new)[8] <- 'scaling'
+# m <- m.new; rm(m.new, m.check)
 
 # Remove if no onset:
 m <- m[!is.na(m$onsetObs5), ]; m2 <- m2[!is.na(m2$onsetObs5), ]

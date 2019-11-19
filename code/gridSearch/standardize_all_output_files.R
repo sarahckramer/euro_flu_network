@@ -1,7 +1,7 @@
 
 # ### METRICS ###
-# m <- read.csv('results/original/outputMet_110819_pro.csv')
-# m2 <- read.csv('results/PROCESS/outputMet_111219_INDIV_pro.csv')
+# m <- read.csv('results/PROCESS/outputMet_111819_pro.csv')
+# m2 <- read.csv('results/R0diff_OEVnew/denom10lam102/outputMet_111219_INDIV_pro.csv')
 # 
 # # Limit indiv. countries to countries in network model:
 # m2 <- m2[m2$country %in% levels(m$country), ]
@@ -22,16 +22,16 @@
 # 
 # summary(names(m) == names(m2))
 # 
-# # write.csv(m, file = 'results/original/outputMet_110819_pro.csv', row.names = FALSE)
+# write.csv(m, file = 'results/PROCESS/outputMet_111819_pro.csv', row.names = FALSE)
 # write.csv(m2, file = 'results/PROCESS/outputMet_111219_INDIV_pro.csv', row.names = FALSE)
 # 
-# m <- read.csv('results/oldOEV_denom10/outputMet_110919_oldOEV_pro.csv')
-# m <- m[, c(1:52, 85:109)]
-# write.csv(m, file = 'results/oldOEV_denom10/outputMet_110919_oldOEV_pro.csv', row.names = FALSE)
-# 
-# m <- read.csv('results/oldOEV_denom1/outputMet_110919_oldOEV_denom1_pro.csv')
-# m <- m[, c(1:52, 85:109)]
-# write.csv(m, file = 'results/oldOEV_denom1/outputMet_110919_oldOEV_denom1_pro.csv', row.names = FALSE)
+# # m <- read.csv('results/oldOEV_denom10/outputMet_110919_oldOEV_pro.csv')
+# # m <- m[, c(1:52, 85:109)]
+# # write.csv(m, file = 'results/oldOEV_denom10/outputMet_110919_oldOEV_pro.csv', row.names = FALSE)
+# # 
+# # m <- read.csv('results/oldOEV_denom1/outputMet_110919_oldOEV_denom1_pro.csv')
+# # m <- m[, c(1:52, 85:109)]
+# # write.csv(m, file = 'results/oldOEV_denom1/outputMet_110919_oldOEV_denom1_pro.csv', row.names = FALSE)
 
 # ### DIST ###
 # d <- read.csv('results/original/logScores_pt_ot.csv')

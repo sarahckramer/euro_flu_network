@@ -3,8 +3,8 @@
 # To make for a fair comparison, remove forecasts made for a country when these conditions were met
 
 # Read in all results:
-m <- read.csv('results/original/outputMet_110819_pro.csv')
-o <- read.csv('results/original/outputOP_110819.csv')
+m <- read.csv('results/original/outputMet_111819_pro.csv')
+o <- read.csv('results/original/outputOP_111819.csv')
 d <- read.csv('results/original/logScores_pt_ot.csv')
 e <- read.csv('results/original/logScores_pi.csv')
 e.wks <- read.csv('results/original/logScores_1-4wk.csv')
@@ -95,6 +95,10 @@ o <- merge(o, m.mini, by = c('season', 'country', 'fc_start'))
 d <- merge(d, m.mini, by = c('season', 'country', 'fc_start'))
 e <- merge(e, m.mini, by = c('season', 'country', 'fc_start'))
 e.wks <- merge(e.wks, m.mini, by = c('season', 'country', 'fc_start'))
+
+# Remove relevant columns to put these into correct format:
+d$obs <- NULL; e$obs <- NULL; e.wks$obs <- NULL
+d$oev <- NULL; e$oev <- NULL; e.wks$oev <- NULL
 
 # Save new results files:
 write.csv(m, file = 'results/original/outputMet_110819_pro_PROC.csv', row.names = FALSE)
