@@ -122,7 +122,10 @@ write.csv(d4.500, file = 'results/original/outputDist_111819_4wk500.csv', row.na
 #########################################################################################################################################################
 
 # Read in dist files:
-d <- read.csv('results/original/outputDist_111819_PI250.csv')
+d <- read.csv('results/original/outputDist_111819.csv')
+# d <- d[, c(1:3, 6:10)]
+# d.wks <- d[d$metric %in% levels(d$metric)[1:4], ]; d.wks$metric <- factor(d.wks$metric)
+# d <- d[d$metric == 'pi', ]
 
 # Get observed peak intensity:
 m <- read.csv('results/original/outputMet_111819_pro.csv')
@@ -136,8 +139,8 @@ d <- merge(d, m, by = c('season', 'country'))
 d <- d[!is.na(d$onsetObs5), ]
 
 # Categorize obs_peak_int by bin:
-d$obs_peak_int_bin <- cut(d$obs_peak_int, c(seq(0, 14000, by = 250), 100000))
-levels(d$obs_peak_int_bin) <- seq(0, 14000, by = 250)
+d$obs_peak_int_bin <- cut(d$obs_peak_int, c(seq(0, 14000, by = 1000), 100000))
+levels(d$obs_peak_int_bin) <- seq(0, 14000, by = 1000)
 # QUESTION: Does it matter that bins aren't equally sized?
 
 # Remove where bin not equal to obs_peak_int:
@@ -148,7 +151,7 @@ d$score <- log(d$value)
 d$score[d$score == -Inf] <- -10
 
 # Reduce appropriately:
-d <- d[, c(1:5, 9:12)]
+d <- d[, c(1:5, 10:13)]
 
 # Get lead weeks:
 m <- read.csv('results/original/fairComp/outputMet_110819_pro_PROC.csv')
@@ -159,7 +162,7 @@ m <- unique(m[, c(1:5, 8:9, 15, 60, 67, 80)])
 d <- merge(d, m, by = c('season', 'country', 'run', 'oev_base', 'fc_start'))
 
 # Save:
-write.csv(d, file = 'results/original/logScores_pi_alt1_250.csv', row.names = FALSE)
+write.csv(d, file = 'results/original/fairComp/logScores_pi_alt1_1000.csv', row.names = FALSE)
 rm(d)
 
 # Now 1-4 week-ahead forecasts:
@@ -167,6 +170,11 @@ d1 <- read.csv('results/original/outputDist_111819_1wk500.csv')
 d2 <- read.csv('results/original/outputDist_111819_2wk500.csv')
 d3 <- read.csv('results/original/outputDist_111819_3wk500.csv')
 d4 <- read.csv('results/original/outputDist_111819_4wk500.csv')
+# levels(d.wks$metric) <- c('1week', '2week', '3week', '4week')
+# d1 <- d.wks[d.wks$metric == '1week', ]; d1$metric <- NULL
+# d2 <- d.wks[d.wks$metric == '2week', ]; d2$metric <- NULL
+# d3 <- d.wks[d.wks$metric == '3week', ]; d3$metric <- NULL
+# d4 <- d.wks[d.wks$metric == '4week', ]; d4$metric <- NULL
 
 m <- read.csv('results/original/outputMet_111819_pro.csv')
 m1 <- unique(m[, c(1:3, 6:8, 25, 39)])
@@ -199,8 +207,8 @@ d$metric <- factor(d$metric)
 d <- d[!is.na(d$onsetObs5), ]
 
 # Categorize obs_peak_int by bin:
-d$obs_xweek_bin <- cut(d$obs_xweek, c(seq(0, 14000, by = 500), 100000))
-levels(d$obs_xweek_bin) <- seq(0, 14000, by = 500)
+d$obs_xweek_bin <- cut(d$obs_xweek, c(seq(0, 14000, by = 1000), 100000))
+levels(d$obs_xweek_bin) <- seq(0, 14000, by = 1000)
 d$obs_xweek_bin[d$obs_xweek == 0 & !is.na(d$obs_xweek)] <- '0'
 
 # Remove where obs is NA:
@@ -225,7 +233,7 @@ m <- unique(m[, c(1:5, 8:9, 15, 60, 67, 80)])
 d <- merge(d, m, by = c('season', 'country', 'run', 'oev_base', 'fc_start'))
 
 # Save:
-write.csv(d, file = 'results/original/logScores_1-4wk_alt1_500.csv', row.names = FALSE)
+write.csv(d, file = 'results/original/fairComp/logScores_1-4wk_alt1_1000.csv', row.names = FALSE)
 # QUESTION: Do we leave 0s in when analyzing these, or not?
 
 #########################################################################################################################################################
@@ -263,15 +271,15 @@ m <- read.csv('results/original/fairComp/outputMet_110819_pro_PROC.csv')
 m <- unique(m[, c(1:2, 8, 17, 39)])
 m$obs_peak_int <- m$obs_peak_int * m$scaling
 
-m$obs_peak_int_bin <- cut(m$obs_peak_int, c(seq(0, 14000, by = 250), 100000))
-levels(m$obs_peak_int_bin) <- seq(0, 14000, by = 250)
+m$obs_peak_int_bin <- cut(m$obs_peak_int, c(seq(0, 14000, by = 1000), 100000))
+levels(m$obs_peak_int_bin) <- seq(0, 14000, by = 1000)
 m$obs_peak_int_bin <- as.numeric(as.character(m$obs_peak_int_bin))
 
 # Merge:
 e <- merge(e, m, by = c('season', 'country'))
 
 # Find % of normal distribution within observed bin:
-e$lower <- e$obs_peak_int_bin; e$upper <- e$obs_peak_int_bin + 250
+e$lower <- e$obs_peak_int_bin; e$upper <- e$obs_peak_int_bin + 1000
 probs <- sapply(1:dim(e)[1], function(ix) {
   pnorm(e[ix, 'upper'], mean = e[ix, 'mean'], sd = e[ix, 'sd']) - pnorm(e[ix, 'lower'], mean = e[ix, 'mean'], sd = e[ix, 'sd'])
 })
@@ -294,7 +302,7 @@ m <- unique(m[, c(1:5, 8:9, 15, 60, 67, 80)])
 e <- merge(e, m, by = c('season', 'country', 'run', 'oev_base', 'fc_start'))
 
 # Save:
-write.csv(e, file = 'results/original/logScores_pi_alt2_250.csv', row.names = FALSE)
+write.csv(e, file = 'results/original/fairComp/logScores_pi_alt2_1000.csv', row.names = FALSE)
 rm(e)
 
 # Now repeat for 1-4 weeks:
@@ -344,8 +352,8 @@ m1$metric <- '1week'; m2$metric <- '2week'; m3$metric <- '3week'; m4$metric <- '
 m <- rbind(m1, m2, m3, m4)
 rm(m1, m2, m3, m4)
 
-m$obs_xweek_bin <- cut(m$obs_xweek, c(seq(0, 14000, by = 250), 100000))
-levels(m$obs_xweek_bin) <- seq(0, 14000, by = 250)
+m$obs_xweek_bin <- cut(m$obs_xweek, c(seq(0, 14000, by = 1000), 100000))
+levels(m$obs_xweek_bin) <- seq(0, 14000, by = 1000)
 m$obs_xweek_bin <- as.numeric(as.character(m$obs_xweek_bin))
 
 m <- m[!is.na(m$obs_xweek), ]
@@ -356,7 +364,7 @@ m <- unique(m[, c(1:3, 10:11)])
 e <- merge(e, m, by = c('season', 'country', 'fc_start', 'metric'))
 
 # Find % of normal distribution within observed bin:
-e$lower <- e$obs_xweek_bin; e$upper <- e$obs_xweek_bin + 250
+e$lower <- e$obs_xweek_bin; e$upper <- e$obs_xweek_bin + 1000
 probs <- sapply(1:dim(e)[1], function(ix) {
   pnorm(e[ix, 'upper'], mean = e[ix, 'mean'], sd = e[ix, 'sd']) - pnorm(e[ix, 'lower'], mean = e[ix, 'mean'], sd = e[ix, 'sd'])
 })
@@ -379,7 +387,7 @@ m <- unique(m[, c(1:5, 8:9, 15, 60, 67, 80)])
 e <- merge(e, m, by = c('season', 'country', 'run', 'oev_base', 'fc_start'))
 
 # Save:
-write.csv(e, file = 'results/original/fairComp/logScores_1-4wk_alt2_250.csv.csv', row.names = FALSE)
+write.csv(e, file = 'results/original/fairComp/logScores_1-4wk_alt2_1000.csv', row.names = FALSE)
 rm(e)
 
 

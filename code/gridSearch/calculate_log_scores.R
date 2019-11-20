@@ -25,9 +25,10 @@ d.ot$oev_base <- factor(d.ot$oev_base); d.ot$oev_denom <- factor(d.ot$oev_denom)
 d.pt$bin <- d.pt$bin + 40 - 1
 d.ot$bin <- d.ot$bin + 40 - 1
 
-# Keep only results for bins within 1 week of the observed values:
-d.pt <- d.pt[d.pt$bin == d.pt$obs_pkwk - 1 | d.pt$bin == d.pt$obs_pkwk | d.pt$bin == d.pt$obs_pkwk + 1, ]
-d.ot <- d.ot[d.ot$bin == d.ot$onsetObs5 - 1 | d.ot$bin == d.ot$onsetObs5 | d.ot$bin == d.ot$onsetObs5 + 1, ]
+# Keep only results for bins THE SAME week as the observed values:
+# d.pt <- d.pt[d.pt$bin == d.pt$obs_pkwk - 1 | d.pt$bin == d.pt$obs_pkwk | d.pt$bin == d.pt$obs_pkwk + 1, ]
+# d.ot <- d.ot[d.ot$bin == d.ot$onsetObs5 - 1 | d.ot$bin == d.ot$onsetObs5 | d.ot$bin == d.ot$onsetObs5 + 1, ]
+d.pt <- d.pt[d.pt$bin == d.pt$obs_pkwk, ]; d.ot <- d.ot[d.ot$bin == d.ot$onsetObs5, ]
 
 # Search through combinations of country, season, run, oev_base, oev_denom, lambda, fc_start to calculate log score for PT and store:
 countries <- levels(d.pt$country) # note: DIFFERENT ORDER than used in forecasting!

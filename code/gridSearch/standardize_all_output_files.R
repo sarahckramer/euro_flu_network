@@ -1,7 +1,7 @@
 
 # ### METRICS ###
-# m <- read.csv('results/PROCESS/outputMet_111819_pro.csv')
-# m2 <- read.csv('results/R0diff_OEVnew/denom10lam102/outputMet_111219_INDIV_pro.csv')
+# m <- read.csv('results/original/outputMet_111819_pro.csv')
+# m2 <- read.csv('results/R0min_OEVold/outputMet_111819_INDIV_R0min-OEVold_pro.csv')
 # 
 # # Limit indiv. countries to countries in network model:
 # m2 <- m2[m2$country %in% levels(m$country), ]
@@ -28,7 +28,7 @@
 # # m <- read.csv('results/oldOEV_denom10/outputMet_110919_oldOEV_pro.csv')
 # # m <- m[, c(1:52, 85:109)]
 # # write.csv(m, file = 'results/oldOEV_denom10/outputMet_110919_oldOEV_pro.csv', row.names = FALSE)
-# # 
+# #
 # # m <- read.csv('results/oldOEV_denom1/outputMet_110919_oldOEV_denom1_pro.csv')
 # # m <- m[, c(1:52, 85:109)]
 # # write.csv(m, file = 'results/oldOEV_denom1/outputMet_110919_oldOEV_denom1_pro.csv', row.names = FALSE)

@@ -107,13 +107,24 @@ write.csv(d, file = 'results/original/logScores_pt_ot_PROC.csv', row.names = FAL
 write.csv(e, file = 'results/original/logScores_pi_PROC.csv', row.names = FALSE)
 write.csv(e.wks, file = 'results/original/logScores_1-4wk_PROC.csv', row.names = FALSE)
 
+# Standardize column order:
+m <- read.csv('results/original/fairComp/outputMet_110819_pro_PROC.csv')
+o <- read.csv('results/original/fairComp/outputOP_110819_PROC.csv')
+d <- read.csv('results/original/fairComp/logScores_pt_ot_PROC.csv')
 
+m.old <- read.csv('results/original/outputMet_111819_pro.csv')
+o.old <- read.csv('results/original/outputOP_111819.csv')
+d.old <- read.csv('results/original/logScores_pt_ot.csv')
 
+names(m) == names(m.old)
+m <- m[, c(1, 4:8, 3, 2, 9:79)]
+summary(names(m)[1:77] == names(m.old))
 
+o <- o[, c(1, 4:7, 3, 8:10, 2, 11:18)]
 
+d <- d[, c(1:2, 4:5, 3, 6:13)]
 
-
-
-
-
+write.csv(m, file = 'results/original/fairComp/outputMet_110819_pro_PROC.csv', row.names = FALSE)
+write.csv(o, file = 'results/original/fairComp/outputOP_110819_PROC.csv', row.names = FALSE)
+write.csv(d, file = 'results/original/fairComp/logScores_pt_ot_PROC.csv', row.names = FALSE)
 
