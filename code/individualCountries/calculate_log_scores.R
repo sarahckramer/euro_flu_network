@@ -1,5 +1,5 @@
 
-setwd('results/PROCESS/')
+# setwd('results/PROCESS/')
 getwd()
 
 ### Deal with PT and OT first - can use Dist:
@@ -25,9 +25,9 @@ d.ot$oev_base <- factor(d.ot$oev_base); d.ot$oev_denom <- factor(d.ot$oev_denom)
 # d.pt$bin <- d.pt$bin + 40 - 1 # already corrected!
 d.ot$week <- d.ot$week + 40 - 1
 
-# Keep only results for bins within 1 week of the observed values:
-d.pt <- d.pt[d.pt$week == d.pt$obs_pkwk - 1 | d.pt$week == d.pt$obs_pkwk | d.pt$week == d.pt$obs_pkwk + 1, ]
-d.ot <- d.ot[d.ot$week == d.ot$onsetObs5 - 1 | d.ot$week == d.ot$onsetObs5 | d.ot$week == d.ot$onsetObs5 + 1, ]
+# Keep only results for bins SAME WEEK week as the observed values:
+d.pt <- d.pt[d.pt$week == d.pt$obs_pkwk, ]
+d.ot <- d.ot[d.ot$week == d.ot$onsetObs5, ]
 
 # Search through combinations of country, season, run, oev_base, oev_denom, lambda, fc_start to calculate log score for PT and store:
 countries <- levels(d.pt$country) # note: DIFFERENT ORDER than used in forecasting!
@@ -96,204 +96,275 @@ log.ot <- merge(log.ot, m, by = c('season', 'country', 'run', 'oev_base', 'fc_st
 log.pt$metric <- 'pt'
 log.ot$metric <- 'ot'
 
-# Save as "temporary" files:
-write.csv(log.pt, file = '../logScores_pt.csv', row.names = FALSE)
-write.csv(log.ot, file = '../logScores_ot.csv', row.names = FALSE)
+# Combine and save:
+d <- rbind(d.pt, d.ot)
+write.csv(d, file = 'logScores_pt_ot.csv', row.names = FALSE)
 
 rm(list = ls())
 
-### For PI (within 25%) and 1-4 weeks (within 1%), use Ens:
-e <- read.csv(file = list.files(pattern = '_PI'))
+# Method 1: Bins
+# Note: Don't have results broken down into bins of 250/500 at this point and it takes a long time to process those, so just use bins of 1000
+d <- read.csv(list.files(pattern = 'Dist_11'))
+d.wks <- d[d$metric %in% levels(d$metric)[1:4], ]; d.wks$metric <- factor(d.wks$metric)
+d <- d[d$metric == 'pi', ]
 
 # Get observed peak intensity:
 m <- read.csv(file = list.files(pattern = '_pro'))
-# m <- m[!is.na(m$onsetObs5), ] # remove if no onset observed
 m <- unique(m[, c(1, 6, 8, 17, 39)])
 
-# # Check that scalings are correct for FR:
-# print(table(m$season[m$country == 'FR'], m$scaling[m$country == 'FR']))
+# Scale peak intensity values:
+m$obs_peak_int <- m$obs_peak_int * m$scaling
 
-# Merge!
-e <- merge(e, m, by = c('season', 'country'))
-e <- e[!is.na(e$onsetObs5), ]
-# all.equal(e$gamma, e$scaling) # will be different for FR sometimes
-e$gamma <- NULL
+# Merge:
+d <- merge(d, m, by = c('season', 'country'))
+d <- d[!is.na(d$onsetObs5), ]
+d$gamma <- NULL; d$metric <- NULL
 
-# Ensure that everything is properly un-scaled:
-for (i in 9:308) {
-  e[, i] <- e[, i] / e$scaling
-}
+# Categorize obs_peak_int by bin:
+d$obs_peak_int_bin <- cut(d$obs_peak_int, c(seq(0, 10000, by = 1000), 100000))
+levels(d$obs_peak_int_bin) <- c(seq(1000, 10000, by = 1000), 1e5)
 
-# Calculate absolute error + obs:
-for (i in 9:308) {
-  e[, i] <- abs(e[, i] - e$obs_peak_int) + e$obs_peak_int
-}
+# Remove where bin not equal to obs_peak_int:
+d <- d[d$week == d$obs_peak_int_bin, ]
 
-# For each row, determine how many of the 300 ensemble members are within 25% of the observed peak intensity:
-scores <- sapply(1:dim(e)[1], function(ix) {
-  log(length(which(e[ix, 9:308] < 1.25 * e$obs_peak_int[ix])) / 300)
-}) # timed: ~30-40 minutes
-scores[scores == -Inf] <- -10
-e$score <- scores
+# Now calculate log score as log of the % of ensemble members within the "correct" bin:
+d$score <- log(d$prob)
+d$score[d$score == -Inf] <- -10
 
 # Reduce appropriately:
-# e <- e[, c(1:8, 310, 312)]
-e <- e[, c(1:4, 7:8, 310, 312)]
+d <- d[, c(1:7, 12:14)]
 
 # Get lead weeks:
 m <- read.csv(file = list.files(pattern = '_pro'))
 m$leadonset5 <- m$fc_start - m$onset5
 m <- m[!is.na(m$onsetObs5), ] # remove if no onset observed
-m <- unique(m[, c(1:3, 6:8, 15, 60, 67, 78)])
+m <- unique(m[, c(1:3, 7:9, 15, 60, 67, 78)])
 
-e <- merge(e, m, by = c('season', 'country', 'run', 'oev_base', 'fc_start'))
+d <- merge(d, m, by = c('season', 'country', 'run', 'oev_base', 'fc_start'))
 
-# Save as temporary file:
-write.csv(e, file = '../logScores_pi.csv', row.names = FALSE)
-rm(list = ls())
+# Save:
+write.csv(d, file = 'logScores_pi_alt1_1000.csv', row.names = FALSE)
+rm(d)
 
-# Now 1-4 weeks:
-e1 <- read.csv(file = list.files(pattern = '_1wk'))
-e2 <- read.csv(file = list.files(pattern = '_2wk'))
-e3 <- read.csv(file = list.files(pattern = '_3wk'))
-e4 <- read.csv(file = list.files(pattern = '_4wk'))
+# And for 1-4 weeks:
+levels(d.wks$metric) <- c('1week', '2week', '3week', '4week')
+d1 <- d.wks[d.wks$metric == '1week', ]; d1$metric <- NULL
+d2 <- d.wks[d.wks$metric == '2week', ]; d2$metric <- NULL
+d3 <- d.wks[d.wks$metric == '3week', ]; d3$metric <- NULL
+d4 <- d.wks[d.wks$metric == '4week', ]; d4$metric <- NULL
 
-# Get appropriate values for that week:
 m <- read.csv(file = list.files(pattern = '_pro'))
-# m <- m[!is.na(m$onsetObs5), ] # remove if no onset observed
-m1 <- unique(m[, c(1:8, 25, 39)])
-m2 <- unique(m[, c(1:8, 26, 39)])
-m3 <- unique(m[, c(1:8, 27, 39)])
-m4 <- unique(m[, c(1:8, 28, 39)])
+m1 <- unique(m[, c(1:3, 6:8, 25, 39)])
+m2 <- unique(m[, c(1:3, 6:8, 26, 39)])
+m3 <- unique(m[, c(1:3, 6:8, 27, 39)])
+m4 <- unique(m[, c(1:3, 6:8, 28, 39)])
 
-# Check scaling in FR:
-print(table(m$season[m$country == 'FR'], m$scaling[m$country == 'FR']))
+# Rescale values:
+m1$obs_1week <- m1$obs_1week * m1$scaling
+m2$obs_2week <- m2$obs_2week * m2$scaling
+m3$obs_3week <- m3$obs_3week * m3$scaling
+m4$obs_4week <- m4$obs_4week * m4$scaling
 
-e1 <- merge(e1, m1, by = c('season', 'run', 'oev_base', 'oev_denom', 'lambda', 'fc_start', 'country'))
-e1 <- e1[!is.na(e1$onsetObs5), ]
+# Add metrics marker:
+m1$metric <- '1week'; m2$metric <- '2week'; m3$metric <- '3week'; m4$metric <- '4week'
 
-e2 <- merge(e2, m2, by = c('season', 'run', 'oev_base', 'oev_denom', 'lambda', 'fc_start', 'country'))
-e2 <- e2[!is.na(e2$onsetObs5), ]
+# Merge:
+d1 <- merge(d1, m1, by = c('season', 'country', 'run', 'oev_base', 'fc_start'))
+d2 <- merge(d2, m2, by = c('season', 'country', 'run', 'oev_base', 'fc_start'))
+d3 <- merge(d3, m3, by = c('season', 'country', 'run', 'oev_base', 'fc_start'))
+d4 <- merge(d4, m4, by = c('season', 'country', 'run', 'oev_base', 'fc_start'))
 
-e3 <- merge(e3, m3, by = c('season', 'run', 'oev_base', 'oev_denom', 'lambda', 'fc_start', 'country'))
-e3 <- e3[!is.na(e3$onsetObs5), ]
+names(d1)[12] = names(d2)[12] = names(d3)[12] = names(d4)[12] = 'obs_xweek'
 
-e4 <- merge(e4, m4, by = c('season', 'run', 'oev_base', 'oev_denom', 'lambda', 'fc_start', 'country'))
-e4 <- e4[!is.na(e4$onsetObs5), ]
+# Combine into one data frame:
+d <- rbind(d1, d2, d3, d4)
+d$metric <- factor(d$metric)
 
-# Remove gamma (scalings aren't right for FR):
-e1$gamma <- NULL; e2$gamma <- NULL; e3$gamma <- NULL; e4$gamma <- NULL
+# Remove where no onset:
+d <- d[!is.na(d$onsetObs5), ]
 
-# Un-scale ens:
-for (i in 9:308) {
-  e1[, i] <- e1[, i] / e1$scaling
-  e2[, i] <- e2[, i] / e2$scaling
-  e3[, i] <- e3[, i] / e3$scaling
-  e4[, i] <- e4[, i] / e4$scaling
-}
+# Categorize obs_peak_int by bin:
+d$obs_xweek_bin <- cut(d$obs_xweek, c(seq(0, 10000, by = 1000), 100000))
+levels(d$obs_xweek_bin) <- c(seq(1000, 10000, by = 1000), 1e5)
+d$obs_xweek_bin[d$obs_xweek == 0 & !is.na(d$obs_xweek)] <- '1000'
 
-# Remove NAs:
-e1 <- e1[!is.na(e1$obs_1week), ]
-e2 <- e2[!is.na(e2$obs_2week), ]
-e3 <- e3[!is.na(e3$obs_3week), ]
-e4 <- e4[!is.na(e4$obs_4week), ]
+# Remove where obs is NA:
+d <- d[!is.na(d$obs_xweek), ]
 
-# Also remove where obs are 0:
-e1 <- e1[e1$obs_1week > 0, ]
-e2 <- e2[e2$obs_2week > 0, ]
-e3 <- e3[e3$obs_3week > 0, ]
-e4 <- e4[e4$obs_4week > 0, ]
+# And where prob NA?
+d <- d[!is.na(d$prob), ] # these are all where data are 0, but there are many, many 0s left after removing these
 
-# Calculate absolute error + obs:
-for (i in 9:308) {
-  e1[, i] <- abs(e1[, i] - e1$obs_1week) + e1$obs_1week
-  e2[, i] <- abs(e2[, i] - e2$obs_2week) + e2$obs_2week
-  e3[, i] <- abs(e3[, i] - e3$obs_3week) + e3$obs_3week
-  e4[, i] <- abs(e4[, i] - e4$obs_4week) + e4$obs_4week
-}
+# Remove where bin not equal to obs_xweek_bin:
+d <- d[d$week == d$obs_xweek_bin, ]
 
-# For each row, determine how many of the 300 ensemble members are within 5% of the observed value:
-scores1 <- sapply(1:dim(e1)[1], function(ix) {
-  log(length(which(e1[ix, 9:308] < 1.10 * e1$obs_1week[ix])) / 300)
-})
-scores1[scores1 == -Inf] <- -10
-e1$scores <- scores1
-hist(scores1)
-
-# # or else just remove where obs is 0 entirely?? or change to 1?
-# e1$obs_1week_1 <- e1$obs_1week
-# scores1.comp2 <- sapply(1:174720, function(ix) {
-#   log(length(which(e1[ix, 9:308] > 0.975 * e1$obs_1week_1[ix] & e1[ix, 9:308] < 1.025 * e1$obs_1week_1[ix])) / 300)
-# })
-# scores1.comp2[scores1.comp2 == -Inf] <- -10
-# 
-# for (i in 9:308) {
-#   e1[, i][e1[, i] == 0] <- 1
-# }
-# scores1.comp3 <- sapply(1:174720, function(ix) {
-#   log(length(which(e1[ix, 9:308] > 0.975 * e1$obs_1week_1[ix] & e1[ix, 9:308] < 1.025 * e1$obs_1week_1[ix])) / 300)
-# })
-# scores1.comp3[scores1.comp3 == -Inf] <- -10
-
-scores2 <- sapply(1:dim(e2)[1], function(ix) {
-  log(length(which(e2[ix, 9:308] < 1.10 * e2$obs_2week[ix])) / 300)
-})
-scores2[scores2 == -Inf] <- -10
-e2$scores <- scores2
-hist(scores2)
-
-scores3 <- sapply(1:dim(e3)[1], function(ix) {
-  log(length(which(e3[ix, 9:308] < 1.10 * e3$obs_3week[ix])) / 300)
-})
-scores3[scores3 == -Inf] <- -10
-e3$scores <- scores3
-hist(scores3)
-
-scores4 <- sapply(1:dim(e4)[1], function(ix) {
-  log(length(which(e4[ix, 9:308] < 1.10 * e4$obs_4week[ix])) / 300)
-})
-scores4[scores4 == -Inf] <- -10
-e4$scores <- scores4
-hist(scores4)
+# Calculate log scores:
+d$score <- log(d$prob)
+d$score[d$score == -Inf] <- -10
 
 # Reduce appropriately:
-e1 <- e1[, c(1:8, 310, 312)]
-e2 <- e2[, c(1:8, 310, 312)]
-e3 <- e3[, c(1:8, 310, 312)]
-e4 <- e4[, c(1:8, 310, 312)]
+d <- d[, c(1:5, 7:8, 11:14, 16)]
 
-# Get lead weeks (just to plot all things by consistent x-axis):
+# Get lead weeks:
 m <- read.csv(file = list.files(pattern = '_pro'))
+m$leadonset5 <- m$fc_start - m$onset5
 m <- m[!is.na(m$onsetObs5), ] # remove if no onset observed
-m <- unique(m[, c(1:3, 7:8, 15, 60)])
+m <- unique(m[, c(1:3, 7:9, 15, 60, 67, 78)])
 
-e1 <- merge(e1, m, by = c('season', 'country', 'run', 'oev_base', 'fc_start'))
-e2 <- merge(e2, m, by = c('season', 'country', 'run', 'oev_base', 'fc_start'))
-e3 <- merge(e3, m, by = c('season', 'country', 'run', 'oev_base', 'fc_start'))
-e4 <- merge(e4, m, by = c('season', 'country', 'run', 'oev_base', 'fc_start'))
+d <- merge(d, m, by = c('season', 'country', 'run', 'oev_base', 'fc_start'))
 
-# Save as temporary file:
-write.csv(e1, file = '../logScores_1wk.csv', row.names = FALSE)
-write.csv(e2, file = '../logScores_2wk.csv', row.names = FALSE)
-write.csv(e3, file = '../logScores_3wk.csv', row.names = FALSE)
-write.csv(e4, file = '../logScores_4wk.csv', row.names = FALSE)
-rm(list = ls())
+# Save:
+write.csv(d, file = 'logScores_1-4wk_alt1_1000.csv', row.names = FALSE)
 
-### Compile files:
-d.pt <- read.csv('../logScores_pt.csv')
-d.ot <- read.csv('../logScores_ot.csv')
-e.pi <- read.csv('../logScores_pi.csv')
-e1 <- read.csv('../logScores_1wk.csv')
-e2 <- read.csv('../logScores_2wk.csv')
-e3 <- read.csv('../logScores_3wk.csv')
-e4 <- read.csv('../logScores_4wk.csv')
+#########################################################################################################################################################
+#########################################################################################################################################################
+#########################################################################################################################################################
 
-d <- rbind(d.pt, d.ot)
+### Kernel Density ###
 
-names(e1)[9] = names(e2)[9] = names(e3)[9] = names(e4)[9] <- 'obs_val'
-e <- rbind(e1, e2, e3, e4)
+for (bin.size in c(250, 500, 1000)) {
+  
+  # Read in ens file:
+  e <- read.csv(file = list.files(pattern = '_PI'))
+  
+  # Determine mean and sd for each row:
+  means <- sapply(1:dim(e)[1], function(ix) {
+    mean(as.numeric(e[ix, 10:309]))
+  })
+  sds <- sapply(1:dim(e)[1], function(ix) {
+    sd(as.numeric(e[ix, 10:309]))
+  })
+  e$mean <- means; e$sd <- sds
+  
+  # Reduce appropriately:
+  e <- e[, c(1:3, 5:9, 310:311)]
+  
+  # Remove where mean/sd NA:
+  e <- e[!is.na(e$mean), ]
+  
+  # Get observed peak intensity and bin:
+  # m <- read.csv(file = list.files(pattern = '_pro'))
+  m <- read.csv(file = '../../results/R0diff_OEVnew/denom10lam102/outputMet_111219_INDIV_pro.csv')
+  m <- unique(m[, c(1, 6, 8, 17, 39)])
+  m$obs_peak_int <- m$obs_peak_int * m$scaling
+  
+  m$obs_peak_int_bin <- cut(m$obs_peak_int, c(seq(0, 14000, by = bin.size), 100000))
+  levels(m$obs_peak_int_bin) <- seq(0, 14000, by = bin.size)
+  m$obs_peak_int_bin <- as.numeric(as.character(m$obs_peak_int_bin))
+  
+  # Merge:
+  e <- merge(e, m, by = c('season', 'country'))
+  
+  # Find % of normal distribution within observed bin:
+  e$lower <- e$obs_peak_int_bin; e$upper <- e$obs_peak_int_bin + bin.size
+  e$upper[e$upper == 14000] <- 1e5
+  probs <- sapply(1:dim(e)[1], function(ix) {
+    pnorm(e[ix, 'upper'], mean = e[ix, 'mean'], sd = e[ix, 'sd']) - pnorm(e[ix, 'lower'], mean = e[ix, 'mean'], sd = e[ix, 'sd'])
+  })
+  e$prob <- probs
+  
+  # Calculate scores:
+  e$score <- log(e$prob)
+  print(e$score[e$score == -Inf])
+  hist(e$score)
+  
+  # Reduce appropriately:
+  e <- e[, c(1:8, 12:13, 18)]
+  
+  # Get lead weeks:
+  m <- read.csv(file = list.files(pattern = '_pro'))
+  m$leadonset5 <- m$fc_start - m$onset5
+  m <- m[!is.na(m$onsetObs5), ] # remove if no onset observed
+  m <- unique(m[, c(1:5, 7:9, 15, 60, 67, 78)])
+  
+  e <- merge(e, m, by = c('season', 'country', 'run', 'oev_base', 'fc_start'))
+  
+  # Save:
+  write.csv(e, file = paste0('logScores_pi_alt2_', bin.size,'.csv'), row.names = FALSE)
+  rm(e)
+  
+  # Now repeat for 1-4 weeks:
+  e1 <- read.csv(list.files(pattern = '_1wk'))
+  e2 <- read.csv(list.files(pattern = '_2wk'))
+  e3 <- read.csv(list.files(pattern = '_3wk'))
+  e4 <- read.csv(list.files(pattern = '_4wk'))
+  e <- rbind(e1, e2, e3, e4)
+  rm(e1, e2, e3, e4)
+  
+  # Determine mean and sd for each row:
+  means <- sapply(1:dim(e)[1], function(ix) {
+    mean(as.numeric(e[ix, 10:309]))
+  })
+  sds <- sapply(1:dim(e)[1], function(ix) {
+    sd(as.numeric(e[ix, 10:309]))
+  })
+  e$mean <- means; e$sd <- sds
+  
+  # Reduce appropriately:
+  e <- e[, c(1:3, 5:9, 310:311)]
+  
+  # Remove where mean/sd NA:
+  e <- e[!is.na(e$mean), ]
+  
+  # Get observed values and bin:
+  m <- read.csv(file = list.files(pattern = '_pro'))
+  m1 <- unique(m[, c(1:9, 25, 39)])
+  m2 <- unique(m[, c(1:9, 26, 39)])
+  m3 <- unique(m[, c(1:9, 27, 39)])
+  m4 <- unique(m[, c(1:9, 28, 39)])
+  
+  m1$obs_1week <- m1$obs_1week * m1$scaling
+  m2$obs_2week <- m2$obs_2week * m2$scaling
+  m3$obs_3week <- m3$obs_3week * m3$scaling
+  m4$obs_4week <- m4$obs_4week * m4$scaling
+  
+  names(m1)[10] = names(m2)[10] = names(m3)[10] = names(m4)[10] = 'obs_xweek'
+  m1$metric <- '1week'; m2$metric <- '2week'; m3$metric <- '3week'; m4$metric <- '4week'
+  m <- rbind(m1, m2, m3, m4)
+  rm(m1, m2, m3, m4)
+  
+  m$obs_xweek_bin <- cut(m$obs_xweek, c(seq(0, 14000, by = bin.size), 100000))
+  levels(m$obs_xweek_bin) <- seq(0, 14000, by = bin.size)
+  m$obs_xweek_bin <- as.numeric(as.character(m$obs_xweek_bin))
+  
+  m <- m[!is.na(m$obs_xweek), ]
+  m$obs_xweek_bin[m$obs_xweek == 0] <- 0
+  
+  # Merge:
+  m <- unique(m[, c(1, 7:8, 12:13)])
+  names(m)[4] <- 'metrics'
+  e <- merge(e, m, by = c('season', 'country', 'fc_start', 'metrics'))
+  
+  # Find % of normal distribution within observed bin:
+  e$lower <- e$obs_xweek_bin; e$upper <- e$obs_xweek_bin + bin.size
+  e$upper[e$upper == 14000] <- 1e5
+  probs <- sapply(1:dim(e)[1], function(ix) {
+    pnorm(e[ix, 'upper'], mean = e[ix, 'mean'], sd = e[ix, 'sd']) - pnorm(e[ix, 'lower'], mean = e[ix, 'mean'], sd = e[ix, 'sd'])
+  })
+  e$prob <- probs
+  
+  # Calculate scores:
+  e$score <- log(e$prob)
+  print(e$score[e$score == -Inf])
+  hist(e$score)
+  
+  # Reduce appropriately:
+  e <- e[, c(1:8, 15)]
+  
+  # Get lead weeks:
+  m <- read.csv(file = list.files(pattern = '_pro'))
+  m$leadonset5 <- m$fc_start - m$onset5
+  m <- m[!is.na(m$onsetObs5), ] # remove if no onset observed
+  m <- unique(m[, c(1:5, 7:9, 15, 60, 67, 78)])
+  
+  e <- merge(e, m, by = c('season', 'country', 'run', 'oev_base', 'fc_start'))
+  
+  # Save:
+  write.csv(e, file = paste0('logScores_1-4wk_alt2_', bin.size, '.csv'), row.names = FALSE)
+  rm(e)
+  
+}
 
-write.csv(d, file = '../logScores_pt_ot.csv', row.names = FALSE)
-write.csv(e, file = '../logScores_1-4wk.csv', row.names = FALSE)
-rm(list = ls())
+
+
+
 

@@ -139,8 +139,10 @@ d <- merge(d, m, by = c('season', 'country'))
 d <- d[!is.na(d$onsetObs5), ]
 
 # Categorize obs_peak_int by bin:
-d$obs_peak_int_bin <- cut(d$obs_peak_int, c(seq(0, 14000, by = 1000), 100000))
-levels(d$obs_peak_int_bin) <- seq(0, 14000, by = 1000)
+d$obs_peak_int_bin <- cut(d$obs_peak_int, c(seq(0, 10000, by = 1000), 100000))
+# d$bin <- factor(d$bin)
+# levels(d$bin) <- seq(0, 10000, by = 1000)
+levels(d$obs_peak_int_bin) <- seq(0, 10000, by = 1000)
 # QUESTION: Does it matter that bins aren't equally sized?
 
 # Remove where bin not equal to obs_peak_int:
@@ -157,7 +159,7 @@ d <- d[, c(1:5, 10:13)]
 m <- read.csv('results/original/fairComp/outputMet_110819_pro_PROC.csv')
 m$leadonset5 <- m$fc_start - m$onset5
 m <- m[!is.na(m$onsetObs5), ] # remove if no onset observed
-m <- unique(m[, c(1:5, 8:9, 15, 60, 67, 80)])
+m <- unique(m[, c(1:5, 7:9, 15, 60, 67, 80)])
 
 d <- merge(d, m, by = c('season', 'country', 'run', 'oev_base', 'fc_start'))
 
@@ -207,12 +209,15 @@ d$metric <- factor(d$metric)
 d <- d[!is.na(d$onsetObs5), ]
 
 # Categorize obs_peak_int by bin:
-d$obs_xweek_bin <- cut(d$obs_xweek, c(seq(0, 14000, by = 1000), 100000))
-levels(d$obs_xweek_bin) <- seq(0, 14000, by = 1000)
+d$obs_xweek_bin <- cut(d$obs_xweek, c(seq(0, 10000, by = 1000), 100000))
+d$bin <- factor(d$bin)
+levels(d$bin) <- seq(0, 10000, by = 1000)
+levels(d$obs_xweek_bin) <- seq(0, 10000, by = 1000)
 d$obs_xweek_bin[d$obs_xweek == 0 & !is.na(d$obs_xweek)] <- '0'
 
 # Remove where obs is NA:
 d <- d[!is.na(d$obs_xweek), ]
+# no NAs in "value" here
 
 # Remove where bin not equal to obs_xweek_bin:
 d <- d[d$bin == d$obs_xweek_bin, ]
@@ -228,19 +233,20 @@ d <- d[, c(1:5, 9:11, 13)]
 m <- read.csv('results/original/fairComp/outputMet_110819_pro_PROC.csv')
 m$leadonset5 <- m$fc_start - m$onset5
 m <- m[!is.na(m$onsetObs5), ] # remove if no onset observed
-m <- unique(m[, c(1:5, 8:9, 15, 60, 67, 80)])
+m <- unique(m[, c(1:5, 7:9, 15, 60, 67, 80)])
 
 d <- merge(d, m, by = c('season', 'country', 'run', 'oev_base', 'fc_start'))
 
 # Save:
 write.csv(d, file = 'results/original/fairComp/logScores_1-4wk_alt1_1000.csv', row.names = FALSE)
-# QUESTION: Do we leave 0s in when analyzing these, or not?
 
 #########################################################################################################################################################
 #########################################################################################################################################################
 #########################################################################################################################################################
 
 ### Kernel Density ###
+bin.size <- 500
+
 # Read in ens file:
 e <- read.csv('results/original/outputEns_111819_PI.csv')
 # these should still be scaled, but check
@@ -268,18 +274,19 @@ e <- e[!is.na(e$mean), ]
 
 # Get observed peak intensity and bin:
 m <- read.csv('results/original/fairComp/outputMet_110819_pro_PROC.csv')
-m <- unique(m[, c(1:2, 8, 17, 39)])
+m <- unique(m[, c(1, 6, 8, 17, 39)])
 m$obs_peak_int <- m$obs_peak_int * m$scaling
 
-m$obs_peak_int_bin <- cut(m$obs_peak_int, c(seq(0, 14000, by = 1000), 100000))
-levels(m$obs_peak_int_bin) <- seq(0, 14000, by = 1000)
+m$obs_peak_int_bin <- cut(m$obs_peak_int, c(seq(0, 14000, by = bin.size), 100000))
+levels(m$obs_peak_int_bin) <- seq(0, 14000, by = bin.size)
 m$obs_peak_int_bin <- as.numeric(as.character(m$obs_peak_int_bin))
 
 # Merge:
 e <- merge(e, m, by = c('season', 'country'))
 
 # Find % of normal distribution within observed bin:
-e$lower <- e$obs_peak_int_bin; e$upper <- e$obs_peak_int_bin + 1000
+e$lower <- e$obs_peak_int_bin; e$upper <- e$obs_peak_int_bin + bin.size
+e$upper[e$upper == 14000] <- 1e5
 probs <- sapply(1:dim(e)[1], function(ix) {
   pnorm(e[ix, 'upper'], mean = e[ix, 'mean'], sd = e[ix, 'sd']) - pnorm(e[ix, 'lower'], mean = e[ix, 'mean'], sd = e[ix, 'sd'])
 })
@@ -297,12 +304,12 @@ e <- e[, c(1:5, 9:10, 15)]
 m <- read.csv('results/original/fairComp/outputMet_110819_pro_PROC.csv')
 m$leadonset5 <- m$fc_start - m$onset5
 m <- m[!is.na(m$onsetObs5), ] # remove if no onset observed
-m <- unique(m[, c(1:5, 8:9, 15, 60, 67, 80)])
+m <- unique(m[, c(1:5, 7:9, 15, 60, 67, 80)])
 
 e <- merge(e, m, by = c('season', 'country', 'run', 'oev_base', 'fc_start'))
 
 # Save:
-write.csv(e, file = 'results/original/fairComp/logScores_pi_alt2_1000.csv', row.names = FALSE)
+write.csv(e, file = paste0('results/original/fairComp/logScores_pi_alt2_', bin.size, '.csv'), row.names = FALSE)
 rm(e)
 
 # Now repeat for 1-4 weeks:
@@ -337,34 +344,35 @@ e <- e[!is.na(e$mean), ]
 
 # Get observed values and bin:
 m <- read.csv('results/original/fairComp/outputMet_110819_pro_PROC.csv')
-m1 <- unique(m[, c(1:5, 8:9, 25, 39)])
-m2 <- unique(m[, c(1:5, 8:9, 26, 39)])
-m3 <- unique(m[, c(1:5, 8:9, 27, 39)])
-m4 <- unique(m[, c(1:5, 8:9, 28, 39)])
+m1 <- unique(m[, c(1:9, 25, 39)])
+m2 <- unique(m[, c(1:9, 26, 39)])
+m3 <- unique(m[, c(1:9, 27, 39)])
+m4 <- unique(m[, c(1:9, 28, 39)])
 
 m1$obs_1week <- m1$obs_1week * m1$scaling
 m2$obs_2week <- m2$obs_2week * m2$scaling
 m3$obs_3week <- m3$obs_3week * m3$scaling
 m4$obs_4week <- m4$obs_4week * m4$scaling
 
-names(m1)[8] = names(m2)[8] = names(m3)[8] = names(m4)[8] = 'obs_xweek'
+names(m1)[10] = names(m2)[10] = names(m3)[10] = names(m4)[10] = 'obs_xweek'
 m1$metric <- '1week'; m2$metric <- '2week'; m3$metric <- '3week'; m4$metric <- '4week'
 m <- rbind(m1, m2, m3, m4)
 rm(m1, m2, m3, m4)
 
-m$obs_xweek_bin <- cut(m$obs_xweek, c(seq(0, 14000, by = 1000), 100000))
-levels(m$obs_xweek_bin) <- seq(0, 14000, by = 1000)
+m$obs_xweek_bin <- cut(m$obs_xweek, c(seq(0, 14000, by = bin.size), 100000))
+levels(m$obs_xweek_bin) <- seq(0, 14000, by = bin.size)
 m$obs_xweek_bin <- as.numeric(as.character(m$obs_xweek_bin))
 
 m <- m[!is.na(m$obs_xweek), ]
 m$obs_xweek_bin[m$obs_xweek == 0] <- 0
 
 # Merge:
-m <- unique(m[, c(1:3, 10:11)])
+m <- unique(m[, c(1, 7:8, 12:13)])
 e <- merge(e, m, by = c('season', 'country', 'fc_start', 'metric'))
 
 # Find % of normal distribution within observed bin:
-e$lower <- e$obs_xweek_bin; e$upper <- e$obs_xweek_bin + 1000
+e$lower <- e$obs_xweek_bin; e$upper <- e$obs_xweek_bin + bin.size
+e$upper[e$upper == 14000] <- 1e5
 probs <- sapply(1:dim(e)[1], function(ix) {
   pnorm(e[ix, 'upper'], mean = e[ix, 'mean'], sd = e[ix, 'sd']) - pnorm(e[ix, 'lower'], mean = e[ix, 'mean'], sd = e[ix, 'sd'])
 })
@@ -382,12 +390,12 @@ e <- e[, c(1:6, 13)]
 m <- read.csv('results/original/fairComp/outputMet_110819_pro_PROC.csv')
 m$leadonset5 <- m$fc_start - m$onset5
 m <- m[!is.na(m$onsetObs5), ] # remove if no onset observed
-m <- unique(m[, c(1:5, 8:9, 15, 60, 67, 80)])
+m <- unique(m[, c(1:5, 7:9, 15, 60, 67, 80)])
 
 e <- merge(e, m, by = c('season', 'country', 'run', 'oev_base', 'fc_start'))
 
 # Save:
-write.csv(e, file = 'results/original/fairComp/logScores_1-4wk_alt2_1000.csv', row.names = FALSE)
+write.csv(e, file = paste0('results/original/fairComp/logScores_1-4wk_alt2_', bin.size, '.csv'), row.names = FALSE)
 rm(e)
 
 
