@@ -1,10 +1,20 @@
 
 # Are there countries that are improving and others that get worse? Which countries?
-library(ggplot2)
+library(reshape2); library(ggplot2); library(gridExtra)
+
+# # Read in all plotting code:
+# source('code/gridSearch/comp_netVsIndiv/plotting_functions.R')
+
+# Set locations of 2 model results to be compared:
+model1 <- 'results/original/fairComp/'
+model2 <- 'results/R0diff_OEVnew/denom10lam102/'
+model3 <- 'results/R0diff_OEVold/'
+model4 <- 'results/R0min_OEVnew/'
+model5 <- 'results/R0min_OEVold/'
 
 # Read in metrics and log scores:
-source('code/compareModels/readIn_metrics.R')
-source('code/compareModels/readIn_logScores.R')
+source('code/gridSearch/comp_netVsIndiv/readIn_metrics_ALL.R')
+source('code/gridSearch/comp_netVsIndiv/readIn_logScores_ALL.R')
 
 ### Compare MAE ###
 m.temp <- m[m$FWeek_pkwk >= -6 & m$FWeek_pkwk < 5 & !is.na(m$leadonset5), ]
