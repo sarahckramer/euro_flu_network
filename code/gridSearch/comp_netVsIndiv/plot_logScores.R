@@ -19,24 +19,6 @@ if (byWeek == 'Predicted') {
     labs(x = 'Predicted Lead Week', y = 'Median Log Score') + scale_x_continuous(breaks = -8:4)
   grid.arrange(p1, p2, p3)
   
-  # PI:
-  e.temp <- e.pi[e.pi$leadpkwk_mean >= -8 & e.pi$leadpkwk_mean < 5 & !is.na(e.pi$leadonset5), ]
-  # e.temp <- e.pi[e.pi$leadpkwk_mean >= -8 & e.pi$leadpkwk_mean < 5, ]
-  e.temp$group <- paste(e.temp$leadpkwk_mean, e.temp$model, sep = '_'); e.temp$group <- factor(e.temp$group)
-  e.agg <- aggregate(score ~ leadpkwk_mean + oev_base + model, data = e.temp, FUN = median)
-  
-  p1 <- ggplot(data = e.temp) + geom_boxplot(aes(x = leadpkwk_mean, y = score, group = group, fill = model)) +
-    facet_wrap(~ oev_base, ncol = 2) + theme_bw() + scale_fill_brewer(palette = 'Set1') +
-    labs(x = 'Predicted Lead Week', y = 'Log Score', title = 'Peak Intensity') + scale_x_continuous(breaks = -8:4)
-  p2 <- ggplot(data = e.temp) + geom_boxplot(aes(x = leadpkwk_mean, y = exp(score), group = group, fill = model)) +
-    facet_wrap(~ oev_base, ncol = 2) + theme_bw() + scale_fill_brewer(palette = 'Set1') +
-    labs(x = 'Predicted Lead Week', y = 'e^(Log Score)') + scale_x_continuous(breaks = -8:4)
-  p3 <- ggplot(data = e.agg) + geom_line(aes(x = leadpkwk_mean, y = score, col = model)) +
-    geom_point(aes(x = leadpkwk_mean, y = score, col = model)) + facet_wrap(~oev_base) +
-    theme_bw() + scale_color_brewer(palette = 'Set1') +
-    labs(x = 'Predicted Lead Week', y = 'Median Log Score') + scale_x_continuous(breaks = -8:4)
-  grid.arrange(p1, p2, p3)
-  
   # OT:
   # d.temp <- d[d$leadonset5 >= -6 & d$leadonset5 < 7 & d$metric == 'ot' & !is.na(d$leadonset5), ]
   d.temp <- d[((d$leadonset5 >= -6 & d$leadonset5 < 7) | is.na(d$leadonset5)) & d$metric == 'ot', ]
@@ -55,16 +37,19 @@ if (byWeek == 'Predicted') {
     labs(x = 'Predicted Lead Week', y = 'Median Log Score') + scale_x_continuous(breaks = -8:4)
   grid.arrange(p1, p2, p3)
   
-  # 1-4 weeks:
-  for (wk in levels(e$metric)) {
-    e.temp <- e[e$metric == wk & e$leadpkwk_mean >= -8 & e$leadpkwk_mean < 5, ]
-    names(e.temp)[8] <- 'score'
+  # PI:
+  # do for a variety of binnings and kernel density methods:
+  for (i in c(1, 3:4)) {
+    e.pi <- e.pi.list[[i]]
+    
+    e.temp <- e.pi[e.pi$leadpkwk_mean >= -8 & e.pi$leadpkwk_mean < 5 & !is.na(e.pi$leadonset5), ]
+    # e.temp <- e.pi[e.pi$leadpkwk_mean >= -8 & e.pi$leadpkwk_mean < 5, ]
     e.temp$group <- paste(e.temp$leadpkwk_mean, e.temp$model, sep = '_'); e.temp$group <- factor(e.temp$group)
     e.agg <- aggregate(score ~ leadpkwk_mean + oev_base + model, data = e.temp, FUN = median)
     
     p1 <- ggplot(data = e.temp) + geom_boxplot(aes(x = leadpkwk_mean, y = score, group = group, fill = model)) +
       facet_wrap(~ oev_base, ncol = 2) + theme_bw() + scale_fill_brewer(palette = 'Set1') +
-      labs(x = 'Predicted Lead Week', y = 'Log Score', title = wk) + scale_x_continuous(breaks = -8:4)
+      labs(x = 'Predicted Lead Week', y = 'Log Score', title = 'Peak Intensity') + scale_x_continuous(breaks = -8:4)
     p2 <- ggplot(data = e.temp) + geom_boxplot(aes(x = leadpkwk_mean, y = exp(score), group = group, fill = model)) +
       facet_wrap(~ oev_base, ncol = 2) + theme_bw() + scale_fill_brewer(palette = 'Set1') +
       labs(x = 'Predicted Lead Week', y = 'e^(Log Score)') + scale_x_continuous(breaks = -8:4)
@@ -73,6 +58,33 @@ if (byWeek == 'Predicted') {
       theme_bw() + scale_color_brewer(palette = 'Set1') +
       labs(x = 'Predicted Lead Week', y = 'Median Log Score') + scale_x_continuous(breaks = -8:4)
     grid.arrange(p1, p2, p3)
+  }
+  
+  # 1-4 weeks:
+  for (i in c(1, 3:4)) {
+    e <- e.wks.list[[i]]
+    if (i %in% 2:4) {
+      names(e)[6] <- 'metric'
+    }
+    
+    for (wk in levels(e$metric)) {
+      e.temp <- e[e$metric == wk & e$leadpkwk_mean >= -8 & e$leadpkwk_mean < 5, ]
+      # names(e.temp)[8] <- 'score'
+      e.temp$group <- paste(e.temp$leadpkwk_mean, e.temp$model, sep = '_'); e.temp$group <- factor(e.temp$group)
+      e.agg <- aggregate(score ~ leadpkwk_mean + oev_base + model, data = e.temp, FUN = median)
+      
+      p1 <- ggplot(data = e.temp) + geom_boxplot(aes(x = leadpkwk_mean, y = score, group = group, fill = model)) +
+        facet_wrap(~ oev_base, ncol = 2) + theme_bw() + scale_fill_brewer(palette = 'Set1') +
+        labs(x = 'Predicted Lead Week', y = 'Log Score', title = wk) + scale_x_continuous(breaks = -8:4)
+      p2 <- ggplot(data = e.temp) + geom_boxplot(aes(x = leadpkwk_mean, y = exp(score), group = group, fill = model)) +
+        facet_wrap(~ oev_base, ncol = 2) + theme_bw() + scale_fill_brewer(palette = 'Set1') +
+        labs(x = 'Predicted Lead Week', y = 'e^(Log Score)') + scale_x_continuous(breaks = -8:4)
+      p3 <- ggplot(data = e.agg) + geom_line(aes(x = leadpkwk_mean, y = score, col = model)) +
+        geom_point(aes(x = leadpkwk_mean, y = score, col = model)) + facet_wrap(~oev_base) +
+        theme_bw() + scale_color_brewer(palette = 'Set1') +
+        labs(x = 'Predicted Lead Week', y = 'Median Log Score') + scale_x_continuous(breaks = -8:4)
+      grid.arrange(p1, p2, p3)
+    }
     
   }
   
@@ -133,24 +145,6 @@ if (byWeek == 'Predicted') {
     labs(x = 'Observed Lead Week', y = 'Median Log Score') + scale_x_continuous(breaks = -8:4)
   grid.arrange(p1, p2, p3)
   
-  # PI:
-  # e.temp <- e.pi[e.pi$FWeek_pkwk >= -8 & e.pi$FWeek_pkwk < 5 & !is.na(e.pi$FWeek_onwk), ]
-  e.temp <- e.pi[e.pi$FWeek_pkwk >= -8 & e.pi$FWeek_pkwk < 5 & !is.na(e.pi$leadonset5), ]
-  e.temp$group <- paste(e.temp$FWeek_pkwk, e.temp$model, sep = '_'); e.temp$group <- factor(e.temp$group)
-  e.agg <- aggregate(score ~ FWeek_pkwk + oev_base + model, data = e.temp, FUN = median)
-  
-  p1 <- ggplot(data = e.temp) + geom_boxplot(aes(x = FWeek_pkwk, y = score, group = group, fill = model)) +
-    facet_wrap(~ oev_base, ncol = 2) + theme_bw() + scale_fill_brewer(palette = 'Set1') +
-    labs(x = 'Observed Lead Week', y = 'Log Score', title = 'Peak Intensity') + scale_x_continuous(breaks = -8:4)
-  p2 <- ggplot(data = e.temp) + geom_boxplot(aes(x = FWeek_pkwk, y = exp(score), group = group, fill = model)) +
-    facet_wrap(~ oev_base, ncol = 2) + theme_bw() + scale_fill_brewer(palette = 'Set1') +
-    labs(x = 'Observed Lead Week', y = 'e^(Log Score)') + scale_x_continuous(breaks = -8:4)
-  p3 <- ggplot(data = e.agg) + geom_line(aes(x = FWeek_pkwk, y = score, col = model)) +
-    geom_point(aes(x = FWeek_pkwk, y = score, col = model)) + facet_wrap(~oev_base) +
-    theme_bw() + scale_color_brewer(palette = 'Set1') +
-    labs(x = 'Observed Lead Week', y = 'Median Log Score') + scale_x_continuous(breaks = -8:4)
-  grid.arrange(p1, p2, p3)
-  
   # OT:
   d.temp <- d[d$FWeek_onwk >= -6 & d$FWeek_onwk < 7 & d$metric == 'ot' & !is.na(d$FWeek_onwk), ]
   d.temp$group <- paste(d.temp$FWeek_onwk, d.temp$model, sep = '_'); d.temp$group <- factor(d.temp$group)
@@ -185,16 +179,17 @@ if (byWeek == 'Predicted') {
     labs(x = 'Observed Lead Week', y = 'Median Log Score') + scale_x_continuous(breaks = -8:4)
   grid.arrange(p1, p2, p3)
   
-  # 1-4 weeks:
-  for (wk in levels(e$metric)) {
-    e.temp <- e[e$metric == wk & e$FWeek_pkwk >= -8 & e$FWeek_pkwk < 5, ]
-    names(e.temp)[8] <- 'score'
+  # PI:
+  for (i in c(1, 3:4)) {
+    e.pi <- e.pi.list[[i]]
+    # e.temp <- e.pi[e.pi$FWeek_pkwk >= -8 & e.pi$FWeek_pkwk < 5 & !is.na(e.pi$FWeek_onwk), ]
+    e.temp <- e.pi[e.pi$FWeek_pkwk >= -8 & e.pi$FWeek_pkwk < 5 & !is.na(e.pi$leadonset5), ]
     e.temp$group <- paste(e.temp$FWeek_pkwk, e.temp$model, sep = '_'); e.temp$group <- factor(e.temp$group)
     e.agg <- aggregate(score ~ FWeek_pkwk + oev_base + model, data = e.temp, FUN = median)
     
     p1 <- ggplot(data = e.temp) + geom_boxplot(aes(x = FWeek_pkwk, y = score, group = group, fill = model)) +
       facet_wrap(~ oev_base, ncol = 2) + theme_bw() + scale_fill_brewer(palette = 'Set1') +
-      labs(x = 'Observed Lead Week', y = 'Log Score', title = wk) + scale_x_continuous(breaks = -8:4)
+      labs(x = 'Observed Lead Week', y = 'Log Score', title = 'Peak Intensity') + scale_x_continuous(breaks = -8:4)
     p2 <- ggplot(data = e.temp) + geom_boxplot(aes(x = FWeek_pkwk, y = exp(score), group = group, fill = model)) +
       facet_wrap(~ oev_base, ncol = 2) + theme_bw() + scale_fill_brewer(palette = 'Set1') +
       labs(x = 'Observed Lead Week', y = 'e^(Log Score)') + scale_x_continuous(breaks = -8:4)
@@ -203,6 +198,33 @@ if (byWeek == 'Predicted') {
       theme_bw() + scale_color_brewer(palette = 'Set1') +
       labs(x = 'Observed Lead Week', y = 'Median Log Score') + scale_x_continuous(breaks = -8:4)
     grid.arrange(p1, p2, p3)
+  }
+  
+  # 1-4 weeks:
+  for (i in c(1, 3:4)) {
+    e <- e.wks.list[[i]]
+    if (i %in% 2:4) {
+      names(e)[6] <- 'metric'
+    }
+    
+    for (wk in levels(e$metric)) {
+      e.temp <- e[e$metric == wk & e$FWeek_pkwk >= -8 & e$FWeek_pkwk < 5, ]
+      # names(e.temp)[8] <- 'score'
+      e.temp$group <- paste(e.temp$FWeek_pkwk, e.temp$model, sep = '_'); e.temp$group <- factor(e.temp$group)
+      e.agg <- aggregate(score ~ FWeek_pkwk + oev_base + model, data = e.temp, FUN = median)
+      
+      p1 <- ggplot(data = e.temp) + geom_boxplot(aes(x = FWeek_pkwk, y = score, group = group, fill = model)) +
+        facet_wrap(~ oev_base, ncol = 2) + theme_bw() + scale_fill_brewer(palette = 'Set1') +
+        labs(x = 'Observed Lead Week', y = 'Log Score', title = wk) + scale_x_continuous(breaks = -8:4)
+      p2 <- ggplot(data = e.temp) + geom_boxplot(aes(x = FWeek_pkwk, y = exp(score), group = group, fill = model)) +
+        facet_wrap(~ oev_base, ncol = 2) + theme_bw() + scale_fill_brewer(palette = 'Set1') +
+        labs(x = 'Observed Lead Week', y = 'e^(Log Score)') + scale_x_continuous(breaks = -8:4)
+      p3 <- ggplot(data = e.agg) + geom_line(aes(x = FWeek_pkwk, y = score, col = model)) +
+        geom_point(aes(x = FWeek_pkwk, y = score, col = model)) + facet_wrap(~oev_base) +
+        theme_bw() + scale_color_brewer(palette = 'Set1') +
+        labs(x = 'Observed Lead Week', y = 'Median Log Score') + scale_x_continuous(breaks = -8:4)
+      grid.arrange(p1, p2, p3)
+    }
     
   }
   # these include where no onset is predicted; don't have predicted onset recorded in e

@@ -13,18 +13,21 @@ for (o1 in levels(m$oev_base)) {
       m.temp <- m.temp1[m.temp1$oev_base == o1 & m.temp1$lambda == l  & m.temp1$model == model.type, ]
       m.temp.ot <- m.temp2[m.temp2$oev_base == o1 & m.temp2$lambda == l  & m.temp2$model == model.type,]
       
-      res.pt <- format_for_plot(m.temp, 'FWeek_pkwk', 'abs_delta_pkwk_mean')
-      res.pt$metric <- 'pt'
+      if (dim(m.temp)[1] > 0) {
+        res.pt <- format_for_plot(m.temp, 'FWeek_pkwk', 'abs_delta_pkwk_mean')
+        res.pt$metric <- 'pt'
+        
+        res.pi <- format_for_plot(m.temp, 'FWeek_pkwk', 'abs_delta_peak_int_bin')
+        res.pi$metric <- 'pi'
+        
+        res.ot <- format_for_plot(m.temp.ot, 'FWeek_onwk', 'abs_delta_onset')
+        res.ot$metric <- 'ot'
+        
+        res <- rbind(res.pt, res.pi, res.ot)
+        res$oev_base <- o1; res$lambda <- l; res$model <- model.type
+        res.all <- rbind(res.all, res)
+      }
       
-      res.pi <- format_for_plot(m.temp, 'FWeek_pkwk', 'abs_delta_peak_int_bin')
-      res.pi$metric <- 'pi'
-      
-      res.ot <- format_for_plot(m.temp.ot, 'FWeek_onwk', 'abs_delta_onset')
-      res.ot$metric <- 'ot'
-      
-      res <- rbind(res.pt, res.pi, res.ot)
-      res$oev_base <- o1; res$lambda <- l; res$model <- model.type
-      res.all <- rbind(res.all, res)
     }
     
   }
