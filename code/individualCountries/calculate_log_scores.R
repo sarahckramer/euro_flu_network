@@ -1,5 +1,5 @@
 
-# setwd('results/PROCESS/')
+setwd('results/PROCESS/')
 getwd()
 
 ### Deal with PT and OT first - can use Dist:
@@ -97,7 +97,7 @@ log.pt$metric <- 'pt'
 log.ot$metric <- 'ot'
 
 # Combine and save:
-d <- rbind(d.pt, d.ot)
+d <- rbind(log.pt, log.ot)
 write.csv(d, file = 'logScores_pt_ot.csv', row.names = FALSE)
 
 rm(list = ls())
