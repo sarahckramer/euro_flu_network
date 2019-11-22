@@ -11,7 +11,7 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
   tm_vec <- seq(tm_strt, tm_end, by = tm_step)
   tm_sz <- length(tm_vec) + 1 # include initial conditions
   
-  S.list = I.list = newI.list = N.list = vector('list', tm_sz)
+  S.list = I.list = newI.list = R.list = N.list = vector('list', tm_sz)
   S.list[[1]] <- S0; I.list[[1]] <- I0
   newI.list[[1]] <- matrix(0, nrow = n, ncol = n)
   
@@ -113,7 +113,10 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
     }
     
     if (discrete) { # run stochastically
+      N <- round(N, 0) # N needs to be whole numbers, then!
+      
       S <- round(S, 0); I <- round(I, 0)
+      R <- N - S - I
       
       ### Daytime ###
       # during the daytime, N.d describes how many people are in each compartment (sum over each COLUMN); during the nighttime, it's N.s (sum over each ROW)
@@ -125,35 +128,170 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
       Erecov <- (tm_step * (1 / 3)) * (1 / D * I)
       
       # Now incorporate travel:
-      s.out <- sweep(sweep(S, 2, 1 / colSums(N), '*'), 2, rowSums(all.rand), '*')
-      i.out <- sweep(sweep(I, 2, 1 / colSums(N), '*'), 2, rowSums(all.rand), '*')
+      # In order to keep population sizes constant, need to first calculate the TOTAL travelers in and out, then allocate them by compartment
+      n.out <- sweep(sweep(N, 2, 1 / colSums(N), '*'), 2, rowSums(all.rand), '*')
+      n.in <- matrix((colSums(N) / colSums(N)) %*% all.rand, nrow = n, ncol = n, byrow = T) *
+        (N / matrix(colSums(N), nrow = n, ncol = n, byrow = TRUE))
+      print(all.equal(n.out, n.in))
+      # now we have how many people are traveling in and out of each compartment total, rpois on that; allocate by what percentage of people are S, I, R
+      # and obviously n.out and n.in have to be the same; so it doesn't make sense just to allocate by proportion S/I/R...
+          # allocating this way for out is correct; but not for in, because that relates to the proportion S/I/R in all the incoming compartments
+      n.trav <- (tm_step * (1 / 3)) * sweep(sweep(N, 2, 1 / colSums(N), '*'), 2, rowSums(all.rand), '*')
+      n.trav.rand <- rpois(length(n.trav), n.trav); dim(n.trav.rand) <- dim(n.trav)
+      # maybe go ahead and incorporate the divide by 3 for daytime here, so it doesn't cause issues later?
       
-      s.in <- matrix((colSums(S) / colSums(N)) %*% all.rand, nrow = n, ncol = n, byrow = T) *
+      # Check:
+      s.out <- (S / N) * n.out; s.out[is.na(s.out)] <- 0
+      i.out <- (I / N) * n.out; i.out[is.na(i.out)] <- 0
+      r.out <- (R / N) * n.out; r.out[is.na(r.out)] <- 0
+      
+      s.out.old <- sweep(sweep(S, 2, 1 / colSums(N), '*'), 2, rowSums(all.rand), '*')
+      i.out.old <- sweep(sweep(I, 2, 1 / colSums(N), '*'), 2, rowSums(all.rand), '*')
+      r.out.old <- sweep(sweep(R, 2, 1 / colSums(N), '*'), 2, rowSums(all.rand), '*')
+      
+      print(all.equal(s.out, s.out.old))
+      print(all.equal(i.out, i.out.old))
+      print(all.equal(r.out, r.out.old))
+      
+      s.in <- matrix(((colSums(S) / colSums(N)) %*% all.rand) / colSums(all.rand), nrow = n, ncol = n, byrow = T) * n.in
+      i.in <- matrix(((colSums(I) / colSums(N)) %*% all.rand) / colSums(all.rand), nrow = n, ncol = n, byrow = T) * n.in
+      r.in <- matrix(((colSums(R) / colSums(N)) %*% all.rand) / colSums(all.rand), nrow = n, ncol = n, byrow = T) * n.in
+      
+      s.in.old <- matrix((colSums(S) / colSums(N)) %*% all.rand, nrow = n, ncol = n, byrow = T) *
         (N / matrix(colSums(N), nrow = n, ncol = n, byrow = T))
-      i.in <- matrix((colSums(I) / colSums(N)) %*% all.rand, nrow = n, ncol = n, byrow = T) *
+      i.in.old <- matrix((colSums(I) / colSums(N)) %*% all.rand, nrow = n, ncol = n, byrow = T) *
         (N / matrix(colSums(N), nrow = n, ncol = n, byrow = T))
+      r.in.old <- matrix((colSums(R) / colSums(N)) %*% all.rand, nrow = n, ncol = n, byrow = T) *
+        (N / matrix(colSums(N), nrow = n, ncol = n, byrow = T))
+      
+      print(all.equal(s.in, s.in.old))
+      print(all.equal(i.in, i.in.old))
+      print(all.equal(r.in, r.in.old))
+      
+      # Now for real:
+      # note that rounding can cause an issue if all round down - then won't be the same value as in n.trav.rand
+          # worst-case scenario is 0.33-0.33-0.33 between the three states - so add (0.5 - 0.33 = 1/6) to matrices before rounding?
+          # but this messes up some of the ones where there previously wasn't an issue...
+      # round.fix <- 1 / 7
+      
+      # s.out <- round((S / N) * n.trav.rand, 0); s.out[is.na(s.out)] <- 0
+      # i.out <- round((I / N) * n.trav.rand, 0); i.out[is.na(i.out)] <- 0
+      # r.out <- round((R / N) * n.trav.rand, 0); r.out[is.na(r.out)] <- 0
+      # # r.out <- n.trav.rand - s.in - i.in
+      # # but need to round these to get whole numbers... and then we might not conserve population
+      # print(all.equal(n.trav.rand, s.out + i.out + r.out, check.attributes = F))
+      # 
+      # s.in <- round((matrix(((colSums(S) / colSums(N)) %*% all.rand) / colSums(all.rand), nrow = n, ncol = n, byrow = T) * n.trav.rand), 0)
+      # i.in <- round((matrix(((colSums(I) / colSums(N)) %*% all.rand) / colSums(all.rand), nrow = n, ncol = n, byrow = T) * n.trav.rand), 0)
+      # r.in <- round((matrix(((colSums(R) / colSums(N)) %*% all.rand) / colSums(all.rand), nrow = n, ncol = n, byrow = T) * n.trav.rand), 0)
+      # # r.in <- n.trav.rand - s.in - i.in
+      # print(all.equal(n.trav.rand, s.in + i.in + r.in), check.attribute = F)
+      
+      # simplest solution might just be to remove/assign the "missing" or "extra" people from a selected compartment (S)?
+          # or can we just set r.out and r.in to be total travel minus the other two?
+      
+      # or can we somehow draw from the integer of people in n.trav.rand randomly?
+          # although I'm hesitant to add this much complexity to an already-slow model
+      
+      s.out.frac <- S / N; i.out.frac <- I / N; r.out.frac <- R / N
+      r.out.frac <- r.out.frac + i.out.frac + s.out.frac
+      i.out.frac <- i.out.frac + s.out.frac
+      
+      s.out.frac[is.na(s.out.frac)] <- 0
+      i.out.frac[is.na(i.out.frac)] <- 0
+      r.out.frac[is.na(r.out.frac)] <- 0
+      
+      s.out = i.out = r.out = matrix(NA, nrow = n, ncol = n)
+      
+      # runif(n.trav.rand[1, 1], min = 0, max = 1)
+      # n.trav.unif <- apply(n.trav.rand, 1:2, function(ix) {
+      #   ix <- sort(runif(ix, min = 0, max = 1))
+      #   apply(s.out.frac, 1:2, function(jx) {
+      #     length(which(ix <= jx))
+      #   })
+      # })
+      
+      for (irow in 1:dim(n.trav.rand)[1]) {
+        for (jcol in 1:dim(n.trav.rand)[2]) {
+          n.trav.unif <- sort(runif(n.trav.rand[irow, jcol], min = 0, max = 1))
+          length(n.trav.unif)
+          
+          s.out[irow, jcol] <- length(n.trav.unif[n.trav.unif <= s.out.frac[irow, jcol]])
+          i.out[irow, jcol] <- length(n.trav.unif[n.trav.unif <= i.out.frac[irow, jcol] & n.trav.unif > s.out.frac[irow, jcol]])
+          r.out[irow, jcol] <- length(n.trav.unif[n.trav.unif <= r.out.frac[irow, jcol] & n.trav.unif > i.out.frac[irow, jcol]])
+          
+          if(!all.equal(n.trav.rand[irow, jcol], s.out[irow, jcol] + i.out[irow, jcol] + r.out[irow, jcol])) {
+            print('Error')
+          }
+        }
+      }
+      
+      
+      
+      
+      
+      
+      
+      # Estrav.base <- (tm_step * (1 / 3)) * ((S / N) - (matrix(((colSums(S) / colSums(N)) %*% all.rand) / colSums(all.rand), nrow = n, ncol = n, byrow = T)))
+      # Eitrav.base <- (tm_step * (1 / 3)) * ((I / N) - (matrix(((colSums(I) / colSums(N)) %*% all.rand) / colSums(all.rand), nrow = n, ncol = n, byrow = T)))
+      # Ertrav.base <- (tm_step * (1 / 3)) * ((R / N) - (matrix(((colSums(R) / colSums(N)) %*% all.rand) / colSums(all.rand), nrow = n, ncol = n, byrow = T)))
+      # 
+      # Estrav.base[is.na(Estrav.base)] <- 0
+      # Eitrav.base[is.na(Eitrav.base)] <- 0
+      # Ertrav.base[is.na(Ertrav.base)] <- 0
+      # 
+      # # adding these all doesn't quite yield zero...
+      
+      
+      
+      # at least only round once:
+      Estrav <- round(((S / N) - (matrix(((colSums(S) / colSums(N)) %*% all.rand) / colSums(all.rand), nrow = n, ncol = n, byrow = T))) * n.trav.rand, 0)
+      Eitrav <- round(((I / N) - (matrix(((colSums(I) / colSums(N)) %*% all.rand) / colSums(all.rand), nrow = n, ncol = n, byrow = T))) * n.trav.rand, 0)
+      Ertrav <- round(((R / N) - (matrix(((colSums(R) / colSums(N)) %*% all.rand) / colSums(all.rand), nrow = n, ncol = n, byrow = T))) * n.trav.rand, 0)
+      
+      # Estrav.first <- round((((S / N) * n.trav.rand) - (matrix(((colSums(S) / colSums(N)) %*% all.rand) / colSums(all.rand), nrow = n, ncol = n, byrow = T) * n.trav.rand)), 0)
+      # Eitrav.first <- round((((I / N) * n.trav.rand) - (matrix(((colSums(I) / colSums(N)) %*% all.rand) / colSums(all.rand), nrow = n, ncol = n, byrow = T) * n.trav.rand)), 0)
+      # Ertrav.first <- round((((R / N) * n.trav.rand) - (matrix(((colSums(R) / colSums(N)) %*% all.rand) / colSums(all.rand), nrow = n, ncol = n, byrow = T) * n.trav.rand)), 0)
+      
+      Estrav[is.na(Estrav)] <- 0
+      Eitrav[is.na(Eitrav)] <- 0
+      Ertrav[is.na(Ertrav)] <- 0
+      
+      all(Estrav + Eitrav + Ertrav == 0)
+      print(Estrav + Eitrav + Ertrav)
+      
+      # # but it concerns me that in fractions don't seem to quite add to 1?
+      # matrix(((colSums(S) / colSums(N)) %*% all.rand) / colSums(all.rand), nrow = n, ncol = n, byrow = T) +
+      #   matrix(((colSums(I) / colSums(N)) %*% all.rand) / colSums(all.rand), nrow = n, ncol = n, byrow = T) +
+      #   matrix(((colSums(R) / colSums(N)) %*% all.rand) / colSums(all.rand), nrow = n, ncol = n, byrow = T)
+      # # okay, here they do
+      # 
+      # # but:
+      # (S/N + I/N + R/N) - (matrix(((colSums(S) / colSums(N)) %*% all.rand) / colSums(all.rand), nrow = n, ncol = n, byrow = T) +
+      #   matrix(((colSums(I) / colSums(N)) %*% all.rand) / colSums(all.rand), nrow = n, ncol = n, byrow = T) +
+      #   matrix(((colSums(R) / colSums(N)) %*% all.rand) / colSums(all.rand), nrow = n, ncol = n, byrow = T))
+      # # not quite zero, just super close; probably acceptable - the math doesn't seem wrong
+      
+      # code R in explicitly instead of using N-S-I - then I think we could set r.in/r.out as those traveling but not in s.in/i.in/s.out/i.out
+      # or just let it lose a person or gain a person? is this that big a deal?
+      
+      
       
       Estrav <- (tm_step * (1 / 3)) * (s.in - s.out)
       Eitrav <- (tm_step * (1 / 3)) * (i.in - i.out)
+      Ertrav <- (tm_step * (1 / 3)) * (r.in - r.out)
       
       Eimmloss[Eimmloss < 0] <- 0 # set any values below 0 to 0
       Einf[Einf < 0] <- 0
       Erecov[Erecov < 0] <- 0
       
-      # smcl <- apply(Eimmloss, 1:2, function(ix) {
-      #   rpois(1, ix)
-      # })
-      # smci <- apply(Einf, 1:2, function(ix) {
-      #   rpois(1, ix)
-      # })
-      # smcr <- apply(Erecov, 1:2, function(ix) {
-      #   rpois(1, ix)
-      # })
-      
       Estrav <- apply(Estrav, 1:2, function(ix) {
         rpois(1, abs(ix)) * sign(ix)
       })
       Eitrav <- apply(Eitrav, 1:2, function(ix) {
+        rpois(1, abs(ix)) * sign(ix)
+      })
+      Ertrav <- apply(Ertrav, 1:2, function(ix) {
         rpois(1, abs(ix)) * sign(ix)
       })
       
@@ -162,7 +300,6 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
       smci <- rpois(length(Einf), Einf); dim(smci) <- dim(Einf)
       smcr <- rpois(length(Erecov), Erecov); dim(smcr) <- dim(Erecov)
       
-      
       # smcl <- Eimmloss
       # smci <- Einf
       # smcr <- Erecov
@@ -170,9 +307,12 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
       sk1 <- smcl - smci + Estrav
       ik1 <- smci - smcr + Eitrav
       ik1a <- smci# + (tm_step * (1 / 3) * i.in) # another option would be to count incoming by HOME country, and not by individual compartment?
+      rk1 <- smcr - smcl + Ertrav
+      
       # ONLY count those who are newly infected; i.in describes people who are already infected, and are traveling to a country; they are not NEWLY infected, so don't double-count
       Ts1 <- S.list[[cnt - 1]] + round(sk1 / 2, 0)
       Ti1 <- I.list[[cnt - 1]] + round(ik1 / 2, 0)
+      Tr1 <- R.list[[cnt - 1]] + round(rk1 / 2, 0)
       
       # STEP 2
       Eimmloss <- (tm_step * (1 / 3)) * (1 / L * (N - Ts1 - Ti1))
