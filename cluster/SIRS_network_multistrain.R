@@ -281,8 +281,41 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
       n.trav <- (tm_step * (1 / 3)) * sweep(sweep(N, 2, 1 / colSums(N), '*'), 2, rowSums(all.rand), '*')
       n.trav.rand <- rpois(length(n.trav), n.trav); dim(n.trav.rand) <- dim(n.trav)
       
-      out.array = in.array = array(NA, c(n, n, 3, 3)) # rows are S, I, R; cols are 1 only, 2 only, both
-      state.array = array(NA, c(n, n, 3, 3))
+      out.array = in.array = vector('list', 9) # S1-S2I2R2, I1-S2I2R2, R1-S2I2R2
+      state.array = vector('list', 9)
+      
+      # get proportions by state for each strain
+      s1 <- (S[,, 1] / N); s2 <- (S[,, 2] / N)
+      i1 <- (I[,, 1] / N); i2 <- (I[,, 2] / N)
+      r1 <- (R[,, 1] / N); r2 <- (R[,, 2] / N)
+      
+      state.array[[1]] <- s1 * s2
+      state.array[[2]] <- s1 * i2
+      state.array[[3]] <- s1 * r2
+      state.array[[4]] <- i1 * s2
+      state.array[[5]] <- i1 * i2
+      state.array[[6]] <- i1 * r2
+      state.array[[7]] <- r1 * s2
+      state.array[[8]] <- r1 * i2
+      state.array[[9]] <- r1 * r2
+      print(Reduce('+', state.array)) # "all" says false, but seems close enough
+      all.equal(Reduce('+', state.array), matrix(1, nrow = 12, ncol = 12), check.attributes = FALSE, na.rm = TRUE)
+      all.equal(Reduce('+', state.array)[!is.na(Reduce('+', state.array))], rep(1, length(Reduce('+', state.array)[!is.na(Reduce('+', state.array))])), check.attributes = FALSE)
+      
+      # convert to numbers of people:
+      state.array <- lapply(state.array, function(ix) {
+        ix * N
+      })
+      
+      # now can get travelers belonging in each of these compartments:
+      out.array <- lapply(state.array, function(ix) {
+        (ix / N) * n.trav.rand
+      })
+      in.array <- lapply(state.array, function(ix) {
+        matrix(((colSums(ix) / colSums(N)) %*% all.rand) / colSums(all.rand), nrow = n, ncol = n, byrow = T) * n.trav.rand
+      })
+      
+      # check that total travelers correct:
       
       
       
@@ -292,58 +325,7 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
       
       
       
-      s.both <- (S[,, 1] / N) * (S[,, 2] / N)
-      s1 <- (S[,, 1] / N) - s.both
-      s2 <- (S[,, 2] / N) - s.both
-      # these sum up to way too much
-      # maybe b/c someone in s2 could theoretically also be in i1 or r1 - so we're double-counting
       
-      
-      state.array[,, 1, 3] <- s.both * N # susceptible to both
-      
-      # maybe calculate the number of travelers in the "both" compartment first? then figure out how many remain in the individual strains?
-      # really should work if we just split the total number of travelers proportionally between all 9 compartments - why is that not working?
-      # do all the state arrays add up to N, though? that should be the first thing to check
-      
-      state.array[,, 1, 1] <- (S[,, 1] - state.array[,, 1, 3])
-      state.array[,, 1, 2] <- (S[,, 2] - state.array[,, 1, 3])
-      
-      i.both <- (I[,, 1] / N) * (I[,, 2] / N)
-      state.array[,, 2, 3] <- i.both * N # susceptible to both
-      state.array[,, 2, 1] <- (I[,, 1] - state.array[,, 2, 3])
-      state.array[,, 2, 2] <- (I[,, 2] - state.array[,, 2, 3])
-      
-      r.both <- (R[,, 1] / N) * (R[,, 2] / N)
-      state.array[,, 3, 3] <- r.both * N # susceptible to both
-      state.array[,, 3, 1] <- (R[,, 1] - state.array[,, 3, 3])
-      state.array[,, 3, 2] <- (R[,, 2] - state.array[,, 3, 3])
-      
-      state.array[is.na(state.array)] <- 0
-      
-      (state.array[,, 1, 1] + state.array[,, 1, 2] + state.array[,, 1, 3]) / N
-      (state.array[,, 2, 1] + state.array[,, 2, 2] + state.array[,, 2, 3]) / N
-      (state.array[,, 3, 1] + state.array[,, 3, 2] + state.array[,, 3, 3]) / N
-      
-      (state.array[,, 1, 1] + state.array[,, 1, 2] + state.array[,, 1, 3] + state.array[,, 2, 1] + state.array[,, 2, 2] + state.array[,, 2, 3] +
-        state.array[,, 3, 1] + state.array[,, 3, 2] + state.array[,, 3, 3]) / N
-      # this is more than N, and it shouldn't be
-      
-      
-      
-      
-      
-      
-      
-      
-      # now can calculate out and in based on population sizes in each of these grids
-      for (state.row in 1:3) {
-        for (inter.col in 1:3) {
-          out.array[,, state.row, inter.col] <- (state.array[,, state.row, inter.col] / N) * n.trav.rand
-          in.array[,, state.row, inter.col] <- matrix(((colSums(state.array[,, state.row, inter.col]) / colSums(N)) %*% all.rand) /
-                                                        colSums(all.rand), nrow = n, ncol = n, byrow = T) * n.trav.rand
-          
-        }
-      }
       
       Estrav1 <- in.array[,, 1, 1] - out.array[,, 1, 1]
       Estrav2 <- in.array[,, 1, 2] - out.array[,, 1, 2]
