@@ -278,6 +278,15 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
       }
       
       # Now incorporate daytime travel:
+      # # what if we introduce randomness instead by doing rpois on all.rand? (or, lower or upper triangle of it, then equal)
+      all.rand.day <- all.rand / 3
+      all.rand.stoch.temp <- rpois(length(all.rand.day[upper.tri(all.rand.day)]), all.rand.day[upper.tri(all.rand.day)])
+      all.rand.stoch <- matrix(0, nrow = n, ncol = n)
+      all.rand.stoch[upper.tri(all.rand.stoch)] <- all.rand.stoch.temp
+      all.rand.stoch <- all.rand.stoch + t(all.rand.stoch)
+      # all.rand.stoch[lower.tri(all.rand.stoch)] <- all.rand.stoch.temp
+      print(isSymmetric(all.rand.stoch))
+      
       # get proportions by state for each strain
       s1 <- (S[,, 1] / N); s2 <- (S[,, 2] / N)
       i1 <- (I[,, 1] / N); i2 <- (I[,, 2] / N)
@@ -434,13 +443,6 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
       # I[,, 3][is.na(I[,, 3])] <- 0
       # R[,, 3][is.na(R[,, 3])] <- 0
       # 
-      # # what if we introduce randomness instead by doing rpois on all.rand? (or, lower or upper triangle of it, then equal)
-      # all.rand.stoch.temp <- rpois(length(all.rand[upper.tri(all.rand)]), all.rand[upper.tri(all.rand)])
-      # all.rand.stoch <- matrix(0, nrow = n, ncol = n)
-      # all.rand.stoch[upper.tri(all.rand.stoch)] <- all.rand.stoch.temp
-      # all.rand.stoch <- all.rand.stoch + t(all.rand.stoch)
-      # # all.rand.stoch[lower.tri(all.rand.stoch)] <- all.rand.stoch.temp
-      # print(isSymmetric(all.rand.stoch))
       # 
       # # Now THAT'S the part that adds stochasticity to each travel step; instead of letting # of travelers downstream vary, just vary the rates!
       # # Now proceed as normal, but round at the end:
