@@ -278,16 +278,13 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
       }
       
       # Now incorporate daytime travel:
-      n.trav <- (tm_step * (1 / 3)) * sweep(sweep(N, 2, 1 / colSums(N), '*'), 2, rowSums(all.rand), '*')
-      n.trav.rand <- rpois(length(n.trav), n.trav); dim(n.trav.rand) <- dim(n.trav)
-      
-      out.array = in.array = vector('list', 9) # S1-S2I2R2, I1-S2I2R2, R1-S2I2R2
-      state.array = vector('list', 9)
-      
       # get proportions by state for each strain
       s1 <- (S[,, 1] / N); s2 <- (S[,, 2] / N)
       i1 <- (I[,, 1] / N); i2 <- (I[,, 2] / N)
       r1 <- (R[,, 1] / N); r2 <- (R[,, 2] / N)
+      
+      # get proportion of people in each of nine categories
+      state.array = vector('list', 9)
       
       state.array[[1]] <- s1 * s2
       state.array[[2]] <- s1 * i2
@@ -298,188 +295,266 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
       state.array[[7]] <- r1 * s2
       state.array[[8]] <- r1 * i2
       state.array[[9]] <- r1 * r2
-      print(Reduce('+', state.array)) # "all" says false, but seems close enough
-      all.equal(Reduce('+', state.array), matrix(1, nrow = 12, ncol = 12), check.attributes = FALSE, na.rm = TRUE)
+      # print(Reduce('+', state.array)) # "all" says false, but seems close enough
+      # all.equal(Reduce('+', state.array), matrix(1, nrow = 12, ncol = 12), check.attributes = FALSE, na.rm = TRUE)
       all.equal(Reduce('+', state.array)[!is.na(Reduce('+', state.array))], rep(1, length(Reduce('+', state.array)[!is.na(Reduce('+', state.array))])), check.attributes = FALSE)
       
-      # convert to numbers of people:
-      state.array <- lapply(state.array, function(ix) {
-        ix * N
-      })
+      # get total S, I, R
+      S[,, 3] <- (state.array[[1]] + (state.array[[2]] + state.array[[3]] + state.array[[4]] + state.array[[7]]) / 2) * N
+      I[,, 3] <- (state.array[[5]] + (state.array[[2]] + state.array[[4]] + state.array[[6]] + state.array[[8]]) / 2) * N
+      R[,, 3] <- (state.array[[9]] + (state.array[[3]] + state.array[[6]] + state.array[[7]] + state.array[[8]]) / 2) * N
+      # ((S[,, 3] + I[,, 3] + R[,, 3]) / N)
+      all.equal(((S[,, 3] + I[,, 3] + R[,, 3]) / N)[!is.na(((S[,, 3] + I[,, 3] + R[,, 3]) / N))],
+                rep(1, length(((S[,, 3] + I[,, 3] + R[,, 3]) / N)[!is.na(((S[,, 3] + I[,, 3] + R[,, 3]) / N))])), check.attributes = FALSE)
       
-      # now can get travelers belonging in each of these compartments:
-      out.array <- lapply(state.array, function(ix) {
-        (ix / N) * n.trav.rand
-      })
-      in.array <- lapply(state.array, function(ix) {
-        matrix(((colSums(ix) / colSums(N)) %*% all.rand) / colSums(all.rand), nrow = n, ncol = n, byrow = T) * n.trav.rand
-      })
+      S[,, 3][is.na(S[,, 3])] <- 0
+      I[,, 3][is.na(I[,, 3])] <- 0
+      R[,, 3][is.na(R[,, 3])] <- 0
       
-      # check that total travelers correct:
+      # what if we introduce randomness instead by doing rpois on all.rand? (or, lower or upper triangle of it, then equal)
+      all.rand.stoch.temp <- rpois(length(all.rand[upper.tri(all.rand)]), all.rand[upper.tri(all.rand)])
+      all.rand.stoch <- matrix(0, nrow = n, ncol = n)
+      all.rand.stoch[upper.tri(all.rand.stoch)] <- all.rand.stoch.temp
+      all.rand.stoch <- all.rand.stoch + t(all.rand.stoch)
+      # all.rand.stoch[lower.tri(all.rand.stoch)] <- all.rand.stoch.temp
+      print(isSymmetric(all.rand.stoch))
       
+      # Now THAT'S the part that adds stochasticity to each travel step; instead of letting # of travelers downstream vary, just vary the rates!
+      # Now proceed as normal, but round at the end:
       
+      s.out <- sweep(sweep(S[,, 3], 2, 1 / colSums(N), '*'), 2, rowSums(all.rand), '*')
+      s.in <- matrix((colSums(S[,, 3]) / colSums(N)) %*% all.rand, nrow = n, ncol = n, byrow = T) *
+        (N / matrix(colSums(N), nrow = n, ncol = n, byrow = T))
+      Estrav <- s.in - s.out
       
-      
-      
-      
-      
-      
-      
-      
-      
-      Estrav1 <- in.array[,, 1, 1] - out.array[,, 1, 1]
-      Estrav2 <- in.array[,, 1, 2] - out.array[,, 1, 2]
-      Estrav3 <- in.array[,, 1, 3] - out.array[,, 1, 3]
-      
-      Eitrav1 <- in.array[,, 2, 1] - out.array[,, 2, 1]
-      Eitrav2 <- in.array[,, 2, 2] - out.array[,, 2, 2]
-      Eitrav3 <- in.array[,, 2, 3] - out.array[,, 2, 3]
-      
-      Ertrav1 <- in.array[,, 3, 1] - out.array[,, 3, 1]
-      Ertrav2 <- in.array[,, 3, 2] - out.array[,, 3, 2]
-      Ertrav3 <- in.array[,, 3, 3] - out.array[,, 3, 3]
-      
-      Estrav1 + Eitrav1 + Ertrav1 + Estrav2 + Eitrav2 + Ertrav2 + Estrav3 + Eitrav3 + Ertrav3
-      # it just seems like the travelers aren't being properly allocated
+      Estrav <- round(Estrav, 0)
+      sum(Estrav) # rounding can still lead to gain/loss...
+      # Estrav.rand <- apply(Estrav, 1:2, function(ix) {
+      #   rpois(1, abs(ix)) * sign(ix)
+      # })
       
       
       
       
       
-      # calculate total travel for both "strains":
-      Estrav1 <- (in.array[,, 1, 1] - out.array[,, 1, 1]) + (in.array[,, 1, 3] - out.array[,, 1, 3])# / 2
-      Eitrav1 <- (in.array[,, 2, 1] - out.array[,, 2, 1]) + (in.array[,, 2, 3] - out.array[,, 2, 3])# / 2
-      Ertrav1 <- (in.array[,, 3, 1] - out.array[,, 3, 1]) + (in.array[,, 3, 3] - out.array[,, 3, 3])# / 2
-      Estrav1 + Eitrav1 + Ertrav1
-      # for some reason, don't divide by 2?
       
-      Estrav2 <- (in.array[,, 1, 2] - out.array[,, 1, 2]) + (in.array[,, 1, 3] - out.array[,, 1, 3])# / 2
-      Eitrav2 <- (in.array[,, 2, 2] - out.array[,, 2, 2]) + (in.array[,, 2, 3] - out.array[,, 2, 3])# / 2
-      Ertrav2 <- (in.array[,, 3, 2] - out.array[,, 3, 2]) + (in.array[,, 3, 3] - out.array[,, 3, 3])# / 2
-      Estrav2 + Eitrav2 + Ertrav2
-      
-      Estrav1 + Eitrav1 + Ertrav1 + Estrav2 + Eitrav2 + Ertrav2
-      
-      
-      
-      
-      s.frac.1 <- S[,, 1] / N; s.frac.2 <- S[,, 2] / N
-      i.frac.1 <- I[,, 1] / N; i.frac.2 <- I[,, 2] / N
-      r.frac.1 <- R[,, 1] / N; r.frac.2 <- R[,, 2] / N
-      
-      s.both <- s.frac.1 * s.frac.2
-      s.frac.1 <- s.frac.1 - s.both/2; s.frac.2 <- s.frac.2 - s.both/2
-      # shouldn't this subtract all of s.both??
-      
-      i.both <- i.frac.1 * i.frac.2
-      i.frac.1 <- i.frac.1 - i.both/2; i.frac.2 <- i.frac.2 - i.both/2
-      
-      r.both <- r.frac.1 * r.frac.2
-      r.frac.1 <- r.frac.1 - r.both/2; r.frac.2 <- r.frac.2 - r.both/2
-      # or do we assume no one is infected with both? b/c we need to add up infections to get total
-          # or just do ifrac1+ifrac2+iboth
-      
-      
-      
-      # now calculate "actual" number to allocate to each strain for purposes of travel calculations
-      S1 <- N * (s.frac.1 + s.both / 2); S2 <- N * (s.frac.2 + s.both / 2); S1[is.na(S1)] <- 0; S2[is.na(S2)] <- 0
-      I1 <- N * (i.frac.1 + i.both / 2); I2 <- N * (i.frac.2 + i.both / 2); I1[is.na(I1)] <- 0; I2[is.na(I2)] <- 0
-      R1 <- N * (r.frac.1 + r.both / 2); R2 <- N * (r.frac.2 + r.both / 2); R1[is.na(R1)] <- 0; R2[is.na(R2)] <- 0
-      
-      # travel out:
-      s.out1 <- (S1 / N) * n.trav.rand; s.out1[is.na(s.out1)] <- 0
-      s.out2 <- (S2 / N) * n.trav.rand; s.out2[is.na(s.out2)] <- 0
-      i.out1 <- (I1 / N) * n.trav.rand; i.out1[is.na(i.out1)] <- 0
-      i.out2 <- (I2 / N) * n.trav.rand; i.out2[is.na(i.out2)] <- 0
-      r.out1 <- (R1 / N) * n.trav.rand; r.out1[is.na(r.out1)] <- 0
-      r.out2 <- (R2 / N) * n.trav.rand; r.out2[is.na(r.out2)] <- 0
-      
-      # travel in:
-      s.in1 <- matrix(((colSums(S1) / colSums(N)) %*% all.rand) / colSums(all.rand), nrow = n, ncol = n, byrow = T) * n.trav.rand
-      s.in2 <- matrix(((colSums(S2) / colSums(N)) %*% all.rand) / colSums(all.rand), nrow = n, ncol = n, byrow = T) * n.trav.rand
-      i.in1 <- matrix(((colSums(I1) / colSums(N)) %*% all.rand) / colSums(all.rand), nrow = n, ncol = n, byrow = T) * n.trav.rand
-      i.in2 <- matrix(((colSums(I2) / colSums(N)) %*% all.rand) / colSums(all.rand), nrow = n, ncol = n, byrow = T) * n.trav.rand
-      r.in1 <- matrix(((colSums(R1) / colSums(N)) %*% all.rand) / colSums(all.rand), nrow = n, ncol = n, byrow = T) * n.trav.rand
-      r.in2 <- matrix(((colSums(R2) / colSums(N)) %*% all.rand) / colSums(all.rand), nrow = n, ncol = n, byrow = T) * n.trav.rand
-      
-      # # travel out:
-      # s.out1 <- (s.frac.1 + s.both / 2) * n.trav.rand; s.out1[is.na(s.out1)] <- 0
-      # s.out2 <- (s.frac.2 + s.both / 2) * n.trav.rand; s.out2[is.na(s.out2)] <- 0
-      # i.out1 <- (i.frac.1 + i.both / 2) * n.trav.rand; i.out1[is.na(i.out1)] <- 0
-      # i.out2 <- (i.frac.2 + i.both / 2) * n.trav.rand; i.out2[is.na(i.out2)] <- 0
-      # r.out1 <- (r.frac.1 + r.both / 2) * n.trav.rand; r.out1[is.na(r.out1)] <- 0
-      # r.out2 <- (r.frac.2 + r.both / 2) * n.trav.rand; r.out2[is.na(r.out2)] <- 0
-      
-      -s.out1 - i.out1 - r.out1 + s.in1 + i.in1 + r.in1
-      -s.out2 - i.out2 - r.out2 + s.in2 + i.in2 + r.in2
-      
-      Estrav1 <- s.in1 - s.out1
-      Eitrav1 <- i.in1 - i.out1
-      Ertrav1 <- r.in1 - r.out1
-      Estrav1 + Eitrav1 + Ertrav1
-      
-      Estrav2 <- s.in2 - s.out2
-      Eitrav2 <- i.in2 - i.out2
-      Ertrav2 <- r.in2 - r.out2
-      Estrav2 + Eitrav2 + Ertrav2
-      
-      # no, this isn't balancing out
-      # okay, that's looking better
-      
-      
-      S.tot <- N * (s.frac.1 + s.both / 2) + N * (s.frac.2 + s.both / 2)
-      s.out.check <- (S.tot / N) * n.trav.rand; s.out.check[is.na(s.out.check)] <- 0
-      # print(s.out.check); print(s.out1 + s.out2) # not the same!
-      print(all.equal(s.out.check, s.out1 + s.out2))
-      
-      
-      
-      
-      
-      ######################################################################################################################################################
-      # # Now for real:
-      # code R in explicitly instead of using N-S-I - then I think we could set r.in/r.out as those traveling but not in s.in/i.in/s.out/i.out
-      # if we do this, the above could probably be re-simplified
-      # or can we somehow draw from the integer of people in n.trav.rand randomly?
-      # although I'm hesitant to add this much complexity to an already-slow model
       
       n.trav <- (tm_step * (1 / 3)) * sweep(sweep(N, 2, 1 / colSums(N), '*'), 2, rowSums(all.rand), '*')
       n.trav.rand <- rpois(length(n.trav), n.trav); dim(n.trav.rand) <- dim(n.trav)
       
-      curr.trav <- allocate_travelers(n.trav.rand, S, I, R, N, all.rand, n)
-      s.out <- curr.trav[[1]]; i.out <- curr.trav[[2]]; r.out <- curr.trav[[3]]
-      s.in <- curr.trav[[4]]; i.in <- curr.trav[[5]]; r.in <- curr.trav[[6]]
+      s.out <- sweep(sweep(S[,, 3], 2, 1 / colSums(N), '*'), 2, rowSums(all.rand), '*')
+      s.in <- matrix((colSums(S[,, 3]) / colSums(N)) %*% all.rand, nrow = n, ncol = n, byrow = T) *
+        (N / matrix(colSums(N), nrow = n, ncol = n, byrow = T))
+      Estrav <- s.in - s.out
+      Estrav.rand <- apply(Estrav, 1:2, function(ix) {
+          rpois(1, abs(ix)) * sign(ix)
+        })
       
-      print(all.equal(s.out + i.out + r.out, n.trav.rand))
-      print(all.equal(s.in + i.in + r.in, n.trav.rand))
+      # this is the step causing problems! rpois doesn't maintain the equal in-out structure of n.trav
+      # actually, even n.trav doesn't have this, but still seems to maintain constant S/I/R below?
       
-      Estrav <- s.in - s.out # tm_step * 1/3 incorporated earlier instead
-      Eitrav <- i.in - i.out
-      Ertrav <- r.in - r.out
+      # n.out <- matrix(NA, nrow = n, ncol = n)
+      # for (i in 1:n) {
+      #   for (j in 1:n) {
+      #     n.out[i, j] <- (N[i, j] / sum(N[, j])) * sum(all.rand[j, ]) * (tm_step * (1 / 3))
+      #   }
+      # } # same as n.trav
+      # but wait, it doesn't have to maintain rowSums=colSums, b/c no longer a matrix of travel to and from
+      # but still, something about the poisson messes with the equal in-out property
       
+      # but with the poisson one, we're still saying that this is the number of people traveling both in and out of each compartment, so shouldn't it still be the same?
+          # or do the different S/I/R proportions mess this up?
+      
+      # could I just run this part continuously and round? maybe could add stochasticity by drawing from all.rand instead?
+      
+      
+      
+      
+      
+      # somehow right now we're losing S and gaining R during travel - need to fix this
+      
+      # initial total S/I/R
+      s3 <- sum(S[,, 3]) / sum(N)
+      i3 <- sum(I[,, 3]) / sum(N)
+      r3 <- sum(R[,, 3]) / sum(N)
+      # this shouldn't be changed by travel
+      
+      # # let's first look at what the TOTAL number of in/out travelers who are S/I/R should be:
+      # total.travelers <- sum(n.trav.rand) # this is similar to sum(all.rand)/3, so it makes sense
+      # s3 * total.travelers # ~85792
+      # i3 * total.travelers # ~7
+      # r3 * total.travelers # ~26431
+      # # this actually isn't right; it'll depend on where the travelers are coming from
+      
+      
+      
+      # implement travel on "total" S/I/R
+      s.out <- (S[,, 3] / N) * n.trav.rand; s.out[is.na(s.out)] <- 0
+      i.out <- (I[,, 3] / N) * n.trav.rand; i.out[is.na(i.out)] <- 0
+      r.out <- (R[,, 3] / N) * n.trav.rand; r.out[is.na(r.out)] <- 0
+      
+      # are the proportions right?
+      sum(s.out) # 86731
+      sum(i.out) # 7
+      sum(r.out) # 25492
+      # no, these aren't right; neither are the in travelers
+      
+      # basically, preserved %SIR in each compartment, but not overall
+      
+      
+      
+      
+      # maybe: of those traveling out of each compartment, where are they traveling to?
+      s.out[1, 1] * (all.rand[1, ] / sum(all.rand[1, ]))
+      # living/working in AT
+      s.out[5, 1]
+      # living DE/working AT, but in AT currently
+      
+      s.in <- matrix(((colSums(S[,, 3]) / colSums(N)) %*% all.rand) / colSums(all.rand), nrow = n, ncol = n, byrow = T) * n.trav.rand
+      i.in <- matrix(((colSums(I[,, 3]) / colSums(N)) %*% all.rand) / colSums(all.rand), nrow = n, ncol = n, byrow = T) * n.trav.rand
+      r.in <- matrix(((colSums(R[,, 3]) / colSums(N)) %*% all.rand) / colSums(all.rand), nrow = n, ncol = n, byrow = T) * n.trav.rand
+      
+      # sum(s.in) # 86647
+      # sum(i.in) # 7
+      # sum(r.in) # 25576
+      
+      # the trouble is, this SHOULD be following the equations, and therefore should be working...
+      # check python code?
+      
+      # for i in range(len(Countries)):
+      # for j in range(len(Countries)):
+      #   sOutTemp = sOutTemp + (S[i] / popN) * airRand_temp[i, j]
+      # iOutTemp = iOutTemp + (I[i] / popN) * airRand_temp[i, j]
+      # sInTemp = sInTemp + (S[j] / popN) * airRand_temp[j, i]
+      # iInTemp = iInTemp + (I[j] / popN) * airRand_temp[j, i]
+      
+      s.out = s.in = matrix(NA, nrow = n, ncol = n)
+      for (i in 1:n) {
+        for (j in 1:n) {
+          # s.out[i, j] <- (S[i, j, 3] / N[i, j]) * n.trav.rand[i, j]
+          s.out[i, j] <- (S[i, j, 3] / sum(N[, j])) * sum(all.rand[j, ])
+          
+          s.in.temp <- 0
+          for (k in 1:n) {
+            for (h in 1:n) {
+              s.in.temp <- s.in.temp + (N[i, j] / sum(N[, j])) * all.rand[k, j] * S[h, k, 3] / sum(N[, k])
+              
+            }
+          }
+          
+          s.in[i, j] <- s.in.temp
+
+        }
+      }
+      s.out[is.na(s.out)] <- 0
+      
+      sum(s.out)
+      sum(s.in)
+      # these check out!
+      
+      # what about the quicker code I came up with to avoid loops?
+      s.out <- sweep(sweep(S[,, 3], 2, 1 / colSums(N), '*'), 2, rowSums(all.rand), '*')
+      s.in <- matrix((colSums(S[,, 3]) / colSums(N)) %*% all.rand, nrow = n, ncol = n, byrow = T) *
+        (N / matrix(colSums(N), nrow = n, ncol = n, byrow = T))
+      
+      sum(s.out)
+      sum(s.in)
+      # yep!
+      # but insert a check!
+      
+      # so something about the method that draws from travel FIRST is causing issues
+      
+      
+      
+      # s.out.check <- matrix(0, 3, 3)
+      # for (i in 1:3) {
+      #   for (j in 1:3) {
+      #     # i is home, j is work
+      #     s.out.check[i, j] <- (S[i, j] / sum(N[, j])) * sum(all.rand[j, ])
+      #   }
+      # }
+      # colnames(s.out.check) = rownames(s.out.check) = countries
+      # print(all.equal(s.out, s.out.check))
+      
+      # s.in.check <- matrix(0, 3, 3)
+      # for (i in 1:3) {
+      #   for (j in 1:3) {
+      #     # i is home, j is work
+      #     s.in.temp = 0
+      #     for (k in 1:3) { # country people are flying in FROM
+      #       for (h in 1:3) { # home (day) / work (night) place of those in country being traveled from
+      #         s.in.temp <- s.in.temp + (N[i, j] / sum(N[, j])) * all.rand[k, j] * S[h, k] / sum(N[, k])
+      #         # s.in.temp <- s.in.temp + (N[i, j] / sum(N[i, ])) * all.rand[k, i] * S[k, h] / sum(N[k, ])
+      #       }
+      #     }
+      #     s.in.check[i, j] <- s.in.temp
+      #   }
+      # }
+      # colnames(s.in.check) = rownames(s.in.check) = countries
+      # print(all.equal(s.in, s.in.check))
+      
+      
+      
+      
+      
+      # but s.out and s.in do need to have same TOTAL number of travelers
+      # right now, they differ...
+      
+      
+      
+      
+      
+      
+      Estrav <- round(s.in - s.out, 0)
+      Eitrav <- round(i.in - i.out, 0)
+      # Ertrav.calc <- round(r.in - r.out, 0)
+      # print(all(Estrav + Eitrav + Ertrav.calc == 0))
+      # print(Estrav + Eitrav + Ertrav.calc)
+      Ertrav <- matrix(0, nrow = n, ncol = n) - Estrav - Eitrav
       print(all(Estrav + Eitrav + Ertrav == 0))
+      # print(Estrav + Eitrav + Ertrav)
+      # this seems just as valid - just take any extra and use R to deal with it
+
+      S[,, 3] <- S[,, 3] + Estrav
+      I[,, 3] <- I[,, 3] + Eitrav
+      R[,, 3] <- R[,, 3] + Ertrav
       
-      sk1 <- smcl - smci + Estrav
-      ik1 <- smci - smcr + Eitrav
-      ik1a <- smci# + (tm_step * (1 / 3) * i.in) # another option would be to count incoming by HOME country, and not by individual compartment?
-      rk1 <- smcr - smcl + Ertrav
-      print(all(sk1+ik1+rk1==0)) # so it really is the divide by 2 that jacks it up
+      # reallocate S, I, R to two "strains" based on proportions:
+      # s1.temp <- ((2 * (S[,, 3] / N) - i1*s2 - r1*s2) / (2*s2 + i2 + r2)) * N; s1.temp[is.na(s1.temp)] <- 0
+      # all.equal(s1.temp, S[,, 1], check.attributes = FALSE)
+      # i1.temp <- ((2 * (I[,, 3] / N) - s1*i2 - r1*i2) / (s2 + 2*i2 + r2)) * N; i1.temp[is.na(i1.temp)] <- 0
+      # all.equal(i1.temp, I[,, 1], check.attributes = FALSE)
+      # r1.temp <- ((2 * (R[,, 3] / N) - i1*r2 - s1*r2) / (s2 + i2 + 2*r2)) * N; r1.temp[is.na(r1.temp)] <- 0
+      # all.equal(r1.temp, R[,, 1], check.attributes = FALSE)
+      # 
+      # s2.temp <- ((2 * (S[,, 3] / N) - s1*i2 - s1*r2) / (2*s1 + i1 + r1)) * N; s2.temp[is.na(s2.temp)] <- 0
+      # all.equal(s2.temp, S[,, 2], check.attributes = FALSE)
+      # i2.temp <- ((2 * (I[,, 3] / N) - i1*s2 - i1*r2) / (s1 + 2*i1 + r1)) * N; i2.temp[is.na(i2.temp)] <- 0
+      # all.equal(i2.temp, I[,, 2], check.attributes = FALSE)
+      # r2.temp <- ((2 * (R[,, 3] / N) - r1*i2 - r1*s2) / (s1 + i1 + 2*r1)) * N; r2.temp[is.na(r2.temp)] <- 0
+      # all.equal(r2.temp, R[,, 2], check.attributes = FALSE)
       
-      # ONLY count those who are newly infected; i.in describes people who are already infected, and are traveling to a country; they are not NEWLY infected, so don't double-count
+      S[,, 1] <- ((2 * (S[,, 3] / N) - i1*s2 - r1*s2) / (2*s2 + i2 + r2)) * N; s1.temp[is.na(s1.temp)] <- 0
+      I[,, 1] <- ((2 * (I[,, 3] / N) - s1*i2 - r1*i2) / (s2 + 2*i2 + r2)) * N; i1.temp[is.na(i1.temp)] <- 0
+      R[,, 1] <- ((2 * (R[,, 3] / N) - i1*r2 - s1*r2) / (s2 + i2 + 2*r2)) * N; r1.temp[is.na(r1.temp)] <- 0
       
-      # This might be about the most we can do - it at least let's us assume R is N-S-I, even though tracking R explicitly doesn't allow for things to remain
-      # constant (it almost does, though, it's just the last rounding)
-      # At this point I might also be able to return to a "simpler" version of allocating s.out/s.in and i.out/i.in - we can assume that r.out/r.in are just
-      # whichever of the n.trav travelers who are left - I don't think this plays a role anywhere else
-      # Or maybe it's good to impose a little more randomness in how many travelers are S/I/R?
-      # This is still better than before, where Estrav and Eitrav were drawn separately from rpois, and wouldn't necessarily agree with an unchanging N
+      S[,, 2] <- ((2 * (S[,, 3] / N) - s1*i2 - s1*r2) / (2*s1 + i1 + r1)) * N; s2.temp[is.na(s2.temp)] <- 0
+      I[,, 2] <- ((2 * (I[,, 3] / N) - i1*s2 - i1*r2) / (s1 + 2*i1 + r1)) * N; i2.temp[is.na(i2.temp)] <- 0
+      R[,, 2] <- ((2 * (R[,, 3] / N) - r1*i2 - r1*s2) / (s1 + i1 + 2*r1)) * N; r2.temp[is.na(r2.temp)] <- 0
       
+      S[is.na(S)] <- 0; I[is.na(I)] <- 0; R[is.na(R)] <- 0
       
+      S <- round(S, 0); I <- round(I, 0)#; R <- round(R, 0)
+      R[,, 1] <- N - S[,, 1] - I[,, 1] # that changed quite a bit, though...
       
+      # rates S/I/R should be the same - are they?
+      all.equal(s1, S[,, 1]/N)
+      all.equal(s2, S[,, 2]/N)
+      # no; so how to fix this? -- wait, no, only totals should stay the same...
+      all.equal(sum(s1 * N, na.rm = TRUE), sum(S[,, 1], na.rm = TRUE))
+      # still not true
       
-      
-      
-      
+      # Does travel somehow change the number S/I/R?
       
       
       
