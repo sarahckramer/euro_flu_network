@@ -299,270 +299,219 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
       # all.equal(Reduce('+', state.array), matrix(1, nrow = 12, ncol = 12), check.attributes = FALSE, na.rm = TRUE)
       all.equal(Reduce('+', state.array)[!is.na(Reduce('+', state.array))], rep(1, length(Reduce('+', state.array)[!is.na(Reduce('+', state.array))])), check.attributes = FALSE)
       
-      # get total S, I, R
-      S[,, 3] <- (state.array[[1]] + (state.array[[2]] + state.array[[3]] + state.array[[4]] + state.array[[7]]) / 2) * N
-      I[,, 3] <- (state.array[[5]] + (state.array[[2]] + state.array[[4]] + state.array[[6]] + state.array[[8]]) / 2) * N
-      R[,, 3] <- (state.array[[9]] + (state.array[[3]] + state.array[[6]] + state.array[[7]] + state.array[[8]]) / 2) * N
-      # ((S[,, 3] + I[,, 3] + R[,, 3]) / N)
-      all.equal(((S[,, 3] + I[,, 3] + R[,, 3]) / N)[!is.na(((S[,, 3] + I[,, 3] + R[,, 3]) / N))],
-                rep(1, length(((S[,, 3] + I[,, 3] + R[,, 3]) / N)[!is.na(((S[,, 3] + I[,, 3] + R[,, 3]) / N))])), check.attributes = FALSE)
-      
-      S[,, 3][is.na(S[,, 3])] <- 0
-      I[,, 3][is.na(I[,, 3])] <- 0
-      R[,, 3][is.na(R[,, 3])] <- 0
-      
-      # what if we introduce randomness instead by doing rpois on all.rand? (or, lower or upper triangle of it, then equal)
-      all.rand.stoch.temp <- rpois(length(all.rand[upper.tri(all.rand)]), all.rand[upper.tri(all.rand)])
-      all.rand.stoch <- matrix(0, nrow = n, ncol = n)
-      all.rand.stoch[upper.tri(all.rand.stoch)] <- all.rand.stoch.temp
-      all.rand.stoch <- all.rand.stoch + t(all.rand.stoch)
-      # all.rand.stoch[lower.tri(all.rand.stoch)] <- all.rand.stoch.temp
-      print(isSymmetric(all.rand.stoch))
-      
-      # Now THAT'S the part that adds stochasticity to each travel step; instead of letting # of travelers downstream vary, just vary the rates!
-      # Now proceed as normal, but round at the end:
-      
-      s.out <- sweep(sweep(S[,, 3], 2, 1 / colSums(N), '*'), 2, rowSums(all.rand), '*')
-      s.in <- matrix((colSums(S[,, 3]) / colSums(N)) %*% all.rand, nrow = n, ncol = n, byrow = T) *
-        (N / matrix(colSums(N), nrow = n, ncol = n, byrow = T))
-      Estrav <- s.in - s.out
-      
-      Estrav <- round(Estrav, 0)
-      sum(Estrav) # rounding can still lead to gain/loss...
-      # Estrav.rand <- apply(Estrav, 1:2, function(ix) {
-      #   rpois(1, abs(ix)) * sign(ix)
-      # })
-      
-      
-      
-      
-      
-      
-      
-      n.trav <- (tm_step * (1 / 3)) * sweep(sweep(N, 2, 1 / colSums(N), '*'), 2, rowSums(all.rand), '*')
-      n.trav.rand <- rpois(length(n.trav), n.trav); dim(n.trav.rand) <- dim(n.trav)
-      
-      s.out <- sweep(sweep(S[,, 3], 2, 1 / colSums(N), '*'), 2, rowSums(all.rand), '*')
-      s.in <- matrix((colSums(S[,, 3]) / colSums(N)) %*% all.rand, nrow = n, ncol = n, byrow = T) *
-        (N / matrix(colSums(N), nrow = n, ncol = n, byrow = T))
-      Estrav <- s.in - s.out
-      Estrav.rand <- apply(Estrav, 1:2, function(ix) {
-          rpois(1, abs(ix)) * sign(ix)
-        })
-      
-      # this is the step causing problems! rpois doesn't maintain the equal in-out structure of n.trav
-      # actually, even n.trav doesn't have this, but still seems to maintain constant S/I/R below?
-      
-      # n.out <- matrix(NA, nrow = n, ncol = n)
-      # for (i in 1:n) {
-      #   for (j in 1:n) {
-      #     n.out[i, j] <- (N[i, j] / sum(N[, j])) * sum(all.rand[j, ]) * (tm_step * (1 / 3))
-      #   }
-      # } # same as n.trav
-      # but wait, it doesn't have to maintain rowSums=colSums, b/c no longer a matrix of travel to and from
-      # but still, something about the poisson messes with the equal in-out property
-      
-      # but with the poisson one, we're still saying that this is the number of people traveling both in and out of each compartment, so shouldn't it still be the same?
-          # or do the different S/I/R proportions mess this up?
-      
-      # could I just run this part continuously and round? maybe could add stochasticity by drawing from all.rand instead?
-      
-      
-      
-      
-      
-      # somehow right now we're losing S and gaining R during travel - need to fix this
-      
-      # initial total S/I/R
-      s3 <- sum(S[,, 3]) / sum(N)
-      i3 <- sum(I[,, 3]) / sum(N)
-      r3 <- sum(R[,, 3]) / sum(N)
-      # this shouldn't be changed by travel
-      
-      # # let's first look at what the TOTAL number of in/out travelers who are S/I/R should be:
-      # total.travelers <- sum(n.trav.rand) # this is similar to sum(all.rand)/3, so it makes sense
-      # s3 * total.travelers # ~85792
-      # i3 * total.travelers # ~7
-      # r3 * total.travelers # ~26431
-      # # this actually isn't right; it'll depend on where the travelers are coming from
-      
-      
-      
-      # implement travel on "total" S/I/R
-      s.out <- (S[,, 3] / N) * n.trav.rand; s.out[is.na(s.out)] <- 0
-      i.out <- (I[,, 3] / N) * n.trav.rand; i.out[is.na(i.out)] <- 0
-      r.out <- (R[,, 3] / N) * n.trav.rand; r.out[is.na(r.out)] <- 0
-      
-      # are the proportions right?
-      sum(s.out) # 86731
-      sum(i.out) # 7
-      sum(r.out) # 25492
-      # no, these aren't right; neither are the in travelers
-      
-      # basically, preserved %SIR in each compartment, but not overall
-      
-      
-      
-      
-      # maybe: of those traveling out of each compartment, where are they traveling to?
-      s.out[1, 1] * (all.rand[1, ] / sum(all.rand[1, ]))
-      # living/working in AT
-      s.out[5, 1]
-      # living DE/working AT, but in AT currently
-      
-      s.in <- matrix(((colSums(S[,, 3]) / colSums(N)) %*% all.rand) / colSums(all.rand), nrow = n, ncol = n, byrow = T) * n.trav.rand
-      i.in <- matrix(((colSums(I[,, 3]) / colSums(N)) %*% all.rand) / colSums(all.rand), nrow = n, ncol = n, byrow = T) * n.trav.rand
-      r.in <- matrix(((colSums(R[,, 3]) / colSums(N)) %*% all.rand) / colSums(all.rand), nrow = n, ncol = n, byrow = T) * n.trav.rand
-      
-      # sum(s.in) # 86647
-      # sum(i.in) # 7
-      # sum(r.in) # 25576
-      
-      # the trouble is, this SHOULD be following the equations, and therefore should be working...
-      # check python code?
-      
-      # for i in range(len(Countries)):
-      # for j in range(len(Countries)):
-      #   sOutTemp = sOutTemp + (S[i] / popN) * airRand_temp[i, j]
-      # iOutTemp = iOutTemp + (I[i] / popN) * airRand_temp[i, j]
-      # sInTemp = sInTemp + (S[j] / popN) * airRand_temp[j, i]
-      # iInTemp = iInTemp + (I[j] / popN) * airRand_temp[j, i]
-      
-      s.out = s.in = matrix(NA, nrow = n, ncol = n)
-      for (i in 1:n) {
-        for (j in 1:n) {
-          # s.out[i, j] <- (S[i, j, 3] / N[i, j]) * n.trav.rand[i, j]
-          s.out[i, j] <- (S[i, j, 3] / sum(N[, j])) * sum(all.rand[j, ])
-          
-          s.in.temp <- 0
-          for (k in 1:n) {
-            for (h in 1:n) {
-              s.in.temp <- s.in.temp + (N[i, j] / sum(N[, j])) * all.rand[k, j] * S[h, k, 3] / sum(N[, k])
-              
-            }
-          }
-          
-          s.in[i, j] <- s.in.temp
-
-        }
+      # Remove NAs:
+      for (i in 1:9) {
+        state.array[[i]][is.na(state.array[[i]])] <- 0
       }
-      s.out[is.na(s.out)] <- 0
       
-      sum(s.out)
-      sum(s.in)
-      # these check out!
+      # Calculate travel for each of these nine subgroups:
+      out1 <- sweep(sweep(state.array[[1]] * N, 2, 1 / colSums(N), '*'), 2, rowSums(all.rand.stoch), '*')
+      out2 <- sweep(sweep(state.array[[2]] * N, 2, 1 / colSums(N), '*'), 2, rowSums(all.rand.stoch), '*')
+      out3 <- sweep(sweep(state.array[[3]] * N, 2, 1 / colSums(N), '*'), 2, rowSums(all.rand.stoch), '*')
+      out4 <- sweep(sweep(state.array[[4]] * N, 2, 1 / colSums(N), '*'), 2, rowSums(all.rand.stoch), '*')
+      out5 <- sweep(sweep(state.array[[5]] * N, 2, 1 / colSums(N), '*'), 2, rowSums(all.rand.stoch), '*')
+      out6 <- sweep(sweep(state.array[[6]] * N, 2, 1 / colSums(N), '*'), 2, rowSums(all.rand.stoch), '*')
+      out7 <- sweep(sweep(state.array[[7]] * N, 2, 1 / colSums(N), '*'), 2, rowSums(all.rand.stoch), '*')
+      out8 <- sweep(sweep(state.array[[8]] * N, 2, 1 / colSums(N), '*'), 2, rowSums(all.rand.stoch), '*')
+      out9 <- sweep(sweep(state.array[[9]] * N, 2, 1 / colSums(N), '*'), 2, rowSums(all.rand.stoch), '*')
+      # note these are total number of travelers from each group; not separated out by state yet!
+      # out1 + out2 + out3 + out4 + out5 + out6 + out7 + out8 + out9 # this looks fine - equal to the total number of travelers below
       
-      # what about the quicker code I came up with to avoid loops?
-      s.out <- sweep(sweep(S[,, 3], 2, 1 / colSums(N), '*'), 2, rowSums(all.rand), '*')
-      s.in <- matrix((colSums(S[,, 3]) / colSums(N)) %*% all.rand, nrow = n, ncol = n, byrow = T) *
+      in1 <- matrix((colSums(state.array[[1]] * N) / colSums(N)) %*% all.rand.stoch, nrow = n, ncol = n, byrow = T) *
         (N / matrix(colSums(N), nrow = n, ncol = n, byrow = T))
+      in2 <- matrix((colSums(state.array[[2]] * N) / colSums(N)) %*% all.rand.stoch, nrow = n, ncol = n, byrow = T) *
+        (N / matrix(colSums(N), nrow = n, ncol = n, byrow = T))
+      in3 <- matrix((colSums(state.array[[3]] * N) / colSums(N)) %*% all.rand.stoch, nrow = n, ncol = n, byrow = T) *
+        (N / matrix(colSums(N), nrow = n, ncol = n, byrow = T))
+      in4 <- matrix((colSums(state.array[[4]] * N) / colSums(N)) %*% all.rand.stoch, nrow = n, ncol = n, byrow = T) *
+        (N / matrix(colSums(N), nrow = n, ncol = n, byrow = T))
+      in5 <- matrix((colSums(state.array[[5]] * N) / colSums(N)) %*% all.rand.stoch, nrow = n, ncol = n, byrow = T) *
+        (N / matrix(colSums(N), nrow = n, ncol = n, byrow = T))
+      in6 <- matrix((colSums(state.array[[6]] * N) / colSums(N)) %*% all.rand.stoch, nrow = n, ncol = n, byrow = T) *
+        (N / matrix(colSums(N), nrow = n, ncol = n, byrow = T))
+      in7 <- matrix((colSums(state.array[[7]] * N) / colSums(N)) %*% all.rand.stoch, nrow = n, ncol = n, byrow = T) *
+        (N / matrix(colSums(N), nrow = n, ncol = n, byrow = T))
+      in8 <- matrix((colSums(state.array[[8]] * N) / colSums(N)) %*% all.rand.stoch, nrow = n, ncol = n, byrow = T) *
+        (N / matrix(colSums(N), nrow = n, ncol = n, byrow = T))
+      in9 <- matrix((colSums(state.array[[9]] * N) / colSums(N)) %*% all.rand.stoch, nrow = n, ncol = n, byrow = T) *
+        (N / matrix(colSums(N), nrow = n, ncol = n, byrow = T))
+      # in1 + in2 + in3 + in4 + in5 + in6 + in7 + in8 + in9 # and this looks the same as above
       
-      sum(s.out)
-      sum(s.in)
-      # yep!
-      # but insert a check!
+      # apply them to correct strain/state combination now, or calculate 9 state-dependent xtravs first?
       
-      # so something about the method that draws from travel FIRST is causing issues
+      Extrav1 <- in1 - out1
+      Extrav1 <- matrix(sumpreserving.rounding(as.vector(Extrav1), digits = 0, preserve = TRUE), nrow = n, ncol = n, byrow = FALSE)
+      # from this, we can calculate "new" % of each of 9 groups in each compartment...
+          # but only if we assume that entirety of travel is happening for both strains, right?
+      # or we can use these matrices to initiate travel, then assign S/I/R by strain?
+      Extrav1 <- in1 - out1
+      Extrav1 <- matrix(sumpreserving.rounding(as.vector(Extrav1), digits = 0, preserve = TRUE), nrow = n, ncol = n, byrow = FALSE)
+      Extrav2 <- in2 - out2
+      Extrav2 <- matrix(sumpreserving.rounding(as.vector(Extrav2), digits = 0, preserve = TRUE), nrow = n, ncol = n, byrow = FALSE)
+      Extrav3 <- in3 - out3
+      Extrav3 <- matrix(sumpreserving.rounding(as.vector(Extrav3), digits = 0, preserve = TRUE), nrow = n, ncol = n, byrow = FALSE)
+      Extrav4 <- in4 - out4
+      Extrav4 <- matrix(sumpreserving.rounding(as.vector(Extrav4), digits = 0, preserve = TRUE), nrow = n, ncol = n, byrow = FALSE)
+      Extrav5 <- in5 - out5
+      Extrav5 <- matrix(sumpreserving.rounding(as.vector(Extrav5), digits = 0, preserve = TRUE), nrow = n, ncol = n, byrow = FALSE)
+      Extrav6 <- in6 - out6
+      Extrav6 <- matrix(sumpreserving.rounding(as.vector(Extrav6), digits = 0, preserve = TRUE), nrow = n, ncol = n, byrow = FALSE)
+      Extrav7 <- in7 - out7
+      Extrav7 <- matrix(sumpreserving.rounding(as.vector(Extrav7), digits = 0, preserve = TRUE), nrow = n, ncol = n, byrow = FALSE)
+      Extrav8 <- in8 - out8
+      Extrav8 <- matrix(sumpreserving.rounding(as.vector(Extrav8), digits = 0, preserve = TRUE), nrow = n, ncol = n, byrow = FALSE)
+      Extrav9 <- in9 - out9
+      Extrav9 <- matrix(sumpreserving.rounding(as.vector(Extrav9), digits = 0, preserve = TRUE), nrow = n, ncol = n, byrow = FALSE)
+      # rounding might not even be necessary here, but at least gives us integer travelers, so it's kind of nice
+      
+      # now initiate travel...
+      state.array <- lapply(state.array, function(ix) {ix * N})
+      state.array.new <- state.array
+      state.array.new[[1]] <- state.array[[1]] + Extrav1
+      state.array.new[[2]] <- state.array[[2]] + Extrav2
+      state.array.new[[3]] <- state.array[[3]] + Extrav3
+      state.array.new[[4]] <- state.array[[4]] + Extrav4
+      state.array.new[[5]] <- state.array[[5]] + Extrav5
+      state.array.new[[6]] <- state.array[[6]] + Extrav6
+      state.array.new[[7]] <- state.array[[7]] + Extrav7
+      state.array.new[[8]] <- state.array[[8]] + Extrav8
+      state.array.new[[9]] <- state.array[[9]] + Extrav9
+      
+      sum(state.array.new[[1]]); sum(state.array[[1]])
+      sum(state.array.new[[2]]); sum(state.array[[2]])
+      # these should remain the same, and they do!
+      
+      # now reallocate these individuals to 1 and 2 based on their group above:
+      S.new <- S; I.new <- I; R.new <- R
+      S.new[,, 1] <- state.array.new[[1]] + state.array.new[[2]] + state.array.new[[3]]
+      print(sum(S[,, 1]) == sum(S.new[,, 1]))
+      S.new[,, 2] <- state.array.new[[1]] + state.array.new[[4]] + state.array.new[[7]]
+      
+      I.new[,, 1] <- state.array.new[[4]] + state.array.new[[5]] + state.array.new[[6]]
+      I.new[,, 2] <- state.array.new[[2]] + state.array.new[[5]] + state.array.new[[8]]
+      print(sum(I[,, 1]) == sum(I.new[,, 1]))
+      print(sum(I[,, 2]) == sum(I.new[,, 2]))
+      
+      R.new[,, 1] <- state.array.new[[7]] + state.array.new[[8]] + state.array.new[[9]]
+      R.new[,, 2] <- state.array.new[[3]] + state.array.new[[6]] + state.array.new[[9]]
+      print(sum(R[,, 1]) == sum(R.new[,, 1]))
+      print(sum(R[,, 2]) == sum(R.new[,, 2]))
+      # all of these work!
+      
+      S[,, 1] <- state.array.new[[1]] + state.array.new[[2]] + state.array.new[[3]]
+      S[,, 2] <- state.array.new[[1]] + state.array.new[[4]] + state.array.new[[7]]
+      
+      I[,, 1] <- state.array.new[[4]] + state.array.new[[5]] + state.array.new[[6]]
+      I[,, 2] <- state.array.new[[2]] + state.array.new[[5]] + state.array.new[[8]]
+      
+      R[,, 1] <- state.array.new[[7]] + state.array.new[[8]] + state.array.new[[9]]
+      R[,, 2] <- state.array.new[[3]] + state.array.new[[6]] + state.array.new[[9]]
+      
+      # is the sum of all three still equal to N? - not quite, some things got shuffled around again!
+      # but: the TOTAL population size did remain the same
+      # just set R to N - S - I: all this does is change a little bit of the travel that happened, and takes care of some rounding errors
+      round(N - S[,, 1] - I[,, 1] - R[,, 1])
+      round(N - S[,, 2] - I[,, 2] - R[,, 2])
+      # both are in the range of movements of 1-3 in different directions - but we're not changing amount with R, just moving a few people around
+      
+      S <- round(S, 0); I <- round(I, 0)
+      R[,, 1] <- N - S[,, 1] - I[,, 1]
+      R[,, 2] <- N - S[,, 2] - I[,, 2]
+      # from here we can actually continue with nighttime transmission
       
       
-      
-      # s.out.check <- matrix(0, 3, 3)
-      # for (i in 1:3) {
-      #   for (j in 1:3) {
-      #     # i is home, j is work
-      #     s.out.check[i, j] <- (S[i, j] / sum(N[, j])) * sum(all.rand[j, ])
-      #   }
-      # }
-      # colnames(s.out.check) = rownames(s.out.check) = countries
-      # print(all.equal(s.out, s.out.check))
-      
-      # s.in.check <- matrix(0, 3, 3)
-      # for (i in 1:3) {
-      #   for (j in 1:3) {
-      #     # i is home, j is work
-      #     s.in.temp = 0
-      #     for (k in 1:3) { # country people are flying in FROM
-      #       for (h in 1:3) { # home (day) / work (night) place of those in country being traveled from
-      #         s.in.temp <- s.in.temp + (N[i, j] / sum(N[, j])) * all.rand[k, j] * S[h, k] / sum(N[, k])
-      #         # s.in.temp <- s.in.temp + (N[i, j] / sum(N[i, ])) * all.rand[k, i] * S[k, h] / sum(N[k, ])
-      #       }
-      #     }
-      #     s.in.check[i, j] <- s.in.temp
-      #   }
-      # }
-      # colnames(s.in.check) = rownames(s.in.check) = countries
-      # print(all.equal(s.in, s.in.check))
-      
-      
-      
-      
-      
-      # but s.out and s.in do need to have same TOTAL number of travelers
-      # right now, they differ...
-      
-      
-      
-      
-      
-      
-      Estrav <- round(s.in - s.out, 0)
-      Eitrav <- round(i.in - i.out, 0)
-      # Ertrav.calc <- round(r.in - r.out, 0)
-      # print(all(Estrav + Eitrav + Ertrav.calc == 0))
-      # print(Estrav + Eitrav + Ertrav.calc)
-      Ertrav <- matrix(0, nrow = n, ncol = n) - Estrav - Eitrav
-      print(all(Estrav + Eitrav + Ertrav == 0))
-      # print(Estrav + Eitrav + Ertrav)
-      # this seems just as valid - just take any extra and use R to deal with it
-
-      S[,, 3] <- S[,, 3] + Estrav
-      I[,, 3] <- I[,, 3] + Eitrav
-      R[,, 3] <- R[,, 3] + Ertrav
-      
-      # reallocate S, I, R to two "strains" based on proportions:
-      # s1.temp <- ((2 * (S[,, 3] / N) - i1*s2 - r1*s2) / (2*s2 + i2 + r2)) * N; s1.temp[is.na(s1.temp)] <- 0
-      # all.equal(s1.temp, S[,, 1], check.attributes = FALSE)
-      # i1.temp <- ((2 * (I[,, 3] / N) - s1*i2 - r1*i2) / (s2 + 2*i2 + r2)) * N; i1.temp[is.na(i1.temp)] <- 0
-      # all.equal(i1.temp, I[,, 1], check.attributes = FALSE)
-      # r1.temp <- ((2 * (R[,, 3] / N) - i1*r2 - s1*r2) / (s2 + i2 + 2*r2)) * N; r1.temp[is.na(r1.temp)] <- 0
-      # all.equal(r1.temp, R[,, 1], check.attributes = FALSE)
+      # # basically caculate it a few ways and see which are equivalent...
       # 
-      # s2.temp <- ((2 * (S[,, 3] / N) - s1*i2 - s1*r2) / (2*s1 + i1 + r1)) * N; s2.temp[is.na(s2.temp)] <- 0
-      # all.equal(s2.temp, S[,, 2], check.attributes = FALSE)
-      # i2.temp <- ((2 * (I[,, 3] / N) - i1*s2 - i1*r2) / (s1 + 2*i1 + r1)) * N; i2.temp[is.na(i2.temp)] <- 0
-      # all.equal(i2.temp, I[,, 2], check.attributes = FALSE)
-      # r2.temp <- ((2 * (R[,, 3] / N) - r1*i2 - r1*s2) / (s1 + i1 + 2*r1)) * N; r2.temp[is.na(r2.temp)] <- 0
-      # all.equal(r2.temp, R[,, 2], check.attributes = FALSE)
-      
-      S[,, 1] <- ((2 * (S[,, 3] / N) - i1*s2 - r1*s2) / (2*s2 + i2 + r2)) * N; s1.temp[is.na(s1.temp)] <- 0
-      I[,, 1] <- ((2 * (I[,, 3] / N) - s1*i2 - r1*i2) / (s2 + 2*i2 + r2)) * N; i1.temp[is.na(i1.temp)] <- 0
-      R[,, 1] <- ((2 * (R[,, 3] / N) - i1*r2 - s1*r2) / (s2 + i2 + 2*r2)) * N; r1.temp[is.na(r1.temp)] <- 0
-      
-      S[,, 2] <- ((2 * (S[,, 3] / N) - s1*i2 - s1*r2) / (2*s1 + i1 + r1)) * N; s2.temp[is.na(s2.temp)] <- 0
-      I[,, 2] <- ((2 * (I[,, 3] / N) - i1*s2 - i1*r2) / (s1 + 2*i1 + r1)) * N; i2.temp[is.na(i2.temp)] <- 0
-      R[,, 2] <- ((2 * (R[,, 3] / N) - r1*i2 - r1*s2) / (s1 + i1 + 2*r1)) * N; r2.temp[is.na(r2.temp)] <- 0
-      
-      S[is.na(S)] <- 0; I[is.na(I)] <- 0; R[is.na(R)] <- 0
-      
-      S <- round(S, 0); I <- round(I, 0)#; R <- round(R, 0)
-      R[,, 1] <- N - S[,, 1] - I[,, 1] # that changed quite a bit, though...
-      
-      # rates S/I/R should be the same - are they?
-      all.equal(s1, S[,, 1]/N)
-      all.equal(s2, S[,, 2]/N)
-      # no; so how to fix this? -- wait, no, only totals should stay the same...
-      all.equal(sum(s1 * N, na.rm = TRUE), sum(S[,, 1], na.rm = TRUE))
-      # still not true
-      
-      # Does travel somehow change the number S/I/R?
-      
-      
-      
-      
-      
-      
-      
-      
+      # # get total S, I, R
+      # S[,, 3] <- (state.array[[1]] + (state.array[[2]] + state.array[[3]] + state.array[[4]] + state.array[[7]]) / 2) * N
+      # I[,, 3] <- (state.array[[5]] + (state.array[[2]] + state.array[[4]] + state.array[[6]] + state.array[[8]]) / 2) * N
+      # R[,, 3] <- (state.array[[9]] + (state.array[[3]] + state.array[[6]] + state.array[[7]] + state.array[[8]]) / 2) * N
+      # # ((S[,, 3] + I[,, 3] + R[,, 3]) / N)
+      # all.equal(((S[,, 3] + I[,, 3] + R[,, 3]) / N)[!is.na(((S[,, 3] + I[,, 3] + R[,, 3]) / N))],
+      #           rep(1, length(((S[,, 3] + I[,, 3] + R[,, 3]) / N)[!is.na(((S[,, 3] + I[,, 3] + R[,, 3]) / N))])), check.attributes = FALSE)
+      # 
+      # S[,, 3][is.na(S[,, 3])] <- 0
+      # I[,, 3][is.na(I[,, 3])] <- 0
+      # R[,, 3][is.na(R[,, 3])] <- 0
+      # 
+      # # what if we introduce randomness instead by doing rpois on all.rand? (or, lower or upper triangle of it, then equal)
+      # all.rand.stoch.temp <- rpois(length(all.rand[upper.tri(all.rand)]), all.rand[upper.tri(all.rand)])
+      # all.rand.stoch <- matrix(0, nrow = n, ncol = n)
+      # all.rand.stoch[upper.tri(all.rand.stoch)] <- all.rand.stoch.temp
+      # all.rand.stoch <- all.rand.stoch + t(all.rand.stoch)
+      # # all.rand.stoch[lower.tri(all.rand.stoch)] <- all.rand.stoch.temp
+      # print(isSymmetric(all.rand.stoch))
+      # 
+      # # Now THAT'S the part that adds stochasticity to each travel step; instead of letting # of travelers downstream vary, just vary the rates!
+      # # Now proceed as normal, but round at the end:
+      # 
+      # s.out <- sweep(sweep(S[,, 3], 2, 1 / colSums(N), '*'), 2, rowSums(all.rand.stoch), '*')
+      # i.out <- sweep(sweep(I[,, 3], 2, 1 / colSums(N), '*'), 2, rowSums(all.rand.stoch), '*')
+      # r.out <- sweep(sweep(R[,, 3], 2, 1 / colSums(N), '*'), 2, rowSums(all.rand.stoch), '*')
+      # 
+      # s.in <- matrix((colSums(S[,, 3]) / colSums(N)) %*% all.rand.stoch, nrow = n, ncol = n, byrow = T) *
+      #   (N / matrix(colSums(N), nrow = n, ncol = n, byrow = T))
+      # i.in <- matrix((colSums(I[,, 3]) / colSums(N)) %*% all.rand.stoch, nrow = n, ncol = n, byrow = T) *
+      #   (N / matrix(colSums(N), nrow = n, ncol = n, byrow = T))
+      # r.in <- matrix((colSums(R[,, 3]) / colSums(N)) %*% all.rand.stoch, nrow = n, ncol = n, byrow = T) *
+      #   (N / matrix(colSums(N), nrow = n, ncol = n, byrow = T))
+      # 
+      # # s.out and s.in do need to have same TOTAL number of travelers:
+      # sum(s.out)
+      # sum(s.in)
+      # 
+      # Estrav <- s.in - s.out
+      # Eitrav <- i.in - i.out
+      # Ertrav <- r.in - r.out
+      # sum(Estrav)
+      #
+      # Estrav <- round(Estrav, 0)
+      # sum(Estrav) # rounding can still lead to gain/loss...
+      #
+      # # so we need to do a sum-preserving round on the whole matrix
+      # Estrav.check <- matrix(sumpreserving.rounding(as.vector(Estrav), digits = 0, preserve = TRUE), nrow = n, ncol = n, byrow = FALSE)
+      # Eitrav.check <- matrix(sumpreserving.rounding(as.vector(Eitrav), digits = 0, preserve = TRUE), nrow = n, ncol = n, byrow = FALSE)
+      # Ertrav.check <- matrix(sumpreserving.rounding(as.vector(Ertrav), digits = 0, preserve = TRUE), nrow = n, ncol = n, byrow = FALSE)
+      # sum(Estrav.check)
+      # # this should work to keep the total number of S/I/R equal during the travel phase
+      # 
+      # Estrav <- matrix(sumpreserving.rounding(as.vector(Estrav), digits = 0, preserve = TRUE), nrow = n, ncol = n, byrow = FALSE)
+      # Eitrav <- matrix(sumpreserving.rounding(as.vector(Eitrav), digits = 0, preserve = TRUE), nrow = n, ncol = n, byrow = FALSE)
+      # Ertrav <- matrix(sumpreserving.rounding(as.vector(Ertrav), digits = 0, preserve = TRUE), nrow = n, ncol = n, byrow = FALSE)
+      # 
+      # # okay, so this let's us ensure that there are no S/I/R being added to the population, but it doesn't ensure that nobody is being added?
+      # # the net total population remains the same, but not the net population of individual compartments...
+      # print(all(Estrav + Eitrav + Ertrav == 0))
+      # print(Estrav + Eitrav + Ertrav)
+      # 
+      # # Estrav <- round(s.in - s.out, 0)
+      # # Eitrav <- round(i.in - i.out, 0)
+      # # # Ertrav.calc <- round(r.in - r.out, 0)
+      # # # print(all(Estrav + Eitrav + Ertrav.calc == 0))
+      # # # print(Estrav + Eitrav + Ertrav.calc)
+      # Ertrav <- matrix(0, nrow = n, ncol = n) - Estrav - Eitrav
+      # print(sum(Ertrav)) # is the net gain/loss of R individuals guaranteed to remain 0 this way?
+      # print(all(Estrav + Eitrav + Ertrav == 0))
+      # print(Estrav + Eitrav + Ertrav)
+      # # this seems just as valid - just take any extra and use R to deal with it
+      # 
+      # S[,, 3] <- S[,, 3] + Estrav
+      # I[,, 3] <- I[,, 3] + Eitrav
+      # R[,, 3] <- R[,, 3] + Ertrav
+      # 
+      # S[,, 3] / (S[,, 3] - Estrav)
+      # 
+      # reallocate S, I, R to two "strains" based on proportions:
+      # S[,, 1] <- ((2 * (S[,, 3] / N) - i1*s2 - r1*s2) / (2*s2 + i2 + r2)) * N; s1.temp[is.na(s1.temp)] <- 0
+      # I[,, 1] <- ((2 * (I[,, 3] / N) - s1*i2 - r1*i2) / (s2 + 2*i2 + r2)) * N; i1.temp[is.na(i1.temp)] <- 0
+      # R[,, 1] <- ((2 * (R[,, 3] / N) - i1*r2 - s1*r2) / (s2 + i2 + 2*r2)) * N; r1.temp[is.na(r1.temp)] <- 0
+      # 
+      # S[,, 2] <- ((2 * (S[,, 3] / N) - s1*i2 - s1*r2) / (2*s1 + i1 + r1)) * N; s2.temp[is.na(s2.temp)] <- 0
+      # I[,, 2] <- ((2 * (I[,, 3] / N) - i1*s2 - i1*r2) / (s1 + 2*i1 + r1)) * N; i2.temp[is.na(i2.temp)] <- 0
+      # R[,, 2] <- ((2 * (R[,, 3] / N) - r1*i2 - r1*s2) / (s1 + i1 + 2*r1)) * N; r2.temp[is.na(r2.temp)] <- 0
+      # 
+      # S[is.na(S)] <- 0; I[is.na(I)] <- 0; R[is.na(R)] <- 0
+      # # these proportions are summing to more than one - need to fix that; S/I/R still being added through the reallocation process
       
       # Now loop through nighttime transmission:
       for (i.strain in 1:2) {
