@@ -1,5 +1,21 @@
 
-propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, airScale, realdata = FALSE, prohibAir = FALSE) {
+# # Generate Vtype matrix:
+# Vtype <- matrix(0, nrow = 365 * 20, ncol = 2) # first column is strain 1/H1N1, second column is strain 2/H3N2
+# # day 91 would be first of April, 121 would be first of May; Jeff's seem to change on 123 (3rd of May) - did they give February 30 days? Or did they go 122/7 weeks? (no, not whole)
+# # let's use May - so change on day 121
+# year.starts <- c(1, 365 * (1:19) + 1)
+# seed.starts <- year.starts + 120
+# 
+# Vtype[c(121:485, 851:1580, 1946:2310, 3041:3405, 3771:4135, 4501:5230, 5596:5960, 6691:7055), 1] <- 1 # 1, 3:4, 6, 9, 11, 13:14, 16, 19
+# Vtype[c(486:850, 1216:1945, 2311:2675, 3041:3405, 4136:4500, 4866:5595, 5961:6325, 6691:7056), 2] <- 1 # 2, 4:5, 7, 9, 12, 14:15, 17, 19
+# 
+# Vtype <- rbind(c(0, 0), Vtype) # add a row of zeros (at cnt value where initial conditions are)
+# Vtype <- rbind(Vtype, c(0, 0)); Vtype <- rbind(Vtype, c(0, 0)) # and two to make sure the final week runs through
+# 
+# write.csv(Vtype, file = 'data/subtypes_seeding.csv', row.names = FALSE)
+
+# Code to run stochastic, multistrain SIRS:
+propagateToySIRS_multi <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, airScale, realdata = FALSE, prohibAir = FALSE) {
   cnt <- 1
   
   tm_strt <- tm_strt - tm.range[1] + 1 # adjust the index to match beta
@@ -9,10 +25,12 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
   tm_sz <- length(tm_vec) + 1 # include initial conditions
   
   S.list = R.list = N.list = array(0, c(n, n, tm_sz, 2))#vector('list', tm_sz)
-  I.list = newI.list = array(0, c(n, n, tm_sz, 3))
+  I.list = newI.list = array(0, c(n, n, tm_sz, 2)) # can change to track total too, but really no need
   S.list[,, 1, 1:2] <- S0
   I.list[,, 1, 1:2] <- I0 # QUESTION!!!: Put these specifically into the seeded strains?
   R.list[,, 1, 1:2] <- N - S0 - I0
+  
+  # I.list[,, 1, 3] <- I.list[,, 1, 1] + I.list[,, 1, 2]
   # newI.list[,, 1, 1:3] <- matrix(0, nrow = n, ncol = n)
   
   # S.list[[1]] <- S0; I.list[[1]] <- I0; R.list[[1]] <- N - S0 - I0
@@ -43,6 +61,7 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
   
   # run continuously
   for (t in tm_vec) {
+    # print(cnt)
     
     # First, choose t.rand by month:
     t.true <- t + tm.range[1] - 1
@@ -121,7 +140,7 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
       N <- round(N, 0) # N needs to be whole numbers, then!
       
       S <- round(S, 0); I <- round(I, 0)
-      R <- array(0, c(n, n, 3))
+      R <- array(0, c(n, n, 2))
       R[,, 1] <- N - S[,, 1] - I[,, 1]; R[,, 2] <- N - S[,, 2] - I[,, 2]
       
       if (cnt == 2) {
@@ -137,8 +156,8 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
       trav.day = trav.night = matrix(0, nrow = n, ncol = n)
       trav.day[upper.tri(trav.day)] <- all.rand.day.temp; trav.night[upper.tri(trav.night)] <- all.rand.night.temp
       trav.day <- trav.day + t(trav.day); trav.night <- trav.night + t(trav.night)
-      print(isSymmetric(trav.day))
-      print(isSymmetric(trav.night))
+      # print(isSymmetric(trav.day))
+      # print(isSymmetric(trav.night))
       
       # Now we need to loop through the different "strains":
       for (i.strain in 1:2) {
@@ -176,20 +195,20 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
         Ertrav <- matrix(sumpreserving.rounding(as.vector(Ertrav), 0, preserve = TRUE), nrow = n, ncol = n, byrow = FALSE)
         
         Ertrav <- matrix(0, nrow = n, ncol = n) - Estrav - Eitrav
-        print(all(Estrav + Eitrav + Ertrav == 0))
+        # print(all(Estrav + Eitrav + Ertrav == 0))
         
         sk1 <- smcl - smci + Estrav
         ik1 <- smci - smcr + Eitrav
         ik1a <- smci# + (tm_step * (1 / 3) * i.in) # another option would be to count incoming by HOME country, and not by individual compartment?
         rk1 <- smcr - smcl + Ertrav
-        print(all(sk1+ik1+rk1==0))
+        # print(all(sk1+ik1+rk1==0))
         
         Ts1 <- S[,, i.strain] + round(sk1 / 2, 0)
         Ti1 <- I[,, i.strain] + round(ik1 / 2, 0)
         # Tr1 <- R[,, i.strain] + round(rk1 / 2, 0)
         Ts1[Ts1 < 0] <- 0; Ti1[Ti1 < 0] <- 0
         Tr1 <- N - Ts1 - Ti1
-        print(all.equal(Ts1 + Ti1 + Tr1, N))
+        # print(all.equal(Ts1 + Ti1 + Tr1, N))
         
         # STEP 2
         Eimmloss <- (tm_step * (1 / 3)) * (1 / L * (N - Ts1 - Ti1))
@@ -222,7 +241,7 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
         Ertrav <- matrix(sumpreserving.rounding(as.vector(Ertrav), 0, preserve = TRUE), nrow = n, ncol = n, byrow = FALSE)
         
         Ertrav <- matrix(0, nrow = n, ncol = n) - Estrav - Eitrav
-        print(all(Estrav + Eitrav + Ertrav == 0))
+        # print(all(Estrav + Eitrav + Ertrav == 0))
         
         sk2 <- smcl - smci + Estrav
         ik2 <- smci - smcr + Eitrav
@@ -234,7 +253,7 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
         # Tr2 <- R.list[[cnt - 1]] + round(rk2 / 2, 0)
         Ts2[Ts2 < 0] <- 0; Ti2[Ti2 < 0] <- 0
         Tr2 <- N - Ts2 - Ti2
-        print(all.equal(Ts2 + Ti2 + Tr2, N))
+        # print(all.equal(Ts2 + Ti2 + Tr2, N))
         
         # STEP 3
         Eimmloss <- (tm_step * (1 / 3)) * (1 / L * (N - Ts2 - Ti2))
@@ -266,7 +285,7 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
         Eitrav <- matrix(sumpreserving.rounding(as.vector(Eitrav), 0, preserve = TRUE), nrow = n, ncol = n, byrow = FALSE)
         Ertrav <- matrix(sumpreserving.rounding(as.vector(Ertrav), 0, preserve = TRUE), nrow = n, ncol = n, byrow = FALSE)
         Ertrav <- matrix(0, nrow = n, ncol = n) - Estrav - Eitrav
-        print(all(Estrav + Eitrav + Ertrav == 0))
+        # print(all(Estrav + Eitrav + Ertrav == 0))
         
         sk3 <- smcl - smci + Estrav
         ik3 <- smci - smcr + Eitrav
@@ -309,7 +328,7 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
         Eitrav <- matrix(sumpreserving.rounding(as.vector(Eitrav), 0, preserve = TRUE), nrow = n, ncol = n, byrow = FALSE)
         Ertrav <- matrix(sumpreserving.rounding(as.vector(Ertrav), 0, preserve = TRUE), nrow = n, ncol = n, byrow = FALSE)
         Ertrav <- matrix(0, nrow = n, ncol = n) - Estrav - Eitrav
-        print(all(Estrav + Eitrav + Ertrav == 0))
+        # print(all(Estrav + Eitrav + Ertrav == 0))
         
         sk4 <- smcl - smci + Estrav
         ik4 <- smci - smcr + Eitrav
@@ -322,7 +341,7 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
         # R <- R + round(rk1/6 + rk2/3 + rk3/3 + rk4/6, 0)# + seed
         S[,, i.strain][S[,, i.strain] < 0] <- 0; I[,, i.strain][I[,, i.strain] < 0] <- 0
         R[,, i.strain] <- N - S[,, i.strain] - I[,, i.strain]
-        print(all.equal(N, S[,, i.strain] + I[,, i.strain] + R[,, i.strain], check.attributes = FALSE))
+        # print(all.equal(N, S[,, i.strain] + I[,, i.strain] + R[,, i.strain], check.attributes = FALSE))
         
         # Nighttime:
         # Step 1:
@@ -355,7 +374,7 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
         Eitrav <- matrix(sumpreserving.rounding(as.vector(Eitrav), 0, preserve = TRUE), nrow = n, ncol = n, byrow = FALSE)
         Ertrav <- matrix(sumpreserving.rounding(as.vector(Ertrav), 0, preserve = TRUE), nrow = n, ncol = n, byrow = FALSE)
         Ertrav <- matrix(0, nrow = n, ncol = n) - Estrav - Eitrav
-        print(all(Estrav + Eitrav + Ertrav == 0))
+        # print(all(Estrav + Eitrav + Ertrav == 0))
         
         sk1 <- smcl - smci + Estrav
         ik1 <- smci - smcr + Eitrav
@@ -367,7 +386,7 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
         Ts1[Ts1 < 0] <- 0; Ti1[Ti1 < 0] <- 0
         # Tr1 <- R.list[[cnt - 1]] + round(rk1 / 2, 0)
         Tr1 <- N - Ts1 - Ti1
-        print(all.equal(Ts1 + Ti1 + Tr1, N))
+        # print(all.equal(Ts1 + Ti1 + Tr1, N))
         
         # STEP 2
         Eimmloss <- (tm_step * (2 / 3)) * (1 / L * (N - Ts1 - Ti1))
@@ -399,7 +418,7 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
         Eitrav <- matrix(sumpreserving.rounding(as.vector(Eitrav), 0, preserve = TRUE), nrow = n, ncol = n, byrow = FALSE)
         Ertrav <- matrix(sumpreserving.rounding(as.vector(Ertrav), 0, preserve = TRUE), nrow = n, ncol = n, byrow = FALSE)
         Ertrav <- matrix(0, nrow = n, ncol = n) - Estrav - Eitrav
-        print(all(Estrav + Eitrav + Ertrav == 0))
+        # print(all(Estrav + Eitrav + Ertrav == 0))
         
         sk2 <- smcl - smci + Estrav
         ik2 <- smci - smcr + Eitrav
@@ -411,7 +430,7 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
         # Tr2 <- R.list[[cnt - 1]] + round(rk2 / 2, 0)
         Ts2[Ts2 < 0] <- 0; Ti2[Ti2 < 0] <- 0
         Tr2 <- N - Ts2 - Ti2
-        print(all.equal(Ts2 + Ti2 + Tr2, N))
+        # print(all.equal(Ts2 + Ti2 + Tr2, N))
         
         # STEP 3
         Eimmloss <- (tm_step * (2 / 3)) * (1 / L * (N - Ts2 - Ti2))
@@ -435,7 +454,7 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
         r.in <- matrix((rowSums(Tr2) / rowSums(N)) %*% trav.night, nrow = n, ncol = n, byrow = F) *
           (N / matrix(rowSums(N), nrow = n, ncol = n, byrow = F))
         
-        Estrav <- s.in - s.out # tm_step * 1/3 incorporated earlier instead
+        Estrav <- s.in - s.out # tm_step * 2/3 incorporated earlier instead
         Eitrav <- i.in - i.out
         Ertrav <- r.in - r.out
         
@@ -443,7 +462,7 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
         Eitrav <- matrix(sumpreserving.rounding(as.vector(Eitrav), 0, preserve = TRUE), nrow = n, ncol = n, byrow = FALSE)
         Ertrav <- matrix(sumpreserving.rounding(as.vector(Ertrav), 0, preserve = TRUE), nrow = n, ncol = n, byrow = FALSE)
         Ertrav <- matrix(0, nrow = n, ncol = n) - Estrav - Eitrav
-        print(all(Estrav + Eitrav + Ertrav == 0))
+        # print(all(Estrav + Eitrav + Ertrav == 0))
         
         sk3 <- smcl - smci + Estrav
         ik3 <- smci - smcr + Eitrav
@@ -487,7 +506,7 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
         Eitrav <- matrix(sumpreserving.rounding(as.vector(Eitrav), 0, preserve = TRUE), nrow = n, ncol = n, byrow = FALSE)
         Ertrav <- matrix(sumpreserving.rounding(as.vector(Ertrav), 0, preserve = TRUE), nrow = n, ncol = n, byrow = FALSE)
         Ertrav <- matrix(0, nrow = n, ncol = n) - Estrav - Eitrav
-        print(all(Estrav + Eitrav + Ertrav == 0))
+        # print(all(Estrav + Eitrav + Ertrav == 0))
         
         sk4 <- smcl - smci + Estrav
         ik4 <- smci - smcr + Eitrav
@@ -500,30 +519,35 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
         newI.list[,, cnt, i.strain] <- newI[,, i.strain] + round(ik1a/6 + ik2a/3 + ik3a/3 + ik4a/6, 0)# + seed
         # R <- R + round(rk1/6 + rk2/3 + rk3/3 + rk4/6, 0)# + seed
         S.list[,, cnt, i.strain][S.list[,, cnt, i.strain] < 0] <- 0; I.list[,, cnt, i.strain][I.list[,, cnt, i.strain] < 0] <- 0
-        R.list[,, cnt, i.strain] <- N - S[,, i.strain] - I[,, i.strain]
-        print(all.equal(N, S[,, i.strain] + I[,, i.strain] + R[,, i.strain], check.attributes = FALSE))
+        R.list[,, cnt, i.strain] <- N - S.list[,, cnt, i.strain] - I.list[,, cnt, i.strain]
+        # print(all.equal(N, S[,, i.strain] + I[,, i.strain] + R[,, i.strain], check.attributes = FALSE))
       }
       
       # Finally, seeding:
-      # Base this on the dominant strain(s) of that year; start new seeding in April/May
+      # Base this on the dominant strain(s) of that year; start new seeding in May
       # seed <- diag(rpois(n, 0.1), n, n) # here seeding only in home-home compartments; 10% chance of a single new infection
       if (Vtype[cnt, 1] == 1) {
+        # print(paste(cnt, 1, sep = '_'))
         seed <- diag(rpois(n, 0.1), n, n) # here seeding only in home-home compartments; 10% chance of a single new infection
         S.list[,, cnt, 1] <- S.list[,, cnt, 1] - seed
         I.list[,, cnt, 1] <- I.list[,, cnt, 1] + seed
         newI.list[,, cnt, 1] <- newI.list[,, cnt, 1] + seed
       }
       if (Vtype[cnt, 2] == 1) {
+        # print(paste(cnt, 2, sep = '_'))
         seed <- diag(rpois(n, 0.1), n, n)
         S.list[,, cnt, 2] <- S.list[,, cnt, 2] - seed
         I.list[,, cnt, 2] <- I.list[,, cnt, 2] + seed
         newI.list[,, cnt, 2] <- newI.list[,, cnt, 2] - seed
       }
+      
+      # And get total I/newI:
+      # I.list[,, cnt, 3] <- I.list[,, cnt, 1] + I.list[,, cnt, 2]
+      # newI.list[,, cnt, 3] <- newI.list[,, cnt, 1] + newI.list[,, cnt, 2]
+      
+      # Questions:
       # seeding okay to be poisson in home-home compartments only?; if both strains seeded do we do same seeding or select it twice?
-      
-      
-      
-      
+      # save last 9 years now, which match the years we have observed?
       
       
     } # else { # run continuously/deterministically
@@ -893,31 +917,114 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
     #   
     # }
     
-    
   }
   
-  temp.S <- lapply(1:length(S.list), function(ix) {
-    as.vector(t(S.list[[ix]]))
+  # Format S:
+  s.list1 <- lapply(1:dim(S.list)[3], function(ix) {
+    S.list[,, ix, 1]
   })
-  temp.S <- as.data.frame(matrix(unlist(temp.S), ncol = n ** 2, byrow = T))
-  
-  temp.I <- lapply(1:length(I.list), function(ix) {
-    as.vector(t(I.list[[ix]]))
+  s.list2 <- lapply(1:dim(S.list)[3], function(ix) {
+    S.list[,, ix, 2]
   })
-  temp.I <- as.data.frame(matrix(unlist(temp.I), ncol = n ** 2, byrow = T))
   
-  temp.newI <- lapply(1:length(newI.list), function(ix) {
-    as.vector(t(newI.list[[ix]]))
+  temp.S1 <- lapply(1:length(s.list1), function(ix) {
+    as.vector(t(s.list1[[ix]]))
   })
-  temp.newI <- as.data.frame(matrix(unlist(temp.newI), ncol = n ** 2, byrow = T))
+  temp.S1 <- as.data.frame(matrix(unlist(temp.S1), ncol = n ** 2, byrow = T))
   
-  # rows.by.country <- matrix(1:(n ** 2), ncol = n, byrow = TRUE)
-  # temp.N.c <- NULL
+  temp.S2 <- lapply(1:length(s.list2), function(ix) {
+    as.vector(t(s.list2[[ix]]))
+  })
+  temp.S2 <- as.data.frame(matrix(unlist(temp.S2), ncol = n ** 2, byrow = T))
+  # these functions take the matrices row by row (row1, then row2, etc.), giving each compartment a column
+  
+  rm(s.list1, s.list2)
+  
+  # Format I:
+  i.list1 <- lapply(1:dim(I.list)[3], function(ix) {
+    I.list[,, ix, 1]
+  })
+  i.list2 <- lapply(1:dim(I.list)[3], function(ix) {
+    I.list[,, ix, 2]
+  })
+  # i.list3 <- lapply(1:dim(I.list)[3], function(ix) {
+  #   I.list[,, ix, 3]
+  # })
+  
+  temp.I1 <- lapply(1:length(i.list1), function(ix) {
+    as.vector(t(i.list1[[ix]]))
+  })
+  temp.I1 <- as.data.frame(matrix(unlist(temp.I1), ncol = n ** 2, byrow = T))
+  
+  temp.I2 <- lapply(1:length(i.list2), function(ix) {
+    as.vector(t(i.list2[[ix]]))
+  })
+  temp.I2 <- as.data.frame(matrix(unlist(temp.I2), ncol = n ** 2, byrow = T))
+  
+  # temp.I3 <- lapply(1:length(i.list3), function(ix) {
+  #   as.vector(t(i.list3[[ix]]))
+  # })
+  # temp.I3 <- as.data.frame(matrix(unlist(temp.I3), ncol = n ** 2, byrow = T))
+  
+  # temp.I3 <- temp.I1 + temp.I2 # only the first values of some columns are different due to rounding; but this way makes more sense
+  
+  # matplot(temp.I1, pch = 20, col = viridis(144), cex = 0.5)
+  # matplot(temp.I2, pch = 20, col = viridis(144), cex = 0.5)
+  # matplot(temp.I3, pch = 20, col = viridis(144), cex = 0.5)
+  
+  rm(i.list1, i.list2)
+  
+  # Format newI:
+  newi.list1 <- lapply(1:dim(newI.list)[3], function(ix) {
+    newI.list[,, ix, 1]
+  })
+  newi.list2 <- lapply(1:dim(newI.list)[3], function(ix) {
+    newI.list[,, ix, 2]
+  })
+  
+  temp.newI1 <- lapply(1:length(newi.list1), function(ix) {
+    as.vector(t(newi.list1[[ix]]))
+  })
+  temp.newI1 <- as.data.frame(matrix(unlist(temp.newI1), ncol = n ** 2, byrow = T))
+  
+  temp.newI2 <- lapply(1:length(newi.list2), function(ix) {
+    as.vector(t(newi.list2[[ix]]))
+  })
+  temp.newI2 <- as.data.frame(matrix(unlist(temp.newI2), ncol = n ** 2, byrow = T))
+  
+  # temp.newI3 <- temp.newI1 + temp.newI2
+  
+  # Format R (to check that nothing ridiculous is happening):
+  r.list1 <- lapply(1:dim(R.list)[3], function(ix) {
+    R.list[,, ix, 1]
+  })
+  r.list2 <- lapply(1:dim(R.list)[3], function(ix) {
+    R.list[,, ix, 2]
+  })
+  
+  temp.R1 <- lapply(1:length(r.list1), function(ix) {
+    as.vector(t(r.list1[[ix]]))
+  })
+  temp.R1 <- as.data.frame(matrix(unlist(temp.R1), ncol = n ** 2, byrow = T))
+  
+  temp.R2 <- lapply(1:length(r.list2), function(ix) {
+    as.vector(t(r.list2[[ix]]))
+  })
+  temp.R2 <- as.data.frame(matrix(unlist(temp.R2), ncol = n ** 2, byrow = T))
+  
+  rm(r.list1, r.list2)
+  # matplot(temp.R2, pch = 20, col = viridis(144), cex = 0.5)
+  
+  # Put results into lists:
+  temp.S <- list(temp.S1, temp.S2)
+  temp.I <- list(temp.I1, temp.I2) # don't even need to return I3 - can just calculate it later
+  temp.newI <- list(temp.newI1, temp.newI2)
+  temp.R <- list(temp.R1, temp.R2)
   
   if (realdata == FALSE) {
     rec <- list(S = temp.S, I = temp.I)
   } else {
-    rec <- list(S = temp.S, I = temp.I, newI = temp.newI)
+    rec <- list(S = temp.S, I = temp.I, newI = temp.newI, R = temp.R)
   }
   
   rec

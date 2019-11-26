@@ -39,6 +39,95 @@ format_model_results <- function(m.res, num.ens, tmstep, tm.strt, tm.end, n, pop
   
 }
 
+format_model_results_multi <- function(m.res, num.ens, tmstep, tm.strt, tm.end, n, pop.dat) {
+  
+  # Calculate weekly incidence by compartment:
+  nt <- floor((length(tm.strt:tm.end) + 1) / 7)
+  
+  newI1 <- lapply(1:(n ** 2), function(ix) {
+    matrix(unlist(lapply(1:num.ens, function(jx) {
+      m.res[3, jx]$newI[[1]][tmstep * (1:nt) + 1, ix] - m.res[3, jx]$newI[[1]][tmstep * (0:(nt - 1)) + 1, ix]
+    })), nrow = num_ens, byrow = TRUE)
+  }) # each ensemble member has its own row
+  newI2 <- lapply(1:(n ** 2), function(ix) {
+    matrix(unlist(lapply(1:num.ens, function(jx) {
+      m.res[3, jx]$newI[[2]][tmstep * (1:nt) + 1, ix] - m.res[3, jx]$newI[[2]][tmstep * (0:(nt - 1)) + 1, ix]
+    })), nrow = num.ens, byrow = TRUE)
+  })
+  
+  # Get S and R, too, but also at weekly level, to conserve space:
+  S1 <- lapply(1:(n ** 2), function(ix) {
+    matrix(unlist(lapply(1:num.ens, function(jx) {
+      m.res[1, jx]$S[[1]][tmstep * (1:nt) + 1, ix]
+    })), nrow = num.ens, byrow = TRUE)
+  })
+  S2 <- lapply(1:(n ** 2), function(ix) {
+    matrix(unlist(lapply(1:num.ens, function(jx) {
+      m.res[1, jx]$S[[2]][tmstep * (1:nt) + 1, ix]
+    })), nrow = num.ens, byrow = TRUE)
+  })
+  
+  R1 <- lapply(1:(n ** 2), function(ix) {
+    matrix(unlist(lapply(1:num.ens, function(jx) {
+      m.res[4, jx]$R[[1]][tmstep * (1:nt) + 1, ix]
+    })), nrow = num.ens, byrow = TRUE)
+  })
+  R2 <- lapply(1:(n ** 2), function(ix) {
+    matrix(unlist(lapply(1:num.ens, function(jx) {
+      m.res[4, jx]$R[[2]][tmstep * (1:nt) + 1, ix]
+    })), nrow = num.ens, byrow = TRUE)
+  })
+  
+  # Aggregate to the country level:
+  newI.c1 = newI.c2 = Sc1 = Sc2 = Rc1 = Rc2 = vector('list', n)
+  for (i in 1:n) {
+    newI.c1[[i]] <- Reduce('+', newI1[(i * n - n + 1):(i * n)])
+    newI.c2[[i]] <- Reduce('+', newI2[(i * n - n + 1):(i * n)])
+    Sc1[[i]] <- Reduce('+', S1[(i * n - n + 1):(i * n)])
+    Sc2[[i]] <- Reduce('+', S2[(i * n - n + 1):(i * n)])
+    Rc1[[i]] <- Reduce('+', R1[(i * n - n + 1):(i * n)])
+    Rc2[[i]] <- Reduce('+', R2[(i * n - n + 1):(i * n)])
+  }
+  # newI.c.COUNT <- newI.c
+  # we don't really need to save the raw counts
+  
+  # Standardize results to per 100,000 population:
+  for (i in 1:n) {
+    newI.c1[[i]] <- (newI.c1[[i]] / pop.dat$pop[i]) * 100000
+    newI.c2[[i]] <- (newI.c2[[i]] / pop.dat$pop[i]) * 100000
+    Sc1[[i]] <- (Sc1[[i]] / pop.dat$pop[i]) * 100000
+    Sc2[[i]] <- (Sc2[[i]] / pop.dat$pop[i]) * 100000
+    Rc1[[i]] <- (Rc1[[i]] / pop.dat$pop[i]) * 100000
+    Rc2[[i]] <- (Rc2[[i]] / pop.dat$pop[i]) * 100000
+  }
+  
+  # Create lists by ens_mem:
+  # synth.runs.RATES = synth.runs.COUNTS = vector('list', num.ens)
+  synth.runs1 = synth.runs2 = synth.s1 = synth.s2 = synth.r1 = synth.r2 = vector('list', num.ens)
+  for (ix in 1:length(synth.runs1)) {
+    newI.ens1 = newI.ens2 = s.ens1 = s.ens2 = r.ens1 = r.ens2 = NULL
+    for (country in 1:n) {
+      newI.ens1 <- rbind(newI.ens1, newI.c1[[country]][ix, ])
+      newI.ens2 <- rbind(newI.ens2, newI.c2[[country]][ix, ])
+      s.ens1 <- rbind(s.ens1, Sc1[[country]][ix, ])
+      s.ens2 <- rbind(s.ens2, Sc2[[country]][ix, ])
+      r.ens1 <- rbind(r.ens1, Rc1[[country]][ix, ])
+      r.ens2 <- rbind(r.ens2, Rc2[[country]][ix, ])
+    }
+    
+    synth.runs1[[ix]] <- newI.ens1
+    synth.runs2[[ix]] <- newI.ens2
+    synth.s1[[ix]] <- s.ens1
+    synth.s2[[ix]] <- s.ens2
+    synth.r1[[ix]] <- r.ens1
+    synth.r2[[ix]] <- r.ens2
+  }
+  
+  # Return results:
+  return(list(synth.runs1, synth.runs2, synth.s1, synth.s2, synth.r1, synth.r2))
+  
+}
+
 allocate_S0I0 <- function(in.parms, num.ens, n, N, s0.method = NULL) {
   
   # Store country-level S0:
@@ -106,7 +195,7 @@ allocate_S0I0 <- function(in.parms, num.ens, n, N, s0.method = NULL) {
   return(list(S0.temp, I0.temp, s0.by.count))
 }
 
-run_model <- function(in.parms, S0.in, I0.in, in.ah, num.ens, n, N, tm.range, tmstep, tm.strt, tm.end, dt, pop.dat, r0.mn = FALSE) {
+run_model <- function(in.parms, S0.in, I0.in, in.ah, num.ens, n, N, tm.range, tmstep, tm.strt, tm.end, dt, pop.dat, r0.mn = FALSE, multi = FALSE) {
   
   # Get parameters:
   in.parms <- in.parms[(dim(in.parms)[1] - 4):(dim(in.parms)[1]), ]
@@ -135,17 +224,33 @@ run_model <- function(in.parms, S0.in, I0.in, in.ah, num.ens, n, N, tm.range, tm
   S0.temp <- S0.in; I0.temp <- I0.in
   
   # Run model:
-  m <- sapply(1:num.ens, function(ix) {
-    propagateToySIRS(tm_strt = tm.strt, tm_end = tm.end, dt,
-                     S0 = S0.temp[[ix]], I0 = I0.temp[[ix]], N,
-                     D = D.temp[ix], L = L.temp[ix], beta[[ix]],
-                     airScale = airScale.temp[ix], realdata = TRUE,
-                     prohibAir = FALSE)
-  })
+  if (multi) {
+    m <- sapply(1:num.ens, function(ix) {
+      propagateToySIRS_multi(tm_strt = tm.strt, tm_end = tm.end, dt,
+                       S0 = S0.temp[[ix]], I0 = I0.temp[[ix]], N,
+                       D = D.temp[ix], L = L.temp[ix], beta[[ix]],
+                       airScale = airScale.temp[ix], realdata = TRUE,
+                       prohibAir = FALSE)
+    })
+    
+    # Re-format results:
+    res.list <- format_model_results_multi(m, num.ens, tmstep, tm.strt, tm.end, n, pop.dat)
+    # res.list <- list(res.list, s0.by.count)
+    
+  } else {
+    m <- sapply(1:num.ens, function(ix) {
+      propagateToySIRS(tm_strt = tm.strt, tm_end = tm.end, dt,
+                       S0 = S0.temp[[ix]], I0 = I0.temp[[ix]], N,
+                       D = D.temp[ix], L = L.temp[ix], beta[[ix]],
+                       airScale = airScale.temp[ix], realdata = TRUE,
+                       prohibAir = FALSE)
+      })
+    
+    # Re-format results:
+    res.list <- format_model_results(m, num.ens, tmstep, tm.strt, tm.end, n, pop.dat)
+    # res.list <- list(res.list, s0.by.count)
   
-  # Re-format results:
-  res.list <- format_model_results(m, num.ens, tmstep, tm.strt, tm.end, n, pop.dat)
-  # res.list <- list(res.list, s0.by.count)
+  }
   
   # Return results:
   return(res.list)
