@@ -2,7 +2,8 @@
 ### Run synthetic code for 20 years ###
 
 ### Read in libraries
-library("truncnorm"); library("tgp"); library("MASS"); library(reshape2); library(plyr); #library(ggplot2); library(gridExtra); library(viridis)
+library("truncnorm"); library("tgp"); library("MASS"); library(reshape2); library(plyr); #library(ggplot2); library(gridExtra); library(viridis); library(miceadds)
+# sessionInfo()
 
 ### Set directory:
 setwd('/ifs/scratch/msph/ehs/sck2165/global_forecasting/core/')
@@ -10,7 +11,7 @@ setwd('/ifs/scratch/msph/ehs/sck2165/global_forecasting/core/')
 ### Read in model functions
 source('code/SIRS_network_multistrain.R')
 source('code/functions/Util.R')
-source('code/synth_functions.R')
+source('code/functions/synth_functions.R')
 
 ### Global variables:
 dt <- 1 # time step for SIRS integration
