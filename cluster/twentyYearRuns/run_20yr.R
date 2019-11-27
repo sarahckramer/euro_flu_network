@@ -114,7 +114,7 @@ for (i in 1:num_ens) {
 res.list <- list(res.rates1, res.rates2, res.s1, res.s2, res.r1, res.r2)
 save(res.list, file = paste0('outputs/synth/resList_20yr_last9_', task.index,'.RData'))
 
-
+print('Done.')
 
 
 
