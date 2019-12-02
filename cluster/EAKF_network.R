@@ -179,6 +179,9 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
   ### Training process
   to.adjust <- c(pos.in.vector, pos.in.vector + n ** 2, pos.in.vector + n ** 2 * 2, param.indices)
   
+  # Store OEV/ens_var at each time step:
+  var.df <- NULL
+  
   for (tt in 1:ntrn) {
     # Update state variables and parameters, then integrate forward
     print(tt)
@@ -229,6 +232,9 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
         
         prior_mean <- mean(obs_ens[loc, ])
         post_mean <- post_var * (prior_mean / prior_var + obs_i[tt, loc] / obs_var)
+        
+        # Store these values:
+        var.df <- rbind(var.df, c(countries[loc], tt + wk_start - 1, obs_var, prior_var))
         
         # Compute alpha and adjust distribution to conform to posterior moments:
         alp <- sqrt(obs_var / (obs_var + prior_var))
@@ -455,17 +461,17 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
   
   rm(obs_ens)
   
-  ### Plot fit and forecast:
-  par(mfrow = c(4, 3), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-  for (i in (1:n)[!is.na(obs_i[tt, ])]) {
-    obs.post.toPlot.ind <- colMeans(obspost[i,, 1:tt])
-    obs.fcast.toPlot.ind <- colMeans(obsfcast[i,, 1:nfc])
-    plot(obs_i[, i], type = 'b', pch = 4, lty = 2, col = 'gray40', cex = 0.75,
-         xlab = 'Wks from Start', ylab = 'Syn+ Counts', main = countries[i], 
-         ylim = c(0, max(max(obs_i[, i], na.rm = T), max(obs.post.toPlot.ind, na.rm = T))))
-    lines(obs.post.toPlot.ind, type = 'b', pch = 20, lty = 1, cex = 0.8, col = 'steelblue2')
-    lines((ntrn + 1):(ntrn + nfc), obs.fcast.toPlot.ind, type = 'b', pch = 20, lty = 1, cex = 0.8, col = 'coral')
-  }
+  # ### Plot fit and forecast:
+  # par(mfrow = c(4, 3), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+  # for (i in (1:n)[!is.na(obs_i[tt, ])]) {
+  #   obs.post.toPlot.ind <- colMeans(obspost[i,, 1:tt])
+  #   obs.fcast.toPlot.ind <- colMeans(obsfcast[i,, 1:nfc])
+  #   plot(obs_i[, i], type = 'b', pch = 4, lty = 2, col = 'gray40', cex = 0.75,
+  #        xlab = 'Wks from Start', ylab = 'Syn+ Counts', main = countries[i], 
+  #        ylim = c(0, max(max(obs_i[, i], na.rm = T), max(obs.post.toPlot.ind, na.rm = T))))
+  #   lines(obs.post.toPlot.ind, type = 'b', pch = 20, lty = 1, cex = 0.8, col = 'steelblue2')
+  #   lines((ntrn + 1):(ntrn + nfc), obs.fcast.toPlot.ind, type = 'b', pch = 20, lty = 1, cex = 0.8, col = 'coral')
+  # }
   
   ### Calculate S and I by country (prior, post, and fcast):
   s.post <- xpost[S0.indices,, ]; s.prior <- xprior[S0.indices,, ]
@@ -977,42 +983,65 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
   }
   peakWeeksDist <- rbind(peakWeeksDist, peakWeeksDistNA)
   
-  # Calculate prob. distribution for peak intensities
-  # we bin in increments of 1e3 upto 1e4. An extra bin for >1e4
-  reqLimits = seq(0, 1e4, by=1e3)
-  peakIntensitiesDist <- matrix(NA, nrow = length(reqLimits), ncol = n + 1)
+  # Calculate prob. distribution for peak intensities:
+  # use bins of 500, 250
+  # # we bin in increments of 1e3 upto 1e4. An extra bin for >1e4
+  reqLimits500 <- seq(0, 14000, by = 500); reqLimits250 <- seq(0, 14000, by = 250)
+  peakIntensitiesDist500 <- matrix(NA, nrow = length(reqLimits500), ncol = n + 1)
+  peakIntensitiesDist250 <- matrix(NA, nrow = length(reqLimits250), ncol = n + 1)
+  
   row <- 1
-  for (i in 2:length(reqLimits)) {
-    peakIntensitiesDist[row, 1] <- reqLimits[i]
+  for (i in 2:length(reqLimits500)) {
+    peakIntensitiesDist500[row, 1] <- reqLimits500[i]
     
     for (j in 1:n) {
       if (!all(is.na(obs_i[, j]))) {
-        peakIntensitiesDist[row, j + 1] <- round(length(peakIntensities[j, ][peakIntensities[j, ] >= reqLimits[i - 1] & peakIntensities[j, ] < reqLimits[i]]) / 300, 4)
+        peakIntensitiesDist500[row, j + 1] <- round(length(peakIntensities[j, ][peakIntensities[j, ] >= reqLimits500[i - 1] & peakIntensities[j, ] < reqLimits500[i]]) / 300, 4)
       }
     }
     
     row <- row + 1
   }
-  # >1e4:
-  peakIntensitiesDist[row, 1] <- 1e5
+  peakIntensitiesDist500[row, 1] <- 1e5
   for (j in 1:n) {
     if (!all(is.na(obs_i[, j]))) {
-      peakIntensitiesDist[row, j + 1] <- round(length(peakIntensities[j, ][peakIntensities[j, ] >= max(reqLimits)]) / 300, 4)
+      peakIntensitiesDist500[row, j + 1] <- round(length(peakIntensities[j, ][peakIntensities[j, ] >= max(reqLimits500)]) / 300, 4)
+    }
+  }
+  
+  row <- 1
+  for (i in 2:length(reqLimits250)) {
+    peakIntensitiesDist250[row, 1] <- reqLimits250[i]
+    
+    for (j in 1:n) {
+      if (!all(is.na(obs_i[, j]))) {
+        peakIntensitiesDist250[row, j + 1] <- round(length(peakIntensities[j, ][peakIntensities[j, ] >= reqLimits250[i - 1] & peakIntensities[j, ] < reqLimits250[i]]) / 300, 4)
+      }
+    }
+    
+    row <- row + 1
+  }
+  peakIntensitiesDist250[row, 1] <- 1e5
+  for (j in 1:n) {
+    if (!all(is.na(obs_i[, j]))) {
+      peakIntensitiesDist250[row, j + 1] <- round(length(peakIntensities[j, ][peakIntensities[j, ] >= max(reqLimits250)]) / 300, 4)
     }
   }
   
   # Calculate prob. distribution for next 4 weeks:
-  nextILIDist <- array(NA, c(length(reqLimits), n + 1, dim(nextILI)[3]))
+  nextILIDist500 <- array(NA, c(length(reqLimits500), n + 1, dim(nextILI)[3]))
+  nextILIDist250 <- array(NA, c(length(reqLimits250), n + 1, dim(nextILI)[3]))
+  
   row <- 1
-  for (i in 2:length(reqLimits)) {
-    nextILIDist[row, 1, ] <- reqLimits[i]
+  for (i in 2:length(reqLimits500)) {
+    nextILIDist500[row, 1, ] <- reqLimits500[i]
     
     for (j in 1:n) {
       if (!all(is.na(obs_i[, j]))) {
         
         for (k in 1:dim(nextILI)[3]) { # depending on where we are in the season, could be fewer than 4 weeks left
           values <- nextILI[j,, k] # don't think these can possibly be NA, right?
-          nextILIDist[row, j + 1, k] <- round(length(values[values >= reqLimits[i - 1] & values < reqLimits[i]]) / 300, 4)
+          nextILIDist500[row, j + 1, k] <- round(length(values[values >= reqLimits500[i - 1] & values < reqLimits500[i]]) / 300, 4)
         }
         
       }
@@ -1020,19 +1049,46 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     
     row <- row + 1
   }
-  # >1e4:
-  nextILIDist[row, 1, ] <- 1e5
+  nextILIDist500[row, 1, ] <- 1e5
   for (j in 1:n) {
     if (!all(is.na(obs_i[, j]))) {
       
       for (k in 1:dim(nextILI)[3]) {
         values <- nextILI[j,, k]
-        nextILIDist[row, j + 1, k] <- round(length(values[values >= max(reqLimits)]) / 300, 4)
+        nextILIDist500[row, j + 1, k] <- round(length(values[values >= max(reqLimits500)]) / 300, 4)
       }
       
     }
   }
   
+  row <- 1
+  for (i in 2:length(reqLimits250)) {
+    nextILIDist250[row, 1, ] <- reqLimits250[i]
+    
+    for (j in 1:n) {
+      if (!all(is.na(obs_i[, j]))) {
+        
+        for (k in 1:dim(nextILI)[3]) { # depending on where we are in the season, could be fewer than 4 weeks left
+          values <- nextILI[j,, k] # don't think these can possibly be NA, right?
+          nextILIDist250[row, j + 1, k] <- round(length(values[values >= reqLimits250[i - 1] & values < reqLimits250[i]]) / 300, 4)
+        }
+        
+      }
+    }
+    
+    row <- row + 1
+  }
+  nextILIDist250[row, 1, ] <- 1e5
+  for (j in 1:n) {
+    if (!all(is.na(obs_i[, j]))) {
+      
+      for (k in 1:dim(nextILI)[3]) {
+        values <- nextILI[j,, k]
+        nextILIDist250[row, j + 1, k] <- round(length(values[values >= max(reqLimits250)]) / 300, 4)
+      }
+      
+    }
+  }
   
   # pkwk_mode_perc=MODE(peakWeeks)[2]/num_ens
   
@@ -1061,9 +1117,9 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
   out4 <- cbind(fc_start, tstep[1:ntrn], 1:ntrn, params.post_df)
   
   out5 <- rbind(cbind('onset3', onsets3Dist), cbind('onset4', onsets4Dist), cbind('onset5', onsets5Dist), cbind('onset6', onsets6Dist),
-                cbind('pw', peakWeeksDist), cbind('pi', peakIntensitiesDist))
+                cbind('pw', peakWeeksDist), cbind('pi500', peakIntensitiesDist500), cbind('pi250', peakIntensitiesDist250))
   for (i in 1:4) {
-    out5 <- rbind(out5, cbind(paste0('nextweek', i), nextILIDist[,, i]))
+    out5 <- rbind(out5, cbind(paste0('nextweek500_', i), nextILIDist500[,, i]), cbind(paste0('nextweek250_', i), nextILIDist250[,, i]))
   }
   out5 <- as.data.frame(cbind(fc_start, out5))
   names(out5) <- c('fc_start', 'metric', 'bin', countries)
@@ -1095,7 +1151,9 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
                      'mape', 'wape', 'smape')
   colnames(out4)[1:3] <- c('fc_start', 'time', 'week')
   
-  out <- list(opStates = out1, metrics = out3, trainParams = out4, dist = out5, ensembles = out6)
+  var.df <- as.data.frame(var.df)
+  
+  out <- list(opStates = out1, metrics = out3, trainParams = out4, dist = out5, ensembles = out6, vars = var.df)
   # out <- list(train = out1, fcast = out2, metrics = out3, trainParams = out4, dist = out5, ensembles = out6)
   
   return(out)

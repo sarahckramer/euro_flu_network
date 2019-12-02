@@ -39,17 +39,18 @@ discrete <- FALSE # run the SIRS model continuously
 metricsonly <- FALSE # save all outputs
 
 seasons <- c('2010-11', '2011-12', '2012-13', '2013-14', '2014-15', '2015-16', '2016-17', '2017-18') # ADD '2018-19'
-oevBase_list <- c(1e4, 1e5)
-# oevBase_list <- c(2e5, 5e5) # test higher OEV bases - does this stop 1-4 week predictions from failing after the peak? (note: will likely be very inaccurate for the most part)
+# oevBase_list <- c(1e4, 1e5)
+# # oevBase_list <- c(2e5, 5e5) # test higher OEV bases - does this stop 1-4 week predictions from failing after the peak? (note: will likely be very inaccurate for the most part)
 # oevDenom_list <- c(1.0, 10.0, 50.0) #c(1.0, 2.0, 5.0, 10.0, 20.0, 50.0)
 # lambdaList <- c(1.00, 1.02, 1.05)
 ntrnList <- 5:30
 
 cmd_args = commandArgs(trailingOnly = T)
 task.index=as.numeric(cmd_args[1]) # 1:416; 1:3744
+# 1:624 for 3 lambdas, or 1:208 to just do the one
 
-season <- seasons[ceiling(task.index / 52)]
-oev_base <- oevBase_list[ceiling((task.index - 26) / 26) %% 2 + 1]
+season <- seasons[ceiling(task.index / 26)]
+oev_base <- 1e4 #oevBase_list[ceiling((task.index - 26) / 26) %% 2 + 1]
 oev_denom <- 10.0 #oevDenom_list[ceiling((task.index - 78) / 78) %% 3 + 1]
 lambda <- 1.02 #lambdaList[ceiling((task.index - 26) / 26) %% 3 + 1]
 ntrn <- ntrnList[ceiling(task.index - 1) %% 26 + 1]
@@ -209,6 +210,7 @@ tm.range <- clim_start:clim_end
 # for (ntrn in 5:30) {
 # print(ntrn)
 # ntrn <- 10
+outputVars <- NULL
 for (run in 1:num_runs) {
   res <- EAKF_rFC(num_ens, tmstep, param.bound, obs_i, ntrn, obs_vars, tm.ini, tm.range,
                   updates = FALSE, do.reprobing = FALSE)
@@ -218,6 +220,7 @@ for (run in 1:num_runs) {
   outputOPParams <- rbind(outputOPParams, cbind(season, run, oev_base, oev_denom, lambda, res$trainParams))
   outputDist = rbind(outputDist, cbind(season, run, oev_base, oev_denom, lambda, res$dist))
   outputEns = rbind(outputEns, cbind(season, run, oev_base, oev_denom, lambda, res$ensembles))
+  outputVars = rbind(outputVars, cbind(season, run, lambda, res$vars))
 }
 # }
 
@@ -237,11 +240,19 @@ outputMetrics[outputMetrics[, 'country'] == 'FR' & outputMetrics[, 'season'] %in
 ### Save results:
 print('Finished with loop; writing files...')
 
-write.csv(outputMetrics, file = paste('outputs/obs/outputMet', season, oev_base, oev_denom, ntrn, '110819_oldOEV.csv', sep = '_'), row.names = FALSE)
-write.csv(outputOP, file = paste('outputs/obs/outputOP', season, oev_base, oev_denom, ntrn, '110819_oldOEV.csv', sep = '_'), row.names = FALSE)
-write.csv(outputOPParams, file = paste('outputs/obs/outputOPParams', season, oev_base, oev_denom, ntrn, '110819_oldOEV.csv', sep = '_'), row.names = FALSE)
-write.csv(outputDist, file = paste('outputs/obs/outputDist', season, oev_base, oev_denom, ntrn, '110819_oldOEV.csv', sep = '_'), row.names = FALSE)
-write.csv(outputEns, file = paste('outputs/obs/outputEns', season, oev_base, oev_denom, ntrn, '110819_oldOEV.csv', sep = '_'), row.names = FALSE)
+write.csv(outputMetrics, file = paste('outputs/obs/outputMet', season, ntrn, '120219.csv', sep = '_'), row.names = FALSE)
+write.csv(outputOP, file = paste('outputs/obs/outputOP', season, ntrn, '120219.csv', sep = '_'), row.names = FALSE)
+write.csv(outputOPParams, file = paste('outputs/obs/outputOPParams', season, ntrn, '120219.csv', sep = '_'), row.names = FALSE)
+write.csv(outputDist, file = paste('outputs/obs/outputDist', season, ntrn, '120219.csv', sep = '_'), row.names = FALSE)
+write.csv(outputEns, file = paste('outputs/obs/outputEns', season, ntrn, '120219.csv', sep = '_'), row.names = FALSE)
+write.csv(outputVars, file = paste('outputs/obs/outputEns', season, ntrn, '120219.csv', sep = '_'), row.names = FALSE)
+
+# write.csv(outputMetrics, file = paste('outputs/obs/outputMet', season, oev_base, oev_denom, lambda, ntrn, '120219.csv', sep = '_'), row.names = FALSE)
+# write.csv(outputOP, file = paste('outputs/obs/outputOP', season, oev_base, oev_denom, lambda, ntrn, '120219.csv', sep = '_'), row.names = FALSE)
+# write.csv(outputOPParams, file = paste('outputs/obs/outputOPParams', season, oev_base, oev_denom, lambda, ntrn, '120219.csv', sep = '_'), row.names = FALSE)
+# write.csv(outputDist, file = paste('outputs/obs/outputDist', season, oev_base, oev_denom, lambda, ntrn, '120219.csv', sep = '_'), row.names = FALSE)
+# write.csv(outputEns, file = paste('outputs/obs/outputEns', season, oev_base, oev_denom, lambda, ntrn, '120219.csv', sep = '_'), row.names = FALSE)
+# write.csv(outputVars, file = paste('outputs/obs/outputEns', season, oev_base, oev_denom, lambda, ntrn, '120219.csv', sep = '_'), row.names = FALSE)
 
 print('Done.')
 
