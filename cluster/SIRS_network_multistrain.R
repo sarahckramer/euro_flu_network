@@ -526,16 +526,35 @@ propagateToySIRS_multi <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, be
       # Finally, seeding:
       # Base this on the dominant strain(s) of that year; start new seeding in May
       # seed <- diag(rpois(n, 0.1), n, n) # here seeding only in home-home compartments; 10% chance of a single new infection
+      # seeding also needs to be 10% chance of 1 PER 100,000 - so seeding matrix * (N / 100,000), then round
       if (Vtype[cnt, 1] == 1) {
         # print(paste(cnt, 1, sep = '_'))
-        seed <- diag(rpois(n, 0.1), n, n) # here seeding only in home-home compartments; 10% chance of a single new infection
+        # seed <- diag(rpois(n, 0.1), n, n) # here seeding only in home-home compartments; 10% chance of a single new infection - actually, higher RATE for bigger places
+        
+        # N / max(N) / 10 # this makes it 1 new case every 10 days for DE-DE compartment, and proportionally less elsewhere
+        
+        seed <- matrix(sapply(N, function(ix) {
+          rpois(1, ix / max(N) / 10)
+          # ix / max(N)
+        }), nrow = n, ncol = n, byrow = FALSE)
+        
+        # rpois(1, sum(N) / 100000) # number of seeds to check
+        # sum(rpois(rpois(1, sum(N) / 100000), 0.1)) # total # of cases to seed
+        # # then could distribute these based on relative population sizes of compartments
+        
+        # every compartment has 10% chance of seeding
         S.list[,, cnt, 1] <- S.list[,, cnt, 1] - seed
         I.list[,, cnt, 1] <- I.list[,, cnt, 1] + seed
         newI.list[,, cnt, 1] <- newI.list[,, cnt, 1] + seed
       }
       if (Vtype[cnt, 2] == 1) {
         # print(paste(cnt, 2, sep = '_'))
-        seed <- diag(rpois(n, 0.1), n, n)
+        # seed <- diag(rpois(n, 0.1), n, n)
+        seed <- matrix(sapply(N, function(ix) {
+          rpois(1, ix / max(N) / 10)
+          # ix / max(N)
+        }), nrow = n, ncol = n, byrow = FALSE)
+        
         S.list[,, cnt, 2] <- S.list[,, cnt, 2] - seed
         I.list[,, cnt, 2] <- I.list[,, cnt, 2] + seed
         newI.list[,, cnt, 2] <- newI.list[,, cnt, 2] - seed

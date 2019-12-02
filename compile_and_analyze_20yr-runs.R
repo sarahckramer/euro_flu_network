@@ -23,6 +23,20 @@
 # Load in last 10 years:
 load('syntheticTests/syntheticData/20yr_runs_cluster/resRates_20yr_last10.RData')
 
+# Temporary: check new results
+load('syntheticTests/syntheticData/20yr_runs_cluster/resList_20yr_last9_1.RData')
+res1 <- res.list[[1]]; res2 <- res.list[[2]]
+
+par(mfrow = c(5, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+for (i in 1:50) {
+  matplot(t(res1[[i]]), pch = 20, cex = 0.6, col = viridis(12), lty = 1)
+  abline(v = seq(0, 523, by = 52), lty = 2)
+  matplot(t(res2[[i]]), pch = 20, cex = 0.6, col = viridis(12), lty = 1)
+  abline(v = seq(0, 523, by = 52), lty = 2)
+}
+
+
+
 # And read in accompanying parameter sets:
 load('syntheticTests/syntheticData/init_parms_10000.RData')
 
