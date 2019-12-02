@@ -44,68 +44,68 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
   param.indices <- (max(newI.indices) + 1):(max(newI.indices) + 5) # where the epi parameters are stored
   
   # QUESTION: Do we continue to generate S0 as a distribution even when forecasting, or do we use LHS?
-  # Dist:
-  parms <- t(lhs(num_ens, param.bound))
-  S0.temp = I0.temp = vector('list', num_ens)
-  for (i in 1:num_ens) {
-    S0.temp[[i]] = I0.temp[[i]] = matrix(0, nrow = n, ncol = n)
-    
-    diag(S0.temp[[i]]) <- rnorm(n, mean = parms[1, i], sd = parms[2, i])
-    diag(I0.temp[[i]]) <- parms[(1:n) + 2, i]
-    
-    # ensure all between 0 and 1:
-    while (any(diag(S0.temp[[i]]) > 1)) {
-      diag(S0.temp[[i]])[which(diag(S0.temp[[i]]) > 1)] <- rnorm(length(which(diag(S0.temp[[i]]) > 1)),
-                                                                 mean = parms[1, i], sd = parms[2, i])
-    }
-    while (any(diag(S0.temp[[i]]) < 0)) {
-      diag(S0.temp[[i]])[which(diag(S0.temp[[i]]) < 0)] <- rnorm(length(which(diag(S0.temp[[i]]) < 0)),
-                                                                 mean = parms[1, i], sd = parms[2, i])
-    }
-    
-    # now same process for non-home-home compartments
-    S0.temp[[i]][S0.temp[[i]] == 0] <- sapply(1:n, function(jx) {
-      rnorm(n - 1, mean = S0.temp[[i]][jx, jx], sd = 0.025)
-    })
-    
-    while (any(S0.temp[[i]] > 1)) {
-      to.redraw <- which(S0.temp[[i]] > 1, arr.ind = TRUE)
-      for (ix.r in dim(to.redraw)[1]) {
-        S0.temp[[i]][to.redraw[ix.r, 1], to.redraw[ix.r, 2]] <-
-          rnorm(1, mean = S0.temp[[i]][to.redraw[ix.r, 2], to.redraw[ix.r, 2]], sd = 0.025)
-      }
-    }
-    while (any(S0.temp[[i]] < 0)) {
-      to.redraw <- which(S0.temp[[i]] < 0, arr.ind = TRUE)
-      for (ix.r in dim(to.redraw)[1]) {
-        S0.temp[[i]][to.redraw[ix.r, 1], to.redraw[ix.r, 2]] <-
-          rnorm(1, mean = S0.temp[[i]][to.redraw[ix.r, 2], to.redraw[ix.r, 2]], sd = 0.025)
-      }
-    }
-    
-    # Finish!
-    S0.temp[[i]] <- t(S0.temp[[i]])
-    S0.temp[[i]] <- S0.temp[[i]] * N
-    
-    I0.temp[[i]] <- sweep(N / rowSums(N), 1, diag(I0.temp[[i]]), '*')
-    I0.temp[[i]] <- I0.temp[[i]] * N
-    
-  }
-  # QUESTION: I0 could still just be LHS; seed just "main" compartments?
-  parms <- parms[(dim(parms)[1] - 4):(dim(parms)[1]), ]
-  
-  # # LHS:
-  # ### Set initial conditions based on input parameters
-  # param.bound <- cbind(c(rep(S0_low, n ** 2), rep(I0_low, n ** 2), theta_low),
-  #                      c(rep(S0_up, n ** 2), rep(I0_up, n ** 2), theta_up))
+  # # Dist:
   # parms <- t(lhs(num_ens, param.bound))
-  # 
   # S0.temp = I0.temp = vector('list', num_ens)
   # for (i in 1:num_ens) {
-  #   S0.temp[[i]] <- matrix(parms[1:(n ** 2), i], nrow = n, ncol = n, byrow = T) * N
-  #   I0.temp[[i]] <- matrix(parms[1:(n ** 2) + (n ** 2), i], nrow = n, ncol = n, byrow = T) * N
+  #   S0.temp[[i]] = I0.temp[[i]] = matrix(0, nrow = n, ncol = n)
+  #   
+  #   diag(S0.temp[[i]]) <- rnorm(n, mean = parms[1, i], sd = parms[2, i])
+  #   diag(I0.temp[[i]]) <- parms[(1:n) + 2, i]
+  #   
+  #   # ensure all between 0 and 1:
+  #   while (any(diag(S0.temp[[i]]) > 1)) {
+  #     diag(S0.temp[[i]])[which(diag(S0.temp[[i]]) > 1)] <- rnorm(length(which(diag(S0.temp[[i]]) > 1)),
+  #                                                                mean = parms[1, i], sd = parms[2, i])
+  #   }
+  #   while (any(diag(S0.temp[[i]]) < 0)) {
+  #     diag(S0.temp[[i]])[which(diag(S0.temp[[i]]) < 0)] <- rnorm(length(which(diag(S0.temp[[i]]) < 0)),
+  #                                                                mean = parms[1, i], sd = parms[2, i])
+  #   }
+  #   
+  #   # now same process for non-home-home compartments
+  #   S0.temp[[i]][S0.temp[[i]] == 0] <- sapply(1:n, function(jx) {
+  #     rnorm(n - 1, mean = S0.temp[[i]][jx, jx], sd = 0.025)
+  #   })
+  #   
+  #   while (any(S0.temp[[i]] > 1)) {
+  #     to.redraw <- which(S0.temp[[i]] > 1, arr.ind = TRUE)
+  #     for (ix.r in dim(to.redraw)[1]) {
+  #       S0.temp[[i]][to.redraw[ix.r, 1], to.redraw[ix.r, 2]] <-
+  #         rnorm(1, mean = S0.temp[[i]][to.redraw[ix.r, 2], to.redraw[ix.r, 2]], sd = 0.025)
+  #     }
+  #   }
+  #   while (any(S0.temp[[i]] < 0)) {
+  #     to.redraw <- which(S0.temp[[i]] < 0, arr.ind = TRUE)
+  #     for (ix.r in dim(to.redraw)[1]) {
+  #       S0.temp[[i]][to.redraw[ix.r, 1], to.redraw[ix.r, 2]] <-
+  #         rnorm(1, mean = S0.temp[[i]][to.redraw[ix.r, 2], to.redraw[ix.r, 2]], sd = 0.025)
+  #     }
+  #   }
+  #   
+  #   # Finish!
+  #   S0.temp[[i]] <- t(S0.temp[[i]])
+  #   S0.temp[[i]] <- S0.temp[[i]] * N
+  #   
+  #   I0.temp[[i]] <- sweep(N / rowSums(N), 1, diag(I0.temp[[i]]), '*')
+  #   I0.temp[[i]] <- I0.temp[[i]] * N
+  #   
   # }
+  # # QUESTION: I0 could still just be LHS; seed just "main" compartments?
   # parms <- parms[(dim(parms)[1] - 4):(dim(parms)[1]), ]
+  
+  # LHS:
+  ### Set initial conditions based on input parameters
+  param.bound <- cbind(c(rep(S0_low, n ** 2), rep(I0_low, n ** 2), theta_low),
+                       c(rep(S0_up, n ** 2), rep(I0_up, n ** 2), theta_up))
+  parms <- t(lhs(num_ens, param.bound))
+
+  S0.temp = I0.temp = vector('list', num_ens)
+  for (i in 1:num_ens) {
+    S0.temp[[i]] <- matrix(parms[1:(n ** 2), i], nrow = n, ncol = n, byrow = T) * N
+    I0.temp[[i]] <- matrix(parms[1:(n ** 2) + (n ** 2), i], nrow = n, ncol = n, byrow = T) * N
+  }
+  parms <- parms[(dim(parms)[1] - 4):(dim(parms)[1]), ]
   
   ### Calculate the reproductive number at time t BT1 and the transmission rate
   beta.range <- tm.range[1]:(tail(tm.range, 1) + 2 * tmstep)
