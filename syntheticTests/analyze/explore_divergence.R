@@ -1,4 +1,42 @@
 
+# Divergence tends to occur when predicted/observed lead weeks > 0
+    # Look at ratio of OEV to ens.var. at lead weeks 1-4
+    # (Okay to restrict to this narrow range - limits the amount of information that needs processing)
+
+# Read in and compile files of OEV and ensemble variance (both scaled):
+file.list <- list.files(path = 'results/original/obs-ens_Vars/')
+oVar <- NULL
+for (i in 1:length(file.list)) {
+  var.temp <- read.csv(paste0('results/original/obs-ens_Vars/', file.list[1]))
+  oVar <- rbind(oVar, var.temp)
+}
+rm(var.temp, file.list, i)
+
+# Format data frame:
+oVar <- oVar[, c(1:2, 4:7)]
+names(oVar) <- c('season', 'run', 'country', 'week', 'obs_var', 'ens_var')
+
+# Join with metrics file to get obs_pkwk:
+m <- read.csv('results/original/fairComp/outputMet_110819_pro_PROC.csv')
+m <- unique(m[, c(1:2, 9)])
+
+
+
+
+
+# Read in metrics w/ OEV calculated:
+m <- read.csv('results/original/fairComp/outputMet_110819_pro_PROC.csv')
+
+
+
+
+
+
+
+
+
+
+
 # Read in newI by country and week:
 oStates <- read.csv('syntheticTests/outputs/cluster/071519/outputOPStates_loop_reduceS0I0.csv')
 
