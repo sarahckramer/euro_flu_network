@@ -245,7 +245,7 @@ write.csv(outputOP, file = paste('outputs/obs/outputOP', season, ntrn, '120219.c
 write.csv(outputOPParams, file = paste('outputs/obs/outputOPParams', season, ntrn, '120219.csv', sep = '_'), row.names = FALSE)
 write.csv(outputDist, file = paste('outputs/obs/outputDist', season, ntrn, '120219.csv', sep = '_'), row.names = FALSE)
 write.csv(outputEns, file = paste('outputs/obs/outputEns', season, ntrn, '120219.csv', sep = '_'), row.names = FALSE)
-write.csv(outputVars, file = paste('outputs/obs/outputEns', season, ntrn, '120219.csv', sep = '_'), row.names = FALSE)
+write.csv(outputVars, file = paste('outputs/obs/outputVars', season, ntrn, '120219.csv', sep = '_'), row.names = FALSE)
 
 # write.csv(outputMetrics, file = paste('outputs/obs/outputMet', season, oev_base, oev_denom, lambda, ntrn, '120219.csv', sep = '_'), row.names = FALSE)
 # write.csv(outputOP, file = paste('outputs/obs/outputOP', season, oev_base, oev_denom, lambda, ntrn, '120219.csv', sep = '_'), row.names = FALSE)
