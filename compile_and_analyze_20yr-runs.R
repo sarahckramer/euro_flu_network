@@ -1,20 +1,37 @@
 
 # # Load and compile 20-year runs:
-# run.list <- vector('list', 200)
+# run.list1 = run.list2 = s.list1 = s.list2 = r.list1 = r.list2 = vector('list', 200)
 # in.files <- list.files('syntheticTests/syntheticData/20yr_runs_cluster/', pattern = '.RData')
 # for (i in 1:length(in.files)) {
-#   load(paste0('syntheticTests/syntheticData/20yr_runs_cluster/resRates_20yr_last10_', i, '.RData'))
-#   run.list[[i]] <- res.rates
+#   load(paste0('syntheticTests/syntheticData/20yr_runs_cluster/resList_20yr_last9_', i, '.RData'))
+#   run.list1[[i]] <- res.list[[1]]
+#   run.list2[[i]] <- res.list[[2]]
+#   s.list1[[i]] <- res.list[[3]]
+#   s.list2[[i]] <- res.list[[4]]
+#   r.list1[[i]] <- res.list[[5]]
+#   r.list2[[i]] <- res.list[[6]]
 # }
 # 
-# # Save new list as one:
-# save(run.list, file = 'syntheticTests/syntheticData/20yr_runs_cluster/resRates_20yr_last10.RData')
+# # # Save new list as one:
+# # save(run.list, file = 'syntheticTests/syntheticData/20yr_runs_cluster/resRates_20yr_last10.RData')
 # 
-# # Transform into a list of 10,000 instead of 200 lists of 50
-# res.list <- do.call(c, run.list)
+# # Transform into lists of 10,000 instead of 200 lists of 50
+# run.list1 <- do.call(c, run.list1)
+# run.list2 <- do.call(c, run.list2)
+# s.list1 <- do.call(c, s.list1)
+# s.list2 <- do.call(c, s.list2)
+# r.list1 <- do.call(c, r.list1)
+# r.list2 <- do.call(c, r.list2)
+# 
+# # Compile by state:
+# run.list <- list(run.list1, run.list2)
+# s.list <- list(s.list1, s.list2)
+# r.list <- list(r.list1, r.list2)
 # 
 # # Save:
-# save(res.list, file = 'syntheticTests/syntheticData/20yr_runs_cluster/resRates_20yr_last10.RData')
+# save(run.list, file = 'syntheticTests/syntheticData/20yr_runs_cluster/resRates_20yr_last10.RData')
+# save(s.list, file = 'syntheticTests/syntheticData/20yr_runs_cluster/resS_20yr_last10.RData')
+# save(r.list, file = 'syntheticTests/syntheticData/20yr_runs_cluster/resR_20yr_last10.RData')
 
 #####################################################################################################################################################################
 #####################################################################################################################################################################
@@ -22,20 +39,8 @@
 
 # Load in last 10 years:
 load('syntheticTests/syntheticData/20yr_runs_cluster/resRates_20yr_last10.RData')
-
-# Temporary: check new results
-load('syntheticTests/syntheticData/20yr_runs_cluster/resList_20yr_last9_1.RData')
-res1 <- res.list[[1]]; res2 <- res.list[[2]]
-
-par(mfrow = c(5, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-for (i in 1:50) {
-  matplot(t(res1[[i]]), pch = 20, cex = 0.6, col = viridis(12), lty = 1)
-  abline(v = seq(0, 523, by = 52), lty = 2)
-  matplot(t(res2[[i]]), pch = 20, cex = 0.6, col = viridis(12), lty = 1)
-  abline(v = seq(0, 523, by = 52), lty = 2)
-}
-
-
+load('syntheticTests/syntheticData/20yr_runs_cluster/resS_20yr_last10.RData')
+load('syntheticTests/syntheticData/20yr_runs_cluster/resR_20yr_last10.RData')
 
 # And read in accompanying parameter sets:
 load('syntheticTests/syntheticData/init_parms_10000.RData')
@@ -56,7 +61,16 @@ get_10yr_avg <- function(obs) {
 }
 
 # Get yearly averages:
-res.avg <- lapply(res.list, get_10yr_avg)
+res.avg1 <- lapply(run.list[[1]], get_10yr_avg)
+res.avg2 <- lapply(run.list[[2]], get_10yr_avg)
+# could combine the two strains - eventually! but for now keep separate to check out?
+    # concerned that if I just add them, years with both strains will have super large outbreaks?
+
+res.list.comb <- vector('list', length(run.list[[1]]))
+for (i in 1:10000) {
+  res.list.comb[[i]] <- run.list[[1]][[i]] + run.list[[2]][[i]]
+}
+res.avg <- lapply(res.list.comb, get_10yr_avg)
 
 # Compile data frame of mean peak timings/intensities:
 df <- NULL
@@ -103,7 +117,7 @@ osc.list <- lapply(1:10000, function(ix) {
 no.outbreaks <- unlist(lapply(pi.list, function(ix) {
   all(ix < 50)
 }))
-no.outbreaks <- (1:10000)[no.outbreaks] # 800
+no.outbreaks <- (1:10000)[no.outbreaks]
 have.outbreaks <- (1:10000)[-no.outbreaks]
 
 # Also remove those with minimum >200, osc.range <200
@@ -128,7 +142,7 @@ small.osc <- small.osc[small.osc %in% have.outbreaks]
 have.outbreaks <- have.outbreaks[!(have.outbreaks %in% small.osc)] # down to 8888
 
 high.min <- unlist(lapply(min.list, function(ix) {
-  all(ix > 300)
+  all(ix > 50)
 }))
 high.min <- (1:10000)[high.min] # 200: 726; 100: 1837; 500: 214; 400: 288; 300: 433 (so ~400 seems to be a cut-off point)
 high.min <- high.min[high.min %in% have.outbreaks] # 200: 652 # 300: 394
@@ -180,7 +194,14 @@ for (run in to.keep[1:100]) {
 # so it might be good to remove these before analyzing parameters!
 # Done!
 
-# Now look at geographical patterns:
+# We also require outbreaks in 10/12 countries - previously we removed those with ALL pt<50, but now we also need to select those with >2 pt<50
+insuff.onsets <- unlist(lapply(pi.list, function(ix) {
+  length(ix[ix < 50]) > 2
+}))
+insuff.onsets <- (1:10000)[insuff.onsets]
+to.keep <- to.keep[!(to.keep %in% insuff.onsets)]
+
+# Now look at geographic patterns:
 library(maps)
 data("world.cities")
 country.names <- c('Austria', 'Belgium', 'Czechia', 'France', 'Germany', 'Hungary', 'Italy', 'Luxembourg',
@@ -226,6 +247,7 @@ for (run in same.peak) {
 }
 
 df <- df[!is.na(df$corr), ]; df$run <- factor(df$run)
+to.keep <- to.keep[to.keep != same.peak]
 # about 76% are east to west at all
 
 # Assign patterns:
@@ -266,11 +288,89 @@ dev.off()
 pdf('syntheticTests/outputs/explore/outbreak_plots_west-to-east_10000.pdf', width = 16, height = 10)
 par(mfrow = c(5, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 for (run in c(runs.we.sig, runs.we.not)) {
-  matplot(t(res.list[[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = run, xlab = 'Time', ylab = 'Inc.')
+  matplot(t(res.list.comb[[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = run, xlab = 'Time', ylab = 'Inc.')
 }
 dev.off()
 # Actually quite a few where there are outbreaks every year - too much tendency to cause outbreaks?
 # And how to decide which to keep? I'm guessing we don't want those with outbreaks every year; do we see which (if any) match observed patterns?
+
+# And what do individual strains look like?
+pdf('syntheticTests/outputs/explore/outbreak_plots_west-to-east_10000_byStrain.pdf', width = 16, height = 10)
+par(mfrow = c(5, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+for (run in c(runs.we.sig, runs.we.not)) {
+  matplot(t(run.list[[1]][[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = paste0('Strain1_', run), xlab = 'Time', ylab = 'Inc.')
+  matplot(t(run.list[[2]][[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = paste0('Strain2_', run), xlab = 'Time', ylab = 'Inc.')
+}
+dev.off()
+
+# Which of these actually reach 0 in all places at some point?
+to.explore <- c(70, 282, 1408, 1491, 1765, 2604, 2730, 3030, 3118, 3259, 3308, 3765, 4685, 4867, 6075, 6554, 7453, 7962, 7756) # look to see if reaching 0
+
+par(mfrow = c(5, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+for (run in to.explore) {
+  matplot(t(run.list[[1]][[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = paste0('Strain1_', run), xlab = 'Time', ylab = 'Inc.')
+  matplot(t(run.list[[2]][[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = paste0('Strain2_', run), xlab = 'Time', ylab = 'Inc.')
+}
+
+for (i in to.explore) {
+  print(i)
+  
+  run.temp <- run.list[[1]][[i]]
+  die.out <- c()
+  for (j in 1:523) {
+    # die.out <- c(die.out, all(run.temp[, j] == 0))
+    die.out <- c(die.out, length(which(run.temp[, j] == 0)))
+  }
+  print(summary(die.out))
+  
+  run.temp <- run.list[[2]][[i]]
+  die.out <- c()
+  for (j in 1:523) {
+    # die.out <- c(die.out, all(run.temp[, j] == 0))
+    die.out <- c(die.out, length(which(run.temp[, j] == 0)))
+  }
+  print(summary(die.out))
+  
+}
+# some spot with all 0 for: 282, 2730 strain 1 (but only 4 time periods), 6075 strain 1
+# interestingly, 282 is the one with alternating strains by season
+# often it's not just one country still harboring influenza; many are above 0
+
+# Find examples in have.outbreaks where die-out occurs?
+die.out.yes <- c()
+for (i in have.outbreaks) {
+  
+  # check strain1 only for now
+  run.temp <- run.list[[1]][[i]]
+  die.out <- c()
+  for (j in 1:523) {
+    die.out <- c(die.out, all(run.temp[, j] == 0))
+  }
+  
+  if (length(die.out[die.out] > 0)) {
+    print(i)
+    die.out.yes <- c(die.out.yes, i)
+  }
+  
+}
+# seems that many actually do have die-out? 1030/5478 (~18.8%)
+# what about just among "realistic"?: only 91/2649 (~3.4%); 71 of these are in e-w sig, 12 in e-w not, 8 in w-e not
+    # so about 3-4.6% of e-w runs, and ~13% of w-e runs
+
+# # Check S and R:
+# par(mfrow = c(5, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+# for (run in c(runs.we.sig, runs.we.not)) {
+#   matplot(t(s.list[[1]][[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = paste0('Strain1_', run), xlab = 'Time', ylab = 'Inc.')
+#   matplot(t(s.list[[2]][[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = paste0('Strain2_', run), xlab = 'Time', ylab = 'Inc.')
+# }
+# # outbreaks occurring around 50-60% S - do we need to lower R0mx?
+# 
+# par(mfrow = c(5, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+# for (run in c(runs.we.sig, runs.we.not)) {
+#   matplot(t(r.list[[1]][[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = paste0('Strain1_', run), xlab = 'Time', ylab = 'Inc.')
+#   matplot(t(r.list[[2]][[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = paste0('Strain2_', run), xlab = 'Time', ylab = 'Inc.')
+# }
+# # I think these look fine? the patterns at least are consistent
 
 # Explore parameter patterns:
 params.no <- as.data.frame(t(parms[c(1:2, 15:19), no.outbreaks]))
@@ -465,7 +565,7 @@ parms.we.df[parms.we.df$rmse < 15, c('L', 'D', 'R0diff')] # a couple L 4,5, but 
 
 
 
-
+to.explore <- c(2, 70, 282, 1408, 1491, 1765, 2604, 2730, 3030, 3118, 3259, 3308, 3765, 4685, 4867, 6075, 6554, 7453, 7962, 7756) # look to see if reaching 0; 2 has negatives instead
 
 
 
