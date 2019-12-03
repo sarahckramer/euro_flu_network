@@ -194,6 +194,35 @@ flip.vir.dat.AH1 <- flip.list[[3]]
 flip.vir.dat.AH3 <- flip.list[[4]]
 flip.vir.dat.B <- flip.list[[5]]
 
+# ########################################################################################################################################################################
+# # Save positivity data for use in OEV calculations:
+# for (i in 1:5) {
+#   flip.list[[i]][, 2:22][is.na(flip.list[[i]][, 2:22])] <- -1
+# }
+# flip.vir.dat.A <- flip.list[[2]]
+# flip.vir.dat.AH1 <- flip.list[[3]]
+# flip.vir.dat.AH3 <- flip.list[[4]]
+# flip.vir.dat.B <- flip.list[[5]]
+# 
+# # I think removing all the "low-quality" data is not important here b/c these will already be NAs in syn.dat?
+#     # Oh, actually, no they're not
+#     # I wonder if they were correctly removed for the forecasts with the full data?
+# # But since these points are NA in the "data" (syndromic+), it doesn't matter if the OEV value has a value
+# write.csv(flip.vir.dat.A, file = 'data/by_subtype/posprop_A(all).csv', row.names = FALSE)
+# write.csv(flip.vir.dat.AH1, file = 'data/by_subtype/posprop_A(H1).csv', row.names = FALSE)
+# write.csv(flip.vir.dat.AH3, file = 'data/by_subtype/posprop_A(H3).csv', row.names = FALSE)
+# write.csv(flip.vir.dat.B, file = 'data/by_subtype/posprop_B.csv', row.names = FALSE)
+# 
+# # # Turn -1 back into NA for calculations:
+# # for (i in 1:5) {
+# #   flip.list[[i]][, 2:22][flip.list[[i]][, 2:22] < 0] <- NA
+# # }
+# # flip.vir.dat.A <- flip.list[[2]]
+# # flip.vir.dat.AH1 <- flip.list[[3]]
+# # flip.vir.dat.AH3 <- flip.list[[4]]
+# # flip.vir.dat.B <- flip.list[[5]]
+# # # or just restart and ignore this section...
+
 ########################################################################################################################################################################
 # Multiply by syndromic data:
 # A, B, H1N1, H3N2; all (as check)
