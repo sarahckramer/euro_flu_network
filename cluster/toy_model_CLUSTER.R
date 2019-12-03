@@ -78,36 +78,34 @@ ah <- read.csv('data/ah_Europe_07142019.csv')
 AH <- rbind(ah[, count.indices], ah[, count.indices])
 
 ### Read in influenza data
-iliiso <- read.csv('data/WHO_data_05-09-19.csv') # in same order as "countries" vector
-iliiso <- iliiso[, c(1, count.indices + 1)]
-# iliiso.raw <- iliiso
+iliiso <- read.csv('data/WHO_data_05-09-19_SCALED.csv') # in same order as "countries" vector
 
 ### Read in syndromic/virologic counts:
 test.dat <- read.csv('data/testCounts_052719.csv')
-syn.dat <- read.csv('data/synDatCounts_060519.csv')
+syn.dat <- read.csv('data/synDatCounts_060519_SCALED.csv')
 pos.dat <- read.csv('data/posProp_060519.csv')
 # ADD 18-19 - change these four files
 
 test.dat <- test.dat[, c(1, count.indices + 1)]
-syn.dat <- syn.dat[, c(1, count.indices + 1)]
+# syn.dat <- syn.dat[, c(1, count.indices + 1)]
 pos.dat <- pos.dat[, c(1, count.indices + 1)]
 
 # syn.dat.raw <- syn.dat
 
 ### Scale data: # ADD: new scalings
-scalings <- read.csv('data/scalings_frame_05-09-19.csv') # 1.3 for France in early seasons
-scalings <- scalings[count.indices, ]
-# note: these are the "old" scalings
+# scalings <- read.csv('data/scalings_frame_05-09-19.csv') # 1.3 for France in early seasons
+# scalings <- scalings[count.indices, ]
+# # note: these are the "old" scalings
 for (i in 2:13) {
-  if (names(iliiso)[i] == 'France') {
-    iliiso[1:286, i] <- iliiso[1:286, i] * 1.3
-    iliiso[287:495, i] <- iliiso[287:495, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
-    syn.dat[1:286, i] <- syn.dat[1:286, i] * 1.3
-    syn.dat[287:495, i] <- syn.dat[287:495, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
-  } else {
-    iliiso[, i] <- iliiso[, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
-    syn.dat[, i] <- syn.dat[, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
-  }
+  # if (names(iliiso)[i] == 'France') {
+  #   iliiso[1:286, i] <- iliiso[1:286, i] * 1.3
+  #   iliiso[287:495, i] <- iliiso[287:495, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
+  #   syn.dat[1:286, i] <- syn.dat[1:286, i] * 1.3
+  #   syn.dat[287:495, i] <- syn.dat[287:495, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
+  # } else {
+  #   iliiso[, i] <- iliiso[, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
+  #   syn.dat[, i] <- syn.dat[, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
+  # }
   
   iliiso[, i][iliiso[, i] < 0] <- NA # replace negatives with NAs
   syn.dat[, i][syn.dat[, i] < 0] <- NA
@@ -193,6 +191,10 @@ obs_vars <- calc_obsvars_nTest(obs = as.matrix(obs_i), syn_dat = as.matrix(syn_i
 # LU and DE look particularly uncertain
 # obs_vars <- calc_obsvars(obs = as.matrix(obs_i), oev_base, oev_denom)
 
+### SET MAX OEV #######################################
+obs_vars[obs_vars > 1.5e6 & !is.na(obs_vars)] <- 1.5e6
+#######################################################
+
 # Get the first and last date of the simulation:
 clim_start <- as.numeric(start_date - as.Date(paste('20',
                                                     substr(season, gregexpr('-', season)[[1]][1]-2,
@@ -241,11 +243,11 @@ outputMetrics[outputMetrics[, 'country'] == 'FR' & outputMetrics[, 'season'] %in
 ### Save results:
 print('Finished with loop; writing files...')
 
-write.csv(outputMetrics, file = paste('outputs/obs/outputMet', season, ntrn, '120219_LHSwide.csv', sep = '_'), row.names = FALSE)
-write.csv(outputOP, file = paste('outputs/obs/outputOP', season, ntrn, '120219_LHSwide.csv', sep = '_'), row.names = FALSE)
-write.csv(outputOPParams, file = paste('outputs/obs/outputOPParams', season, ntrn, '120219_LHSwide.csv', sep = '_'), row.names = FALSE)
-write.csv(outputDist, file = paste('outputs/obs/outputDist', season, ntrn, '120219_LHSwide.csv', sep = '_'), row.names = FALSE)
-write.csv(outputEns, file = paste('outputs/obs/outputEns', season, ntrn, '120219_LHSwide.csv', sep = '_'), row.names = FALSE)
+write.csv(outputMetrics, file = paste('outputs/obs/outputMet', season, ntrn, '120219_OEVmax15e6.csv', sep = '_'), row.names = FALSE)
+write.csv(outputOP, file = paste('outputs/obs/outputOP', season, ntrn, '120219_OEVmax15e6.csv', sep = '_'), row.names = FALSE)
+write.csv(outputOPParams, file = paste('outputs/obs/outputOPParams', season, ntrn, '120219_OEVmax15e6.csv', sep = '_'), row.names = FALSE)
+write.csv(outputDist, file = paste('outputs/obs/outputDist', season, ntrn, '120219_OEVmax15e6.csv', sep = '_'), row.names = FALSE)
+write.csv(outputEns, file = paste('outputs/obs/outputEns', season, ntrn, '120219_OEVmax15e6.csv', sep = '_'), row.names = FALSE)
 # write.csv(outputVars, file = paste('outputs/obs/outputVars', season, ntrn, '120219.csv', sep = '_'), row.names = FALSE)
 
 # write.csv(outputMetrics, file = paste('outputs/obs/outputMet', season, oev_base, oev_denom, lambda, ntrn, '120219.csv', sep = '_'), row.names = FALSE)

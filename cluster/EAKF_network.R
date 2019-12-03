@@ -291,6 +291,60 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
       # print(obs_i[tt, to.check])
     }
     
+    # REPROBING
+    # do.reprobing controls whether reprobing is considered at all; condition for reprobing is inside if-loop
+    if (do.reprobing) {
+      obs_var_curr <- obs_vars[tt, ]
+      ens_var_curr <- c()
+      for (loc in 1:n) {
+        ens_var_curr <- c(ens_var_curr, var(obs_ens[loc, ]))
+      }
+      rat.curr <- obs_var_curr / ens_var_curr
+      rat.curr <- rat.curr[!is.na(rat.curr)]
+      
+      if (any(rat.curr > 5)) {
+      # if (any(alps[, tt] > 0.9)) {
+        # if (any(alps[, tt] > 0.95)) {
+        # if (tt %% 2 == 0) { # even weeks only - so every other week
+        # if (tt %in% c(1:43)) { # dummy condition - reprobe every week
+        
+        print('Reprobing...')
+        
+        rpnum <- ceiling(0.02 * num_ens) # 2%? 5%?
+        rpid <- sample(1:num_ens, rpnum)
+        
+        parms.reprobe <- t(lhs(rpnum, param.bound))
+        
+        S0.reprobe = I0.reprobe = vector('list', rpnum)
+        for (ir in 1:rpnum) {
+          S0.reprobe[[ir]] <- matrix(parms.reprobe[1:(n ** 2), ir], nrow = n, ncol = n, byrow = T) * N
+          I0.reprobe[[ir]] <- matrix(parms.reprobe[1:(n ** 2) + (n ** 2), ir], nrow = n, ncol = n, byrow = T) * N
+        }
+        
+        # to get matrices in proper format for adding back to xnew, need to transpose before unlisting
+        S0.reprobe <- lapply(1:rpnum, function(ix) {
+          t(S0.reprobe[[ix]])
+        })
+        I0.reprobe <- lapply(1:rpnum, function(ix) {
+          t(I0.reprobe[[ix]])
+        })
+        
+        S0.reprobe <- matrix(unlist(S0.reprobe), ncol = rpnum, byrow = F)
+        I0.reprobe <- matrix(unlist(I0.reprobe), ncol = rpnum, byrow = F)
+        parms.reprobe <- parms.reprobe[(dim(parms.reprobe)[1] - 4):(dim(parms.reprobe)[1]), ]
+        # S0.indices go row by row - so full first row, then on to second row, etc.
+        
+        xnew[S0.indices, rpid] <- S0.reprobe # dim 400 6
+        xnew[I0.indices, rpid] <- I0.reprobe
+        xnew[param.indices, rpid] <- parms.reprobe
+        
+        # xnew[xnew < 0] <- 0
+        xnew[which(xnew < 0, arr.ind = TRUE)] <- 0
+        xnew <- Fn_checkxnobounds(xnew, S0.indices, I0.indices, param.indices)
+        
+      } # end of all conditional loops
+    }
+    
     # Store posteriors:
     xpost[,, tt] <- xnew
     obspost[,, tt] <- obs_ens

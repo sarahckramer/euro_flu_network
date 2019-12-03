@@ -667,8 +667,8 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
       Estrav <- (tm_step * (1 / 3)) * (s.in - s.out)
       Eitrav <- (tm_step * (1 / 3)) * (i.in - i.out)
       
-      print(sum(Estrav))
-      print(sum(Eitrav))
+      # print(sum(Estrav))
+      # print(sum(Eitrav))
       
       Eimmloss[Eimmloss < 0] <- 0 # set any values below 0 to 0
       Einf[Einf < 0] <- 0
