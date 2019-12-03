@@ -3,11 +3,14 @@
 # To make for a fair comparison, remove forecasts made for a country when these conditions were met
 
 # Read in all results:
-m <- read.csv('results/original/outputMet_111819_pro.csv')
-o <- read.csv('results/original/outputOP_111819.csv')
-d <- read.csv('results/original/logScores_pt_ot.csv')
-e <- read.csv('results/original/logScores_pi.csv')
-e.wks <- read.csv('results/original/logScores_1-4wk.csv')
+# m <- read.csv(list.files(pattern = 'Met_pro.csv')) # m is already read in
+o <- read.csv(list.files(pattern = 'OP.csv'))
+d <- list()
+logScore.files <- list.files(pattern = 'logScores')
+for (i in 1:length(logScore.files)) {
+  d[[i]] <- read.csv(logScore.files[i])
+}
+rm(i)
 
 # List countries:
 countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
@@ -15,13 +18,13 @@ count.indices <- c(1:2, 4, 6:8, 11:14, 17, 19)
 n <- length(countries)
 
 # Get observations:
-iliiso <- read.csv('data/WHO_data_05-09-19.csv')
+iliiso <- read.csv('../../data/WHO_data_05-09-19.csv')
 iliiso <- iliiso[, c(1, count.indices + 1)]
 # here it doesn't matter if they're scaled or not b/c we only care whether or not they are NAs
 
-test.dat <- read.csv('data/testCounts_052719.csv')
-syn.dat <- read.csv('data/synDatCounts_060519.csv')
-pos.dat <- read.csv('data/posProp_060519.csv')
+test.dat <- read.csv('../../data/testCounts_052719.csv')
+syn.dat <- read.csv('../../data/synDatCounts_060519.csv')
+pos.dat <- read.csv('../../data/posProp_060519.csv')
 
 test.dat <- test.dat[, c(1, count.indices + 1)]
 syn.dat <- syn.dat[, c(1, count.indices + 1)]
@@ -39,9 +42,9 @@ for (i in 2:13) {
 # names(iliiso) = names(syn.dat) = names(pos.dat) = names(test.dat)
 
 # Load required functions:
-source('cluster/functions/Fn_initializations.R')
-source('cluster/functions/replaceLeadingLaggingNAs.R')
-source('cluster/functions/calc_obsvars.R')
+source('../../cluster/functions/Fn_initializations.R')
+source('../../cluster/functions/replaceLeadingLaggingNAs.R')
+source('../../cluster/functions/calc_obsvars.R')
 
 # Get mini-dataset that can be matched with larger ones later:
 m.mini <- unique(m[, c(1, 7:8)])
@@ -92,39 +95,30 @@ m.mini <- m.mini[!is.na(m.mini$obs) & !is.na(m.mini$oev) & m.mini$oev != 0, ]
 # Merge m.mini with all important data frames:
 m <- merge(m, m.mini, by = c('season', 'country', 'fc_start')) # 9304
 o <- merge(o, m.mini, by = c('season', 'country', 'fc_start'))
-d <- merge(d, m.mini, by = c('season', 'country', 'fc_start'))
-e <- merge(e, m.mini, by = c('season', 'country', 'fc_start'))
-e.wks <- merge(e.wks, m.mini, by = c('season', 'country', 'fc_start'))
+for (i in 1:length(d)) {
+  d[[i]] <- merge(d[[i]], m.mini, c('season', 'country', 'fc_start'))
+}
 
 # Remove relevant columns to put these into correct format:
-d$obs <- NULL; e$obs <- NULL; e.wks$obs <- NULL
-d$oev <- NULL; e$oev <- NULL; e.wks$oev <- NULL
+m$obs <- NULL; m$oev <- NULL
+o$obs <- NULL; o$oev <- NULL
+for (i in 1:length(d)) {
+  d[[i]]$obs <- NULL; d[[i]]$oev <- NULL
+}
+
+# Put correct column order back:
+m <- m[, c(1, 4:8, 3, 2, 9:78)]
+o <- o[, c(1, 4:7, 3, 8:10, 2, 11:16)]
 
 # Save new results files:
-write.csv(m, file = 'results/original/outputMet_110819_pro_PROC.csv', row.names = FALSE)
-write.csv(o, file = 'results/original/outputOP_110819_PROC.csv', row.names = FALSE)
-write.csv(d, file = 'results/original/logScores_pt_ot_PROC.csv', row.names = FALSE)
-write.csv(e, file = 'results/original/logScores_pi_PROC.csv', row.names = FALSE)
-write.csv(e.wks, file = 'results/original/logScores_1-4wk_PROC.csv', row.names = FALSE)
+write.csv(m, file = 'outputMet_pro_PROC.csv', row.names = FALSE)
+write.csv(o, file = 'outputOP_PROC.csv', row.names = FALSE)
 
-# Standardize column order:
-m <- read.csv('results/original/fairComp/outputMet_110819_pro_PROC.csv')
-o <- read.csv('results/original/fairComp/outputOP_110819_PROC.csv')
-d <- read.csv('results/original/fairComp/logScores_pt_ot_PROC.csv')
+for (i in 1:length(d)) {
+  d.temp <- d[[i]]
+  write.csv(d.temp, file = paste0('PROC_', logScore.files[i]), row.names = FALSE)
+}
 
-m.old <- read.csv('results/original/outputMet_111819_pro.csv')
-o.old <- read.csv('results/original/outputOP_111819.csv')
-d.old <- read.csv('results/original/logScores_pt_ot.csv')
-
-names(m) == names(m.old)
-m <- m[, c(1, 4:8, 3, 2, 9:79)]
-summary(names(m)[1:77] == names(m.old))
-
-o <- o[, c(1, 4:7, 3, 8:10, 2, 11:18)]
-
-d <- d[, c(1:2, 4:5, 3, 6:13)]
-
-write.csv(m, file = 'results/original/fairComp/outputMet_110819_pro_PROC.csv', row.names = FALSE)
-write.csv(o, file = 'results/original/fairComp/outputOP_110819_PROC.csv', row.names = FALSE)
-write.csv(d, file = 'results/original/fairComp/logScores_pt_ot_PROC.csv', row.names = FALSE)
+# Clean up!
+rm(list = ls())
 

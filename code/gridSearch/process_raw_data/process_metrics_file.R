@@ -1,7 +1,7 @@
 
-# Country names
-europe <- c('Austria', 'Belgium', 'Croatia', 'Czechia', 'Denmark', 'France', 'Germany', 'Hungary', 'Ireland', 'Italy', 'Luxembourg',
-            'Netherlands', 'Poland', 'Portugal', 'Romania', 'Slovakia', 'Slovenia', 'Spain', 'Sweden', 'United Kingdom')
+# # Country names
+# europe <- c('Austria', 'Belgium', 'Croatia', 'Czechia', 'Denmark', 'France', 'Germany', 'Hungary', 'Ireland', 'Italy', 'Luxembourg',
+#             'Netherlands', 'Poland', 'Portugal', 'Romania', 'Slovakia', 'Slovenia', 'Spain', 'Sweden', 'United Kingdom')
 
 # Countries by data type
 north.ili <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'HU', 'IE', 'IT', 'NL', 'PL', 'PT', 'RO', 'SK', 'ES', 'SE')
@@ -9,17 +9,15 @@ north.ari <- c('LU', 'UK', 'DE', 'SI', 'FR')
 
 # Read in results
 setwd('results/PROCESS/')
-m <- read.csv(file = list.files(pattern = 'Met_'))
+m <- read.csv(file = list.files(pattern = 'Met'))
 
-# m <- read.csv('results/outputMet_110919_oldOEV.csv')
-# 
-# # m <- read.csv('code/individualCountries/outputs/outputMet_082819.csv')
-names(m)[4] <- 'scaling'
-m$scaling[m$country == 'FR' & m$season %in% c('2010-11', '2011-12', '2012-13', '2013-14')] <- 1.3
-for (i in 37:44) {
-  m[, i] <- m[, i] + 40 - 1
+if (model.type == 'Individual') {
+  names(m)[4] <- 'scaling'
+  m$scaling[m$country == 'FR' & m$season %in% c('2010-11', '2011-12', '2012-13', '2013-14')] <- 1.3
+  for (i in 37:44) {
+    m[, i] <- m[, i] + 40 - 1
+  }
 }
-# 
 # m <- read.csv('results/newScalings/outputMet_090919.csv')
 # load('data/scalings_temp_08-26-19_MEANS.RData')
 # for (country in levels(m$country)) {
@@ -34,8 +32,8 @@ for (i in 37:44) {
 #   
 # }
 
-# Are peak intensities still the same for all base/denom/lambda at this point?:
-m.check <- unique(m[, c(1, 8:9, 17)]) # yep!
+# # Are peak intensities still the same for all base/denom/lambda at this point?:
+# m.check <- unique(m[, c(1, 8:9, 17)]) # yep!
 
 # Re-code any magnitudes by scaling
 m$obs_peak_int <- round(m$obs_peak_int/m$scaling, digits=4)
@@ -130,11 +128,12 @@ m$accurate_on[!(m$abs_delta_onset %in% c(0,1))] <- 'no'
 m$accurate_on <- factor(m$accurate_on)
 
 # Write new metrics file
-write.csv(m, file = '../PROCESS/outputMet_111819_pro.csv', row.names = F)
+write.csv(m, file = '../PROCESS/outputMet_pro.csv', row.names = F)
 # write.csv(m, file = 'code/individualCountries/outputs/outputMet_082819_pro.csv', row.names = F)
 # write.csv(m, file = 'results/newScalings/outputMet_090919_pro.csv', row.names = F)
 # write.csv(m, file = 'results/propRandTravel/outputMet_090919_pro.csv', row.names = F)
 # write.csv(m, file = 'results/highOEVBase/outputMet_090919_pro.csv', row.names = F)
 
 # Clear environment
-rm(list=ls())
+# rm(list=ls())
+rm(country, north.ili, north.ari, peak.vals, peak.val)
