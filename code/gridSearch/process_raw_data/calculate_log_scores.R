@@ -222,6 +222,7 @@ for (bin.size in bin.sizes) {
   
   # Calculate scores:
   e$score <- log(e$prob)
+  e$score[e$score == -Inf] <- min(e$score[e$score != -Inf]) - 1
   print(e$score[e$score == -Inf])
   # hist(e$score)
   
