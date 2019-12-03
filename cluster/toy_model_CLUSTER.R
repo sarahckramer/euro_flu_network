@@ -27,7 +27,8 @@ wk_start <- 40
 ### Parameter boundaries
 D_low <- 2; L_low <- 1*365; Rmx_low <- 2.0; Rdiff_low <- 0.2; airScale_low <- 0.75
 D_up <- 7; L_up <- 8*365; Rmx_up <- 2.8; Rdiff_up <- 1.0; airScale_up <- 1.25
-S0_low <- 0.55; S0_up <- 0.85
+# S0_low <- 0.55; S0_up <- 0.85
+S0_low <- 0; S0_up <- 1.0
 sd_low <- 0.05; sd_up <- 0.18
 I0_low <- 0; I0_up <- 0.00005
 
@@ -240,11 +241,11 @@ outputMetrics[outputMetrics[, 'country'] == 'FR' & outputMetrics[, 'season'] %in
 ### Save results:
 print('Finished with loop; writing files...')
 
-write.csv(outputMetrics, file = paste('outputs/obs/outputMet', season, ntrn, '120219_LHS.csv', sep = '_'), row.names = FALSE)
-write.csv(outputOP, file = paste('outputs/obs/outputOP', season, ntrn, '120219_LHS.csv', sep = '_'), row.names = FALSE)
-write.csv(outputOPParams, file = paste('outputs/obs/outputOPParams', season, ntrn, '120219_LHS.csv', sep = '_'), row.names = FALSE)
-write.csv(outputDist, file = paste('outputs/obs/outputDist', season, ntrn, '120219_LHS.csv', sep = '_'), row.names = FALSE)
-write.csv(outputEns, file = paste('outputs/obs/outputEns', season, ntrn, '120219_LHS.csv', sep = '_'), row.names = FALSE)
+write.csv(outputMetrics, file = paste('outputs/obs/outputMet', season, ntrn, '120219_LHSwide.csv', sep = '_'), row.names = FALSE)
+write.csv(outputOP, file = paste('outputs/obs/outputOP', season, ntrn, '120219_LHSwide.csv', sep = '_'), row.names = FALSE)
+write.csv(outputOPParams, file = paste('outputs/obs/outputOPParams', season, ntrn, '120219_LHSwide.csv', sep = '_'), row.names = FALSE)
+write.csv(outputDist, file = paste('outputs/obs/outputDist', season, ntrn, '120219_LHSwide.csv', sep = '_'), row.names = FALSE)
+write.csv(outputEns, file = paste('outputs/obs/outputEns', season, ntrn, '120219_LHSwide.csv', sep = '_'), row.names = FALSE)
 # write.csv(outputVars, file = paste('outputs/obs/outputVars', season, ntrn, '120219.csv', sep = '_'), row.names = FALSE)
 
 # write.csv(outputMetrics, file = paste('outputs/obs/outputMet', season, oev_base, oev_denom, lambda, ntrn, '120219.csv', sep = '_'), row.names = FALSE)
