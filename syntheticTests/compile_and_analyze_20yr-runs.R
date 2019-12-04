@@ -160,46 +160,58 @@ have.outbreaks <- have.outbreaks[!(have.outbreaks %in% high.min)] # 8494
 
 # Get those where 10+/12 are between 13:25:
 to.keep <- unlist(lapply(pt.list, function(ix) {
-  length(ix[!(ix %in% 13:25) & !is.na(ix)]) < 3 # 1809
+  length(ix[!(ix %in% c(1:12, 52)) & !is.na(ix)]) < 3 # 1809
   # length(ix[ix %in% 13:25 & !is.na(ix)]) >= 10 # 1763
 }))
 to.keep <- (1:10000)[to.keep]
 to.keep <- to.keep[to.keep %in% have.outbreaks] # reduces to 1410
 
-# Separate others into too early/too late:
-too.early <- unlist(lapply(pt.list, function(ix) {
-  length(ix[ix < 13]) > 2
-}))
-too.late <- unlist(lapply(pt.list, function(ix) {
-  length(ix[ix > 25]) > 2
-}))
-# unlike with individual season runs, runs are more likely to be too late than too early
-# any overlap?: yes, 13 runs (9 with high enough "peaks")
-mixed.pt <- which(too.early & too.late); mixed.pt <- mixed.pt[mixed.pt %in% have.outbreaks] # 2
-too.early <- (1:10000)[too.early]; too.early <- too.early[!(too.early %in% mixed.pt) & too.early %in% have.outbreaks] # 235
-too.late <- (1:10000)[too.late]; too.late <- too.late[!(too.late %in% mixed.pt) & too.late %in% have.outbreaks] # 6847
-
-length(too.early) + length(too.late) + length(mixed.pt) # 7084; this leaves 8494 - 7084 = 1410 within the "realistic" range
-# this checks out!
-
-# Plot out to.keep? How many have weak oscillations?
-par(mfrow = c(5, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-for (run in to.keep[1:100]) {
-  matplot(t(res.avg[[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = run, xlab = 'Time', ylab = 'Inc.')
-  abline(v = c(13, 25), lty = 1, col = 'red')
-}
-# honestly I think the PI step took most of those out, although some still do look like little oscillations
-  # could cut it off at like 200? 500? but maybe not now; could also say minimum has to be below 500 or near zero or something
-# a lot of the "too.early" runs are blips, though; not as often the case with "too.late"
-# so it might be good to remove these before analyzing parameters!
-# Done!
-
-# We also require outbreaks in 10/12 countries - previously we removed those with ALL pt<50, but now we also need to select those with >2 pt<50
+# Check for onsets in at least 10/12 as well?:
 insuff.onsets <- unlist(lapply(pi.list, function(ix) {
   length(ix[ix < 50]) > 2
 }))
 insuff.onsets <- (1:10000)[insuff.onsets]
 to.keep <- to.keep[!(to.keep %in% insuff.onsets)]
+# none of those were in to.keep, so fine to move on
+
+# # Separate others into too early/too late:
+# too.early <- unlist(lapply(pt.list, function(ix) {
+#   length(ix[ix < 13]) > 2
+# }))
+# too.late <- unlist(lapply(pt.list, function(ix) {
+#   length(ix[ix > 25]) > 2
+# }))
+# # unlike with individual season runs, runs are more likely to be too late than too early
+# # any overlap?: yes, 13 runs (9 with high enough "peaks")
+# mixed.pt <- which(too.early & too.late); mixed.pt <- mixed.pt[mixed.pt %in% have.outbreaks] # 2
+# too.early <- (1:10000)[too.early]; too.early <- too.early[!(too.early %in% mixed.pt) & too.early %in% have.outbreaks] # 235
+# too.late <- (1:10000)[too.late]; too.late <- too.late[!(too.late %in% mixed.pt) & too.late %in% have.outbreaks] # 6847
+# 
+# length(too.early) + length(too.late) + length(mixed.pt) # 7084; this leaves 8494 - 7084 = 1410 within the "realistic" range
+# # this checks out!
+
+# Store others as wrong timing for now:
+# We can evaluate late/early/wrong season/etc. later, if we want
+wrong.timing <- have.outbreaks[!(have.outbreaks %in% to.keep)]
+
+# # Plot out to.keep? How many have weak oscillations?
+# par(mfrow = c(5, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+# for (run in to.keep[1:100]) {
+#   matplot(t(res.avg[[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = run, xlab = 'Time', ylab = 'Inc.')
+#   abline(v = c(13, 25), lty = 1, col = 'red')
+# }
+# # honestly I think the PI step took most of those out, although some still do look like little oscillations
+#   # could cut it off at like 200? 500? but maybe not now; could also say minimum has to be below 500 or near zero or something
+# # a lot of the "too.early" runs are blips, though; not as often the case with "too.late"
+# # so it might be good to remove these before analyzing parameters!
+# # Done!
+
+# # We also require outbreaks in 10/12 countries - previously we removed those with ALL pt<50, but now we also need to select those with >2 pt<50
+# insuff.onsets <- unlist(lapply(pi.list, function(ix) {
+#   length(ix[ix < 50]) > 2
+# }))
+# insuff.onsets <- (1:10000)[insuff.onsets]
+# to.keep <- to.keep[!(to.keep %in% insuff.onsets)]
 
 # Now look at geographic patterns:
 library(maps)
@@ -216,6 +228,12 @@ world.cities <- world.cities[, c('country.etc', 'lat', 'long')]
 
 df$country[1:12] # order that we want world.cities to be in
 long.vals <- world.cities[order(world.cities$country.etc, df$country[1:12]), 'long']
+
+# have to make sure that PT < 40 is added appropriately
+pt.list <- lapply(pt.list, function(ix) {
+  ix[ix < 40 & !is.na(ix)] <- ix[ix < 40 & !is.na(ix)] + 52
+  return(ix)
+})
 
 corrs <- lapply(pt.list, function(ix) {
   cor.test(long.vals, ix, method = 'kendall')$estimate
@@ -239,15 +257,15 @@ for (run in levels(df$run)) {
 # 5 outbreaks have simultaneous peaks...
 same.peak <- as.numeric(as.character(unique(df$run[is.na(df$corr)])))
 
-par(mfrow = c(5, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+par(mfrow = c(5, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 for (run in same.peak) {
   matplot(t(res.avg[[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = run, xlab = 'Time', ylab = 'Inc.')
-  abline(v = c(13, 25), lty = 1, col = 'red')
-  matplot(t(res.list[[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = run, xlab = 'Time', ylab = 'Inc.')
+  abline(v = c(12, 52), lty = 1, col = 'red')
+  matplot(t(res.list.comb[[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = run, xlab = 'Time', ylab = 'Inc.')
 }
 
 df <- df[!is.na(df$corr), ]; df$run <- factor(df$run)
-to.keep <- to.keep[to.keep != same.peak]
+to.keep <- to.keep[!(to.keep %in% same.peak)]
 # about 76% are east to west at all
 
 # Assign patterns:
@@ -280,7 +298,7 @@ pdf('syntheticTests/outputs/explore/outbreak_averages_west-to-east_10000.pdf', w
 par(mfrow = c(5, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 for (run in c(runs.we.sig, runs.we.not)) {
   matplot(t(res.avg[[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = run, xlab = 'Time', ylab = 'Inc.')
-  abline(v = c(13, 25), lty = 1, col = 'red')
+  abline(v = c(12, 52), lty = 1, col = 'red')
   # matplot(t(res.list[[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = run, xlab = 'Time', ylab = 'Inc.')
 }
 dev.off()
@@ -299,42 +317,54 @@ pdf('syntheticTests/outputs/explore/outbreak_plots_west-to-east_10000_byStrain.p
 par(mfrow = c(5, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 for (run in c(runs.we.sig, runs.we.not)) {
   matplot(t(run.list[[1]][[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = paste0('Strain1_', run), xlab = 'Time', ylab = 'Inc.')
+  abline(v = seq(12, 523, by = 52), col = 'red', lwd = 1.5); abline(v = seq(0, 523, by = 52), col = 'red', lwd = 1.5)
+  abline(v = seq(1, 523, by = 52), lty = 3, lwd = 2)
   matplot(t(run.list[[2]][[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = paste0('Strain2_', run), xlab = 'Time', ylab = 'Inc.')
+  abline(v = seq(12, 523, by = 52), col = 'red', lwd = 1.5); abline(v = seq(0, 523, by = 52), col = 'red', lwd = 1.5)
+  abline(v = seq(1, 523, by = 52), lty = 3, lwd = 2)
 }
 dev.off()
+# 9602, 9356, 9194, 8851, 8566, 7819, 7212, 7054, 6732, 5284, 5765, 5516, 4417, 4315, 4166, 3743, 3342, 3328, 2982, 2760, 2666, 2153, 2119, 1611, 961, 5
+# 5605, 4682, 2130; 592 (weird/jumpy); 6995 (sig, but no die out) # have alternating seasons to some extent
+# and some that have no outbreaks and maybe negatives: 2, 
 
-# Which of these actually reach 0 in all places at some point?
-to.explore <- c(70, 282, 1408, 1491, 1765, 2604, 2730, 3030, 3118, 3259, 3308, 3765, 4685, 4867, 6075, 6554, 7453, 7962, 7756) # look to see if reaching 0
+to.explore <- c(9602, 9356, 9194, 8851, 8566, 7819, 7212, 7054, 6732, 5284, 5765, 5516, 4417, 4315, 4166, 3743, 3342, 3328, 2982, 2760, 2666, 2153, 2119, 1611, 961, 5,
+                5605, 4682, 2130, 592, 6995, 2, 56, 131, 198, 402, 431, 535, 1179, 1537, 7736, 33, 299)
+# 1-26 are not sig, 27-29 are sig; 30-31 are sig, too, but strange; all later are negative (but only strain 2!)
+# although note most of these do actually have die-out, right? choose a couple that don't!
 
-par(mfrow = c(5, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-for (run in to.explore) {
-  matplot(t(run.list[[1]][[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = paste0('Strain1_', run), xlab = 'Time', ylab = 'Inc.')
-  matplot(t(run.list[[2]][[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = paste0('Strain2_', run), xlab = 'Time', ylab = 'Inc.')
-}
-
+# # Which of these actually reach 0 in all places at some point?
+# to.explore <- c(70, 282, 1408, 1491, 1765, 2604, 2730, 3030, 3118, 3259, 3308, 3765, 4685, 4867, 6075, 6554, 7453, 7962, 7756) # look to see if reaching 0
+# 
+# par(mfrow = c(5, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+# for (run in to.explore) {
+#   matplot(t(run.list[[1]][[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = paste0('Strain1_', run), xlab = 'Time', ylab = 'Inc.')
+#   matplot(t(run.list[[2]][[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = paste0('Strain2_', run), xlab = 'Time', ylab = 'Inc.')
+# }
+#
 for (i in to.explore) {
   print(i)
-  
+
   run.temp <- run.list[[1]][[i]]
   die.out <- c()
   for (j in 1:523) {
-    # die.out <- c(die.out, all(run.temp[, j] == 0))
-    die.out <- c(die.out, length(which(run.temp[, j] == 0)))
+    die.out <- c(die.out, all(run.temp[, j] == 0))
+    # die.out <- c(die.out, length(which(run.temp[, j] == 0)))
   }
   print(summary(die.out))
-  
+
   run.temp <- run.list[[2]][[i]]
   die.out <- c()
   for (j in 1:523) {
-    # die.out <- c(die.out, all(run.temp[, j] == 0))
-    die.out <- c(die.out, length(which(run.temp[, j] == 0)))
+    die.out <- c(die.out, all(run.temp[, j] == 0))
+    # die.out <- c(die.out, length(which(run.temp[, j] == 0)))
   }
   print(summary(die.out))
-  
+
 }
-# some spot with all 0 for: 282, 2730 strain 1 (but only 4 time periods), 6075 strain 1
-# interestingly, 282 is the one with alternating strains by season
-# often it's not just one country still harboring influenza; many are above 0
+# # some spot with all 0 for: 282, 2730 strain 1 (but only 4 time periods), 6075 strain 1
+# # interestingly, 282 is the one with alternating strains by season
+# # often it's not just one country still harboring influenza; many are above 0
 
 # Find examples in have.outbreaks where die-out occurs?
 die.out.yes <- c()
@@ -357,42 +387,44 @@ for (i in have.outbreaks) {
 # what about just among "realistic"?: only 91/2649 (~3.4%); 71 of these are in e-w sig, 12 in e-w not, 8 in w-e not
     # so about 3-4.6% of e-w runs, and ~13% of w-e runs
 
-# # Check S and R:
-# par(mfrow = c(5, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-# for (run in c(runs.we.sig, runs.we.not)) {
-#   matplot(t(s.list[[1]][[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = paste0('Strain1_', run), xlab = 'Time', ylab = 'Inc.')
-#   matplot(t(s.list[[2]][[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = paste0('Strain2_', run), xlab = 'Time', ylab = 'Inc.')
-# }
-# # outbreaks occurring around 50-60% S - do we need to lower R0mx?
-# 
-# par(mfrow = c(5, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-# for (run in c(runs.we.sig, runs.we.not)) {
-#   matplot(t(r.list[[1]][[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = paste0('Strain1_', run), xlab = 'Time', ylab = 'Inc.')
-#   matplot(t(r.list[[2]][[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = paste0('Strain2_', run), xlab = 'Time', ylab = 'Inc.')
-# }
-# # I think these look fine? the patterns at least are consistent
+# Check S and R:
+par(mfrow = c(5, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+for (run in c(runs.we.sig, runs.we.not)) {
+  matplot(t(s.list[[1]][[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = paste0('Strain1_', run), xlab = 'Time', ylab = 'Inc.')
+  matplot(t(s.list[[2]][[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = paste0('Strain2_', run), xlab = 'Time', ylab = 'Inc.')
+}
+# outbreaks occurring around 50-60% S - do we need to lower R0mx?
+
+par(mfrow = c(5, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+for (run in c(runs.we.sig, runs.we.not)) {
+  matplot(t(r.list[[1]][[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = paste0('Strain1_', run), xlab = 'Time', ylab = 'Inc.')
+  matplot(t(r.list[[2]][[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = paste0('Strain2_', run), xlab = 'Time', ylab = 'Inc.')
+}
+# I think these look fine? the patterns at least are consistent
 
 # Explore parameter patterns:
 params.no <- as.data.frame(t(parms[c(1:2, 15:19), no.outbreaks]))
 params.osc <- as.data.frame(t(parms[c(1:2, 15:19), small.osc]))
 params.min <- as.data.frame(t(parms[c(1:2, 15:19), high.min]))
-params.early <- as.data.frame(t(parms[c(1:2, 15:19), too.early]))
-params.late <- as.data.frame(t(parms[c(1:2, 15:19), too.late]))
-params.mix <- as.data.frame(t(parms[c(1:2, 15:19), mixed.pt]))
+# params.early <- as.data.frame(t(parms[c(1:2, 15:19), too.early]))
+# params.late <- as.data.frame(t(parms[c(1:2, 15:19), too.late]))
+# params.mix <- as.data.frame(t(parms[c(1:2, 15:19), mixed.pt]))
+params.wrong <- as.data.frame(t(parms[c(1:2, 15:19), wrong.timing]))
 params.keep <- as.data.frame(t(parms[c(1:2, 15:19), to.keep]))
 
 params.no$group <- 'No Outbreaks'
 params.osc$group <- 'Small Osc.'
 params.min$group <- 'High Min.'
-params.early$group <- 'Early'
-params.late$group <- 'Late'
-params.mix$group <- 'Mix'
+# params.early$group <- 'Early'
+# params.late$group <- 'Late'
+# params.mix$group <- 'Mix'
+params.wrong$group <- 'Timing Off'
 params.keep$group <- 'Realistic'
 
-parms.df <- rbind(params.no, params.osc, params.min, params.early, params.late, params.mix, params.keep)
+parms.df <- rbind(params.no, params.osc, params.min, params.wrong, params.keep)
 names(parms.df) <- c('S0_mean', 'S0_sd', 'L', 'D', 'R0mx', 'R0diff', 'airScale', 'group')
 parms.df$group <- factor(parms.df$group)
-parms.df$group <- factor(parms.df$group, levels = levels(parms.df$group)[c(5, 7, 2, 1, 3:4, 6)])
+parms.df$group <- factor(parms.df$group, levels = levels(parms.df$group)[c(2, 4, 1, 5, 3)])#[c(5, 7, 2, 1, 3:4, 6)])
 
 pdf('syntheticTests/outputs/explore/param_comp_10000.pdf', width = 16, height = 10)
 par(mfrow = c(3, 3), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
@@ -472,6 +504,9 @@ obs.mat.avg <- apply(simplify2array(obs.mats), 1:2, mean, na.rm = TRUE)
 rownames(obs.mat.avg) <- NULL
 # since there are a lot of NAs as the season ends, may just use the first 35 or so, and ignore 0s?
 
+# Organize this to be week 1-52, rather than 40 forward
+obs.mat.avg <- rbind(obs.mat.avg[14:52, ], obs.mat.avg[1:13, ])
+
 # Is RMSE okay? Since we don't necessarily expect outbreaks every year anyway, we also don't necessarily expect the mean values to be as high
 # Maybe calculate the % relative to maximum value for that run (over all countries, not by country), then calculate RMSE against that?
 
@@ -489,29 +524,35 @@ rmses <- lapply(res.avg.we.stand, function(ix) { # keep where 0 in obs.mat.avg -
   sqrt(mean((obs.mat.avg[1:35, ] - t(ix)[1:35, ]) ** 2, na.rm = TRUE))
 })
 rmses <- unlist(rmses) # 25% < 20
-runs.we[which(rmses < 20)]
+runs.we[which(rmses < 15)]
 
 matplot(obs.mat.avg, type = 'b', pch = 20, col = viridis(12), xlab = 'Time', ylab = 'Obs. Syn+')
 
 pdf('syntheticTests/outputs/explore/best_by_RMSE_10000.pdf', width = 16, height = 10)
 par(mfrow = c(5, 3), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 for (run in which(rmses < 15)) {
-  matplot(obs.mat.avg, type = 'b', pch = 20, col = viridis(12), xlab = 'Time', ylab = 'Obs. Syn+', cex = 0.6)
+  matplot(obs.mat.avg, type = 'b', pch = 20, col = viridis(12), xlab = 'Time', ylab = 'Obs. Syn+', cex = 0.6, main = rmses[run])
   # matplot(t(res.avg[[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = run, xlab = 'Time', ylab = 'Inc.')
   matlines(t(res.avg.we.stand[[run]]), type = 'l', pch = 20, cex = 0.6, col = viridis(12))
-  abline(v = c(13, 25), lty = 1, col = 'red')
+  abline(v = c(12, 52), lty = 1, col = 'red')
   # matplot(t(res.list[[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = run, xlab = 'Time', ylab = 'Inc.')
 }
+dev.off()
 # Okay, so they're synchronous, but at least on average they're not weirdly synchronous
+# Might need a better way to see if individual countries tend to line up
 
+par(mfrow = c(5, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 for (run in runs.we[which(rmses < 15)]) {
   # matplot(t(res.avg[[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = run, xlab = 'Time', ylab = 'Inc.')
-  matplot(t(res.list[[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = run, xlab = 'Time', ylab = 'Inc.')
+  matplot(t(run.list[[1]][[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = run, xlab = 'Time', ylab = 'Inc.')
+  abline(v = seq(0, 550, by = 52), lty = 2)
+  matplot(t(run.list[[2]][[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = run, xlab = 'Time', ylab = 'Inc.')
   abline(v = seq(0, 550, by = 52), lty = 2)
 }
 # Although even the individual outbreaks seem pretty synchronous...
 # And some have the late one year-early the next pattern, so those aren't terribly realistic...
 dev.off()
+# only 2 (2130 and 1611) have alternating pattern - but these are in the top 4!
 
 # Also look at RMSE over parameter ranges:
 parms.we <- parms[c(1:2, 15:19), runs.we]
@@ -542,10 +583,10 @@ ggplot(data = parms.we.df) + geom_point(aes(x = D, y = R0diff, col = rmses), cex
 ggplot(data = parms.we.df) + geom_point(aes(x = L, y = D, col = rmses), cex = 5.0) + theme_classic() + scale_color_viridis() # combo of low L/low D? but L clearer
 
 parms.we.df$L <- parms.we.df$L / 365
-a <- lm(rmse ~ R0diff + D + L, data = parms.we.df)
+a <- lm(rmse ~ S0_mean + S0_sd + R0mx + R0diff + D + L + airScale, data = parms.we.df)
 print(summary(a)) # all still sig; change in one day of D has slightly larger impact than a 1-year change in L
 
-parms.we.df[parms.we.df$rmse < 15, c('L', 'D', 'R0diff')] # a couple L 4,5, but mostly < 3; D under 5; R0diff at least 0.6 (usually higher R0diff can contribute to e-w...)
+parms.we.df[parms.we.df$rmse < 15, c('L', 'D', 'R0diff', 'airScale')] # a couple L 4,5, but mostly < 3; D under 5; R0diff at least 0.6 (usually higher R0diff can contribute to e-w...)
 # among to.keep, restricting to R0diff > 0.6 leads to higher percentage e-w
 # but back to original (even slightly higher) proportion w-e if we also limit to L < 1000 and D < 5 (although % of e-w sig still goes up quite a bit relative to e-w not)
 
