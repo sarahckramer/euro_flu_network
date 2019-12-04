@@ -27,8 +27,8 @@ wk_start <- 40
 ### Parameter boundaries
 D_low <- 2; L_low <- 1*365; Rmx_low <- 2.0; Rdiff_low <- 0.2; airScale_low <- 0.75
 D_up <- 7; L_up <- 8*365; Rmx_up <- 2.8; Rdiff_up <- 1.0; airScale_up <- 1.25
-# S0_low <- 0.55; S0_up <- 0.85
-S0_low <- 0; S0_up <- 1.0
+S0_low <- 0.55; S0_up <- 0.85
+# S0_low <- 0; S0_up <- 1.0
 sd_low <- 0.05; sd_up <- 0.18
 I0_low <- 0; I0_up <- 0.00005
 
@@ -93,8 +93,8 @@ pos.dat <- pos.dat[, c(1, count.indices + 1)]
 # syn.dat.raw <- syn.dat
 
 ### Scale data: # ADD: new scalings
-# scalings <- read.csv('data/scalings_frame_05-09-19.csv') # 1.3 for France in early seasons
-# scalings <- scalings[count.indices, ]
+scalings <- read.csv('data/scalings_frame_05-09-19.csv') # 1.3 for France in early seasons
+scalings <- scalings[count.indices, ]
 # # note: these are the "old" scalings
 for (i in 2:13) {
   # if (names(iliiso)[i] == 'France') {
@@ -191,9 +191,9 @@ obs_vars <- calc_obsvars_nTest(obs = as.matrix(obs_i), syn_dat = as.matrix(syn_i
 # LU and DE look particularly uncertain
 # obs_vars <- calc_obsvars(obs = as.matrix(obs_i), oev_base, oev_denom)
 
-### SET MAX OEV #######################################
-obs_vars[obs_vars > 1.5e6 & !is.na(obs_vars)] <- 1.5e6
-#######################################################
+# ### SET MAX OEV #######################################
+# obs_vars[obs_vars > 1e6 & !is.na(obs_vars)] <- 1e6
+# #######################################################
 
 # Get the first and last date of the simulation:
 clim_start <- as.numeric(start_date - as.Date(paste('20',
@@ -216,7 +216,7 @@ tm.range <- clim_start:clim_end
 outputVars <- NULL
 for (run in 1:num_runs) {
   res <- EAKF_rFC(num_ens, tmstep, param.bound, obs_i, ntrn, obs_vars, tm.ini, tm.range,
-                  updates = FALSE, do.reprobing = FALSE)
+                  updates = FALSE, do.reprobing = TRUE)
   
   outputMetrics <- rbind(outputMetrics, cbind(season, run, oev_base, oev_denom, lambda, scalings$gamma, res$metrics))
   outputOP <- rbind(outputOP, cbind(season, run, oev_base, oev_denom, lambda, res$opStates))
@@ -243,11 +243,11 @@ outputMetrics[outputMetrics[, 'country'] == 'FR' & outputMetrics[, 'season'] %in
 ### Save results:
 print('Finished with loop; writing files...')
 
-write.csv(outputMetrics, file = paste('outputs/obs/outputMet', season, ntrn, '120219_OEVmax15e6.csv', sep = '_'), row.names = FALSE)
-write.csv(outputOP, file = paste('outputs/obs/outputOP', season, ntrn, '120219_OEVmax15e6.csv', sep = '_'), row.names = FALSE)
-write.csv(outputOPParams, file = paste('outputs/obs/outputOPParams', season, ntrn, '120219_OEVmax15e6.csv', sep = '_'), row.names = FALSE)
-write.csv(outputDist, file = paste('outputs/obs/outputDist', season, ntrn, '120219_OEVmax15e6.csv', sep = '_'), row.names = FALSE)
-write.csv(outputEns, file = paste('outputs/obs/outputEns', season, ntrn, '120219_OEVmax15e6.csv', sep = '_'), row.names = FALSE)
+write.csv(outputMetrics, file = paste('outputs/obs/outputMet', season, ntrn, '120219_reprobe5.csv', sep = '_'), row.names = FALSE)
+write.csv(outputOP, file = paste('outputs/obs/outputOP', season, ntrn, '120219_reprobe5.csv', sep = '_'), row.names = FALSE)
+write.csv(outputOPParams, file = paste('outputs/obs/outputOPParams', season, ntrn, '120219_reprobe5.csv', sep = '_'), row.names = FALSE)
+write.csv(outputDist, file = paste('outputs/obs/outputDist', season, ntrn, '120219_reprobe5.csv', sep = '_'), row.names = FALSE)
+write.csv(outputEns, file = paste('outputs/obs/outputEns', season, ntrn, '120219_reprobe5.csv', sep = '_'), row.names = FALSE)
 # write.csv(outputVars, file = paste('outputs/obs/outputVars', season, ntrn, '120219.csv', sep = '_'), row.names = FALSE)
 
 # write.csv(outputMetrics, file = paste('outputs/obs/outputMet', season, oev_base, oev_denom, lambda, ntrn, '120219.csv', sep = '_'), row.names = FALSE)
