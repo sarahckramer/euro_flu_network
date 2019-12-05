@@ -31,7 +31,7 @@ cmd_args = commandArgs(trailingOnly = T)
 task.index=as.numeric(cmd_args[1])
 range.to.use <- (1:50) + 50 * (task.index - 1)
 
-load('code/runs20yr/inputs/init_parms_10000.RData')
+load('code/runs20yr/inputs/init_parms_10000_NEW.RData')
 parms <- parms[, range.to.use]
 
 print(range.to.use)
@@ -64,7 +64,7 @@ AH <- rbind(ah[, count.indices], ah[, count.indices])
 for (i in 1:4) {
   AH <- rbind(AH, AH)
 }
-AH <- AH[1:7302, ] # 20 years
+AH <- AH[1:7316, ] # 20 years
 
 ### Get subtypes by season
 Vtype <- read.csv('data/subtypes_seeding.csv')

@@ -16,6 +16,11 @@
 
 # Code to run stochastic, multistrain SIRS:
 propagateToySIRS_multi <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, airScale, realdata = FALSE, prohibAir = FALSE) {
+  
+  if (!exists('prohibAir')) {
+    prohibAir <- FALSE
+  }
+  
   cnt <- 1
   
   tm_strt <- tm_strt - tm.range[1] + 1 # adjust the index to match beta
@@ -557,7 +562,7 @@ propagateToySIRS_multi <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, be
         
         S.list[,, cnt, 2] <- S.list[,, cnt, 2] - seed
         I.list[,, cnt, 2] <- I.list[,, cnt, 2] + seed
-        newI.list[,, cnt, 2] <- newI.list[,, cnt, 2] - seed
+        newI.list[,, cnt, 2] <- newI.list[,, cnt, 2] + seed
       }
       
       # And get total I/newI:
@@ -1012,6 +1017,32 @@ propagateToySIRS_multi <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, be
   temp.newI2 <- as.data.frame(matrix(unlist(temp.newI2), ncol = n ** 2, byrow = T))
   
   # temp.newI3 <- temp.newI1 + temp.newI2
+  
+  # ##################################################################################################################################
+  # ### Check whether die out occurs, and where ###
+  # temp.I1 <- temp.I1[3651:7303, ]; temp.I2 <- temp.I2[3651:7303, ]
+  # die.out1 = die.out2 = c()
+  # for (i in 1:n**2) {
+  #   die.out1 <- c(die.out1, any(temp.I1[, i] == 0))
+  #   die.out2 <- c(die.out2, any(temp.I2[, i] == 0))
+  # }
+  # print(summary(die.out1)); print(summary(die.out2))
+  # # die.out1 = die.out2 = c()
+  # # for (i in 1:3653) {
+  # #   die.out1 <- c(die.out1, all(temp.I1[i, ] == 0))
+  # #   die.out2 <- c(die.out2, all(temp.I2[i, ] == 0))
+  # # }
+  # # print(summary(die.out1)); print(summary(die.out2))
+  # print(which(!die.out1)); print(which(!die.out2))
+  # plot(rowSums(temp.I1), pch = 20, cex = 0.5)
+  # points(rowSums(temp.I2), pch = 20, cex = 0.5, col = 'blue')
+  # abline(v = seq(0, 4000, by = 365))
+  # # 299: only non-die-out was 118 (PL-PL) (strain1) / 53/118 (DE-DE, PL-PL) (strain 2)
+  # # 33: all die out? but all at once? - yes, there are times when all die out, but all in first 10 years
+  #     # limit to last 10 years: don't die out ever: 40 (FR-FR) (strain1) / 40/53 (FR-FR/DE-DE) (strain2)
+  # # 431: none of the same home/work compartments die out (note: this is one of the ones w/ outbreaks every year - very short L)
+  # # 1179: most of the home/work compartments; changed R0diff to 0.5: 8/12 don't die out, 0.8: FR, DE, IT, ES, NL; changed R0mx to 2.4: survived in FR-LU too?, 2.0: even more survive - turns into oscillation
+  # ##################################################################################################################################
   
   # Format R (to check that nothing ridiculous is happening):
   r.list1 <- lapply(1:dim(R.list)[3], function(ix) {

@@ -42,23 +42,28 @@ for (i in 1:10000) {
 res.avg <- lapply(res.list.comb, get_10yr_avg)
 
 # Limit to runs of interest:
-to.explore <- c(2, 70, 282, 1408, 1491, 1765, 2604, 2730, 3030, 3118, 3259, 3308, 3765, 4685, 4867, 6075, 6554, 7453, 7962, 7756)
+to.explore <- c(9602, 9356, 9194, 8851, 8566, 7819, 7212, 7054, 6732, 5284, 5765, 5516, 4417, 4315, 4166, 3743, 3342, 3328, 2982, 2760, 2666, 2153, 2119, 1611, 961, 5,
+                5605, 4682, 2130, 592, 6995, 2, 56, 131, 198, 402, 431, 535, 1179, 1537, 7736, 33, 299)
 # look to see if reaching 0; 2 has negatives instead
 
 red.list1 <- run.list1[to.explore]
 red.list2 <- run.list2[to.explore]
 
-parms.red <- parms[, to.explore]
+# parms.red <- parms[, to.explore]
 
 # Plot out our runs of interest, but subtype:
 par(mfrow = c(5, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 for (run in to.explore) {
   matplot(t(run.list1[[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = paste0('Strain1_', run), xlab = 'Time', ylab = 'Inc.')
+  abline(v = seq(0, 523, by = 52), lty = 2)
   matplot(t(run.list2[[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = paste0('Strain2_', run), xlab = 'Time', ylab = 'Inc.')
   abline(v = seq(0, 523, by = 52), lty = 2)
-  abline(v = seq(13, 523, by = 52), lwd = 1.5, col = 'red')
-  abline(v = seq(25, 523, by = 52), lwd = 1.5, col = 'red')
+  # abline(v = seq(12, 523, by = 52), lwd = 1.5, col = 'red')
+  # abline(v = seq(52, 523, by = 52), lwd = 1.5, col = 'red')
 }
+# for 0s, check: 2, 198
+# for no die-out: 431/1179 (every year); 33/299 (every other, but synced)
+# for comp (die-out - maybe): 4682, 6995, 2119, 7819, 9602 
 
 ####################################################################################################################################################################
 ####################################################################################################################################################################
@@ -114,7 +119,7 @@ AH <- rbind(ah[, count.indices], ah[, count.indices])
 for (i in 1:4) {
   AH <- rbind(AH, AH)
 }
-AH <- AH[1:7302, ] # 20 years
+AH <- AH[1:7316, ] # 20 years + some for beta
 
 ### Get subtypes by season
 Vtype <- read.csv('data/subtypes_seeding.csv')
@@ -122,8 +127,16 @@ Vtype <- read.csv('data/subtypes_seeding.csv')
 ####################################################################################################################################################################
 ####################################################################################################################################################################
 
+# Choose runs:
+parms.red <- parms[, c(2, 198, 431, 1179, 33, 299, 4682, 6995, 2119, 7819, 9602)]
+# for 0s, check: 2, 198
+# for no die-out: 431/1179 (every year); 33/299 (every other, but synced)
+# for comp (die-out - maybe): 4682, 6995, 2119, 7819, 9602 
+num_ens <- dim(parms.red)[2]
+# parameter-wise, lack of die-out seems to be due to low L or low R0diff or high D; higher airScale?
+
 ### Run model!
-init.states <- allocate_S0I0(parms, num_ens, n, N, s0.method = 'dist')
+init.states <- allocate_S0I0(parms.red, num_ens, n, N, s0.method = 'dist')
 
 # res <- run_model(parms, init.states[[1]], init.states[[2]], AH, num_ens, n, N, tm.range, tmstep, tm_strt, tm_end, dt, pop.size, r0.mn = FALSE, multi = TRUE) # time: 50 ~ 30minutes
 in.parms <- parms.red[(dim(parms.red)[1] - 4):(dim(parms.red)[1]), ]
@@ -136,6 +149,7 @@ b <- log(in.parms[4, ])
 beta <- lapply(1:num_ens, function(ix) {
   (exp(a * AHpt + b[ix]) + (in.parms[3, ix] - in.parms[4, ix])) / in.parms[2, ix]
 })
+beta.full <- beta
 
 D.temp <- in.parms[2, ]; L.temp <- in.parms[1, ]; airScale.temp <- in.parms[5, ]
 S0.temp <- init.states[[1]]; I0.temp <- init.states[[2]]
@@ -147,8 +161,13 @@ m <- sapply(1:num_ens, function(ix) {
                          airScale = airScale.temp[ix], realdata = TRUE,
                          prohibAir = FALSE)
 })
-
 res.list <- format_model_results_multi(m, num_ens, tmstep, tm_strt, tm_end, n, pop.size)
+
+# or, manually:
+ix <- 4
+S0 <- init.states[[1]][[ix]]; I0 <- init.states[[2]][[ix]]
+D <- D.temp[ix]; L <- L.temp[ix]; airScale <- airScale.temp[ix]
+beta <- beta.full[[ix]]
 
 ####################################################################################################################################################################
 ####################################################################################################################################################################
@@ -179,6 +198,7 @@ for (i in 1:20) {
 
 
 # Check < 0
+    # Only for strain 2; looks like I was subtracting instead of adding seed to newI
 # Check why not die-ing out
 # Play with R0mx, S0, dist/LHS
 # Check which compartments hold on to cases

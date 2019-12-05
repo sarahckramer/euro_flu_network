@@ -18,7 +18,7 @@ tmstep <- 7 #data is weekly
 wk_start <- 40
 
 ### Set parameters
-num_ens <- 500
+num_ens <- 10000 #500
 tm_strt <- 273; tm_end <- 273 + 365 * 20 - 1; tm_step <- 1#; t <- 1 # 273 is first of October
 tm.range <- tm_strt:tm_end # should be length 7300 days, or 7300 / 365 = 20 years
 
@@ -31,8 +31,9 @@ I0_low <- 0; I0_up <- 0.00005
 
 # or do we want to start wider?
 D_low <- 2; L_low <- 1*365; Rmx_low <- 1.5; Rdiff_low <- 0.0; airScale_low <- 0.75
-D_up <- 7; L_up <- 8*365; Rmx_up <- 3.0; Rdiff_up <- 1.5; airScale_up <- 1.25
-S0_low <- 0.30; S0_up <- 0.90
+D_up <- 7; L_up <- 10*365; Rmx_up <- 3.0; Rdiff_up <- 1.5; airScale_up <- 1.25
+# S0_low <- 0.30; S0_up <- 0.90
+S0_low <- 0; S0_up <- 1.0
 sd_low <- 0.05; sd_up <- 0.20
 I0_low <- 0; I0_up <- 0.0001
 # ASK!

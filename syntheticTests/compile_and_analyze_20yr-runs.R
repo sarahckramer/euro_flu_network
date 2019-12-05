@@ -606,25 +606,5 @@ parms.we.df[parms.we.df$rmse < 15, c('L', 'D', 'R0diff', 'airScale')] # a couple
 
 
 
-to.explore <- c(2, 70, 282, 1408, 1491, 1765, 2604, 2730, 3030, 3118, 3259, 3308, 3765, 4685, 4867, 6075, 6554, 7453, 7962, 7756) # look to see if reaching 0; 2 has negatives instead
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
