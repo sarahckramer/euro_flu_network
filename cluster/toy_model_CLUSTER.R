@@ -78,7 +78,7 @@ ah <- read.csv('data/ah_Europe_07142019.csv')
 AH <- rbind(ah[, count.indices], ah[, count.indices])
 
 ### Read in influenza data
-iliiso <- read.csv('data/WHO_data_05-09-19_SCALED.csv') # in same order as "countries" vector
+# iliiso <- read.csv('data/WHO_data_05-09-19_SCALED.csv') # in same order as "countries" vector
 iliiso <- read.csv('data/by_subtype/WHO_data_A(all)_SCALED.csv')
 
 ### Read in syndromic/virologic counts:
