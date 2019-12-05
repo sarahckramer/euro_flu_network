@@ -2,27 +2,28 @@
 ### Assess patterns in observed data
 
 ### Save all plots:
-pdf('code/checks/analyzeDataRetro/outputs/data_patterns_RED_103119.pdf', width = 11, height = 10)
+pdf('code/checks/analyzeDataRetro/outputs/data_patterns_RED_B_120219.pdf', width = 11, height = 10)
 
 ### Plot data for each season ###
 # Read in data:
-iliiso <- read.csv('data/WHO_data_05-09-19.csv')
+# iliiso <- read.csv('data/WHO_data_05-09-19.csv')
+iliiso <- read.csv('data/by_subtype/WHO_data_B_SCALED.csv')
 
-# Scale data:
-scalings <- read.csv('data/scalings_frame_05-09-19.csv') # 1.3 for France in early seasons
-for (i in 2:22) {
-  if (names(iliiso)[i] == 'France') {
-    iliiso[1:283, i] <- iliiso[1:283, i] * 1.3
-    iliiso[284:495, i] <- iliiso[284:495, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
-  } else {
-    iliiso[, i] <- iliiso[, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
-  }
-  
-  iliiso[, i][iliiso[, i] < 0] <- NA # replace negatives with NAs
-}
-
-# Limit to countries of interest:
-iliiso <- iliiso[, c(1:3, 5, 7:9, 12:15, 18, 20)]
+# # Scale data:
+# scalings <- read.csv('data/scalings_frame_05-09-19.csv') # 1.3 for France in early seasons
+# for (i in 2:22) {
+#   if (names(iliiso)[i] == 'France') {
+#     iliiso[1:283, i] <- iliiso[1:283, i] * 1.3
+#     iliiso[284:495, i] <- iliiso[284:495, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
+#   } else {
+#     iliiso[, i] <- iliiso[, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
+#   }
+#   
+#   iliiso[, i][iliiso[, i] < 0] <- NA # replace negatives with NAs
+# }
+# 
+# # Limit to countries of interest:
+# iliiso <- iliiso[, c(1:3, 5, 7:9, 12:15, 18, 20)]
 
 # Plot data by season:
 season.names <- c('2010-11', '2011-12', '2012-13', '2013-14', '2014-15', '2015-16', '2016-17', '2017-18')
@@ -34,69 +35,39 @@ for (i in 1:length(season.breaks)) {
           xlab = 'Weeks from Season Start', ylab = 'Syn+ Cases (Scaled)', main = season.names[i])
 }
 
-### Look at range of AR, PT, OT by country ###
-# Read in and format metrics files:
-m <- read.csv('C:/Users/Sarah/Dropbox/spatial_model/forecasts/results/outputMet_TEMPERATE_new_FIN.csv')
-m.1718 <- read.csv('C:/Users/Sarah/Dropbox/spatial_model/realtime_forecasts/outputMetrics_RT1718_onset.csv')
-# m <- read.csv('/Users/sarahkramer/Dropbox/spatial_model/forecasts/results/outputMet_TEMPERATE_new_FIN.csv')
-# m.1718 <- read.csv('/Users/sarahkramer/Dropbox/spatial_model/realtime_forecasts/outputMetrics_RT1718_onset.csv')
-
-m <- unique(m[, c('country', 'season', 'scaling', 'obs_pkwk', 'obs_peak_int', 'onsetObs5', 'totAttackObs')])
-m$obs_peak_int <- m$obs_peak_int * m$scaling; m$totAttackObs <- m$totAttackObs * m$scaling
-m <- m[, -3]
-
-m.1718 <- unique(m.1718[, c('country', 'scaling', 'obs_pkwk', 'obs_peak_int', 'onsetObs')])
-m.1718$obs_peak_int <- m.1718$obs_peak_int * m.1718$scaling; m.1718$season <- '2017-18'
-m.1718 <- m.1718[, c(1, 6, 3:5)]
-
-# Reduce all to countries being used in network model:
-countries <- c('Austria', 'Belgium', 'Czechia', 'France', 'Germany', 'Hungary', 'Italy',
-               'Luxembourg', 'Netherlands', 'Poland', 'Slovakia', 'Spain')
-m <- m[m$country %in% countries, ]; m$country <- factor(m$country)
-m.1718 <- m.1718[m.1718$country %in% countries, ]; m.1718$country <- factor(m.1718$country)
-
-# Remove if PT = OT:
-m <- m[!(m$onsetObs5 == m$obs_pkwk) | is.na(m$onsetObs5), ]
-m.1718 <- m.1718[!(m.1718$onsetObs == m.1718$obs_pkwk) | is.na(m.1718$onsetObs), ]
-
-# Calculate AR for 17-18 season:
-m.1718$totAttackObs <- NA
-for (country in levels(m.1718$country)) {
-  m.1718$totAttackObs[m.1718$country == country] <- sum(iliiso[season.breaks[[8]], names(iliiso) == country], na.rm = TRUE)
+# Calculate peak and onset timing by season/country:
+source('cluster/functions/Util.R')
+met.df <- NULL
+for (country in 2:13) {
+  for (season in 1:8) {
+    dat.temp <- iliiso[season.breaks[[season]], country]
+    
+    if (!all(is.na(dat.temp) | dat.temp == 0)) {
+      pt.temp <- which(dat.temp == max(dat.temp, na.rm = TRUE))
+      ot.temp <- findOnset(dat.temp, 500)$onset
+      met.df <- rbind(met.df, c(names(iliiso)[country], season.names[season], pt.temp, ot.temp))
+    }
+    
+  }
 }
+met.df <- as.data.frame(met.df)
+names(met.df) <- c('country', 'season', 'pt', 'ot')
+met.df$pt <- as.numeric(as.character(met.df$pt))
+met.df$ot <- as.numeric(as.character(met.df$ot))
+met.df$pt[is.na(met.df$ot)] <- NA
+# met.df[met.df$pt == met.df$ot, ] # could remove these, but let's just use the peaks for these
 
-# Combine the two data sets:
-m$season <- as.character(m$season)
-names(m)[5] <- 'onsetObs'
-m <- rbind(m, m.1718)
-m$season <- factor(m$season)
-rm(m.1718)
-
-# Remove where no onset:
-m <- m[!is.na(m$onsetObs), ]
+table(met.df[is.na(met.df$ot), 'season'])
+# NL 13-14 and SK 13-14
+met.df <- met.df[!is.na(met.df$ot), ]
+table(met.df$season)
+# met.df <- met.df[!(met.df$season %in% c('2011-12', '2016-17')), ]
+# met.df <- met.df[!(met.df$season %in% c('2010-11', '2015-16', '2017-18')), ]
+met.df <- met.df[!(met.df$season %in% c('2011-12', '2013-14', '2016-17')), ]
 
 # Rename countries:
-levels(m$country) <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
-
-# # Plot range of AR, PT, OT by country:
-# p1 <- ggplot(data = m) + geom_boxplot(aes(x = country, y = totAttackObs), fill = 'lightblue2') +
-#   theme_classic() + theme(axis.text = element_text(size = 10)) +
-#   labs(x = '', y = 'Attack Rate (per 100,000)')
-# p2 <- ggplot(data = m) + geom_boxplot(aes(x = country, y = onsetObs), fill = 'lightblue2') +
-#   theme_classic() + theme(axis.text = element_text(size = 10)) +
-#   labs(x = '', y = 'Onset Week') + scale_y_continuous(breaks = seq(46, 68, by = 2))
-# p3 <- ggplot(data = m) + geom_boxplot(aes(x = country, y = obs_pkwk), fill = 'lightblue2') +
-#   theme_classic() + theme(axis.text = element_text(size = 10)) +
-#   labs(x = '', y = 'Peak Week') + scale_y_continuous(breaks = seq(46, 68, by = 2))
-# p4 <- ggplot(data = m) + geom_boxplot(aes(x = country, y = obs_peak_int), fill = 'lightblue2') +
-#   theme_classic() + theme(axis.text = element_text(size = 10)) +
-#   labs(x = '', y = 'Peak Intensity (per 100,000)')
-# grid.arrange(p1, p2, p3, ncol = 1)
-# # grid.arrange(p1, p2, p3, p4, ncol = 1)
-
-# Larger: DE, IS, AT, BE, HR, CZ; smaller: DK, FR, IE, PT, RO, SI, ES
-# Later onsets: RO, SK, also HR and IS (?)
-# Earlier: IE, IT, FR(?); later: DE, HU, IS, RO
+countries <- names(iliiso)[2:13]
+levels(met.df$country) <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
 
 # Plot organized by median (with color by capital longitude):
 library(maps)
@@ -104,13 +75,17 @@ data("world.cities")
 world.cities <- world.cities[(world.cities$country.etc %in% c(countries, 'Czech Republic')) &
                                world.cities$capital == 1, ]
 world.cities$country.etc <- factor(world.cities$country.etc)
-levels(world.cities$country.etc) <- levels(m$country)
+levels(world.cities$country.etc) <- levels(met.df$country)
 world.cities <- world.cities[, c('country.etc', 'long')]
-m <- merge(m, world.cities, by.x = 'country', by.y = 'country.etc')
+m <- merge(met.df, world.cities, by.x = 'country', by.y = 'country.etc')
 rm(world.cities)
 
-ar.med <- aggregate(totAttackObs ~ country, data = m, FUN = median)
-ar.med <- ar.med[order(ar.med$totAttackObs, decreasing = TRUE), ]
+names(m)[3:4] <- c('obs_pkwk', 'onsetObs')
+m$onsetObs <- m$onsetObs + 40 - 1
+m$obs_pkwk <- m$obs_pkwk + 40 - 1
+
+# ar.med <- aggregate(totAttackObs ~ country, data = m, FUN = median)
+# ar.med <- ar.med[order(ar.med$totAttackObs, decreasing = TRUE), ]
 
 ot.med <- aggregate(onsetObs ~ country, data = m, FUN = median)
 ot.med <- ot.med[order(ot.med$onsetObs), ]
@@ -118,11 +93,11 @@ ot.med <- ot.med[order(ot.med$onsetObs), ]
 pt.med <- aggregate(obs_pkwk ~ country, data = m, FUN = median)
 pt.med <- pt.med[order(pt.med$obs_pkwk), ]
 
-m$country <- factor(m$country, levels = ar.med$country)
-p1 <- ggplot(data = m) + geom_boxplot(aes(x = country, y = totAttackObs, fill = long)) +
-  theme_classic() + theme(axis.text = element_text(size = 10)) +
-  labs(x = '', y = 'Attack Rate (per 100,000)', fill = 'Long.') +
-  scale_fill_gradientn(colors = viridis(100))
+# m$country <- factor(m$country, levels = ar.med$country)
+# p1 <- ggplot(data = m) + geom_boxplot(aes(x = country, y = totAttackObs, fill = long)) +
+#   theme_classic() + theme(axis.text = element_text(size = 10)) +
+#   labs(x = '', y = 'Attack Rate (per 100,000)', fill = 'Long.') +
+#   scale_fill_gradientn(colors = viridis(100))
 m$country <- factor(m$country, levels = ot.med$country)
 p2 <- ggplot(data = m) + geom_boxplot(aes(x = country, y = onsetObs, fill = long)) +
   theme_classic() + theme(axis.text = element_text(size = 10)) +
@@ -135,11 +110,12 @@ p3 <- ggplot(data = m) + geom_boxplot(aes(x = country, y = obs_pkwk, fill = long
   labs(x = '', y = 'Peak Week', fill = 'Long.') +
   scale_y_continuous(breaks = seq(46, 68, by = 2)) +
   scale_fill_gradientn(colors = viridis(100))
-grid.arrange(p1, p2, p3, ncol = 1)
-# might be a bit of a tendency for OT/PT to happen sooner in west than east, but not super strong
+grid.arrange(p2, p3, ncol = 1)
+# A(all): still a bit of a w-e pattern in transmission, but peak tends to actually be first in IT/DE (although CZ/PL/SK/HU late)
 
 # Also look at ORDER of OT/PT:
 m.new <- NULL
+m$season <- factor(m$season)
 for (ix in 1:length(levels(m$season))) {
   season <- levels(m$season)[ix]
   m.temp <- m[m$season == season, ]
@@ -173,14 +149,15 @@ p2 <- ggplot(data = m.new) + geom_boxplot(aes(x = country, y = pt_order, fill = 
   scale_y_continuous(breaks = seq(0, 10, by = 2)) +
   scale_fill_gradientn(colors = viridis(100))
 grid.arrange(p1, p2, ncol = 1)
-# differences in order by OT/PT - especially DE tends to have early onset but later peak
-# pattern definitely still exists, but there are some exceptions
+# A(all): similar to above
+
+# note that OT seems a bit less reliable than PT, b/c missing data can throw off the "3 consecutive weeks" metric
 
 # Longitudinal pattern by season?:
 par(mfrow = c(4, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 for (season in unique(m$season)) {
   print(season)
-  print(cor.test(m$long[m$season == season], m$onsetObs[m$season == season], method = 'kendall'))
+  # print(cor.test(m$long[m$season == season], m$onsetObs[m$season == season], method = 'kendall'))
   print(cor.test(m$long[m$season == season], m$obs_pkwk[m$season == season], method = 'kendall'))
   plot(m$long[m$season == season], m$onsetObs[m$season == season], xlab = 'Longitude', ylab = 'Onset Timing', main = season, pch = 20)
   plot(m$long[m$season == season], m$obs_pkwk[m$season == season], xlab = 'Longitude', ylab = 'Peak Timing', main = season, pch = 20)
@@ -198,10 +175,10 @@ for (season in unique(m$season)) {
 
 # Test differences statistically?
 library(PMCMR); library(PMCMRplus)
-kruskal.test(totAttackObs ~ country, data = m)
+# kruskal.test(totAttackObs ~ country, data = m)
 kruskal.test(onsetObs ~ country, data = m)
 kruskal.test(obs_pkwk ~ country, data = m)
-kruskal.test(obs_peak_int ~ country, data = m)
+# kruskal.test(obs_peak_int ~ country, data = m)
 # none sig
 
 ### Assess synchrony ###
@@ -241,6 +218,9 @@ for (season in 1:length(cor.synch)) {
   print(isSymmetric(cor.mat))
   cor.synch[[season]] <- cor.mat
 }
+# cor.synch <- cor.synch[c(1, 3:6, 8)]
+# cor.synch <- cor.synch[c(2:5, 7)]
+cor.synch <- cor.synch[c(1, 3, 5:6, 8)]
 
 # Average cor.synch across all seasons:
 cor.synch.AVG <- apply(simplify2array(cor.synch), 1:2, mean, na.rm = TRUE)
@@ -260,7 +240,7 @@ cor.synch.plot$corr[cor.synch.plot$corr == 1] <- NA
 p3 <- ggplot(cor.synch.plot, aes(x = c1, y = c2)) + geom_tile(aes(fill = corr), colour = 'white') +
   scale_fill_gradientn(colours = cividis(100), na.value = 'gray80', limits = c(0.4, 0.95)) + theme_classic() +
   theme(axis.ticks = element_blank(), text = element_text(size = 16), axis.text.x = element_text(angle = 90, hjust = 1)) +
-  scale_x_discrete(expand = c(0, 0)) + scale_y_discrete(expand = c(0, 0))
+  scale_x_discrete(expand = c(0, 0)) + scale_y_discrete(expand = c(0, 0)) +
   labs(title = 'Average Synchrony', x = '', y = '', fill = 'Corr.')
 print(p3)
 
@@ -437,6 +417,6 @@ for (season in levels(m$season)) {
 
 dev.off()
 
-
+rm(list = ls())
 
 
