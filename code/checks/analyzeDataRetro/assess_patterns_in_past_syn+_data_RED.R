@@ -7,7 +7,7 @@ pdf('code/checks/analyzeDataRetro/outputs/data_patterns_RED_B_120219.pdf', width
 ### Plot data for each season ###
 # Read in data:
 # iliiso <- read.csv('data/WHO_data_05-09-19.csv')
-iliiso <- read.csv('data/by_subtype/WHO_data_B_SCALED.csv')
+iliiso <- read.csv('data/by_subtype/WHO_data_A(all)_SCALED.csv')
 
 # # Scale data:
 # scalings <- read.csv('data/scalings_frame_05-09-19.csv') # 1.3 for France in early seasons

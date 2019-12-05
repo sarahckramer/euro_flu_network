@@ -324,12 +324,34 @@ dev.off()
     # Can certainly still drop the 2ish seasons that met drop criteria for all strains - these will be very small regardless
 # Scaling by same rule, or only apply rule to the seasons we know have some baseline level (%) of a given type/subtype, then use that scaling for every season?
 
-
-
-
-
-
-
+# # Get synDat scaled for all subtypes:
+# load('data/by_subtype/scalings_by_subtype_120219.RData')
+# syn.dat.check <- read.csv('data/by_subtype/synDatCounts_A(all)_SCALED.csv')
+# 
+# countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
+# count.indices <- c(1:2, 4, 6:8, 11:14, 17, 19)
+# 
+# syn.dat <- read.csv('data/synDatCounts_060519.csv')
+# syn.dat <- syn.dat[, c(1, count.indices + 1)]
+# syn.dat.list <- vector('list', 4)
+# for (i in 1:4) {
+#   dat.temp <- syn.dat
+#   
+#   for (j in 2:13) {
+#     if (names(dat.temp)[j] == 'France') {
+#       dat.temp[, j] <- dat.temp[, j] * scalings.new[[i]][j - 1]
+#       dat.temp[, j] <- dat.temp[, j] * scalings.new[[i]][13]
+#     } else {
+#       dat.temp[, j] <- dat.temp[, j] * scalings.new[[i]][j - 1]
+#     }
+#   }
+#   dat.temp[, 2:13][dat.temp[, 2:13] < 0] <- NA
+#   
+#   syn.dat.list[[i]] <- dat.temp
+# }
+# 
+# all.equal(syn.dat.check, syn.dat.list[[1]])
+# # Already done!
 
 
 

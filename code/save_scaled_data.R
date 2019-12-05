@@ -94,8 +94,35 @@ write.csv(iliiso.H3, file = 'data/by_subtype/WHO_data_A(H3)_SCALED.csv', row.nam
 write.csv(iliiso.B, file = 'data/by_subtype/WHO_data_B_SCALED.csv', row.names = FALSE)
 
 write.csv(synDat.A, file = 'data/by_subtype/synDatCounts_A(all)_SCALED.csv', row.names = FALSE)
-write.csv(synDat.H1, file = 'data/by_subtype/synDatCounts_A(all)_SCALED.csv', row.names = FALSE)
-write.csv(synDat.H3, file = 'data/by_subtype/synDatCounts_A(all)_SCALED.csv', row.names = FALSE)
-write.csv(synDat.B, file = 'data/by_subtype/synDatCounts_A(all)_SCALED.csv', row.names = FALSE)
+write.csv(synDat.H1, file = 'data/by_subtype/synDatCounts_A(H1)_SCALED.csv', row.names = FALSE)
+write.csv(synDat.H3, file = 'data/by_subtype/synDatCounts_A(H3)_SCALED.csv', row.names = FALSE)
+write.csv(synDat.B, file = 'data/by_subtype/synDatCounts_B_SCALED.csv', row.names = FALSE)
+
+################################################################################################################################
+################################################################################################################################
+################################################################################################################################
+
+# Get scalings_frame for all subtypes:
+scalings$gamma <- scalings.new[[1]][1:12]
+write.csv(scalings, 'data/by_subtype/scalings_frame_A(all).csv', row.names = FALSE)
+
+scalings$gamma <- scalings.new[[2]][1:12]
+write.csv(scalings, 'data/by_subtype/scalings_frame_A(H1).csv', row.names = FALSE)
+
+scalings$gamma <- scalings.new[[3]][1:12]
+write.csv(scalings, 'data/by_subtype/scalings_frame_A(H3).csv', row.names = FALSE)
+
+scalings$gamma <- scalings.new[[4]][1:12]
+write.csv(scalings, 'data/by_subtype/scalings_frame_B.csv', row.names = FALSE)
+
+
+
+
+
+
+
+
+
+
 
 
