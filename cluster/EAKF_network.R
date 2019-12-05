@@ -374,7 +374,7 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
         # param.bound.temp <- cbind(c(rep(S0_low, n ** 2), rep(I0_low, n ** 2), theta_low),
         #                           c(rep(S0_up, n ** 2), rep(I0_up, n ** 2), theta_up))
         param.bound.temp <- cbind(c(rep(S0_low, n ** 2), rep(0, n ** 2), theta_low),
-                                  c(rep(S0_up, n ** 2), rep(0.10, n ** 2), theta_up))
+                                  c(rep(S0_up, n ** 2), rep(0.01, n ** 2), theta_up))
         parms.reprobe <- t(lhs(rpnum, param.bound.temp))
 
         S0.reprobe = I0.reprobe = vector('list', rpnum)
@@ -480,32 +480,32 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     }
     obsprior[,, tt + 1] <- obs_ens
     
-    # # Plot training progress:
-    # if (tt > 1) {
-      # par(mfrow = c(1, 1), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-      # obs.red.toPlot <- obs_i#[, to.check] # DE, IT, ES, SE, UK
-      # obs.post.toPlot <- t(apply(obspost[,, 1:tt], c(1, 3), mean))
-      # matplot(obs.red.toPlot, type = 'b', pch = 4, lty = 2,
-      #         col = viridis(n), cex = 0.75,
-      #         xlab = 'Weeks from Outbreak Start', ylab = 'Syn+ Counts', main = tt)
-      # matlines(obs.post.toPlot, type = 'b', pch = 20, lty = 1, cex = 0.8,
-      #          col = viridis(12))
-      
-      # print(obs.post.toPlot[, to.check])
-      # print(obs_i[1:tt, to.check])
-      # Failure might occur sometimes b/c model cases go to infinity
-      
-      # if (tt > 1) {
-      #   par(mfrow = c(3, 4), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-      #   for (i in (1:n)[!is.na(obs_i[tt, ])]) {
-      #     obs.post.toPlot.ind <- colMeans(obspost[i,, 1:tt])
-      #     plot(obs_i[, i], type = 'b', pch = 4, lty = 2, col = 'gray40', cex = 0.75,
-      #          xlab = 'Wks from Start', ylab = 'Syn+ Counts', main = countries[i], 
-      #          ylim = c(0, max(max(obs_i[, i], na.rm = T), max(obs.post.toPlot.ind, na.rm = T))))
-      #     lines(obs.post.toPlot.ind, type = 'b', pch = 20, lty = 1, cex = 0.8, col = 'coral')
-      #   }
-      # }
-    # }
+    # Plot training progress:
+    if (tt > 1) {
+    # par(mfrow = c(1, 1), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+    # obs.red.toPlot <- obs_i#[, to.check] # DE, IT, ES, SE, UK
+    # obs.post.toPlot <- t(apply(obspost[,, 1:tt], c(1, 3), mean))
+    # matplot(obs.red.toPlot, type = 'b', pch = 4, lty = 2,
+    #         col = viridis(n), cex = 0.75,
+    #         xlab = 'Weeks from Outbreak Start', ylab = 'Syn+ Counts', main = tt)
+    # matlines(obs.post.toPlot, type = 'b', pch = 20, lty = 1, cex = 0.8,
+    #          col = viridis(12))
+    # 
+    # # print(obs.post.toPlot[, to.check])
+    # # print(obs_i[1:tt, to.check])
+    # # Failure might occur sometimes b/c model cases go to infinity
+
+    if (tt > 1) {
+      par(mfrow = c(3, 4), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+      for (i in (1:n)[!is.na(obs_i[tt, ])]) {
+        obs.post.toPlot.ind <- colMeans(obspost[i,, 1:tt])
+        plot(obs_i[, i], type = 'b', pch = 4, lty = 2, col = 'gray40', cex = 0.75,
+             xlab = 'Wks from Start', ylab = 'Syn+ Counts', main = countries[i],
+             ylim = c(0, max(max(obs_i[, i], na.rm = T), max(obs.post.toPlot.ind, na.rm = T))))
+        lines(obs.post.toPlot.ind, type = 'b', pch = 20, lty = 1, cex = 0.8, col = 'coral')
+      }
+    }
+    }
     
   } # end of training
   

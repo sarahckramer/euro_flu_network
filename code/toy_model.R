@@ -7,11 +7,11 @@ library(viridis)
 
 ### Read in model functions
 source('cluster/SIRS_network.R')
-source('code/functions/Fn_initializations.R')
-source('code/functions/Fn_checkxnobounds.R')
-source('code/functions/Util.R')
-source('code/functions/calc_obsvars.R')
-source('code/functions/replaceLeadingLaggingNAs.R')
+source('cluster/functions/Fn_initializations.R')
+source('cluster/functions/Fn_checkxnobounds.R')
+source('cluster/functions/Util.R')
+source('cluster/functions/calc_obsvars.R')
+source('cluster/functions/replaceLeadingLaggingNAs.R')
 
 ### Read in filter function
 source('cluster/EAKF_network.R')
@@ -65,43 +65,33 @@ ah <- read.csv('../GLDAS_data/ah_Europe_07142019.csv')
 AH <- rbind(ah[, count.indices], ah[, count.indices])
 
 ### Read in influenza data
-iliiso <- read.csv('data/WHO_data_05-09-19.csv') # in same order as "countries" vector
-iliiso <- iliiso[, c(1, count.indices + 1)]
-# iliiso.raw <- iliiso
+# iliiso <- read.csv('data/WHO_data_05-09-19_SCALED.csv') # in same order as "countries" vector
+iliiso <- read.csv('data/by_subtype/WHO_data_A(all)_SCALED.csv') # in same order as "countries" vector
 
 ### Read in syndromic/virologic counts:
 test.dat <- read.csv('data/testCounts_052719.csv')
-syn.dat <- read.csv('data/synDatCounts_060519.csv')
-pos.dat <- read.csv('data/posProp_060519.csv')
+
+# syn.dat <- read.csv('data/synDatCounts_060519_SCALED.csv')
+# pos.dat <- read.csv('data/posProp_060519.csv')
+
+syn.dat <- read.csv('data/by_subtype/synDatCounts_A(all)_SCALED.csv')
+pos.dat <- read.csv('data/by_subtype/posprop_A(all).csv')
+# ADD 18-19 - change these four files
 
 test.dat <- test.dat[, c(1, count.indices + 1)]
-syn.dat <- syn.dat[, c(1, count.indices + 1)]
+# syn.dat <- syn.dat[, c(1, count.indices + 1)]
 pos.dat <- pos.dat[, c(1, count.indices + 1)]
 
-# syn.dat.raw <- syn.dat
+# scalings <- read.csv('data/scalings_frame_05-09-19.csv') # 1.3 for France in early seasons
+# scalings <- scalings[count.indices, ]
+scalings <- read.csv('data/by_subtype/scalings_frame_A(all).csv')
 
-### Scale data:
-scalings <- read.csv('data/scalings_frame_05-09-19.csv') # 1.3 for France in early seasons
-scalings <- scalings[count.indices, ]
-# note: these are the "old" scalings
 for (i in 2:13) {
-  if (names(iliiso)[i] == 'France') {
-    iliiso[1:286, i] <- iliiso[1:286, i] * 1.3
-    iliiso[287:495, i] <- iliiso[287:495, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
-    syn.dat[1:286, i] <- syn.dat[1:286, i] * 1.3
-    syn.dat[287:495, i] <- syn.dat[287:495, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
-  } else {
-    iliiso[, i] <- iliiso[, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
-    syn.dat[, i] <- syn.dat[, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
-  }
-  
-  iliiso[, i][iliiso[, i] < 0] <- NA # replace negatives with NAs
-  syn.dat[, i][syn.dat[, i] < 0] <- NA
+  # iliiso[, i][iliiso[, i] < 0] <- NA # replace negatives with NAs
+  # syn.dat[, i][syn.dat[, i] < 0] <- NA
   pos.dat[, i][pos.dat[, i] < 0] <- NA
   test.dat[, i][test.dat[, i] < 0] <- NA
 }
-# iliiso.scale <- iliiso
-# syn.dat.scale <- syn.dat
 
 ### Initialize output data frame
 outputMetrics <- NULL
@@ -218,7 +208,8 @@ for (run in 1:num_runs) {
 colnames(outputMetrics)[6] <- 'scaling'
 # I actually think all the other colnames are fine as-is...
 
-outputMetrics[outputMetrics[, 'country'] == 'FR' & outputMetrics[, 'season'] %in% seasons[1:4], 'scaling'] <- 1.3
+load('data/by_subtype/scalings_by_subtype_120219.RData')
+outputMetrics[outputMetrics[, 'country'] == 'FR' & outputMetrics[, 'season'] %in% seasons[1:4], 'scaling'] <- scalings.new[[1]][13]
 # FR has an alternative scaling for earlier
 
 # write.csv(outputMetrics, file = 'code/checks/outputMetrics_1e5_remove.csv', row.names = FALSE)

@@ -79,12 +79,16 @@ AH <- rbind(ah[, count.indices], ah[, count.indices])
 
 ### Read in influenza data
 iliiso <- read.csv('data/WHO_data_05-09-19_SCALED.csv') # in same order as "countries" vector
+iliiso <- read.csv('data/by_subtype/WHO_data_A(all)_SCALED.csv')
 
 ### Read in syndromic/virologic counts:
 test.dat <- read.csv('data/testCounts_052719.csv')
-syn.dat <- read.csv('data/synDatCounts_060519_SCALED.csv')
-pos.dat <- read.csv('data/posProp_060519.csv')
-# ADD 18-19 - change these four files
+
+# syn.dat <- read.csv('data/synDatCounts_060519_SCALED.csv')
+# pos.dat <- read.csv('data/posProp_060519.csv')
+
+syn.dat <- read.csv('data/by_subtype/synDatCounts_A(all)_SCALED.csv')
+pos.dat <- read.csv('data/by_subtype/posprop_A(all).csv')
 
 test.dat <- test.dat[, c(1, count.indices + 1)]
 # syn.dat <- syn.dat[, c(1, count.indices + 1)]
@@ -93,9 +97,11 @@ pos.dat <- pos.dat[, c(1, count.indices + 1)]
 # syn.dat.raw <- syn.dat
 
 ### Scale data: # ADD: new scalings
-scalings <- read.csv('data/scalings_frame_05-09-19.csv') # 1.3 for France in early seasons
-scalings <- scalings[count.indices, ]
-# # note: these are the "old" scalings
+# scalings <- read.csv('data/scalings_frame_05-09-19.csv') # 1.3 for France in early seasons
+# scalings <- scalings[count.indices, ]
+# # # note: these are the "old" scalings
+scalings <- read.csv('data/by_subtype/scalings_frame_A(all).csv')
+
 for (i in 2:13) {
   # if (names(iliiso)[i] == 'France') {
   #   iliiso[1:286, i] <- iliiso[1:286, i] * 1.3
@@ -107,8 +113,8 @@ for (i in 2:13) {
   #   syn.dat[, i] <- syn.dat[, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
   # }
   
-  iliiso[, i][iliiso[, i] < 0] <- NA # replace negatives with NAs
-  syn.dat[, i][syn.dat[, i] < 0] <- NA
+  # iliiso[, i][iliiso[, i] < 0] <- NA # replace negatives with NAs
+  # syn.dat[, i][syn.dat[, i] < 0] <- NA
   pos.dat[, i][pos.dat[, i] < 0] <- NA
   test.dat[, i][test.dat[, i] < 0] <- NA
 }
@@ -216,7 +222,7 @@ tm.range <- clim_start:clim_end
 outputVars <- NULL
 for (run in 1:num_runs) {
   res <- EAKF_rFC(num_ens, tmstep, param.bound, obs_i, ntrn, obs_vars, tm.ini, tm.range,
-                  updates = FALSE, do.reprobing = TRUE)
+                  updates = FALSE, do.reprobing = FALSE)
   
   outputMetrics <- rbind(outputMetrics, cbind(season, run, oev_base, oev_denom, lambda, scalings$gamma, res$metrics))
   outputOP <- rbind(outputOP, cbind(season, run, oev_base, oev_denom, lambda, res$opStates))
@@ -236,7 +242,8 @@ for (run in 1:num_runs) {
 colnames(outputMetrics)[6] <- 'scaling'
 # I actually think all the other colnames are fine as-is...
 
-outputMetrics[outputMetrics[, 'country'] == 'FR' & outputMetrics[, 'season'] %in% seasons[1:4], 'scaling'] <- 1.3
+load('data/by_subtype/scalings_by_subtype_120219.RData')
+outputMetrics[outputMetrics[, 'country'] == 'FR' & outputMetrics[, 'season'] %in% seasons[1:4], 'scaling'] <- scalings.new[[1]][13]#1.3
 # outputMetrics[outputMetrics[, 'country'] == 'FR' & outputMetrics[, 'season'] %in% seasons[1:4], 'scaling'] <- new.scalings.mean[[6]][1]
 # FR has an alternative scaling for earlier
 
