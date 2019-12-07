@@ -15,7 +15,7 @@
 # write.csv(Vtype, file = 'data/subtypes_seeding.csv', row.names = FALSE)
 
 # Code to run stochastic, multistrain SIRS:
-propagateToySIRS_multi <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, airScale, realdata = FALSE, prohibAir = FALSE) {
+propagateToySIRS_multi <- function(tm_strt, tm_end, tm_step, S01, I01, S02, I02, N, D, L, beta, airScale, realdata = FALSE, prohibAir = FALSE) {
   
   if (!exists('prohibAir')) {
     prohibAir <- FALSE
@@ -31,9 +31,14 @@ propagateToySIRS_multi <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, be
   
   S.list = R.list = N.list = array(0, c(n, n, tm_sz, 2))#vector('list', tm_sz)
   I.list = newI.list = array(0, c(n, n, tm_sz, 2)) # can change to track total too, but really no need
-  S.list[,, 1, 1:2] <- S0
-  I.list[,, 1, 1:2] <- I0 # QUESTION!!!: Put these specifically into the seeded strains?
-  R.list[,, 1, 1:2] <- N - S0 - I0
+  
+  S.list[,, 1, 1] <- S01
+  I.list[,, 1, 1] <- I01
+  R.list[,, 1, 1] <- N - S01 - I01
+  
+  S.list[,, 1, 2] <- S02
+  I.list[,, 1, 2] <- I02
+  R.list[,, 1, 2] <- N - S02 - I02
   
   # I.list[,, 1, 3] <- I.list[,, 1, 1] + I.list[,, 1, 2]
   # newI.list[,, 1, 1:3] <- matrix(0, nrow = n, ncol = n)

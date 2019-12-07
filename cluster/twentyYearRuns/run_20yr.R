@@ -71,7 +71,10 @@ Vtype <- read.csv('data/subtypes_seeding.csv')
 
 ### Run model!
 print('Get initial states...')
-init.states <- allocate_S0I0(parms, num_ens, n, N, s0.method = 'dist')
+init.states1 <- allocate_S0I0(parms, num_ens, n, N, s0.method = 'dist')
+init.states2 <- allocate_S0I0(parms, num_ens, n, N, s0.method = 'dist')
+init.states <- list(list(init.states1[[1]], init.states2[[1]]),
+                    list(init.states1[[2]], init.states2[[2]]))
 print('Begin running model...')
 res <- run_model(parms, init.states[[1]], init.states[[2]], AH, num_ens, n, N, tm.range, tmstep, tm_strt, tm_end, dt, pop.size, r0.mn = FALSE, multi = TRUE) # time: 50 ~ 30minutes
 print('Model run!')
