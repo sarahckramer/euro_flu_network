@@ -389,9 +389,11 @@ EAKF_rFC<-function(num_ens, tmstep, param.bound, obs_i=obs_i,ntrn=1,
   
   #calculate prob. distribution for peak intensities
   # we bin in increments of 1e3 upto 1e4. An extra bin for >1e4
-  reqLimits <- seq(0, 1e4, by = 1e3)
-  peakIntensities<-peakIntensities[!is.na(peakIntensities)]
+  # CHANGE BINS to be size 500
+  reqLimits <- seq(0, 14000, by = 500)
+  peakIntensities <- peakIntensities[!is.na(peakIntensities)]
   peakIntensitiesDist <- matrix(NA, nrow = length(reqLimits), ncol = 2)
+  
   row <- 1
   for(i in 2:length(reqLimits)){
     peakIntensitiesDist[row, 1] <- reqLimits[i]
@@ -415,7 +417,6 @@ EAKF_rFC<-function(num_ens, tmstep, param.bound, obs_i=obs_i,ntrn=1,
     }
     row <- row + 1
   }
-  
   # > 1e4
   nextILIDist[row, 1] <- 1e5
   for(j in 1:nrow(nextILI)){

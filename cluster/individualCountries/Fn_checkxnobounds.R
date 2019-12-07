@@ -48,11 +48,19 @@ Fn_checkxnobounds<-function(xnew){
       }
     }
   }
-  ug=min(xnew[5,]-xnew[6,]);  #  Runs if R0mx <= R0mn
+  # ug=min(xnew[5,]-xnew[6,]);  #  Runs if R0mx <= R0mn
+  # if (ug<=0){
+  #   for (jj in 1:n.ens){
+  #     if (xnew[5,jj]<=xnew[6,jj]){
+  #       xnew[5,jj]=xnew[6,jj]+0.01;
+  #     }
+  #   }
+  # }
+  ug=min(xnew[5,]-xnew[6,]);  #  Runs if R0mx < R0diff
   if (ug<=0){
     for (jj in 1:n.ens){
-      if (xnew[5,jj]<=xnew[6,jj]){
-        xnew[5,jj]=xnew[6,jj]+0.01;
+      if (xnew[5,jj]<xnew[6,jj]){
+        xnew[5,jj]=xnew[6,jj]#+0.01;
       }
     }
   }
