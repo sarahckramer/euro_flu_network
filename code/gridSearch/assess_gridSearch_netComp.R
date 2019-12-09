@@ -5,13 +5,16 @@ library(reshape2); library(ggplot2); library(gridExtra)
 # Save plots?:
 outputPlots <- FALSE
 
+# Restrict the forecast start weeks for which results are shown?
+restrict.fc <- TRUE
+
 # Read in all plotting code:
 source('code/gridSearch/comp_netVsIndiv/plotting_functions.R')
 
 # Set locations of model results to be compared:
 model1 <- 'results/network_dist_120219/'
-model2 <- 'results/network_LHS_120219/'
-model3 <- 'results/network_LHSwide_120319/'
+model2 <- 'results/network_dist_reprobe5/'
+model3 <- 'results/network_dist_reprobe5_wide1/'
 
 # Read in and format metrics files:
 m1 <- read.csv(file = paste0(model1, list.files(path = model1, pattern = 'Met')))
@@ -22,7 +25,7 @@ m1 <- m1[, c(1:9, 12:13, 15, 17:19, 25:32, 39, 43, 47, 60:63, 65, 67:69, 78)]
 m2 <- m2[, c(1:9, 12:13, 15, 17:19, 25:32, 39, 43, 47, 60:63, 65, 67:69, 78)]
 m3 <- m3[, c(1:9, 12:13, 15, 17:19, 25:32, 39, 43, 47, 60:63, 65, 67:69, 78)]
 
-m1$model <- 'Dist'; m2$model <- 'LHS'; m3$model <- 'LHS_wide'
+m1$model <- 'No Reprobing'; m2$model <- 'Reprobe'; m3$model <- 'Reprobe (Wide)'
 m <- rbind(m1, m2, m3)
 rm(m1, m2, m3)
 
@@ -51,7 +54,7 @@ m$abs_err_4wk_perc[m$abs_err_4wk_perc == Inf & !is.na(m$abs_err_4wk_perc)] <- NA
 
 # Plot overall PT, PI, and OT by PREDICTED lead week:
 if (outputPlots) {
-  pdf('code/gridSearch/plots/comp_byPred_NetS0.pdf', width = 14, height = 9)
+  pdf('code/gridSearch/plots/comp_byPred_reprobeRange_restrict.pdf', width = 14, height = 9)
   source('code/gridSearch/comp_netVsIndiv/by_pred.R')
   print(plots.by.pred)
   dev.off()
@@ -61,21 +64,21 @@ if (outputPlots) {
 }
 rm(plots.by.pred)
 
-# Plot overall PT, PI, and OT by OBSERVED lead week:
-if (outputPlots) {
-  pdf('code/gridSearch/plots/comp_byObs_NetS0.pdf', width = 14, height = 9)
-  source('code/gridSearch/comp_netVsIndiv/by_obs.R')
-  print(plots.by.obs)
-  dev.off()
-} else {
-  source('code/gridSearch/comp_netVsIndiv/by_obs.R')
-  print(plots.by.obs)
-}
-rm(plots.by.obs)
+# # Plot overall PT, PI, and OT by OBSERVED lead week:
+# if (outputPlots) {
+#   pdf('code/gridSearch/plots/comp_byObs_reprobeRange_restrict.pdf', width = 14, height = 9)
+#   source('code/gridSearch/comp_netVsIndiv/by_obs.R')
+#   print(plots.by.obs)
+#   dev.off()
+# } else {
+#   source('code/gridSearch/comp_netVsIndiv/by_obs.R')
+#   print(plots.by.obs)
+# }
+# rm(plots.by.obs)
 
 # Plot MAEs:
 if (outputPlots) {
-  pdf('code/gridSearch/plots/comp_MAE_NetS0.pdf', width = 14, height = 9)
+  pdf('code/gridSearch/plots/comp_MAE_reprobeRange_restrict.pdf', width = 14, height = 9)
   source('code/gridSearch/comp_netVsIndiv/plot_MAE.R')
   dev.off()
 } else {
@@ -107,9 +110,9 @@ logs2 <- list(d2, e.pi2, e2, e.pi.alt2, e.alt2)
 logs3 <- list(d3, e.pi3, e3, e.pi.alt3, e.alt3)
 
 for (i in 1:5) {
-  logs1[[i]]$model <- 'Dist'
-  logs2[[i]]$model <- 'LHS'
-  logs3[[i]]$model <- 'LHS_wide'
+  logs1[[i]]$model <- 'No Reprobing'
+  logs2[[i]]$model <- 'Reprobe'
+  logs3[[i]]$model <- 'Reprobe (Wide)'
 }
 
 d <- rbind(logs1[[1]], logs2[[1]], logs3[[1]])
@@ -128,11 +131,11 @@ rm(d1, d2, d3, e.pi1, e.pi2, e.pi3, e1, e2, e3, e.pi.alt1, e.pi.alt2, e.pi.alt3,
 # Question: Remove where obs are 0 for 1-4 weeks? Or where obs below some value?
 # Question: Remove where no onset predicted before calculating these?
 if (outputPlots) {
-  pdf('code/gridSearch/plots/comp_logScores_byPred_NetS0.pdf', width = 14, height = 9)
+  pdf('code/gridSearch/plots/comp_logScores_byPred_reprobeRange_restrict.pdf', width = 14, height = 9)
   byWeek <- 'Predicted'
   source('code/gridSearch/comp_netVsIndiv/plot_logScores.R')
   dev.off()
-  pdf('code/gridSearch/plots/comp_logScores_byObs_NetS0.pdf', width = 14, height = 9)
+  pdf('code/gridSearch/plots/comp_logScores_byObs_reprobeRange_restrict.pdf', width = 14, height = 9)
   byWeek <- 'Observed'
   source('code/gridSearch/comp_netVsIndiv/plot_logScores.R')
   dev.off()
@@ -183,7 +186,7 @@ rm(d, e.pi.list, e.list, byWeek)
 #   grid.arrange(p1, p2, p3, p4, p5, ncol = 1)
 # }
 
-
+rm(list = ls())
 
 
 
