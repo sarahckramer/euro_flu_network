@@ -1,37 +1,37 @@
 
-# # Load and compile 20-year runs:
-# run.list1 = run.list2 = s.list1 = s.list2 = r.list1 = r.list2 = vector('list', 200)
-# in.files <- list.files('syntheticTests/syntheticData/20yr_runs_cluster/', pattern = '.RData')
-# for (i in 1:length(in.files)) {
-#   load(paste0('syntheticTests/syntheticData/20yr_runs_cluster/resList_20yr_last9_', i, '.RData'))
-#   run.list1[[i]] <- res.list[[1]]
-#   run.list2[[i]] <- res.list[[2]]
-#   s.list1[[i]] <- res.list[[3]]
-#   s.list2[[i]] <- res.list[[4]]
-#   r.list1[[i]] <- res.list[[5]]
-#   r.list2[[i]] <- res.list[[6]]
-# }
-# 
-# # # Save new list as one:
-# # save(run.list, file = 'syntheticTests/syntheticData/20yr_runs_cluster/resRates_20yr_last10.RData')
-# 
-# # Transform into lists of 10,000 instead of 200 lists of 50
-# run.list1 <- do.call(c, run.list1)
-# run.list2 <- do.call(c, run.list2)
-# s.list1 <- do.call(c, s.list1)
-# s.list2 <- do.call(c, s.list2)
-# r.list1 <- do.call(c, r.list1)
-# r.list2 <- do.call(c, r.list2)
-# 
-# # Compile by state:
-# run.list <- list(run.list1, run.list2)
-# s.list <- list(s.list1, s.list2)
-# r.list <- list(r.list1, r.list2)
-# 
-# # Save:
+# Load and compile 20-year runs:
+run.list1 = run.list2 = s.list1 = s.list2 = r.list1 = r.list2 = vector('list', 200)
+in.files <- list.files('syntheticTests/20yr_runs_cluster/', pattern = '.RData')
+for (i in 1:length(in.files)) {
+  load(paste0('syntheticTests/20yr_runs_cluster/resList_20yr_last9_', i, '.RData'))
+  run.list1[[i]] <- res.list[[1]]
+  run.list2[[i]] <- res.list[[2]]
+  s.list1[[i]] <- res.list[[3]]
+  s.list2[[i]] <- res.list[[4]]
+  r.list1[[i]] <- res.list[[5]]
+  r.list2[[i]] <- res.list[[6]]
+}
+
+# # Save new list as one:
 # save(run.list, file = 'syntheticTests/syntheticData/20yr_runs_cluster/resRates_20yr_last10.RData')
-# save(s.list, file = 'syntheticTests/syntheticData/20yr_runs_cluster/resS_20yr_last10.RData')
-# save(r.list, file = 'syntheticTests/syntheticData/20yr_runs_cluster/resR_20yr_last10.RData')
+
+# Transform into lists of 10,000 instead of 200 lists of 50
+run.list1 <- do.call(c, run.list1)
+run.list2 <- do.call(c, run.list2)
+s.list1 <- do.call(c, s.list1)
+s.list2 <- do.call(c, s.list2)
+r.list1 <- do.call(c, r.list1)
+r.list2 <- do.call(c, r.list2)
+
+# Compile by state:
+run.list <- list(run.list1, run.list2)
+s.list <- list(s.list1, s.list2)
+r.list <- list(r.list1, r.list2)
+
+# Save:
+save(run.list, file = 'syntheticTests/syntheticData/20yr_runs_cluster/resRates_20yr_last10.RData')
+save(s.list, file = 'syntheticTests/syntheticData/20yr_runs_cluster/resS_20yr_last10.RData')
+save(r.list, file = 'syntheticTests/syntheticData/20yr_runs_cluster/resR_20yr_last10.RData')
 
 #####################################################################################################################################################################
 #####################################################################################################################################################################
