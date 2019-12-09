@@ -75,6 +75,8 @@ AH <- AH[1:7665, ] # 21 years
 ### Set initial conditions based on input parameters
 param.bound <- cbind(c(S0_low, sd_low, rep(I0_low, n), theta_low),
                      c(S0_up, sd_up, rep(I0_up, n), theta_up))
+param.bound <- cbind(c(rep(S0_low, n), rep(I0_low, n), theta_low),
+                     c(rep(S0_up, n), rep(I0_up, n), theta_up))
 parms <- t(lhs(num_ens, param.bound))
 
 ### RUN STOCHASTICALLY:
