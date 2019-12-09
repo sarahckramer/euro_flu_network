@@ -1,9 +1,12 @@
 
 ### Run to process files downloaded from cluster (network model only) ###
-model.type <- 'Network'
+# model.type <- 'Network'
+model.type <- 'Individual'
 
 # 1. Read in and compile:
-source('code/gridSearch/process_raw_data/compile_fcasts_from_cluster.R')
+if (model.type == 'Network') {
+  source('code/gridSearch/process_raw_data/compile_fcasts_from_cluster.R')
+}
 
 # 2. Process metrics file:
 source('code/gridSearch/process_raw_data/process_metrics_file.R')
@@ -14,7 +17,7 @@ if (model.type == 'Network') {
   source('../../code/gridSearch/process_raw_data/calculate_log_scores.R')
   
 } else if (model.type == 'Individual') {
-  # insert source here later
+  source('../../code/individualCountries/calculate_log_scores.R')
 }
 
 # 4. Reorder columns as necessary:
@@ -35,3 +38,5 @@ for (file in file.list) {
   file.remove(paste0('results/raw/', file))
 }
 rm(file, file.list)
+
+rm(list = ls())

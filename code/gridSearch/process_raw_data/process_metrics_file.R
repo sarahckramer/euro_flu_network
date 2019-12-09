@@ -127,6 +127,12 @@ m$accurate_on[m$abs_delta_onset %in% c(0,1)] <- 'yes'
 m$accurate_on[!(m$abs_delta_onset %in% c(0,1))] <- 'no'
 m$accurate_on <- factor(m$accurate_on)
 
+# Reorder columns if individual:
+if (model.type == 'Individual') {
+  m <- m[, c(2:3, 5:7, 4, 8, 1, 9:77)]
+  # print(summary(names(m) == names(m.comp)[1:77]))
+}
+
 # Write new metrics file
 write.csv(m, file = '../PROCESS/outputMet_pro.csv', row.names = F)
 # write.csv(m, file = 'code/individualCountries/outputs/outputMet_082819_pro.csv', row.names = F)
