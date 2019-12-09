@@ -31,7 +31,7 @@ cmd_args = commandArgs(trailingOnly = T)
 task.index=as.numeric(cmd_args[1])
 range.to.use <- (1:50) + 50 * (task.index - 1)
 
-load('code/runs20yr/inputs/init_parms_10000_NEW.RData')
+load('code/runs20yr/inputs/init_parms_10000_LHS.RData')
 parms <- parms[, range.to.use]
 
 print(range.to.use)
@@ -71,8 +71,8 @@ Vtype <- read.csv('data/subtypes_seeding.csv')
 
 ### Run model!
 print('Get initial states...')
-init.states1 <- allocate_S0I0(parms, num_ens, n, N, s0.method = 'dist')
-init.states2 <- allocate_S0I0(parms, num_ens, n, N, s0.method = 'dist')
+init.states1 <- allocate_S0I0(parms, num_ens, n, N, s0.method = 'lhs')
+init.states2 <- allocate_S0I0(parms, num_ens, n, N, s0.method = 'lhs')
 init.states <- list(list(init.states1[[1]], init.states2[[1]]),
                     list(init.states1[[2]], init.states2[[2]]))
 print('Begin running model...')
@@ -115,7 +115,7 @@ for (i in 1:num_ens) {
 
 ### Save outputs with last 9 years only:
 res.list <- list(res.rates1, res.rates2, res.s1, res.s2, res.r1, res.r2)
-save(res.list, file = paste0('outputs/synth/resList_20yr_last9_', task.index,'.RData'))
+save(res.list, file = paste0('outputs/synth/resList_20yr_last10_', task.index,'.RData'))
 
 print('Done.')
 

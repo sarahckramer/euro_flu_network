@@ -78,17 +78,17 @@ ah <- read.csv('data/ah_Europe_07142019.csv')
 AH <- rbind(ah[, count.indices], ah[, count.indices])
 
 ### Read in influenza data
-# iliiso <- read.csv('data/WHO_data_05-09-19_SCALED.csv') # in same order as "countries" vector
-iliiso <- read.csv('data/by_subtype/WHO_data_A(all)_SCALED.csv')
+iliiso <- read.csv('data/WHO_data_05-09-19_SCALED.csv') # in same order as "countries" vector
+# iliiso <- read.csv('data/by_subtype/WHO_data_A(all)_SCALED.csv')
 
 ### Read in syndromic/virologic counts:
 test.dat <- read.csv('data/testCounts_052719.csv')
 
-# syn.dat <- read.csv('data/synDatCounts_060519_SCALED.csv')
-# pos.dat <- read.csv('data/posProp_060519.csv')
+syn.dat <- read.csv('data/synDatCounts_060519_SCALED.csv')
+pos.dat <- read.csv('data/posProp_060519.csv')
 
-syn.dat <- read.csv('data/by_subtype/synDatCounts_A(all)_SCALED.csv')
-pos.dat <- read.csv('data/by_subtype/posprop_A(all).csv')
+# syn.dat <- read.csv('data/by_subtype/synDatCounts_A(all)_SCALED.csv')
+# pos.dat <- read.csv('data/by_subtype/posprop_A(all).csv')
 
 test.dat <- test.dat[, c(1, count.indices + 1)]
 # syn.dat <- syn.dat[, c(1, count.indices + 1)]
@@ -97,10 +97,10 @@ pos.dat <- pos.dat[, c(1, count.indices + 1)]
 # syn.dat.raw <- syn.dat
 
 ### Scale data: # ADD: new scalings
-# scalings <- read.csv('data/scalings_frame_05-09-19.csv') # 1.3 for France in early seasons
-# scalings <- scalings[count.indices, ]
+scalings <- read.csv('data/scalings_frame_05-09-19.csv') # 1.3 for France in early seasons
+scalings <- scalings[count.indices, ]
 # # # note: these are the "old" scalings
-scalings <- read.csv('data/by_subtype/scalings_frame_A(all).csv')
+# scalings <- read.csv('data/by_subtype/scalings_frame_A(all).csv')
 
 for (i in 2:13) {
   # if (names(iliiso)[i] == 'France') {
@@ -197,9 +197,9 @@ obs_vars <- calc_obsvars_nTest(obs = as.matrix(obs_i), syn_dat = as.matrix(syn_i
 # LU and DE look particularly uncertain
 # obs_vars <- calc_obsvars(obs = as.matrix(obs_i), oev_base, oev_denom)
 
-# ### SET MAX OEV #######################################
-# obs_vars[obs_vars > 1e6 & !is.na(obs_vars)] <- 1e6
-# #######################################################
+### SET MAX OEV #######################################
+obs_vars[obs_vars > 1e6 & !is.na(obs_vars)] <- 1e6
+#######################################################
 
 # Get the first and last date of the simulation:
 clim_start <- as.numeric(start_date - as.Date(paste('20',
@@ -243,18 +243,18 @@ colnames(outputMetrics)[6] <- 'scaling'
 # I actually think all the other colnames are fine as-is...
 
 load('data/by_subtype/scalings_by_subtype_120219.RData')
-outputMetrics[outputMetrics[, 'country'] == 'FR' & outputMetrics[, 'season'] %in% seasons[1:4], 'scaling'] <- scalings.new[[1]][13]#1.3
+outputMetrics[outputMetrics[, 'country'] == 'FR' & outputMetrics[, 'season'] %in% seasons[1:4], 'scaling'] <- 1.3 #scalings.new[[1]][13]#1.3
 # outputMetrics[outputMetrics[, 'country'] == 'FR' & outputMetrics[, 'season'] %in% seasons[1:4], 'scaling'] <- new.scalings.mean[[6]][1]
 # FR has an alternative scaling for earlier
 
 ### Save results:
 print('Finished with loop; writing files...')
 
-write.csv(outputMetrics, file = paste('outputs/obs/outputMet', season, ntrn, '120219_reprobe5.csv', sep = '_'), row.names = FALSE)
-write.csv(outputOP, file = paste('outputs/obs/outputOP', season, ntrn, '120219_reprobe5.csv', sep = '_'), row.names = FALSE)
-write.csv(outputOPParams, file = paste('outputs/obs/outputOPParams', season, ntrn, '120219_reprobe5.csv', sep = '_'), row.names = FALSE)
-write.csv(outputDist, file = paste('outputs/obs/outputDist', season, ntrn, '120219_reprobe5.csv', sep = '_'), row.names = FALSE)
-write.csv(outputEns, file = paste('outputs/obs/outputEns', season, ntrn, '120219_reprobe5.csv', sep = '_'), row.names = FALSE)
+write.csv(outputMetrics, file = paste('outputs/obs/outputMet', season, ntrn, '.csv', sep = '_'), row.names = FALSE)
+write.csv(outputOP, file = paste('outputs/obs/outputOP', season, ntrn, '.csv', sep = '_'), row.names = FALSE)
+write.csv(outputOPParams, file = paste('outputs/obs/outputOPParams', season, ntrn, '.csv', sep = '_'), row.names = FALSE)
+write.csv(outputDist, file = paste('outputs/obs/outputDist', season, ntrn, '.csv', sep = '_'), row.names = FALSE)
+write.csv(outputEns, file = paste('outputs/obs/outputEns', season, ntrn, '.csv', sep = '_'), row.names = FALSE)
 # write.csv(outputVars, file = paste('outputs/obs/outputVars', season, ntrn, '120219.csv', sep = '_'), row.names = FALSE)
 
 # write.csv(outputMetrics, file = paste('outputs/obs/outputMet', season, oev_base, oev_denom, lambda, ntrn, '120219.csv', sep = '_'), row.names = FALSE)

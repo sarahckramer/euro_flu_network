@@ -44,8 +44,8 @@ theta_up <- c(L_up, D_up, Rmx_up, Rdiff_up)
 param.bound <- cbind(theta_low, theta_up)
 
 ### Initial state variable values
-S0_low <- 0.55; S0_up <- 0.85
-# S0_low <- 0; S0_up <- 1.0
+# S0_low <- 0.55; S0_up <- 0.85
+S0_low <- 0; S0_up <- 1.0
 I0_low <- 0; I0_up <- 0.00005
 
 ### Parameters for the filters
@@ -81,28 +81,28 @@ ah <- read.csv('data/ah_Europe_07142019.csv')
 AH <- rbind(ah[, count.indices], ah[, count.indices])
 
 ### Read in influenza data
-# iliiso <- read.csv('data/WHO_data_05-09-19_SCALED.csv') # in same order as "countries" vector
+iliiso <- read.csv('data/WHO_data_05-09-19_SCALED.csv') # in same order as "countries" vector
 # iliiso <- iliiso[, c(1, count.indices + 1)]
- iliiso <- read.csv('data/by_subtype/WHO_data_A(all)_SCALED.csv')
-
+# iliiso <- read.csv('data/by_subtype/WHO_data_A(all)_SCALED.csv')
+print(dim(iliiso))
 ### Read in syndromic/virologic counts:
 test.dat <- read.csv('data/testCounts_052719.csv')
 
-# syn.dat <- read.csv('data/synDatCounts_060519_SCALED.csv')
-# pos.dat <- read.csv('data/posProp_060519.csv')
+syn.dat <- read.csv('data/synDatCounts_060519_SCALED.csv')
+pos.dat <- read.csv('data/posProp_060519.csv')
 
-syn.dat <- read.csv('data/by_subtype/synDatCounts_A(all)_SCALED.csv')
-pos.dat <- read.csv('data/by_subtype/posprop_A(all).csv')
+# syn.dat <- read.csv('data/by_subtype/synDatCounts_A(all)_SCALED.csv')
+# pos.dat <- read.csv('data/by_subtype/posprop_A(all).csv')
 
 test.dat <- test.dat[, c(1, count.indices + 1)]
 # syn.dat <- syn.dat[, c(1, count.indices + 1)]
 pos.dat <- pos.dat[, c(1, count.indices + 1)]
 
 ### Scale data:
-# scalings <- read.csv('data/scalings_frame_05-09-19.csv') # 1.3 for France in early seasons
-# scalings <- scalings[count.indices, ]
+scalings <- read.csv('data/scalings_frame_05-09-19.csv') # 1.3 for France in early seasons
+scalings <- scalings[count.indices, ]
 # note: these are the "old" scalings
-scalings <- read.csv('data/by_subtype/scalings_frame_A(all).csv')
+# scalings <- read.csv('data/by_subtype/scalings_frame_A(all).csv')
 
 for (i in 2:13) {
   # if (names(iliiso)[i] == 'France') {
@@ -175,8 +175,8 @@ for (count.index in 1:length(countries)) {
       # # par(mfrow = c(6, 5), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
       
       # Calculate OEV:
-      obs_vars <- calc_obsvars_nTest(obs = obs_i, syn_dat = syn_i, ntests = test_i, posprops = pos_i, oev_base, oev_denom, tmp_exp = 2.0)
-      # obs_vars <- calc_obsvars(obs = as.matrix(obs_i), oev_base, oev_denom)
+      # obs_vars <- calc_obsvars_nTest(obs = obs_i, syn_dat = syn_i, ntests = test_i, posprops = pos_i, oev_base, oev_denom, tmp_exp = 2.0)
+      obs_vars <- calc_obsvars(obs = as.matrix(obs_i), oev_base, oev_denom)
       # print(obs_vars[1:3, ])
       
       # Get the first and last date of the simulation
@@ -251,9 +251,9 @@ for (country in countries) {
 }
 print('Results compiled.')
 
-write.csv(metrics.all, file = paste0('code/individualCountries/outputs/outputMet_', oev_base, '_', oev_denom, '_', lambda, '_newOEV.csv'), row.names = FALSE)
-write.csv(output.all, file = paste0('code/individualCountries/outputs/outputOP_', oev_base, '_', oev_denom, '_', lambda, '_newOEV.csv'), row.names = FALSE)
-write.csv(dist.all, file = paste0('code/individualCountries/outputs/outputDist_', oev_base, '_', oev_denom, '_', lambda, '_newOEV.csv'), row.names = FALSE)
-write.csv(ens.all, file = paste0('code/individualCountries/outputs/outputEns_', oev_base, '_', oev_denom, '_', lambda, '_newOEV.csv'), row.names = FALSE)
+write.csv(metrics.all, file = paste0('code/individualCountries/outputs/outputMet_', oev_base, '_', oev_denom, '_', lambda, '_oldOEV_S0wide.csv'), row.names = FALSE)
+write.csv(output.all, file = paste0('code/individualCountries/outputs/outputOP_', oev_base, '_', oev_denom, '_', lambda, '_oldOEV_S0wide.csv'), row.names = FALSE)
+write.csv(dist.all, file = paste0('code/individualCountries/outputs/outputDist_', oev_base, '_', oev_denom, '_', lambda, '_oldOEV_S0wide.csv'), row.names = FALSE)
+write.csv(ens.all, file = paste0('code/individualCountries/outputs/outputEns_', oev_base, '_', oev_denom, '_', lambda, '_oldOEV_S0wide.csv'), row.names = FALSE)
 
 print('Done.')
