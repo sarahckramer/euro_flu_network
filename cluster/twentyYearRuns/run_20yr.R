@@ -59,12 +59,15 @@ diag(N) <- unlist(lapply(1:n, function(ix) {
 # note: this now results in more home-home people than before, since there are fewer countries to commute to
 
 ### Read in humidity data
-ah <- read.csv('data/ah_Europe_07142019.csv')
-AH <- rbind(ah[, count.indices], ah[, count.indices])
+# ah <- read.csv('data/ah_Europe_07142019.csv')
+ah <- read.csv('data/ah_MEAN_120519.csv')
+# AH <- rbind(ah[, count.indices], ah[, count.indices])
+AH <- rbind(ah, ah)
 for (i in 1:4) {
   AH <- rbind(AH, AH)
 }
 AH <- AH[1:7316, ] # 20 years
+# print(head(AH))
 
 ### Get subtypes by season
 Vtype <- read.csv('data/subtypes_seeding.csv')
