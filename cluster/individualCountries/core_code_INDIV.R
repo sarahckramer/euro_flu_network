@@ -44,8 +44,8 @@ theta_up <- c(L_up, D_up, Rmx_up, Rdiff_up)
 param.bound <- cbind(theta_low, theta_up)
 
 ### Initial state variable values
-# S0_low <- 0.55; S0_up <- 0.85
-S0_low <- 0; S0_up <- 1.0
+S0_low <- 0.55; S0_up <- 0.85
+# S0_low <- 0; S0_up <- 1.0
 I0_low <- 0; I0_up <- 0.00005
 
 ### Parameters for the filters
@@ -60,9 +60,9 @@ metricsonly <- FALSE # save all outputs
 # cmd_args = commandArgs(trailingOnly = T)
 # task.index=as.numeric(cmd_args[1]) # 1:144 # 1:240 # 1:480
 
-oev_base <- 1e4 #oevBaseList[ceiling((task.index - 9) / 9) %% 2 + 1]
-oev_denom <- 10 #oevDenomList[ceiling((task.index - 3) / 3) %% 3 + 1]
-lambda <- 1.02 #lambdaList[ceiling(task.index - 1) %% 3 + 1]
+oev_base <- 1e5#1e4 #oevBaseList[ceiling((task.index - 9) / 9) %% 2 + 1]
+oev_denom <- 5#10 #oevDenomList[ceiling((task.index - 3) / 3) %% 3 + 1]
+lambda <- 1.03#1.02 #lambdaList[ceiling(task.index - 1) %% 3 + 1]
 
 # oev_denom <- 100
 # lamdba <- 1.05
@@ -251,9 +251,9 @@ for (country in countries) {
 }
 print('Results compiled.')
 
-write.csv(metrics.all, file = paste0('code/individualCountries/outputs/outputMet_', oev_base, '_', oev_denom, '_', lambda, '_oldOEV_S0wide.csv'), row.names = FALSE)
-write.csv(output.all, file = paste0('code/individualCountries/outputs/outputOP_', oev_base, '_', oev_denom, '_', lambda, '_oldOEV_S0wide.csv'), row.names = FALSE)
-write.csv(dist.all, file = paste0('code/individualCountries/outputs/outputDist_', oev_base, '_', oev_denom, '_', lambda, '_oldOEV_S0wide.csv'), row.names = FALSE)
-write.csv(ens.all, file = paste0('code/individualCountries/outputs/outputEns_', oev_base, '_', oev_denom, '_', lambda, '_oldOEV_S0wide.csv'), row.names = FALSE)
+write.csv(metrics.all, file = paste0('code/individualCountries/outputs/outputMet_', oev_base, '_', oev_denom, '_', lambda, '_a1OEV.csv'), row.names = FALSE)
+write.csv(output.all, file = paste0('code/individualCountries/outputs/outputOP_', oev_base, '_', oev_denom, '_', lambda, '_a1OEV.csv'), row.names = FALSE)
+write.csv(dist.all, file = paste0('code/individualCountries/outputs/outputDist_', oev_base, '_', oev_denom, '_', lambda, '_a1OEV.csv'), row.names = FALSE)
+write.csv(ens.all, file = paste0('code/individualCountries/outputs/outputEns_', oev_base, '_', oev_denom, '_', lambda, '_a1OEV.csv'), row.names = FALSE)
 
 print('Done.')
