@@ -415,14 +415,14 @@ for (i in c(runs.we.sig, runs.we.not)) {
 #####################################################################################################################################################################
 ### Explore parameter patterns ###
 
-params.no <- as.data.frame(t(parms[c(1:2, 15:19), no.outbreaks]))
-params.osc <- as.data.frame(t(parms[c(1:2, 15:19), small.osc]))
-params.min <- as.data.frame(t(parms[c(1:2, 15:19), high.min]))
-# params.early <- as.data.frame(t(parms[c(1:2, 15:19), too.early]))
-# params.late <- as.data.frame(t(parms[c(1:2, 15:19), too.late]))
-# params.mix <- as.data.frame(t(parms[c(1:2, 15:19), mixed.pt]))
-params.wrong <- as.data.frame(t(parms[c(1:2, 15:19), wrong.timing]))
-params.keep <- as.data.frame(t(parms[c(1:2, 15:19), to.keep]))
+params.no <- as.data.frame(t(parms[, no.outbreaks]))
+params.osc <- as.data.frame(t(parms[, small.osc]))
+params.min <- as.data.frame(t(parms[, high.min]))
+# params.early <- as.data.frame(t(parms[, too.early]))
+# params.late <- as.data.frame(t(parms[, too.late]))
+# params.mix <- as.data.frame(t(parms[, mixed.pt]))
+params.wrong <- as.data.frame(t(parms[, wrong.timing]))
+params.keep <- as.data.frame(t(parms[, to.keep]))
 
 params.no$group <- 'No Outbreaks'
 params.osc$group <- 'Small Osc.'
@@ -434,43 +434,70 @@ params.wrong$group <- 'Timing Off'
 params.keep$group <- 'Realistic'
 
 parms.df <- rbind(params.no, params.osc, params.min, params.wrong, params.keep)
-names(parms.df) <- c('S0_mean', 'S0_sd', 'L', 'D', 'R0mx', 'R0diff', 'airScale', 'group')
+names(parms.df)[25:30] <- c('L', 'D', 'R0mx', 'R0diff', 'airScale', 'group')
+for (i in 1:length(countries)) {
+  names(parms.df)[i] <- paste0('S0_', countries[i])
+  names(parms.df)[i + length(countries)] <- paste0('I0_', countries[i])
+}
 parms.df$group <- factor(parms.df$group)
 parms.df$group <- factor(parms.df$group, levels = levels(parms.df$group)[c(2, 4, 1, 5, 3)])#[c(5, 7, 2, 1, 3:4, 6)])
 
 pdf('syntheticTests/outputs/explore/param_comp_10000_LHS.pdf', width = 16, height = 10)
-par(mfrow = c(3, 3), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-boxplot(S0_mean ~ group, data = parms.df, xlab = '', col = 'gray95')
-boxplot(S0_sd ~ group, data = parms.df, xlab = '', col = 'gray95')
+par(mfrow = c(3, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+# boxplot(S0_mean ~ group, data = parms.df, xlab = '', col = 'gray95')
+# boxplot(S0_sd ~ group, data = parms.df, xlab = '', col = 'gray95')
 boxplot(L ~ group, data = parms.df, xlab = '', col = 'gray95')
 boxplot(D ~ group, data = parms.df, xlab = '', col = 'gray95')
 boxplot(R0mx ~ group, data = parms.df, xlab = '', col = 'gray95')
 boxplot(R0diff ~ group, data = parms.df, xlab = '', col = 'gray95')
 boxplot(airScale ~ group, data = parms.df, xlab = '', col = 'gray95')
+
+par(mfrow = c(4, 3), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+for (i in 1:length(countries)) {
+  boxplot(parms.df[, i] ~ parms.df$group, xlab = '', col = 'gray95', ylab = names(parms.df)[i])
+}
+
+for (i in 1:length(countries)) {
+  boxplot(parms.df[, i + length(countries)] ~ parms.df$group, xlab = '', col = 'gray95', ylab = names(parms.df)[i + length(countries)])
+}
 dev.off()
 
 # And by geography:
-parms.ew.sig <- as.data.frame(t(parms[c(1:2, 15:19), runs.ew.sig]))
-parms.ew.not <- as.data.frame(t(parms[c(1:2, 15:19), runs.ew.not]))
-parms.we.not <- as.data.frame(t(parms[c(1:2, 15:19), runs.we.not]))
-parms.we.sig <- as.data.frame(t(parms[c(1:2, 15:19), runs.we.sig]))
+parms.ew.sig <- as.data.frame(t(parms[, runs.ew.sig]))
+parms.ew.not <- as.data.frame(t(parms[, runs.ew.not]))
+parms.we.not <- as.data.frame(t(parms[, runs.we.not]))
+parms.we.sig <- as.data.frame(t(parms[, runs.we.sig]))
 
-colnames(parms.ew.sig) = colnames(parms.ew.not) = colnames(parms.we.not) = colnames(parms.we.sig) = c('S0_mean', 'S0_sd', 'L', 'D', 'R0mx', 'R0diff', 'airScale')
 parms.ew.sig$group <- 'E-W Sig'; parms.ew.not$group <- 'E-W Not'; parms.we.not$group <- 'W-E Not'; parms.we.sig$group <- 'W-E Sig'
 
 parms.df2 <- rbind(parms.ew.sig, parms.ew.not, parms.we.not, parms.we.sig)
 parms.df2$group <- factor(parms.df2$group)
 parms.df2$group <- factor(parms.df2$group, levels = levels(parms.df2$group)[c(2, 1, 3:4)])
 
+colnames(parms.df2)[25:30] <- c('L', 'D', 'R0mx', 'R0diff', 'airScale', 'group')
+for (i in 1:length(countries)) {
+  names(parms.df2)[i] <- paste0('S0_', countries[i])
+  names(parms.df2)[i + length(countries)] <- paste0('I0_', countries[i])
+}
+
 pdf('syntheticTests/outputs/explore/param_comp_geo_10000_LHS.pdf', width = 16, height = 10)
-par(mfrow = c(2, 4), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-boxplot(S0_mean ~ group, data = parms.df2, xlab = '', col = 'gray95')
-boxplot(S0_sd ~ group, data = parms.df2, xlab = '', col = 'gray95')
+par(mfrow = c(2, 3), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+# boxplot(S0_mean ~ group, data = parms.df2, xlab = '', col = 'gray95')
+# boxplot(S0_sd ~ group, data = parms.df2, xlab = '', col = 'gray95')
 boxplot(L ~ group, data = parms.df2, xlab = '', col = 'gray95')
 boxplot(D ~ group, data = parms.df2, xlab = '', col = 'gray95')
 boxplot(R0mx ~ group, data = parms.df2, xlab = '', col = 'gray95')
 boxplot(R0diff ~ group, data = parms.df2, xlab = '', col = 'gray95')
 boxplot(airScale ~ group, data = parms.df2, xlab = '', col = 'gray95')
+
+par(mfrow = c(4, 3), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+for (i in 1:length(countries)) {
+  boxplot(parms.df2[, i] ~ parms.df2$group, xlab = '', col = 'gray95', ylab = names(parms.df2)[i])
+}
+
+for (i in 1:length(countries)) {
+  boxplot(parms.df2[, i + length(countries)] ~ parms.df2$group, xlab = '', col = 'gray95', ylab = names(parms.df2)[i + length(countries)])
+}
 dev.off()
 
 # More complex parameter analysis? (2D and 3D co-variability?)
@@ -582,8 +609,8 @@ for (run in which(rmses2 < 16)) {
 # I think this is fine, but there's always the option to look at RMSEs by each country, and add/average them or something
 
 # What about RMSEs calculated for all "have.outbreaks" - are any better?
-summary(df.outbreaks.rmses$run[df.outbreaks.rmses$rmse1 < quantile(df.outbreaks.rmses$rmse1, probs = 0.01)] %in% runs.we) # 18 fall in runs.we
-summary(df.outbreaks.rmses$run[df.outbreaks.rmses$rmse2 < quantile(df.outbreaks.rmses$rmse2, probs = 0.01)] %in% runs.we) # 21
+summary(df.outbreaks.rmses$run[df.outbreaks.rmses$rmse1 < quantile(df.outbreaks.rmses$rmse1, probs = 0.01)] %in% runs.we) # 18 fall in runs.we; 14
+summary(df.outbreaks.rmses$run[df.outbreaks.rmses$rmse2 < quantile(df.outbreaks.rmses$rmse2, probs = 0.01)] %in% runs.we) # 21; 17
 
 df.outbreaks.rmses$run[df.outbreaks.rmses$rmse1 < quantile(df.outbreaks.rmses$rmse1, probs = 0.01)]
 df.outbreaks.rmses$run[df.outbreaks.rmses$rmse2 < quantile(df.outbreaks.rmses$rmse2, probs = 0.01)]
@@ -591,10 +618,14 @@ runs.we[which(rmses1 < 700)]
 runs.we[which(rmses2 < 16)]
 
 df.outbreaks.rmses$we <- ifelse(df.outbreaks.rmses$run %in% runs.we, T, F)
+df.outbreaks.rmses$real <- ifelse(df.outbreaks.rmses$run %in% to.keep, T, F)
 boxplot(log(df.outbreaks.rmses$rmse1) ~ df.outbreaks.rmses$we)
 boxplot(df.outbreaks.rmses$rmse2 ~ df.outbreaks.rmses$we)
 # rmse2 are clearly better where T, rmse1 less clear/very similar
 # but there certainly are those with the "wrong" pattern that have lower RMSEs
+boxplot(log(df.outbreaks.rmses$rmse1) ~ df.outbreaks.rmses$real)
+boxplot(df.outbreaks.rmses$rmse2 ~ df.outbreaks.rmses$real)
+# same
 
 par(mfrow = c(5, 3), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 for (run in df.outbreaks.rmses$run[df.outbreaks.rmses$rmse1 < quantile(df.outbreaks.rmses$rmse1, probs = 0.01)]) {
@@ -613,25 +644,26 @@ for (run in df.outbreaks.rmses$run[df.outbreaks.rmses$rmse1 < quantile(df.outbre
 # } # don't have relative for all runs, so skip this plot for now
 
 # But I think it's fine to manually pull "best" out first, b/c RMSE can be quite limited in finding "best" fits
+    # Although some of the ones for RMSE1 look better than the w-e/real ones I think
 
 # Also look at RMSE over parameter ranges:
-parms.we <- parms[c(1:2, 15:19), runs.we]
+parms.we <- parms[, runs.we]
 parms.we.df <- as.data.frame(t(parms.we))
-names(parms.we.df) <- c('S0_mean', 'S0_sd', 'L', 'D', 'R0mx', 'R0diff', 'airScale')
+names(parms.we.df)[25:29] <- c('L', 'D', 'R0mx', 'R0diff', 'airScale')
 parms.we.df$rmse1 <- rmses1; parms.we.df$rmse2 <- rmses2
 
-par(mfrow = c(4, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-plot(parms.we.df$S0_mean, parms.we.df$rmse1, pch = 20, xlab = 'S0_mean', ylab = 'RMSE')
-plot(parms.we.df$S0_sd, parms.we.df$rmse1, pch = 20, xlab = 'S0_sd', ylab = 'RMSE')
+par(mfrow = c(3, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+# plot(parms.we.df$S0_mean, parms.we.df$rmse1, pch = 20, xlab = 'S0_mean', ylab = 'RMSE')
+# plot(parms.we.df$S0_sd, parms.we.df$rmse1, pch = 20, xlab = 'S0_sd', ylab = 'RMSE')
 plot(parms.we.df$L, parms.we.df$rmse1, pch = 20, xlab = 'L', ylab = 'RMSE')
 plot(parms.we.df$D, parms.we.df$rmse1, pch = 20, xlab = 'D', ylab = 'RMSE')
 plot(parms.we.df$R0mx, parms.we.df$rmse1, pch = 20, xlab = 'R0mx', ylab = 'RMSE')
 plot(parms.we.df$R0diff, parms.we.df$rmse1, pch = 20, xlab = 'R0diff', ylab = 'RMSE')
 plot(parms.we.df$airScale, parms.we.df$rmse1, pch = 20, xlab = 'airScale', ylab = 'RMSE')
 # 
-par(mfrow = c(4, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-plot(parms.we.df$S0_mean, parms.we.df$rmse2, pch = 20, xlab = 'S0_mean', ylab = 'RMSE')
-plot(parms.we.df$S0_sd, parms.we.df$rmse2, pch = 20, xlab = 'S0_sd', ylab = 'RMSE')
+par(mfrow = c(3, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+# plot(parms.we.df$S0_mean, parms.we.df$rmse2, pch = 20, xlab = 'S0_mean', ylab = 'RMSE')
+# plot(parms.we.df$S0_sd, parms.we.df$rmse2, pch = 20, xlab = 'S0_sd', ylab = 'RMSE')
 plot(parms.we.df$L, parms.we.df$rmse2, pch = 20, xlab = 'L', ylab = 'RMSE')
 plot(parms.we.df$D, parms.we.df$rmse2, pch = 20, xlab = 'D', ylab = 'RMSE')
 plot(parms.we.df$R0mx, parms.we.df$rmse2, pch = 20, xlab = 'R0mx', ylab = 'RMSE')
@@ -651,7 +683,7 @@ plot(parms.we.df$airScale, parms.we.df$rmse2, pch = 20, xlab = 'airScale', ylab 
 # ggplot(data = parms.we.df) + geom_point(aes(x = L, y = D, col = rmses), cex = 5.0) + theme_classic() + scale_color_viridis() # combo of low L/low D? but L clearer
 
 parms.we.df$L <- parms.we.df$L / 365
-a <- lm(rmse2 ~ S0_mean + S0_sd + R0mx + R0diff + D + L + airScale, data = parms.we.df)
+a <- lm(rmse1 ~ R0mx + R0diff + D + L + airScale, data = parms.we.df)
 print(summary(a)) # all still sig; change in one day of D has slightly larger impact than a 1-year change in L
  
 # parms.we.df[parms.we.df$rmse < 15, c('L', 'D', 'R0diff', 'airScale')] # a couple L 4,5, but mostly < 3; D under 5; R0diff at least 0.6 (usually higher R0diff can contribute to e-w...)
