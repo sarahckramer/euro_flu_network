@@ -3,30 +3,41 @@
 library(reshape2); library(ggplot2); library(gridExtra)
 
 # Save plots?:
-outputPlots <- FALSE
+outputPlots <- TRUE
+fileSuffix <- 'A_1'
 
 # Restrict the forecast start weeks for which results are shown?
-restrict.fc <- TRUE
+restrict.fc <- FALSE
+
+# Set model labels:
+m1.lab <- 'Network (dist)'
+m2.lab <- 'Indiv. (new OEV)'
+m3.lab <- 'Indiv. (old OEV)'
+
+# Set locations of model results to be compared:
+model1 <- 'results/A_all/network_dist_A(all)/'
+model2 <- 'results/A_all/indiv_OEVnew_R0diff_A(all)/'
+model3 <- 'results/A_all/indiv_OEVold_R0diff_A(all)/'
+
+#########################################################################################################################################################
+#########################################################################################################################################################
 
 # Read in all plotting code:
 source('code/gridSearch/comp_netVsIndiv/plotting_functions.R')
 
-# Set locations of model results to be compared:
-model1 <- 'results/network_dist_120219/'
-model2 <- 'results/network_dist_reprobe5/'
-model3 <- 'results/network_dist_reprobe5_wide1/'
-
 # Read in and format metrics files:
-m1 <- read.csv(file = paste0(model1, list.files(path = model1, pattern = 'Met')))
-m2 <- read.csv(file = paste0(model2, list.files(path = model2, pattern = 'Met')))
-m3 <- read.csv(file = paste0(model3, list.files(path = model3, pattern = 'Met')))
+m1 <- read.csv(file = paste0(model1, list.files(path = model1, pattern = 'Met_pro')))
+m2 <- read.csv(file = paste0(model2, list.files(path = model2, pattern = 'Met_pro')))
+m3 <- read.csv(file = paste0(model3, list.files(path = model3, pattern = 'Met_pro')))
 
 m1 <- m1[, c(1:9, 12:13, 15, 17:19, 25:32, 39, 43, 47, 60:63, 65, 67:69, 78)]
 m2 <- m2[, c(1:9, 12:13, 15, 17:19, 25:32, 39, 43, 47, 60:63, 65, 67:69, 78)]
 m3 <- m3[, c(1:9, 12:13, 15, 17:19, 25:32, 39, 43, 47, 60:63, 65, 67:69, 78)]
 
-m1$model <- 'No Reprobing'; m2$model <- 'Reprobe'; m3$model <- 'Reprobe (Wide)'
+m1$model <- m1.lab; m2$model <- m2.lab; m3$model <- m3.lab
+
 m <- rbind(m1, m2, m3)
+m$model <- factor(m$model, levels = c(m1.lab, m2.lab, m3.lab))
 rm(m1, m2, m3)
 
 m <- m[!is.na(m$onsetObs5), ]
@@ -54,7 +65,7 @@ m$abs_err_4wk_perc[m$abs_err_4wk_perc == Inf & !is.na(m$abs_err_4wk_perc)] <- NA
 
 # Plot overall PT, PI, and OT by PREDICTED lead week:
 if (outputPlots) {
-  pdf('code/gridSearch/plots/comp_byPred_reprobeRange_restrict.pdf', width = 14, height = 9)
+  pdf(paste0('code/gridSearch/plots/comp_byPred_', fileSuffix, '.pdf'), width = 14, height = 9)
   source('code/gridSearch/comp_netVsIndiv/by_pred.R')
   print(plots.by.pred)
   dev.off()
@@ -66,7 +77,7 @@ rm(plots.by.pred)
 
 # # Plot overall PT, PI, and OT by OBSERVED lead week:
 # if (outputPlots) {
-#   pdf('code/gridSearch/plots/comp_byObs_reprobeRange_restrict.pdf', width = 14, height = 9)
+#   pdf(paste0('code/gridSearch/plots/comp_byObs_', fileSuffix, '.pdf', width = 14, height = 9)
 #   source('code/gridSearch/comp_netVsIndiv/by_obs.R')
 #   print(plots.by.obs)
 #   dev.off()
@@ -78,7 +89,7 @@ rm(plots.by.pred)
 
 # Plot MAEs:
 if (outputPlots) {
-  pdf('code/gridSearch/plots/comp_MAE_reprobeRange_restrict.pdf', width = 14, height = 9)
+  pdf(paste0('code/gridSearch/plots/comp_MAE_', fileSuffix,'.pdf'), width = 14, height = 9)
   source('code/gridSearch/comp_netVsIndiv/plot_MAE.R')
   dev.off()
 } else {
@@ -110,9 +121,9 @@ logs2 <- list(d2, e.pi2, e2, e.pi.alt2, e.alt2)
 logs3 <- list(d3, e.pi3, e3, e.pi.alt3, e.alt3)
 
 for (i in 1:5) {
-  logs1[[i]]$model <- 'No Reprobing'
-  logs2[[i]]$model <- 'Reprobe'
-  logs3[[i]]$model <- 'Reprobe (Wide)'
+  logs1[[i]]$model <- m1.lab
+  logs2[[i]]$model <- m2.lab
+  logs3[[i]]$model <- m3.lab
 }
 
 d <- rbind(logs1[[1]], logs2[[1]], logs3[[1]])
@@ -122,8 +133,10 @@ e.pi.alt <- rbind(logs1[[4]], logs2[[4]], logs3[[4]])
 e.alt <- rbind(logs1[[5]], logs2[[5]], logs3[[5]])
 
 levels(d$metric) <- c('ot', 'pt')
-e.pi.list <- list(e.pi[e.pi$metric == 'pi500', ], e.pi[e.pi$metric == 'pi250', ], e.pi.alt[e.pi.alt$metric == 500, ], e.pi.alt[e.pi.alt$metric == 250, ])
-e.list <- list(e[e$metric2 == 'bin500', ], e[e$metric2 == 'bin250', ], e.alt[e.alt$metric2 == 500, ], e.alt[e.alt$metric2 == 250, ])
+# e.pi.list <- list(e.pi[e.pi$metric == 'pi500', ], e.pi[e.pi$metric == 'pi250', ], e.pi.alt[e.pi.alt$metric == 500, ], e.pi.alt[e.pi.alt$metric == 250, ])
+# e.list <- list(e[e$metric2 == 'bin500', ], e[e$metric2 == 'bin250', ], e.alt[e.alt$metric2 == 500, ], e.alt[e.alt$metric2 == 250, ])
+e.pi.list <- list(e.pi[e.pi$metric %in% c('pi500', 'pi'), ], e.pi.alt[e.pi.alt$metric %in% c('500', 'pi'), ])
+e.list <- list(e[e$metric2 == 'bin500', ], e.alt[e.alt$metric2 == '500', ])
 
 rm(d1, d2, d3, e.pi1, e.pi2, e.pi3, e1, e2, e3, e.pi.alt1, e.pi.alt2, e.pi.alt3, e.alt1, e.alt2, e.alt3, logs1, logs2, logs3, e.pi, e.pi.alt, e, e.alt)
 
@@ -131,11 +144,11 @@ rm(d1, d2, d3, e.pi1, e.pi2, e.pi3, e1, e2, e3, e.pi.alt1, e.pi.alt2, e.pi.alt3,
 # Question: Remove where obs are 0 for 1-4 weeks? Or where obs below some value?
 # Question: Remove where no onset predicted before calculating these?
 if (outputPlots) {
-  pdf('code/gridSearch/plots/comp_logScores_byPred_reprobeRange_restrict.pdf', width = 14, height = 9)
+  pdf(paste0('code/gridSearch/plots/comp_logScores_byPred_', fileSuffix, '.pdf'), width = 14, height = 9)
   byWeek <- 'Predicted'
   source('code/gridSearch/comp_netVsIndiv/plot_logScores.R')
   dev.off()
-  pdf('code/gridSearch/plots/comp_logScores_byObs_reprobeRange_restrict.pdf', width = 14, height = 9)
+  pdf(paste0('code/gridSearch/plots/comp_logScores_byObs_', fileSuffix, '.pdf'), width = 14, height = 9)
   byWeek <- 'Observed'
   source('code/gridSearch/comp_netVsIndiv/plot_logScores.R')
   dev.off()

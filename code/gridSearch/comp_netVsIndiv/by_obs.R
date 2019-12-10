@@ -33,6 +33,7 @@ for (o1 in levels(m$oev_base)) {
   }
 }
 
+res.all$model <- factor(res.all$model, levels = c(m1.lab, m2.lab, m3.lab))
 res.all$group <- paste(res.all$metric, res.all$oev_base, res.all$lambda, res.all$model, sep = '_'); res.all$group <- factor(res.all$group)
 
 p1 <- ggplot(data = res.all[res.all$metric == 'pt', ], aes(x = lead, y = value, group = group, col = model)) + geom_line() + 

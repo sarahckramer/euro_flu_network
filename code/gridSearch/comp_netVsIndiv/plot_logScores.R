@@ -15,6 +15,9 @@ if (byWeek == 'Predicted') {
   d.temp$group <- paste(d.temp$leadpkwk_mean, d.temp$model, sep = '_'); d.temp$group <- factor(d.temp$group)
   d.agg <- aggregate(score ~ leadpkwk_mean + oev_base + model, data = d.temp, FUN = median)
   
+  d.temp$model <- factor(d.temp$model, levels = c(m1.lab, m2.lab, m3.lab))
+  d.agg$model <- factor(d.agg$model, levels = c(m1.lab, m2.lab, m3.lab))
+  
   p1 <- ggplot(data = d.temp) + geom_boxplot(aes(x = leadpkwk_mean, y = score, group = group, fill = model)) +
     facet_wrap(~ oev_base, ncol = 2) + theme_bw() + scale_fill_brewer(palette = 'Set1') +
     labs(x = 'Predicted Lead Week', y = 'Log Score', title = 'Peak Timing') + scale_x_continuous(breaks = -8:4)
@@ -38,6 +41,9 @@ if (byWeek == 'Predicted') {
   d.temp$group <- paste(d.temp$leadonset5, d.temp$model, sep = '_'); d.temp$group <- factor(d.temp$group)
   d.agg <- aggregate(score ~ leadonset5 + oev_base + model, data = d.temp, FUN = median)
   
+  d.temp$model <- factor(d.temp$model, levels = c(m1.lab, m2.lab, m3.lab))
+  d.agg$model <- factor(d.agg$model, levels = c(m1.lab, m2.lab, m3.lab))
+  
   p1 <- ggplot(data = d.temp) + geom_boxplot(aes(x = leadonset5, y = score, group = group, fill = model)) +
     facet_wrap(~ oev_base, ncol = 2) + theme_bw() + scale_fill_brewer(palette = 'Set1') +
     labs(x = 'Predicted Lead Week', y = 'Log Score', title = 'Onset Timing') + scale_x_continuous(breaks = -8:4)
@@ -52,7 +58,7 @@ if (byWeek == 'Predicted') {
   
   # PI:
   # do for a variety of binnings and kernel density methods:
-  for (i in c(1, 3)) {
+  for (i in 1:2) {
     e.pi <- e.pi.list[[i]]
     
     if (restrict.fc) {
@@ -64,6 +70,9 @@ if (byWeek == 'Predicted') {
     
     e.temp$group <- paste(e.temp$leadpkwk_mean, e.temp$model, sep = '_'); e.temp$group <- factor(e.temp$group)
     e.agg <- aggregate(score ~ leadpkwk_mean + oev_base + model, data = e.temp, FUN = median)
+    
+    e.temp$model <- factor(e.temp$model, levels = c(m1.lab, m2.lab, m3.lab))
+    e.agg$model <- factor(e.agg$model, levels = c(m1.lab, m2.lab, m3.lab))
     
     p1 <- ggplot(data = e.temp) + geom_boxplot(aes(x = leadpkwk_mean, y = score, group = group, fill = model)) +
       facet_wrap(~ oev_base, ncol = 2) + theme_bw() + scale_fill_brewer(palette = 'Set1') +
@@ -79,7 +88,7 @@ if (byWeek == 'Predicted') {
   }
   
   # 1-4 weeks:
-  for (i in c(1, 3)) {
+  for (i in 1:2) {
     e <- e.list[[i]]
     # if (i %in% 2:4) {
     #   names(e)[6] <- 'metric'
@@ -96,6 +105,9 @@ if (byWeek == 'Predicted') {
       # names(e.temp)[8] <- 'score'
       e.temp$group <- paste(e.temp$leadpkwk_mean, e.temp$model, sep = '_'); e.temp$group <- factor(e.temp$group)
       e.agg <- aggregate(score ~ leadpkwk_mean + oev_base + model, data = e.temp, FUN = median)
+      
+      e.temp$model <- factor(e.temp$model, levels = c(m1.lab, m2.lab, m3.lab))
+      e.agg$model <- factor(e.agg$model, levels = c(m1.lab, m2.lab, m3.lab))
       
       p1 <- ggplot(data = e.temp) + geom_boxplot(aes(x = leadpkwk_mean, y = score, group = group, fill = model)) +
         facet_wrap(~ oev_base, ncol = 2) + theme_bw() + scale_fill_brewer(palette = 'Set1') +
@@ -163,6 +175,9 @@ if (byWeek == 'Predicted') {
   d.temp$group <- paste(d.temp$FWeek_pkwk, d.temp$model, sep = '_'); d.temp$group <- factor(d.temp$group)
   d.agg <- aggregate(score ~ FWeek_pkwk + oev_base + model, data = d.temp, FUN = median)
   
+  d.temp$model <- factor(d.temp$model, levels = c(m1.lab, m2.lab, m3.lab))
+  d.agg$model <- factor(d.agg$model, levels = c(m1.lab, m2.lab, m3.lab))
+  
   p1 <- ggplot(data = d.temp) + geom_boxplot(aes(x = FWeek_pkwk, y = score, group = group, fill = model)) +
     facet_wrap(~ oev_base, ncol = 2) + theme_bw() + scale_fill_brewer(palette = 'Set1') +
     labs(x = 'Observed Lead Week', y = 'Log Score', title = 'Peak Timing') + scale_x_continuous(breaks = -8:4)
@@ -184,6 +199,9 @@ if (byWeek == 'Predicted') {
   
   d.temp$group <- paste(d.temp$FWeek_onwk, d.temp$model, sep = '_'); d.temp$group <- factor(d.temp$group)
   d.agg <- aggregate(score ~ FWeek_onwk + oev_base + model, data = d.temp, FUN = median)
+  
+  d.temp$model <- factor(d.temp$model, levels = c(m1.lab, m2.lab, m3.lab))
+  d.agg$model <- factor(d.agg$model, levels = c(m1.lab, m2.lab, m3.lab))
   
   p1 <- ggplot(data = d.temp) + geom_boxplot(aes(x = FWeek_onwk, y = score, group = group, fill = model)) +
     facet_wrap(~ oev_base, ncol = 2) + theme_bw() + scale_fill_brewer(palette = 'Set1') +
@@ -220,7 +238,7 @@ if (byWeek == 'Predicted') {
   grid.arrange(p1, p2, p3)
   
   # PI:
-  for (i in c(1, 3)) {
+  for (i in 1:2) {
     e.pi <- e.pi.list[[i]]
     
     if (restrict.fc) {
@@ -232,6 +250,9 @@ if (byWeek == 'Predicted') {
     
     e.temp$group <- paste(e.temp$FWeek_pkwk, e.temp$model, sep = '_'); e.temp$group <- factor(e.temp$group)
     e.agg <- aggregate(score ~ FWeek_pkwk + oev_base + model, data = e.temp, FUN = median)
+    
+    e.temp$model <- factor(e.temp$model, levels = c(m1.lab, m2.lab, m3.lab))
+    e.agg$model <- factor(e.agg$model, levels = c(m1.lab, m2.lab, m3.lab))
     
     p1 <- ggplot(data = e.temp) + geom_boxplot(aes(x = FWeek_pkwk, y = score, group = group, fill = model)) +
       facet_wrap(~ oev_base, ncol = 2) + theme_bw() + scale_fill_brewer(palette = 'Set1') +
@@ -247,7 +268,7 @@ if (byWeek == 'Predicted') {
   }
   
   # 1-4 weeks:
-  for (i in c(1, 3)) {
+  for (i in 1:2) {
     e <- e.list[[i]]
     # if (i %in% 2:4) {
     #   names(e)[6] <- 'metric'
@@ -264,6 +285,9 @@ if (byWeek == 'Predicted') {
       # names(e.temp)[8] <- 'score'
       e.temp$group <- paste(e.temp$FWeek_pkwk, e.temp$model, sep = '_'); e.temp$group <- factor(e.temp$group)
       e.agg <- aggregate(score ~ FWeek_pkwk + oev_base + model, data = e.temp, FUN = median)
+      
+      e.temp$model <- factor(e.temp$model, levels = c(m1.lab, m2.lab, m3.lab))
+      e.agg$model <- factor(e.agg$model, levels = c(m1.lab, m2.lab, m3.lab))
       
       p1 <- ggplot(data = e.temp) + geom_boxplot(aes(x = FWeek_pkwk, y = score, group = group, fill = model)) +
         facet_wrap(~ oev_base, ncol = 2) + theme_bw() + scale_fill_brewer(palette = 'Set1') +
