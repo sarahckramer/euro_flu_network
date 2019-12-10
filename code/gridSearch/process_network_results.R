@@ -1,7 +1,7 @@
 
 ### Run to process files downloaded from cluster (network model only) ###
-# model.type <- 'Network'
-model.type <- 'Individual'
+model.type <- 'Network'
+# model.type <- 'Individual'
 
 # 1. Read in and compile:
 if (model.type == 'Network') {
@@ -21,7 +21,9 @@ if (model.type == 'Network') {
 }
 
 # 4. Reorder columns as necessary:
-source('../../code/gridSearch/process_raw_data/standardize_all_output_files.R')
+if (model.type == 'Network') {
+  source('../../code/gridSearch/process_raw_data/standardize_all_output_files.R')
+}
 
 # 5. Remove where there would be no forecasts in individual model:
 if (model.type == 'Network') {
