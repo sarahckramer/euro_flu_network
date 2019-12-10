@@ -3,7 +3,7 @@
 run.list1 = run.list2 = s.list1 = s.list2 = r.list1 = r.list2 = vector('list', 200)
 in.files <- list.files('syntheticTests/20yr_runs_cluster/', pattern = '.RData')
 for (i in 1:length(in.files)) {
-  load(paste0('syntheticTests/20yr_runs_cluster/resList_20yr_last9_', i, '.RData'))
+  load(paste0('syntheticTests/20yr_runs_cluster/resList_20yr_last10_', i, '.RData'))
   run.list1[[i]] <- res.list[[1]]
   run.list2[[i]] <- res.list[[2]]
   s.list1[[i]] <- res.list[[3]]
@@ -29,9 +29,9 @@ s.list <- list(s.list1, s.list2)
 r.list <- list(r.list1, r.list2)
 
 # Save:
-save(run.list, file = 'syntheticTests/syntheticData/20yr_runs_cluster/resRates_20yr_last10.RData')
-save(s.list, file = 'syntheticTests/syntheticData/20yr_runs_cluster/resS_20yr_last10.RData')
-save(r.list, file = 'syntheticTests/syntheticData/20yr_runs_cluster/resR_20yr_last10.RData')
+save(run.list, file = 'syntheticTests/syntheticData/20yr_runs_cluster/resRates_20yr_last10_LHS.RData')
+save(s.list, file = 'syntheticTests/syntheticData/20yr_runs_cluster/resS_20yr_last10_LHS.RData')
+save(r.list, file = 'syntheticTests/syntheticData/20yr_runs_cluster/resR_20yr_last10_LHS.RData')
 
 #####################################################################################################################################################################
 #####################################################################################################################################################################
@@ -39,12 +39,13 @@ save(r.list, file = 'syntheticTests/syntheticData/20yr_runs_cluster/resR_20yr_la
 ### Format ### 
 
 # Load in last 10 years:
-load('syntheticTests/syntheticData/20yr_runs_cluster/resRates_20yr_last10.RData')
-load('syntheticTests/syntheticData/20yr_runs_cluster/resS_20yr_last10.RData')
-load('syntheticTests/syntheticData/20yr_runs_cluster/resR_20yr_last10.RData')
+load('syntheticTests/syntheticData/20yr_runs_cluster/resRates_20yr_last10_LHS.RData')
+load('syntheticTests/syntheticData/20yr_runs_cluster/resS_20yr_last10_LHS.RData')
+load('syntheticTests/syntheticData/20yr_runs_cluster/resR_20yr_last10_LHS.RData')
 
 # And read in accompanying parameter sets:
-load('syntheticTests/syntheticData/init_parms_10000_NEW.RData')
+# load('syntheticTests/syntheticData/init_parms_10000_NEW.RData')
+load('syntheticTests/syntheticData/init_parms_10000_LHS.RData')
 
 # List of countries:
 countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
@@ -325,7 +326,7 @@ runs.we.sig <- sort(as.numeric(as.character(unique(df$run[df$patternSig == 'west
 ### Plots of time series ###
 
 # Visualize runs with "correct" pattern:
-pdf('syntheticTests/outputs/explore/outbreak_averages_west-to-east_10000.pdf', width = 16, height = 10)
+pdf('syntheticTests/outputs/explore/outbreak_averages_west-to-east_10000_LHS.pdf', width = 16, height = 10)
 par(mfrow = c(5, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 for (run in c(runs.we.sig, runs.we.not)) {
   matplot(t(res.avg[[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = run, xlab = 'Time', ylab = 'Inc.')
@@ -334,7 +335,7 @@ for (run in c(runs.we.sig, runs.we.not)) {
 }
 dev.off()
 
-pdf('syntheticTests/outputs/explore/outbreak_plots_west-to-east_10000.pdf', width = 16, height = 10)
+pdf('syntheticTests/outputs/explore/outbreak_plots_west-to-east_10000_LHS.pdf', width = 16, height = 10)
 par(mfrow = c(5, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 for (run in c(runs.we.sig, runs.we.not)) {
   matplot(t(res.list.comb[[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = run, xlab = 'Time', ylab = 'Inc.')
@@ -344,7 +345,7 @@ dev.off()
 # And how to decide which to keep? I'm guessing we don't want those with outbreaks every year; do we see which (if any) match observed patterns?
 
 # And what do individual strains look like?
-pdf('syntheticTests/outputs/explore/outbreak_plots_west-to-east_10000_byStrain.pdf', width = 16, height = 10)
+pdf('syntheticTests/outputs/explore/outbreak_plots_west-to-east_10000_byStrain_LHS.pdf', width = 16, height = 10)
 par(mfrow = c(5, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 for (run in c(runs.we.sig, runs.we.not)) {
   matplot(t(run.list[[1]][[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = paste0('Strain1_', run), xlab = 'Time', ylab = 'Inc.')
@@ -355,7 +356,6 @@ for (run in c(runs.we.sig, runs.we.not)) {
   abline(v = seq(1, 523, by = 52), lty = 3, lwd = 2)
 }
 dev.off()
-
 
 for (i in c(runs.we.sig, runs.we.not)) {
   print(i)
@@ -438,7 +438,7 @@ names(parms.df) <- c('S0_mean', 'S0_sd', 'L', 'D', 'R0mx', 'R0diff', 'airScale',
 parms.df$group <- factor(parms.df$group)
 parms.df$group <- factor(parms.df$group, levels = levels(parms.df$group)[c(2, 4, 1, 5, 3)])#[c(5, 7, 2, 1, 3:4, 6)])
 
-pdf('syntheticTests/outputs/explore/param_comp_10000.pdf', width = 16, height = 10)
+pdf('syntheticTests/outputs/explore/param_comp_10000_LHS.pdf', width = 16, height = 10)
 par(mfrow = c(3, 3), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 boxplot(S0_mean ~ group, data = parms.df, xlab = '', col = 'gray95')
 boxplot(S0_sd ~ group, data = parms.df, xlab = '', col = 'gray95')
@@ -462,7 +462,7 @@ parms.df2 <- rbind(parms.ew.sig, parms.ew.not, parms.we.not, parms.we.sig)
 parms.df2$group <- factor(parms.df2$group)
 parms.df2$group <- factor(parms.df2$group, levels = levels(parms.df2$group)[c(2, 1, 3:4)])
 
-pdf('syntheticTests/outputs/explore/param_comp_geo_10000.pdf', width = 16, height = 10)
+pdf('syntheticTests/outputs/explore/param_comp_geo_10000_LHS.pdf', width = 16, height = 10)
 par(mfrow = c(2, 4), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 boxplot(S0_mean ~ group, data = parms.df2, xlab = '', col = 'gray95')
 boxplot(S0_sd ~ group, data = parms.df2, xlab = '', col = 'gray95')
@@ -532,7 +532,7 @@ rmses1 <- unlist(rmses1); rmses2 <- unlist(rmses2)
 quantile(rmses1, probs = c(0, 0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 1))
 quantile(rmses2, probs = c(0, 0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 1))
 
-pdf('syntheticTests/outputs/explore/best_by_RMSE1_10000.pdf', width = 16, height = 10)
+pdf('syntheticTests/outputs/explore/best_by_RMSE1_10000_LHS.pdf', width = 16, height = 10)
 par(mfrow = c(5, 3), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 for (run in which(rmses1 < 700)) {
   # matplot(obs.mat.avg, type = 'b', pch = 20, col = viridis(12), xlab = 'Time', ylab = 'Obs. Syn+', cex = 0.6, main = rmses1[run])
@@ -541,7 +541,7 @@ for (run in which(rmses1 < 700)) {
   abline(v = c(12, 52), lty = 1, col = 'red')
 }
 dev.off()
-pdf('syntheticTests/outputs/explore/best_by_RMSE2_10000.pdf', width = 16, height = 10)
+pdf('syntheticTests/outputs/explore/best_by_RMSE2_10000_LHS.pdf', width = 16, height = 10)
 par(mfrow = c(5, 3), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 for (run in which(rmses2 < 16)) {
   # matplot(obs.mat.rel, type = 'b', pch = 20, col = viridis(12), xlab = 'Time', ylab = 'Obs. Syn+', cex = 0.6, main = rmses2[run])
