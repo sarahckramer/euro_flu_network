@@ -1,7 +1,7 @@
 
 ### Run to process files downloaded from cluster (network model only) ###
-model.type <- 'Network'
-# model.type <- 'Individual'
+# model.type <- 'Network'
+model.type <- 'Individual'
 
 # 1. Read in and compile:
 if (model.type == 'Network') {
@@ -18,6 +18,7 @@ if (model.type == 'Network') {
   
 } else if (model.type == 'Individual') {
   source('../../code/individualCountries/calculate_log_scores.R')
+  write.csv(m.store, file = 'outputMet_pro.csv', row.names = FALSE)
 }
 
 # 4. Reorder columns as necessary:

@@ -288,7 +288,7 @@ e$metric2 <- 500
 e <- e[, c(1:2, 4, 3, 5:8, 17, 10:11, 13:16, 12)]
 
 # Save:
-write.csv(e, file = 'logScores_1-4wk_alt.csv', row.names = FALSE)
+write.csv(e, file = 'logScores_1-4wks_kd.csv', row.names = FALSE)
 rm(e, e.full, m, means, sds, probs)
 
 
