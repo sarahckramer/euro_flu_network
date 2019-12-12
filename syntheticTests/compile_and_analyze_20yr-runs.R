@@ -1,9 +1,9 @@
 
 # Load and compile 20-year runs:
 run.list1 = run.list2 = s.list1 = s.list2 = r.list1 = r.list2 = vector('list', 200)
-in.files <- list.files('syntheticTests/20yr_runs_cluster/', pattern = '.RData')
+in.files <- list.files('syntheticTests/20yr_runs_raw/', pattern = '.RData')
 for (i in 1:length(in.files)) {
-  load(paste0('syntheticTests/20yr_runs_cluster/resList_20yr_last10_', i, '.RData'))
+  load(paste0('syntheticTests/20yr_runs_raw/resList_20yr_last10_', i, '.RData'))
   run.list1[[i]] <- res.list[[1]]
   run.list2[[i]] <- res.list[[2]]
   s.list1[[i]] <- res.list[[3]]
@@ -29,9 +29,11 @@ s.list <- list(s.list1, s.list2)
 r.list <- list(r.list1, r.list2)
 
 # Save:
-save(run.list, file = 'syntheticTests/syntheticData/20yr_runs_cluster/resRates_20yr_last10_LHS.RData')
-save(s.list, file = 'syntheticTests/syntheticData/20yr_runs_cluster/resS_20yr_last10_LHS.RData')
-save(r.list, file = 'syntheticTests/syntheticData/20yr_runs_cluster/resR_20yr_last10_LHS.RData')
+save(run.list, file = 'syntheticTests/syntheticData/20yr_runs_cluster/resRates_20yr_last10_meanAH.RData')
+save(s.list, file = 'syntheticTests/syntheticData/20yr_runs_cluster/resS_20yr_last10_meanAH.RData')
+save(r.list, file = 'syntheticTests/syntheticData/20yr_runs_cluster/resR_20yr_last10_meanAH.RData')
+
+rm(list = ls())
 
 #####################################################################################################################################################################
 #####################################################################################################################################################################
@@ -39,9 +41,9 @@ save(r.list, file = 'syntheticTests/syntheticData/20yr_runs_cluster/resR_20yr_la
 ### Format ### 
 
 # Load in last 10 years:
-load('syntheticTests/syntheticData/20yr_runs_cluster/resRates_20yr_last10_LHS.RData')
-load('syntheticTests/syntheticData/20yr_runs_cluster/resS_20yr_last10_LHS.RData')
-load('syntheticTests/syntheticData/20yr_runs_cluster/resR_20yr_last10_LHS.RData')
+load('syntheticTests/syntheticData/20yr_runs_cluster/resRates_20yr_last10_meanAH.RData')
+# load('syntheticTests/syntheticData/20yr_runs_cluster/resS_20yr_last10_meanAH.RData')
+# load('syntheticTests/syntheticData/20yr_runs_cluster/resR_20yr_last10_meanAH.RData')
 
 # And read in accompanying parameter sets:
 # load('syntheticTests/syntheticData/init_parms_10000_NEW.RData')
@@ -326,7 +328,7 @@ runs.we.sig <- sort(as.numeric(as.character(unique(df$run[df$patternSig == 'west
 ### Plots of time series ###
 
 # Visualize runs with "correct" pattern:
-pdf('syntheticTests/outputs/explore/outbreak_averages_west-to-east_10000_LHS.pdf', width = 16, height = 10)
+pdf('syntheticTests/outputs/explore/outbreak_averages_west-to-east_10000_meanAH.pdf', width = 16, height = 10)
 par(mfrow = c(5, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 for (run in c(runs.we.sig, runs.we.not)) {
   matplot(t(res.avg[[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = run, xlab = 'Time', ylab = 'Inc.')
@@ -335,7 +337,7 @@ for (run in c(runs.we.sig, runs.we.not)) {
 }
 dev.off()
 
-pdf('syntheticTests/outputs/explore/outbreak_plots_west-to-east_10000_LHS.pdf', width = 16, height = 10)
+pdf('syntheticTests/outputs/explore/outbreak_plots_west-to-east_10000_meanAH.pdf', width = 16, height = 10)
 par(mfrow = c(5, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 for (run in c(runs.we.sig, runs.we.not)) {
   matplot(t(res.list.comb[[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = run, xlab = 'Time', ylab = 'Inc.')
@@ -345,7 +347,7 @@ dev.off()
 # And how to decide which to keep? I'm guessing we don't want those with outbreaks every year; do we see which (if any) match observed patterns?
 
 # And what do individual strains look like?
-pdf('syntheticTests/outputs/explore/outbreak_plots_west-to-east_10000_byStrain_LHS.pdf', width = 16, height = 10)
+pdf('syntheticTests/outputs/explore/outbreak_plots_west-to-east_10000_byStrain_meanAH.pdf', width = 16, height = 10)
 par(mfrow = c(5, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 for (run in c(runs.we.sig, runs.we.not)) {
   matplot(t(run.list[[1]][[run]]), type = 'b', pch = 20, cex = 0.6, col = viridis(12), main = paste0('Strain1_', run), xlab = 'Time', ylab = 'Inc.')
@@ -357,7 +359,7 @@ for (run in c(runs.we.sig, runs.we.not)) {
 }
 dev.off()
 
-for (i in c(runs.we.sig, runs.we.not)) {
+for (i in runs.we.not) {
   print(i)
 
   run.temp <- run.list[[1]][[i]]
@@ -390,7 +392,7 @@ for (i in c(runs.we.sig, runs.we.not)) {
   }
   
   if (length(die.out[die.out] > 0)) {
-    print(i)
+    # print(i)
     die.out.yes <- c(die.out.yes, i)
   }
   
@@ -442,7 +444,7 @@ for (i in 1:length(countries)) {
 parms.df$group <- factor(parms.df$group)
 parms.df$group <- factor(parms.df$group, levels = levels(parms.df$group)[c(2, 4, 1, 5, 3)])#[c(5, 7, 2, 1, 3:4, 6)])
 
-pdf('syntheticTests/outputs/explore/param_comp_10000_LHS.pdf', width = 16, height = 10)
+pdf('syntheticTests/outputs/explore/param_comp_10000_meanAH.pdf', width = 16, height = 10)
 par(mfrow = c(3, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 # boxplot(S0_mean ~ group, data = parms.df, xlab = '', col = 'gray95')
 # boxplot(S0_sd ~ group, data = parms.df, xlab = '', col = 'gray95')
@@ -480,7 +482,7 @@ for (i in 1:length(countries)) {
   names(parms.df2)[i + length(countries)] <- paste0('I0_', countries[i])
 }
 
-pdf('syntheticTests/outputs/explore/param_comp_geo_10000_LHS.pdf', width = 16, height = 10)
+pdf('syntheticTests/outputs/explore/param_comp_geo_10000_meanAH.pdf', width = 16, height = 10)
 par(mfrow = c(2, 3), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 # boxplot(S0_mean ~ group, data = parms.df2, xlab = '', col = 'gray95')
 # boxplot(S0_sd ~ group, data = parms.df2, xlab = '', col = 'gray95')
@@ -559,7 +561,7 @@ rmses1 <- unlist(rmses1); rmses2 <- unlist(rmses2)
 quantile(rmses1, probs = c(0, 0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 1))
 quantile(rmses2, probs = c(0, 0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 1))
 
-pdf('syntheticTests/outputs/explore/best_by_RMSE1_10000_LHS.pdf', width = 16, height = 10)
+pdf('syntheticTests/outputs/explore/best_by_RMSE1_10000_meanAH.pdf', width = 16, height = 10)
 par(mfrow = c(5, 3), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 for (run in which(rmses1 < 700)) {
   # matplot(obs.mat.avg, type = 'b', pch = 20, col = viridis(12), xlab = 'Time', ylab = 'Obs. Syn+', cex = 0.6, main = rmses1[run])
@@ -568,7 +570,7 @@ for (run in which(rmses1 < 700)) {
   abline(v = c(12, 52), lty = 1, col = 'red')
 }
 dev.off()
-pdf('syntheticTests/outputs/explore/best_by_RMSE2_10000_LHS.pdf', width = 16, height = 10)
+pdf('syntheticTests/outputs/explore/best_by_RMSE2_10000_meanAH.pdf', width = 16, height = 10)
 par(mfrow = c(5, 3), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 for (run in which(rmses2 < 16)) {
   # matplot(obs.mat.rel, type = 'b', pch = 20, col = viridis(12), xlab = 'Time', ylab = 'Obs. Syn+', cex = 0.6, main = rmses2[run])
@@ -607,6 +609,7 @@ for (run in which(rmses2 < 16)) {
   }
 }
 # I think this is fine, but there's always the option to look at RMSEs by each country, and add/average them or something
+    # Or even weight them by some measure of data quality
 
 # What about RMSEs calculated for all "have.outbreaks" - are any better?
 summary(df.outbreaks.rmses$run[df.outbreaks.rmses$rmse1 < quantile(df.outbreaks.rmses$rmse1, probs = 0.01)] %in% runs.we) # 18 fall in runs.we; 14
@@ -683,7 +686,7 @@ plot(parms.we.df$airScale, parms.we.df$rmse2, pch = 20, xlab = 'airScale', ylab 
 # ggplot(data = parms.we.df) + geom_point(aes(x = L, y = D, col = rmses), cex = 5.0) + theme_classic() + scale_color_viridis() # combo of low L/low D? but L clearer
 
 parms.we.df$L <- parms.we.df$L / 365
-a <- lm(rmse1 ~ R0mx + R0diff + D + L + airScale, data = parms.we.df)
+a <- lm(rmse2 ~ R0mx + R0diff + D + L + airScale, data = parms.we.df)
 print(summary(a)) # all still sig; change in one day of D has slightly larger impact than a 1-year change in L
  
 # parms.we.df[parms.we.df$rmse < 15, c('L', 'D', 'R0diff', 'airScale')] # a couple L 4,5, but mostly < 3; D under 5; R0diff at least 0.6 (usually higher R0diff can contribute to e-w...)
