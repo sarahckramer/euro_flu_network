@@ -11,10 +11,7 @@ library(gtable); library(gridExtra); library(reshape2); library(stringr)
 dir.save <- 'code/gridSearch/plots/'
 
 # Read in results:
-output <- read.csv('results/indiv_new/outputOP_111219_INDIV.csv')
-
-# First need to add observed to output data frame:
-iliiso <- read.csv('data/WHO_data_05-09-19.csv')
+output <- read.csv('results/A(H1)/indiv_mid/outputOP_PROC.csv')
 
 output$year <- as.numeric(as.character(substr(output$season, start = 1, stop = 4)))
 output$year[output$week > 53] <- output$year[output$week > 53] + 1
@@ -28,29 +25,33 @@ output$week2[output$year == 2015 & output$week2 == 1 & output$season == '2015-16
 output$week2 <- str_pad(output$week2, width = 2, pad = '0')
 output$time2 <- paste(output$year, output$week2, sep = '_')
 
-iliiso <- iliiso[, c(1:3, 5, 7:9, 12:15, 18, 20)]
+# First need to add observed to output data frame:
+# iliiso <- read.csv('data/WHO_data_05-09-19.csv')
+# iliiso <- iliiso[, c(1:3, 5, 7:9, 12:15, 18, 20)]
+# 
+# scalings <- read.csv('data/scalings_frame_05-09-19.csv') # 1.3 for France in early seasons
+# scalings <- scalings[c(1:2, 4, 6:8, 11:14, 17, 19), ]
+# for (i in 2:13) {
+#   if (names(iliiso)[i] == 'France') {
+#     iliiso[1:286, i] <- iliiso[1:286, i] * 1.3
+#     iliiso[287:495, i] <- iliiso[287:495, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
+#   } else {
+#     iliiso[, i] <- iliiso[, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
+#   }
+#   
+#   iliiso[, i][iliiso[, i] < 0] <- NA # replace negatives with NAs
+# }
 
-scalings <- read.csv('data/scalings_frame_05-09-19.csv') # 1.3 for France in early seasons
-scalings <- scalings[c(1:2, 4, 6:8, 11:14, 17, 19), ]
-for (i in 2:13) {
-  if (names(iliiso)[i] == 'France') {
-    iliiso[1:286, i] <- iliiso[1:286, i] * 1.3
-    iliiso[287:495, i] <- iliiso[287:495, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
-  } else {
-    iliiso[, i] <- iliiso[, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
-  }
-  
-  iliiso[, i][iliiso[, i] < 0] <- NA # replace negatives with NAs
-}
+iliiso <- read.csv('data/by_subtype/WHO_data_A(H1)_SCALED.csv')
 names(iliiso) <- c('time', 'AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
 iliiso <- melt(iliiso)
 names(iliiso)[3] <- 'observed'
 
 output <- merge(output, iliiso, by.x = c('country', 'time2'), by.y = c('variable', 'time'))
 
-# Choose oev_base:
-output.full <- output
-output <- output[output$oev_base == 1e4, ]
+# # Choose oev_base:
+# output.full <- output
+# output <- output[output$oev_base == 1e4, ]
 
 #### OUTPUT ####
 # Create output graphs, saved as PDF file:
@@ -82,7 +83,7 @@ for (season in seasons) {
   
   print('Graph list completed.')
   glist <- marrangeGrob(grobs = graphs, nrow = 1, ncol = 1)
-  ggsave(paste(dir.save, 'output_', season, '_INDIV_1e4.pdf', sep = ''), glist, width = 18, height = 9, dpi = 600)
+  ggsave(paste(dir.save, 'output_', season, '_H1_INDIV.pdf', sep = ''), glist, width = 18, height = 9, dpi = 600)
   print('Done.')
 }
 
