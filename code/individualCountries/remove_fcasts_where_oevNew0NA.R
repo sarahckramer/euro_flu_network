@@ -1,10 +1,10 @@
 
-# In individual country models, forecasts are not performed if data is NA, or if obs_vars is either 0 or NA
-# To make for a fair comparison, remove forecasts made for a country when these conditions were met
+# In individual country models, there are fewer times when OEV is 0/NA, since we only take syn+, and not test
+# numbers, etc., into account; remove forecasts where the network wouldn't produce them, for fairer comparison
 
 # Read in all results:
-m <- read.csv(list.files(pattern = 'Met_pro.csv'))
-o <- read.csv(list.files(pattern = 'OP.csv'))
+# m <- read.csv(list.files(pattern = 'Met_pro.csv')) # m is already read in
+o <- read.csv(list.files(pattern = 'OP'))
 d <- list()
 logScore.files <- list.files(pattern = 'logScores')
 for (i in 1:length(logScore.files)) {
@@ -63,11 +63,11 @@ source('../../cluster/functions/replaceLeadingLaggingNAs.R')
 source('../../cluster/functions/calc_obsvars.R')
 
 # Get mini-dataset that can be matched with larger ones later:
-m.mini <- unique(m[, c(1, 7:8)])
+m.mini <- unique(m.store[, c(1, 7:8)])
 m.mini$oev = m.mini$obs <- NA
 
 # Loop through seasons to get matching observations:
-seasons <- levels(m$season)
+seasons <- levels(m.store$season)
 
 for (season in seasons) {
   tmp <- Fn_dates(season)
@@ -106,28 +106,29 @@ for (season in seasons) {
 }
 
 # Remove from m.mini where obs is NA, or oev NA or 0:
-m.mini <- m.mini[!is.na(m.mini$obs) & !is.na(m.mini$oev) & m.mini$oev != 0, ]
+m.mini <- m.mini[!is.na(m.mini$oev) & m.mini$oev != 0, ]
+# honestly, this doesn't remove much
 
 # Merge m.mini with all important data frames:
-m <- merge(m, m.mini, by = c('season', 'country', 'fc_start')) # 9304
+m.store <- merge(m.store, m.mini, by = c('season', 'country', 'fc_start'))
 o <- merge(o, m.mini, by = c('season', 'country', 'fc_start'))
 for (i in 1:length(d)) {
   d[[i]] <- merge(d[[i]], m.mini, c('season', 'country', 'fc_start'))
 }
 
 # Remove relevant columns to put these into correct format:
-m$obs <- NULL; m$oev <- NULL
+m.store$obs <- NULL; m.store$oev <- NULL
 o$obs <- NULL; o$oev <- NULL
 for (i in 1:length(d)) {
   d[[i]]$obs <- NULL; d[[i]]$oev <- NULL
 }
 
 # Put correct column order back:
-m <- m[, c(1, 4:8, 3, 2, 9:78)]
+m.store <- m.store[, c(1, 4:8, 3, 2, 9:78)]
 o <- o[, c(1, 4:7, 3, 8:10, 2, 11:16)]
 
 # Save new results files:
-write.csv(m, file = 'outputMet_pro_PROC.csv', row.names = FALSE)
+write.csv(m.store, file = 'outputMet_pro_PROC.csv', row.names = FALSE)
 write.csv(o, file = 'outputOP_PROC.csv', row.names = FALSE)
 
 for (i in 1:length(d)) {
