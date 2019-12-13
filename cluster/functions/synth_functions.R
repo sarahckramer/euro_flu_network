@@ -261,6 +261,57 @@ run_model <- function(in.parms, S0.in, I0.in, in.ah, num.ens, n, N, tm.range, tm
   
 }
 
+run_model_noAH <- function(in.parms, S0.in, I0.in, num.ens, n, N, tm.range, tmstep, tm.strt, tm.end, dt, pop.dat, multi = FALSE) {
+  
+  # Get parameters:
+  in.parms <- in.parms[(dim(in.parms)[1] - 3):(dim(in.parms)[1]), ]
+  
+  beta.range <- tm.range[1]:(tail(tm.range, 1) + 2 * tmstep)
+  beta <- lapply(1:dim(in.parms)[2], function(ix) {
+    matrix(in.parms[3, ix] / in.parms[2, ix], nrow = length(beta.range), ncol = n)
+  })
+  
+  D.temp <- in.parms[2, ]; L.temp <- in.parms[1, ]; airScale.temp <- in.parms[4, ]
+  S0.temp <- S0.in; I0.temp <- I0.in
+  
+  # Run model:
+  if (multi) {
+    S0.temp1 <- S0.in[[1]]; S0.temp2 <- S0.in[[2]]
+    I0.temp1 <- I0.in[[1]]; I0.temp2 <- I0.in[[2]]
+    
+    m <- sapply(1:num.ens, function(ix) {
+      propagateToySIRS_multi(tm_strt = tm.strt, tm_end = tm.end, dt,
+                             S01 = S0.temp1[[ix]], I01 = I0.temp1[[ix]],
+                             S02 = S0.temp2[[ix]], I02 = I0.temp2[[ix]],
+                             N, D = D.temp[ix], L = L.temp[ix], beta[[ix]],
+                             airScale = airScale.temp[ix], realdata = TRUE,
+                             prohibAir = FALSE)
+    })
+    
+    # Re-format results:
+    res.list <- format_model_results_multi(m, num.ens, tmstep, tm.strt, tm.end, n, pop.dat)
+    # res.list <- list(res.list, s0.by.count)
+    
+  } else {
+    m <- sapply(1:num.ens, function(ix) {
+      propagateToySIRS(tm_strt = tm.strt, tm_end = tm.end, dt,
+                       S0 = S0.temp[[ix]], I0 = I0.temp[[ix]], N,
+                       D = D.temp[ix], L = L.temp[ix], beta[[ix]],
+                       airScale = airScale.temp[ix], realdata = TRUE,
+                       prohibAir = FALSE)
+    })
+    
+    # Re-format results:
+    res.list <- format_model_results(m, num.ens, tmstep, tm.strt, tm.end, n, pop.dat)
+    # res.list <- list(res.list, s0.by.count)
+    
+  }
+  
+  # Return results:
+  return(res.list)
+  
+}
+
 ### Analysis ###
 
 calc_metrics <- function(m) {

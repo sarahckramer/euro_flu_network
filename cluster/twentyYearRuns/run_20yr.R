@@ -31,7 +31,8 @@ cmd_args = commandArgs(trailingOnly = T)
 task.index=as.numeric(cmd_args[1])
 range.to.use <- (1:50) + 50 * (task.index - 1)
 
-load('code/runs20yr/inputs/init_parms_10000_LHS.RData')
+# load('code/runs20yr/inputs/init_parms_10000_LHS.RData')
+load('code/runs20yr/inputs/init_parms_10000_LHS_noAH.RData')
 parms <- parms[, range.to.use]
 
 print(range.to.use)
@@ -58,16 +59,16 @@ diag(N) <- unlist(lapply(1:n, function(ix) {
 }))
 # note: this now results in more home-home people than before, since there are fewer countries to commute to
 
-### Read in humidity data
-# ah <- read.csv('data/ah_Europe_07142019.csv')
-ah <- read.csv('data/ah_MEAN_120519.csv')
-# AH <- rbind(ah[, count.indices], ah[, count.indices])
-AH <- rbind(ah, ah)
-for (i in 1:4) {
-  AH <- rbind(AH, AH)
-}
-AH <- AH[1:7316, ] # 20 years
-# print(head(AH))
+# ### Read in humidity data
+# # ah <- read.csv('data/ah_Europe_07142019.csv')
+# ah <- read.csv('data/ah_MEAN_120519.csv')
+# # AH <- rbind(ah[, count.indices], ah[, count.indices])
+# AH <- rbind(ah, ah)
+# for (i in 1:4) {
+#   AH <- rbind(AH, AH)
+# }
+# AH <- AH[1:7316, ] # 20 years
+# # print(head(AH))
 
 ### Get subtypes by season
 Vtype <- read.csv('data/subtypes_seeding.csv')
@@ -79,7 +80,8 @@ init.states2 <- allocate_S0I0(parms, num_ens, n, N, s0.method = 'lhs')
 init.states <- list(list(init.states1[[1]], init.states2[[1]]),
                     list(init.states1[[2]], init.states2[[2]]))
 print('Begin running model...')
-res <- run_model(parms, init.states[[1]], init.states[[2]], AH, num_ens, n, N, tm.range, tmstep, tm_strt, tm_end, dt, pop.size, r0.mn = FALSE, multi = TRUE) # time: 50 ~ 30minutes
+# res <- run_model(parms, init.states[[1]], init.states[[2]], AH, num_ens, n, N, tm.range, tmstep, tm_strt, tm_end, dt, pop.size, r0.mn = FALSE, multi = TRUE) # time: 50 ~ 30minutes
+res <- run_model_noAH(parms, init.states[[1]], init.states[[2]], num_ens, n, N, tm.range, tmstep, tm_strt, tm_end, dt, pop.size, multi = TRUE)
 print('Model run!')
 res.rates1 <- res[[1]]; res.rates2 <- res[[2]]
 res.s1 <- res[[3]]; res.s2 <- res[[4]]
