@@ -125,6 +125,7 @@ for (i in 1:length(d)) {
 
 # Put correct column order back:
 m.store <- m.store[, c(1, 4:8, 3, 2, 9:78)]
+o <- o[, c(1, 4, 6:8, 3, 9:11, 2, 12:25)]
 o <- o[, c(1, 4:7, 3, 8:10, 2, 11:16)]
 
 # Save new results files:
