@@ -3,21 +3,21 @@
 library(reshape2); library(ggplot2); library(gridExtra)
 
 # Save plots?:
-outputPlots <- TRUE
-fileSuffix <- 'A_1'
+outputPlots <- FALSE
+fileSuffix <- '1'
 
 # Restrict the forecast start weeks for which results are shown?
 restrict.fc <- FALSE
 
 # Set model labels:
-m1.lab <- 'Network (dist)'
-m2.lab <- 'Indiv. (new OEV)'
-m3.lab <- 'Indiv. (old OEV)'
+m1.lab <- 'Indiv. (Mid)'
+m2.lab <- 'Indiv. (Narrow)'
+m3.lab <- 'Network (Mid)'
 
 # Set locations of model results to be compared:
-model1 <- 'results/A_all/network_dist_A(all)/'
-model2 <- 'results/A_all/indiv_OEVnew_R0diff_A(all)/'
-model3 <- 'results/A_all/indiv_OEVold_R0diff_A(all)/'
+model1 <- 'results/A(H1)/indiv_mid/'
+model2 <- 'results/A(H1)/indiv_narrow/'
+model3 <- 'results/A(H1)/network_LHSmid/'
 
 #########################################################################################################################################################
 #########################################################################################################################################################
@@ -75,17 +75,17 @@ if (outputPlots) {
 }
 rm(plots.by.pred)
 
-# # Plot overall PT, PI, and OT by OBSERVED lead week:
-# if (outputPlots) {
-#   pdf(paste0('code/gridSearch/plots/comp_byObs_', fileSuffix, '.pdf', width = 14, height = 9)
-#   source('code/gridSearch/comp_netVsIndiv/by_obs.R')
-#   print(plots.by.obs)
-#   dev.off()
-# } else {
-#   source('code/gridSearch/comp_netVsIndiv/by_obs.R')
-#   print(plots.by.obs)
-# }
-# rm(plots.by.obs)
+# Plot overall PT, PI, and OT by OBSERVED lead week:
+if (outputPlots) {
+  pdf(paste0('code/gridSearch/plots/comp_byObs_', fileSuffix, '.pdf'), width = 14, height = 9)
+  source('code/gridSearch/comp_netVsIndiv/by_obs.R')
+  print(plots.by.obs)
+  dev.off()
+} else {
+  source('code/gridSearch/comp_netVsIndiv/by_obs.R')
+  print(plots.by.obs)
+}
+rm(plots.by.obs)
 
 # Plot MAEs:
 if (outputPlots) {
@@ -101,26 +101,26 @@ if (outputPlots) {
 d1 <- read.csv(paste0(model1, list.files(path = model1, pattern = '_pt_ot')))
 e.pi1 <- read.csv(paste0(model1, list.files(path = model1, pattern = '_pi_bin')))
 e1 <- read.csv(paste0(model1, list.files(path = model1, pattern = '_1-4wks_bin')))
-e.pi.alt1 <- read.csv(paste0(model1, list.files(path = model1, pattern = '_pi_kd')))
-e.alt1 <- read.csv(paste0(model1, list.files(path = model1, pattern = '_1-4wks_kd')))
+# e.pi.alt1 <- read.csv(paste0(model1, list.files(path = model1, pattern = '_pi_kd')))
+# e.alt1 <- read.csv(paste0(model1, list.files(path = model1, pattern = '_1-4wks_kd')))
 
 d2 <- read.csv(paste0(model2, list.files(path = model2, pattern = '_pt_ot')))
 e.pi2 <- read.csv(paste0(model2, list.files(path = model2, pattern = '_pi_bin')))
 e2 <- read.csv(paste0(model2, list.files(path = model2, pattern = '_1-4wks_bin')))
-e.pi.alt2 <- read.csv(paste0(model2, list.files(path = model2, pattern = '_pi_kd')))
-e.alt2 <- read.csv(paste0(model2, list.files(path = model2, pattern = '_1-4wks_kd')))
+# e.pi.alt2 <- read.csv(paste0(model2, list.files(path = model2, pattern = '_pi_kd')))
+# e.alt2 <- read.csv(paste0(model2, list.files(path = model2, pattern = '_1-4wks_kd')))
 
 d3 <- read.csv(paste0(model3, list.files(path = model3, pattern = '_pt_ot')))
 e.pi3 <- read.csv(paste0(model3, list.files(path = model3, pattern = '_pi_bin')))
 e3 <- read.csv(paste0(model3, list.files(path = model3, pattern = '_1-4wks_bin')))
-e.pi.alt3 <- read.csv(paste0(model3, list.files(path = model3, pattern = '_pi_kd')))
-e.alt3 <- read.csv(paste0(model3, list.files(path = model3, pattern = '_1-4wks_kd')))
+# e.pi.alt3 <- read.csv(paste0(model3, list.files(path = model3, pattern = '_pi_kd')))
+# e.alt3 <- read.csv(paste0(model3, list.files(path = model3, pattern = '_1-4wks_kd')))
 
-logs1 <- list(d1, e.pi1, e1, e.pi.alt1, e.alt1)
-logs2 <- list(d2, e.pi2, e2, e.pi.alt2, e.alt2)
-logs3 <- list(d3, e.pi3, e3, e.pi.alt3, e.alt3)
+logs1 <- list(d1, e.pi1, e1)#, e.pi.alt1, e.alt1)
+logs2 <- list(d2, e.pi2, e2)#, e.pi.alt2, e.alt2)
+logs3 <- list(d3, e.pi3, e3)#, e.pi.alt3, e.alt3)
 
-for (i in 1:5) {
+for (i in 1:3) {# 5) {
   logs1[[i]]$model <- m1.lab
   logs2[[i]]$model <- m2.lab
   logs3[[i]]$model <- m3.lab
@@ -129,16 +129,17 @@ for (i in 1:5) {
 d <- rbind(logs1[[1]], logs2[[1]], logs3[[1]])
 e.pi <- rbind(logs1[[2]], logs2[[2]], logs3[[2]])
 e <- rbind(logs1[[3]], logs2[[3]], logs3[[3]])
-e.pi.alt <- rbind(logs1[[4]], logs2[[4]], logs3[[4]])
-e.alt <- rbind(logs1[[5]], logs2[[5]], logs3[[5]])
+# e.pi.alt <- rbind(logs1[[4]], logs2[[4]], logs3[[4]])
+# e.alt <- rbind(logs1[[5]], logs2[[5]], logs3[[5]])
 
 levels(d$metric) <- c('ot', 'pt')
 # e.pi.list <- list(e.pi[e.pi$metric == 'pi500', ], e.pi[e.pi$metric == 'pi250', ], e.pi.alt[e.pi.alt$metric == 500, ], e.pi.alt[e.pi.alt$metric == 250, ])
 # e.list <- list(e[e$metric2 == 'bin500', ], e[e$metric2 == 'bin250', ], e.alt[e.alt$metric2 == 500, ], e.alt[e.alt$metric2 == 250, ])
-e.pi.list <- list(e.pi[e.pi$metric %in% c('pi500', 'pi'), ], e.pi.alt[e.pi.alt$metric %in% c('500', 'pi'), ])
-e.list <- list(e[e$metric2 == 'bin500', ], e.alt[e.alt$metric2 == '500', ])
+e.pi.list <- list(e.pi[e.pi$metric %in% c('pi500', 'pi'), ])#, e.pi.alt[e.pi.alt$metric %in% c('500', 'pi'), ])
+e.list <- list(e[e$metric2 == 'bin500', ])#, e.alt[e.alt$metric2 == '500', ])
 
-rm(d1, d2, d3, e.pi1, e.pi2, e.pi3, e1, e2, e3, e.pi.alt1, e.pi.alt2, e.pi.alt3, e.alt1, e.alt2, e.alt3, logs1, logs2, logs3, e.pi, e.pi.alt, e, e.alt)
+# rm(d1, d2, d3, e.pi1, e.pi2, e.pi3, e1, e2, e3, e.pi.alt1, e.pi.alt2, e.pi.alt3, e.alt1, e.alt2, e.alt3, logs1, logs2, logs3, e.pi, e.pi.alt, e, e.alt)
+rm(d1, d2, d3, e.pi1, e.pi2, e.pi3, e1, e2, e3, logs1, logs2, logs3, e.pi, e)
 
 # Plot log scores for PT, PI, OT, 1-4 weeks, by PREDICTED lead week:
 # Question: Remove where obs are 0 for 1-4 weeks? Or where obs below some value?

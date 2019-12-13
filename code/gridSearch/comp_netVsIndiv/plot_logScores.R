@@ -58,7 +58,7 @@ if (byWeek == 'Predicted') {
   
   # PI:
   # do for a variety of binnings and kernel density methods:
-  for (i in 1:2) {
+  for (i in 1) {
     e.pi <- e.pi.list[[i]]
     
     if (restrict.fc) {
@@ -88,7 +88,7 @@ if (byWeek == 'Predicted') {
   }
   
   # 1-4 weeks:
-  for (i in 1:2) {
+  for (i in 1) {
     e <- e.list[[i]]
     # if (i %in% 2:4) {
     #   names(e)[6] <- 'metric'
@@ -238,7 +238,7 @@ if (byWeek == 'Predicted') {
   grid.arrange(p1, p2, p3)
   
   # PI:
-  for (i in 1:2) {
+  for (i in 1) {
     e.pi <- e.pi.list[[i]]
     
     if (restrict.fc) {
@@ -268,7 +268,7 @@ if (byWeek == 'Predicted') {
   }
   
   # 1-4 weeks:
-  for (i in 1:2) {
+  for (i in 1) {
     e <- e.list[[i]]
     # if (i %in% 2:4) {
     #   names(e)[6] <- 'metric'
