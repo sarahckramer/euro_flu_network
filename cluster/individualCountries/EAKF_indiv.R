@@ -175,10 +175,20 @@ EAKF_rFC<-function(num_ens, tmstep, param.bound, obs_i=obs_i,ntrn=1,
   
   #### Metrics for comparison
   Y <- c(xpost_mean[7, ], fcast_mean[3, ]) # newI
+  Y.ens <- matrix(NA, nrow = num_ens, ncol = nsn)
+  Y.ens[, 1:ntrn] <- xpost[7,, 1:ntrn]; Y.ens[, (ntrn + 1):(ntrn + nfc)] <- fcast[3,, 1:nfc]
+  
+  Y[is.na(obs_i)] <- NA
+  Y.ens[, which(is.na(obs_i))] <- NA
+  # for (ensmem in 1:num_ens) {
+  #   Y.ens[ensmem, ][is.na(obs_i)] <- NA
+  # }
+  
   pkwks <- rep(0, num_ens)
   obs_pkwk <- which.max(obs_i)
   for (i in 1:num_ens){
-    pkwks[i] <- which.max(c(xpost[7, i, 1:ntrn], fcast[3, i, 1:nfc]))
+    # pkwks[i] <- which.max(c(xpost[7, i, 1:ntrn], fcast[3, i, 1:nfc]))
+    pkwks[i] <- which.max(Y.ens[i, ])
   }
   pkwk_mode <- MODE(pkwks)[1]
   pkwk_mode_perc <- MODE(pkwks)[2] / num_ens
@@ -187,7 +197,7 @@ EAKF_rFC<-function(num_ens, tmstep, param.bound, obs_i=obs_i,ntrn=1,
   deno_obs_i <- ifelse(obs_i[ntrn + 1]==0, 1, obs_i[ntrn + 1])
   rdiff_next_newI <- (fcast_mean[3, 1] - deno_obs_i) / deno_obs_i
   # corr <- cor(Y, head(obs_i, nsn)); rms <- sqrt(mean((Y - head(obs_i, nsn))^2))
-  delta_sum_newI <- sum(Y) - sum(head(obs_i, nsn))
+  delta_sum_newI <- sum(Y, na.rm = TRUE) - sum(head(obs_i, nsn))
   delta_pkwk_mode <- pkwk_mode - obs_pkwk
   
   corr <- cor(Y, head(obs_i, nsn), use='pairwise.complete.obs');
@@ -219,7 +229,8 @@ EAKF_rFC<-function(num_ens, tmstep, param.bound, obs_i=obs_i,ntrn=1,
   intensity_err <- peak_intensity - obs_peak_int
   ili_peaks  <-  rep(0, num_ens)
   for (i in 1:num_ens){
-    ili_peaks[i]  <-  max(c(xpost[7, i, 1:ntrn], fcast[3, i, 1:nfc]))
+    # ili_peaks[i]  <-  max(c(xpost[7, i, 1:ntrn], fcast[3, i, 1:nfc]))
+    ili_peaks[i] <- max(Y.ens[i, ], na.rm = TRUE)
   }
   peak_intensity_var <- var(ili_peaks)
   
@@ -278,7 +289,8 @@ EAKF_rFC<-function(num_ens, tmstep, param.bound, obs_i=obs_i,ntrn=1,
   peakWeeks = peakIntensities = rep(NA, num_ens)
   nextILI  <-  matrix(NA, nrow=4, ncol=num_ens)
   for (i in 1:num_ens){
-    yy <- c(xpost[7,i,1:ntrn], fcast[3,i,1:nfc]); # trajectory for that particle
+    # yy <- c(xpost[7,i,1:ntrn], fcast[3,i,1:nfc]); # trajectory for that particle
+    yy <- Y.ens[i, ]
     
     onsets3[i] <- findOnset(yy, 300)$onset
     onsets4[i] <- findOnset(yy, 400)$onset

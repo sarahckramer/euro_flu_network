@@ -585,7 +585,7 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
   #   obs.post.toPlot.ind <- colMeans(obspost[i,, 1:tt])
   #   obs.fcast.toPlot.ind <- colMeans(obsfcast[i,, 1:nfc])
   #   plot(obs_i[, i], type = 'b', pch = 4, lty = 2, col = 'gray40', cex = 0.75,
-  #        xlab = 'Wks from Start', ylab = 'Syn+ Counts', main = countries[i], 
+  #        xlab = 'Wks from Start', ylab = 'Syn+ Counts', main = countries[i],
   #        ylim = c(0, max(max(obs_i[, i], na.rm = T), max(obs.post.toPlot.ind, na.rm = T))))
   #   lines(obs.post.toPlot.ind, type = 'b', pch = 20, lty = 1, cex = 0.8, col = 'steelblue2')
   #   lines((ntrn + 1):(ntrn + nfc), obs.fcast.toPlot.ind, type = 'b', pch = 20, lty = 1, cex = 0.8, col = 'coral')
@@ -1080,6 +1080,12 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
   delta_dur6 <- duration6 - durObs6
   
   # Calculate prob. distribution for peak weeks:
+  # print('Check for NAs...')
+  # print(which(is.na(peakWeeks))) # NAs showing up for countries with no data this year
+  # print(which(is.na(peakIntensities)))
+  # print(which(is.na(nextILI)))
+  # print('')
+  
   peakWeeksDistNA <- matrix(c(-1, rep(NA, n)), nrow = 1, ncol = n + 1)
   for (j in 1:n) {
     if (!all(is.na(obs_i[, j]))) {
@@ -1093,7 +1099,17 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     
     for (j in 1:n) {
       if (!all(is.na(obs_i[, j]))) {
+        
+        if (any(is.na(peakWeeks[j, ]))) {
+          print('NAs in peakWeeks')
+        }
+        if (any(is.na(peakIntensities[j, ]))) {
+          print('NAs in peakIntensities')
+        }
+        
         peakWeeksDist[row, j + 1] <- round(length(peakWeeks[j, ][peakWeeks[j, ] == i & !is.na(peakWeeks[j, ])]) / 300, 4)
+        # peakWeeksDist[row, j + 1] <- round(length(peakWeeks[j, ][peakWeeks[j, ] == i & !is.na(peakWeeks[j, ])]) / length(peakWeeks[j, ][!is.na(peakWeeks[j, ])]), 4)
+        # but I'm not sure there will ever be NAs in peakWeeks or peakIntensities - but we can put in a check!
       }
     }
     
