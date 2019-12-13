@@ -27,8 +27,9 @@ wk_start <- 40
 ### Parameter boundaries
 D_low <- 2; L_low <- 1*365; Rmx_low <- 2.0; Rdiff_low <- 0.2; airScale_low <- 0.75
 D_up <- 7; L_up <- 8*365; Rmx_up <- 2.8; Rdiff_up <- 1.0; airScale_up <- 1.25
-S0_low <- 0.55; S0_up <- 0.85
+# S0_low <- 0.55; S0_up <- 0.85
 # S0_low <- 0; S0_up <- 1.0
+S0_low <- 0.3; S0_up <- 0.9
 sd_low <- 0.05; sd_up <- 0.18
 I0_low <- 0; I0_up <- 0.00005
 
@@ -39,7 +40,11 @@ theta_up <- c(L_up, D_up, Rmx_up, Rdiff_up, airScale_up)
 discrete <- FALSE # run the SIRS model continuously
 metricsonly <- FALSE # save all outputs
 
-seasons <- c('2010-11', '2011-12', '2012-13', '2013-14', '2014-15', '2015-16', '2016-17', '2017-18') # ADD '2018-19'
+# seasons <- c('2010-11', '2011-12', '2012-13', '2013-14', '2014-15', '2015-16', '2016-17', '2017-18') # ADD '2018-19'
+seasons <- c('2010-11', '2012-13', '2013-14', '2014-15', '2015-16', '2017-18') # H1
+# seasons <- c('2011-12', '2012-13', '2013-14', '2014-15', '2016-17') # H3
+# seasons <- c('2010-11', '2011-12', '2012-13', '2014-15', '2015-16', '2017-18') # B
+
 # oevBase_list <- c(1e4, 1e5)
 # # oevBase_list <- c(2e5, 5e5) # test higher OEV bases - does this stop 1-4 week predictions from failing after the peak? (note: will likely be very inaccurate for the most part)
 # oevDenom_list <- c(1.0, 10.0, 50.0) #c(1.0, 2.0, 5.0, 10.0, 20.0, 50.0)
@@ -78,17 +83,29 @@ ah <- read.csv('data/ah_Europe_07142019.csv')
 AH <- rbind(ah[, count.indices], ah[, count.indices])
 
 ### Read in influenza data
-iliiso <- read.csv('data/WHO_data_05-09-19_SCALED.csv') # in same order as "countries" vector
+# iliiso <- read.csv('data/WHO_data_05-09-19_SCALED.csv') # in same order as "countries" vector
 # iliiso <- read.csv('data/by_subtype/WHO_data_A(all)_SCALED.csv')
+iliiso <- read.csv('data/by_subtype/WHO_data_A(H1)_SCALED.csv')
+# iliiso <- read.csv('data/by_subtype/WHO_data_A(H3)_SCALED.csv')
+# iliiso <- read.csv('data/by_subtype/WHO_data_B_SCALED.csv')
 
 ### Read in syndromic/virologic counts:
 test.dat <- read.csv('data/testCounts_052719.csv')
 
-syn.dat <- read.csv('data/synDatCounts_060519_SCALED.csv')
-pos.dat <- read.csv('data/posProp_060519.csv')
+# syn.dat <- read.csv('data/synDatCounts_060519_SCALED.csv')
+# pos.dat <- read.csv('data/posProp_060519.csv')
 
 # syn.dat <- read.csv('data/by_subtype/synDatCounts_A(all)_SCALED.csv')
 # pos.dat <- read.csv('data/by_subtype/posprop_A(all).csv')
+
+syn.dat <- read.csv('data/by_subtype/synDatCounts_A(H1)_SCALED.csv')
+pos.dat <- read.csv('data/by_subtype/posprop_A(H1).csv')
+
+# syn.dat <- read.csv('data/by_subtype/synDatCounts_A(H3)_SCALED.csv')
+# pos.dat <- read.csv('data/by_subtype/posprop_A(H3).csv')
+# 
+# syn.dat <- read.csv('data/by_subtype/synDatCounts_B_SCALED.csv')
+# pos.dat <- read.csv('data/by_subtype/posprop_B.csv')
 
 test.dat <- test.dat[, c(1, count.indices + 1)]
 # syn.dat <- syn.dat[, c(1, count.indices + 1)]
@@ -97,10 +114,13 @@ pos.dat <- pos.dat[, c(1, count.indices + 1)]
 # syn.dat.raw <- syn.dat
 
 ### Scale data: # ADD: new scalings
-scalings <- read.csv('data/scalings_frame_05-09-19.csv') # 1.3 for France in early seasons
-scalings <- scalings[count.indices, ]
+# scalings <- read.csv('data/scalings_frame_05-09-19.csv') # 1.3 for France in early seasons
+# scalings <- scalings[count.indices, ]
 # # # note: these are the "old" scalings
 # scalings <- read.csv('data/by_subtype/scalings_frame_A(all).csv')
+scalings <- read.csv('data/by_subtype/scalings_frame_A(H1).csv')
+# scalings <- read.csv('data/by_subtype/scalings_frame_A(H3).csv')
+# scalings <- read.csv('data/by_subtype/scalings_frame_B.csv')
 
 for (i in 2:13) {
   # if (names(iliiso)[i] == 'France') {
@@ -197,9 +217,9 @@ obs_vars <- calc_obsvars_nTest(obs = as.matrix(obs_i), syn_dat = as.matrix(syn_i
 # LU and DE look particularly uncertain
 # obs_vars <- calc_obsvars(obs = as.matrix(obs_i), oev_base, oev_denom)
 
-### SET MAX OEV #######################################
-obs_vars[obs_vars > 1e6 & !is.na(obs_vars)] <- 1e6
-#######################################################
+# ### SET MAX OEV #######################################
+# obs_vars[obs_vars > 1e6 & !is.na(obs_vars)] <- 1e6
+# #######################################################
 
 # Get the first and last date of the simulation:
 clim_start <- as.numeric(start_date - as.Date(paste('20',
@@ -243,7 +263,7 @@ colnames(outputMetrics)[6] <- 'scaling'
 # I actually think all the other colnames are fine as-is...
 
 load('data/by_subtype/scalings_by_subtype_120219.RData')
-outputMetrics[outputMetrics[, 'country'] == 'FR' & outputMetrics[, 'season'] %in% seasons[1:4], 'scaling'] <- 1.3 #scalings.new[[1]][13]#1.3
+outputMetrics[outputMetrics[, 'country'] == 'FR' & outputMetrics[, 'season'] %in% seasons[1:4], 'scaling'] <- scalings.new[[2]][13]#1.3
 # outputMetrics[outputMetrics[, 'country'] == 'FR' & outputMetrics[, 'season'] %in% seasons[1:4], 'scaling'] <- new.scalings.mean[[6]][1]
 # FR has an alternative scaling for earlier
 

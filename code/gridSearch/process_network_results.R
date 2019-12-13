@@ -1,7 +1,10 @@
 
 ### Run to process files downloaded from cluster (network model only) ###
-# model.type <- 'Network'
-model.type <- 'Individual'
+model.type <- 'Network'
+# model.type <- 'Individual'
+
+# Set strain:
+strain <- 'A(H1)'
 
 # 1. Read in and compile:
 if (model.type == 'Network') {
@@ -29,8 +32,9 @@ if (model.type == 'Network') {
 # 5. Remove where there would be no forecasts in individual model:
 if (model.type == 'Network') {
   source('../../code/gridSearch/process_raw_data/remove_fcasts_where_no_data.R')
+} else if (model.type == 'Individual') {
+  source('../../code/individualCountries/remove_fcasts_where_oevNew0NA.R')
 }
-# nothing to do here for individual model
 
 # 6: Reset directory:
 setwd('../../')
