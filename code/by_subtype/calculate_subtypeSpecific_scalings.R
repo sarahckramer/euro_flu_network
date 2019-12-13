@@ -1,9 +1,9 @@
 
 # Read in subtype-specific syndromic+:
-dat.H1 <- read.csv('data/WHO_data_A(H1).csv')
-dat.H3 <- read.csv('data/WHO_data_A(H3).csv')
-dat.A <- read.csv('data/WHO_data_A(all).csv')
-dat.B <- read.csv('data/WHO_data_B.csv')
+dat.H1 <- read.csv('data/by_subtype/WHO_data_A(H1).csv')
+dat.H3 <- read.csv('data/by_subtype/WHO_data_A(H3).csv')
+dat.A <- read.csv('data/by_subtype/WHO_data_A(all).csv')
+dat.B <- read.csv('data/by_subtype/WHO_data_B.csv')
 
 # Get only countries of interest:
 countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
@@ -103,6 +103,7 @@ countries <- names(dat.A)[2:13]
 scalings.new <- vector('list', 4)
 
 for (ix in 1:length(props.strain.season)) {
+  print(ix)
   for (count.index in 1:12) {
     dat.temp <- dat.list[[ix]][, count.index + 1]
     
@@ -114,11 +115,14 @@ for (ix in 1:length(props.strain.season)) {
         ar <- sum(dat.temp[seasons[[season]]], na.rm = TRUE)
         min.scales <- c(min.scales, 15000 / ar)
         max.scales <- c(max.scales, 50000 / ar)
+      } else {
+        print(names(dat.A)[count.index + 1])
+        print(c('2009pdm', '10-11', '11-12', '12-13', '13-14', '14-15', '15-16', '16-17', '17-18')[season])
       }
     }
     # then we have min and max scales only for those seasons where strain made up at least 25% of infections
     
-    print(names(dat.A)[count.index + 1])
+    # print(names(dat.A)[count.index + 1])
     
     overlap <- max(min.scales[min.scales > 0 & min.scales != Inf])
     no.overlap <- min(max.scales[max.scales > 0 & max.scales != Inf])
@@ -127,7 +131,7 @@ for (ix in 1:length(props.strain.season)) {
     
     # print(min.scales); print(max.scales); print('') # never a case of the vectors being completely empty
   }
-  
+  print(''); print('')
 }
 
 # Calculate appropriate scalings for France:
