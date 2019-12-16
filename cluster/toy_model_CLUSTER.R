@@ -79,8 +79,11 @@ pop.size <- pop.size[pop.size$country %in% countries, ]; pop.size$country <- fac
 pop.size <- pop.size[match(countries, pop.size$country), ]
 
 ### Read in humidity data
-ah <- read.csv('data/ah_Europe_07142019.csv')
-AH <- rbind(ah[, count.indices], ah[, count.indices])
+# ah <- read.csv('data/ah_Europe_07142019.csv')
+# AH <- rbind(ah[, count.indices], ah[, count.indices])
+
+ah <- read.csv('data/ah_MEAN_120519.csv')
+AH <- rbind(ah, ah)
 
 ### Read in influenza data
 # iliiso <- read.csv('data/WHO_data_05-09-19_SCALED.csv') # in same order as "countries" vector

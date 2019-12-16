@@ -47,8 +47,8 @@ theta_up <- c(L_up, D_up, Rmx_up, Rdiff_up)
 param.bound <- cbind(theta_low, theta_up)
 
 ### Initial state variable values
-# S0_low <- 0.55; S0_up <- 0.85
-S0_low <- 0; S0_up <- 1.0
+S0_low <- 0.55; S0_up <- 0.85
+# S0_low <- 0; S0_up <- 1.0
 # S0_low <- 0.3; S0_up <- 0.9
 I0_low <- 0; I0_up <- 0.00005
 
@@ -270,9 +270,9 @@ for (country in countries) {
 }
 print('Results compiled.')
 
-write.csv(metrics.all, file = paste0('code/individualCountries/outputs/outputMet_', oev_base, '_', oev_denom, '_', lambda, '_H1_wide.csv'), row.names = FALSE)
-write.csv(output.all, file = paste0('code/individualCountries/outputs/outputOP_', oev_base, '_', oev_denom, '_', lambda, '_H1_wide.csv'), row.names = FALSE)
-write.csv(dist.all, file = paste0('code/individualCountries/outputs/outputDist_', oev_base, '_', oev_denom, '_', lambda, '_H1_wide.csv'), row.names = FALSE)
-write.csv(ens.all, file = paste0('code/individualCountries/outputs/outputEns_', oev_base, '_', oev_denom, '_', lambda, '_H1_wide.csv'), row.names = FALSE)
+write.csv(metrics.all, file = paste0('code/individualCountries/outputs/outputMet_', oev_base, '_', oev_denom, '_', lambda, '_H1_narrow.csv'), row.names = FALSE)
+write.csv(output.all, file = paste0('code/individualCountries/outputs/outputOP_', oev_base, '_', oev_denom, '_', lambda, '_H1_narrow.csv'), row.names = FALSE)
+write.csv(dist.all, file = paste0('code/individualCountries/outputs/outputDist_', oev_base, '_', oev_denom, '_', lambda, '_H1_narrow.csv'), row.names = FALSE)
+write.csv(ens.all, file = paste0('code/individualCountries/outputs/outputEns_', oev_base, '_', oev_denom, '_', lambda, '_H1_narrow.csv'), row.names = FALSE)
 
 print('Done.')
