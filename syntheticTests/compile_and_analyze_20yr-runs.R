@@ -29,9 +29,9 @@ s.list <- list(s.list1, s.list2)
 r.list <- list(r.list1, r.list2)
 
 # Save:
-save(run.list, file = 'syntheticTests/syntheticData/20yr_runs_cluster/resRates_20yr_last10_meanAH.RData')
-save(s.list, file = 'syntheticTests/syntheticData/20yr_runs_cluster/resS_20yr_last10_meanAH.RData')
-save(r.list, file = 'syntheticTests/syntheticData/20yr_runs_cluster/resR_20yr_last10_meanAH.RData')
+save(run.list, file = 'syntheticTests/syntheticData/20yr_runs_cluster/resRates_20yr_last10_noAH.RData')
+save(s.list, file = 'syntheticTests/syntheticData/20yr_runs_cluster/resS_20yr_last10_noAH.RData')
+save(r.list, file = 'syntheticTests/syntheticData/20yr_runs_cluster/resR_20yr_last10_noAH.RData')
 
 rm(list = ls())
 
@@ -41,13 +41,14 @@ rm(list = ls())
 ### Format ### 
 
 # Load in last 10 years:
-load('syntheticTests/syntheticData/20yr_runs_cluster/resRates_20yr_last10_meanAH.RData')
+load('syntheticTests/syntheticData/20yr_runs_cluster/resRates_20yr_last10_noAH.RData')
 # load('syntheticTests/syntheticData/20yr_runs_cluster/resS_20yr_last10_meanAH.RData')
 # load('syntheticTests/syntheticData/20yr_runs_cluster/resR_20yr_last10_meanAH.RData')
 
 # And read in accompanying parameter sets:
 # load('syntheticTests/syntheticData/init_parms_10000_NEW.RData')
-load('syntheticTests/syntheticData/init_parms_10000_LHS.RData')
+# load('syntheticTests/syntheticData/init_parms_10000_LHS.RData')
+load('syntheticTests/syntheticData/init_parms_10000_LHS_noAH.RData')
 
 # List of countries:
 countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
