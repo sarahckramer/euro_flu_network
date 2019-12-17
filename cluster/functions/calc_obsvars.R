@@ -118,7 +118,7 @@ calc_obsvars_nTest <- function(obs, syn_dat, ntests, posprops, oev_base, oev_den
   # Incorporate syndromic counts:
   vars.temp <- matrix(0, nrow = nrow(posprops), ncol = ncol(posprops))
   for (i in 1:dim(posprops)[2]) {
-    vars.temp[, i] <- (tmp.syn[, i] / tmp.test[, i]) * (oev_base + ((tmp[, i] ** tmp_exp) / oev_denom))
+    vars.temp[, i] <- (tmp.syn[, i] ** 2 / tmp.test[, i]) * (oev_base + ((tmp[, i] ** tmp_exp) / oev_denom))
     # vars.temp[, i] <- ((syn_dat[, i] / ntests[, i]) * (oev_base + oev_fact * (tmp[, i] ** tmp_exp))) / oev_denom
     # vars.temp[, i] <- ((syn_dat[, i]) * (oev_base + oev_fact * (tmp[, i] ** tmp_exp)))
   }
@@ -133,6 +133,9 @@ calc_obsvars_nTest <- function(obs, syn_dat, ntests, posprops, oev_base, oev_den
   # So basically, anything that's NA here is also NA in the data themselves
   
   # if last string of NAs can leave, but otherwise set to 1?
+  
+  #print(tmp)
+  #print(oev_base + ((tmp ** tmp_exp) / oev_denom))
   
   return(vars.temp)
 }
