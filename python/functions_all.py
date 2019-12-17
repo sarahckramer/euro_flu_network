@@ -82,7 +82,7 @@ def calc_obsvars_nTest(obs, syndat, ntests, posprops, oev_base, oev_denom, tmp_e
             #print(tmp_syn[:, i])
             #print(tmp_test[:, i])
             #print(tmp_syn[:, i] / tmp_test[:, i])
-            vars_temp[:, i] = (tmp_syn[:, i] / tmp_test[:, i]) * (oev_base + (np.square(tmp[:, i]) / oev_denom))
+            vars_temp[:, i] = (np.square(tmp_syn[:, i]) / tmp_test[:, i]) * (oev_base + (np.square(tmp[:, i]) / oev_denom))
         #print(vars_temp.shape)
 
         return(vars_temp)

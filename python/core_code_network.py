@@ -40,8 +40,8 @@ I0_up = 0.00005
 
 # Parameters for filters
 discrete = False
-oev_base = 1e4
-oev_denom = 10.0
+oev_base = 0.5
+oev_denom = 1.0
 lambda_val = 1.02
 num_ens = 300
 num_runs = 1 # EVENTUALLY WANT 5
@@ -215,6 +215,13 @@ for season_index in range(len(seasons)):
         res = EAKF_fn(num_ens, tmstep, param_init, obs_i, 10, nsn, obs_vars, tm_ini, tm_range, n, N, ah,
                       dt, countries, a_rand) # and variables needed for SIRS
         # loop through ntrns or run all as we go?
+
+        #res = pd.Panel(res)
+        print(res.shape)
+        #np.savetxt(os.path.join('results/', 'xprior_ens_' + str(run) + '_' + season + '.txt'), res, delimiter = ',')
+        #for i in range(res.shape[1]):
+            #a = res[:, i, :]
+            #np.savetxt(os.path.join('results/', 'xprior_ens_' + str(i + 1) + '_' + season + '.txt'), a, delimiter = ',')
 
 
 
