@@ -53,7 +53,7 @@ source('cluster/functions/replaceLeadingLaggingNAs.R')
 seasons <- c("2010-11", "2011-12", "2012-13", "2013-14", "2014-15", "2015-16", "2016-17", "2017-18")
 
 # Initiate lists to store OEVs:
-oev.new = oev.old = vector('list', length(seasons))
+oev.new.alt = oev.new = oev.old = vector('list', length(seasons))
 
 # Loop through seasons and calculate both "old" and "new" type of OEV:
 for (season.index in 1:length(seasons)) {
@@ -82,19 +82,24 @@ for (season.index in 1:length(seasons)) {
   # Replace 0s in test_i w/ NA (b/c can't divide by 0!):
   test_i[test_i == 0 & !is.na(test_i)] <- NA
   
-  # Calculate OEVs used in network model:
+  # # Calculate OEVs used in network model:
   obs_vars <- calc_obsvars_nTest(obs = obs_i, syn_dat = syn_i, ntests = test_i, posprops = pos_i, oev_base, oev_denom, tmp_exp = 2.0)
   
   # Calculate OEVs used in individual country models:
   obs_vars.indiv <- calc_obsvars(obs = obs_i, oev_base, oev_denom)
   
+  # And calculate OEVs after "scaling" posprops:
+  #pos_i <- pos_i * 100000
+  obs_vars.alt <- calc_obsvars_nTest(obs = obs_i, syn_dat = syn_i, ntests = test_i, posprops = pos_i, oev_base = 0.5, oev_denom = 1.0, tmp_exp = 2.0)
+  
   # Store results in lists:
   oev.new[[season.index]] <- obs_vars
   oev.old[[season.index]] <- obs_vars.indiv
+  oev.new.alt[[season.index]] <- obs_vars.alt
 }
 
 # Format lists for plotting:
-oev.new.df = oev.old.df = NULL
+oev.alt.df = oev.new.df = oev.old.df = NULL
 for (ix in 1:length(seasons)) {
   colnames(oev.new[[ix]]) <- countries
   oev.new[[ix]] <- melt(oev.new[[ix]])
@@ -105,13 +110,18 @@ for (ix in 1:length(seasons)) {
   oev.old[[ix]] <- melt(oev.old[[ix]])
   oev.old[[ix]]$season <- seasons[ix]
   oev.old.df <- rbind(oev.old.df, oev.old[[ix]])
+  
+  colnames(oev.new.alt[[ix]]) <- countries
+  oev.new.alt[[ix]] <- melt(oev.new.alt[[ix]])
+  oev.new.alt[[ix]]$season <- seasons[ix]
+  oev.alt.df <- rbind(oev.alt.df, oev.new.alt[[ix]])
 }
 
-names(oev.new.df) = names(oev.old.df) = c('time', 'country', 'value', 'season')
+names(oev.new.df) = names(oev.old.df) = names(oev.alt.df) = c('time', 'country', 'value', 'season')
 
 # Combine:
-oev.new.df$model <- 'New'; oev.old.df$model <- 'Old'
-oev.df <- rbind(oev.new.df, oev.old.df)
+oev.new.df$model <- 'New'; oev.old.df$model <- 'Old'; oev.alt.df$model <- 'Alt'
+oev.df <- rbind(oev.old.df, oev.alt.df)
 
 # # Plot new and old by country:
 # p1 <- ggplot(data = oev.new.df) + labs(x = 'Weeks Since Season Start', y = 'OEV') +
@@ -131,12 +141,15 @@ p1 <- ggplot(data = oev.new.df[oev.new.df$time <= 33, ]) + labs(x = 'Weeks Since
 p2 <- ggplot(data = oev.old.df[oev.old.df$time <= 33, ]) + labs(x = 'Weeks Since Season Start', y = 'OEV') +
   geom_line(aes(x = time, y = value, group = season, colour = season)) +
   facet_wrap(~ country, scales = 'free_y') + theme_bw()
+p3 <- ggplot(data = oev.alt.df[oev.alt.df$time <= 33, ]) + labs(x = 'Weeks Since Season Start', y = 'OEV') +
+  geom_line(aes(x = time, y = value, group = season, colour = season)) +
+  facet_wrap(~ country, scales = 'free_y') + theme_bw()
 # print(p1); print(p2)
 # absolute values remain similar, but structure over time changes quite a bit
 
 # Save plots to pdf:
-pdf('code/gridSearch/plots/OEV_comp.pdf', width = 12, height = 7)
-print(p1); print(p2)
+#pdf('code/gridSearch/plots/OEV_comp.pdf', width = 12, height = 7)
+#print(p2); print(p3)
 # dev.off()
 
 # Now plot by country, comparing new to old:
@@ -202,7 +215,7 @@ for (season.index in 1:length(seasons)) {
   test_i[test_i == 0 & !is.na(test_i)] <- NA
   
   # Calculate OEVs used in network model:
-  obs_vars <- calc_obsvars_nTest(obs = obs_i, syn_dat = syn_i, ntests = test_i, posprops = pos_i, oev_base, oev_denom, tmp_exp = 2.0)
+  obs_vars <- calc_obsvars_nTest(obs = obs_i, syn_dat = syn_i, ntests = test_i, posprops = pos_i, oev_base = 0.5, oev_denom = 1.0, tmp_exp = 2.0)
   
   # Calculate OEVs used in individual country models:
   obs_vars.indiv <- calc_obsvars(obs = obs_i, oev_base, oev_denom)
@@ -232,9 +245,9 @@ oev.df.unscaled <- rbind(oev.new.df, oev.old.df)
 oev.df.unscaled <- oev.df.unscaled[oev.df.unscaled$time < 33, ]
 oev.df.unscaled$group <- paste(oev.df.unscaled$season, oev.df.unscaled$model, sep = '_'); oev.df.unscaled$group <- factor(oev.df.unscaled$group)
 oev.df.unscaled <- oev.df.unscaled[!is.na(oev.df.unscaled$value), ]
-# p2 <- ggplot(data = oev.df.unscaled, aes(x = time, y = value, group = group, colour = model)) + geom_line() +
-#   facet_wrap(~ country, scales = 'free_y') + theme_bw() + labs(x = 'Weeks Since Season Start', y = 'OEV', colour = '')
-# print(p2)
+p2 <- ggplot(data = oev.df.unscaled, aes(x = time, y = value, group = group, colour = model)) + geom_line() +
+  facet_wrap(~ country, scales = 'free_y') + theme_bw() + labs(x = 'Weeks Since Season Start', y = 'OEV', colour = '')
+print(p2)
 # # these have a similar range between countries as the scaled versions, but some are quite low, and I think scaling would make sense
 # # relationship between old and new changes for some countries: AT, BE, NL especially
 
@@ -251,11 +264,11 @@ for (country in countries) {
   }
 }
 
-# # Replot:
-# p3 <- ggplot(data = oev.df.scaled, aes(x = time, y = value, group = group, colour = model)) + geom_line() +
-#   facet_wrap(~ country, scales = 'free_y') + theme_bw() + labs(x = 'Weeks Since Season Start', y = 'OEV', colour = '')
-# print(p3)
-# # okay, obviously the same relationships between old and new, but between-country changes might be interesting
+# Replot:
+p3 <- ggplot(data = oev.df.scaled, aes(x = time, y = value, group = group, colour = model)) + geom_line() +
+  facet_wrap(~ country, scales = 'free_y') + theme_bw() + labs(x = 'Weeks Since Season Start', y = 'OEV', colour = '')
+print(p3)
+# okay, obviously the same relationships between old and new, but between-country changes might be interesting
 
 p1 <- ggplot(data = oev.df.unscaled[oev.df.unscaled$model == 'New', ]) + labs(x = 'Weeks Since Season Start', y = 'log(OEV)', title = 'Unscaled') +
   geom_line(aes(x = time, y = value, group = country, colour = country)) +
@@ -266,19 +279,21 @@ p2 <- ggplot(data = oev.df.scaled[oev.df.scaled$model == 'New', ]) + labs(x = 'W
 grid.arrange(p1, p2)
 # scalings only slightly increase how close different countries are, but they do change the ordering of the countries
 
-# # And plot OEV_old and OEV_new, comparing pre- and post-scaling:
-# oev.df.scaled$scaling <- 'Post'
-# oev.df$scaling <- 'Pre'
-# oev.df <- rbind(oev.df, oev.df.scaled)
-# 
-# oev.df$group <- paste(oev.df$group, oev.df$scaling, sep = '_'); oev.df$group <- factor(oev.df$group)
-# 
-# p1 <- ggplot(data = oev.df[oev.df$model == 'Old', ], aes(x = time, y = value, group = group, colour = scaling)) + geom_line() +
-#   facet_wrap(~ country, scales = 'free_y') + theme_bw() + labs(x = 'Weeks Since Season Start', y = 'OEV', colour = 'Scaling Timing')
-# p2 <- ggplot(data = oev.df[oev.df$model == 'New', ], aes(x = time, y = value, group = group, colour = scaling, lty = scaling)) + geom_line() +
-#   facet_wrap(~ country, scales = 'free_y') + theme_bw() + labs(x = 'Weeks Since Season Start', y = 'OEV', colour = 'Scaling Timing')
-# print(p2)
-# # scaling before or after makes no difference; obviously
+# And plot OEV_old and OEV_new, comparing pre- and post-scaling:
+oev.df.scaled$scaling <- 'Post'
+oev.df$scaling <- 'Pre'
+oev.df <- rbind(oev.df, oev.df.scaled)
+
+oev.df$model[oev.df$model == 'Alt'] <- 'New'
+
+oev.df$group <- paste(oev.df$group, oev.df$scaling, sep = '_'); oev.df$group <- factor(oev.df$group)
+
+p1 <- ggplot(data = oev.df[oev.df$model == 'Old', ], aes(x = time, y = value, group = group, colour = scaling)) + geom_line() +
+  facet_wrap(~ country, scales = 'free_y') + theme_bw() + labs(x = 'Weeks Since Season Start', y = 'OEV', colour = 'Scaling Timing')
+p2 <- ggplot(data = oev.df[oev.df$model == 'New', ], aes(x = time, y = value, group = group, colour = scaling, lty = scaling)) + geom_line() +
+  facet_wrap(~ country, scales = 'free_y') + theme_bw() + labs(x = 'Weeks Since Season Start', y = 'OEV', colour = 'Scaling Timing')
+print(p2)
+# scaling before or after makes no difference; obviously
 
 dev.off()
 
