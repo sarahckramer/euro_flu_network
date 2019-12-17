@@ -8,11 +8,19 @@ import numpy as np
 import pandas as pd
 import math
 import matplotlib.pyplot as plt
+#from numba import jit
+#import cython
+#from cython_start_try import *
+from multiprocessing import *
+
+#from IPython import get_ipython
+#get_ipython().magic('load_ext cythonmagic')
 
 # Read in all model functions:
 from functions_all import *
 from SIRS_python import *
 from EAKF_python import *
+#from try_ensemble import *
 
 # Turn off SettingWithCopyWarning:
 pd.options.mode.chained_assignment = None 
@@ -217,12 +225,9 @@ for season_index in range(len(seasons)):
         # loop through ntrns or run all as we go?
 
         #res = pd.Panel(res)
-        print(res.shape)
-        #np.savetxt(os.path.join('results/', 'xprior_ens_' + str(run) + '_' + season + '.txt'), res, delimiter = ',')
-        #for i in range(res.shape[1]):
-            #a = res[:, i, :]
-            #np.savetxt(os.path.join('results/', 'xprior_ens_' + str(i + 1) + '_' + season + '.txt'), a, delimiter = ',')
-
+        #print(res.shape)
+        #np.savetxt(os.path.join('results/', 'xprior_ens_' + str(run) + '_' + season + '_NEW.txt'), res, delimiter = ',')
+        
 
 
 

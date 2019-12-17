@@ -1,6 +1,46 @@
 
 import numpy as np
 
+# Run full ensemble:
+def run_ensemble(tmStrt, tmEnd, tmStep, tmRange, S0, I0, popN, D, L, beta, airScale, Countries, n, airRand, num_ens):
+    xprior_temp = np.empty([np.square(n) * 3, num_ens])
+    
+    for i in range(num_ens):
+        Sr_tmp = propagate_SIRS(tmStrt, tmEnd, tmStep, tmRange, S_0 = S0[:, :, i], I_0 = I0[:, :, i], popN = popN,
+                                D_d = D[i], L_d = L[i], beta_d = beta[:, :, i], airScale_d = airScale[i],
+                                Countries = Countries, n_count = n, airRand = airRand)
+
+##        print(np.array((Sr_tmp[0][:, :, Sr_tmp[0].shape[2] - 1].reshape([1, np.square(n)]), Sr_tmp[1][:, :, Sr_tmp[1].shape[2] - 1].reshape([1, np.square(n)]),
+##               Sr_tmp[2][:, :, Sr_tmp[2].shape[2] - 1].reshape([1, np.square(n)]))).reshape([1, np.square(n) * 3]))
+
+        xprior_temp[:, i] = np.array((Sr_tmp[0][:, :, Sr_tmp[0].shape[2] - 1].reshape([1, np.square(n)]),
+                                      Sr_tmp[1][:, :, Sr_tmp[1].shape[2] - 1].reshape([1, np.square(n)]),
+                                      Sr_tmp[2][:, :, Sr_tmp[2].shape[2] - 1].reshape([1, np.square(n)]))).reshape([1, np.square(n) * 3])
+        
+        #xprior[S0_indices, i, 0] = Sr_tmp[0][:, :, Sr_tmp[0].shape[2] - 1].reshape([1, np.square(n)])
+        #xprior[I0_indices, i, 0] = Sr_tmp[1][:, :, Sr_tmp[1].shape[2] - 1].reshape([1, np.square(n)])
+        #xprior[newI_indices, i, 0] = Sr_tmp[2][:, :, Sr_tmp[2].shape[2] - 1].reshape([1, np.square(n)])
+
+    return(xprior_temp)
+
+# Or try running in parallel?:
+def run_ensemble2(i, tmStrt, tmEnd, tmStep, tmRange, S0, I0, popN, D, L, beta, airScale, Countries, n, airRand):
+
+    S_0 = S0[:, :, i]
+    I_0 = I0[:, :, i]
+    D_d = D[i]
+    L_d = L[i]
+    beta_d = beta[:, :, i]
+    airScale_d = airScale[i]
+    
+    Sr_tmp = propagate_SIRS(tmStrt, tmEnd, tmStep, tmRange, S_0, I_0, popN, D_d, L_d, beta_d, airScale_d,
+                                Countries = Countries, n_count = n, airRand = airRand)
+    
+    return(np.array((Sr_tmp[0][:, :, Sr_tmp[0].shape[2] - 1].reshape([1, np.square(n)]),
+                    Sr_tmp[1][:, :, Sr_tmp[1].shape[2] - 1].reshape([1, np.square(n)]),
+                    Sr_tmp[2][:, :, Sr_tmp[2].shape[2] - 1].reshape([1, np.square(n)]))).reshape([1, np.square(n) * 3]))
+    
+
 # SIRS (including air travel and commuting):
 def propagate_SIRS(tmStrt, tmEnd, tmStep, tmRange, S_0, I_0, popN, D_d, L_d, beta_d, airScale_d, Countries, n_count, airRand):
 
@@ -365,28 +405,11 @@ def propagate_SIRS(tmStrt, tmEnd, tmStep, tmRange, S_0, I_0, popN, D_d, L_d, bet
         del h
         '''
 
-        #print(np.transpose(np.transpose(S) / np.sum(popN, 1)))
-        #print(S[1, 3] / np.sum(popN, 1)[1])
-        #print(S[1, 3] / np.sum(popN, 1)[3])
-        
-        #print(np.transpose(np.transpose(S) / np.sum(popN, 1) * np.sum(airRand_temp, 1)))
-        #print(S[1, 3] / np.sum(popN, 1)[1] * np.sum(airRand_temp, 1)[1])
-        #print(S[1, 3] / np.sum(popN, 1)[1] * np.sum(airRand_temp, 1)[3])
-
         sOut = np.transpose(np.transpose(S) / np.sum(popN, 1) * np.sum(airRand_temp, 1))
         iOut = np.transpose(np.transpose(I) / np.sum(popN, 1) * np.sum(airRand_temp, 1))
-
-        #print(np.allclose(sOut, sOutCheck))
-        #print(np.allclose(iOut, iOutCheck))
-
-        #print(np.transpose(np.tile(np.matmul(np.sum(S, 1) / np.sum(popN, 1), airRand_temp), (n_count, 1))))
-        #print(popN / np.transpose(np.tile(np.sum(popN, 1), (n_count, 1))))
-
+        
         sIn = np.transpose(np.tile(np.matmul(np.sum(S, 1) / np.sum(popN, 1), airRand_temp), (n_count, 1))) * popN / np.transpose(np.tile(np.sum(popN, 1), (n_count, 1)))
         iIn = np.transpose(np.tile(np.matmul(np.sum(I, 1) / np.sum(popN, 1), airRand_temp), (n_count, 1))) * popN / np.transpose(np.tile(np.sum(popN, 1), (n_count, 1)))
-        
-        #print(np.allclose(sIn, sInCheck))
-        #print(np.allclose(iIn, iInCheck))
 
         Estrav = (tmStep * (2 / 3)) * (sIn - sOut)
         Eitrav = (tmStep * (2 / 3)) * (iIn - iOut)
@@ -414,30 +437,14 @@ def propagate_SIRS(tmStrt, tmEnd, tmStep, tmRange, S_0, I_0, popN, D_d, L_d, bet
         Einf = tmStep * (2 / 3) * (Ts1 * np.reshape(beta_d[t, :] * np.sum(Ti1, axis = 1) / np.sum(popN, axis = 1), [12, 1]))
         Erecov = tmStep * (2 / 3) * (Ti1 / D_d)
 
-        Estrav = np.zeros(S.shape)
-        Eitrav = np.zeros(S.shape)
+        sOut = np.transpose(np.transpose(Ts1) / np.sum(popN, 1) * np.sum(airRand_temp, 1))
+        iOut = np.transpose(np.transpose(Ti1) / np.sum(popN, 1) * np.sum(airRand_temp, 1))
+        
+        sIn = np.transpose(np.tile(np.matmul(np.sum(Ts1, 1) / np.sum(popN, 1), airRand_temp), (n_count, 1))) * popN / np.transpose(np.tile(np.sum(popN, 1), (n_count, 1)))
+        iIn = np.transpose(np.tile(np.matmul(np.sum(Ti1, 1) / np.sum(popN, 1), airRand_temp), (n_count, 1))) * popN / np.transpose(np.tile(np.sum(popN, 1), (n_count, 1)))
 
-##        for k in range(len(Countries)): # k = home
-##            for n in range(len(Countries)): # n = work
-##                sOutTemp = 0
-##                iOutTemp = 0
-##                sInTemp = 0
-##                iInTemp = 0
-##
-##                for h in range(len(Countries)): # h = travel to/from
-##                     sOutTemp = sOutTemp + (Ts1[k, n] / sum(popN[k, :])) * airRand_temp[k, h]
-##                     iOutTemp = iOutTemp + (Ti1[k, n] / sum(popN[k, :])) * airRand_temp[k, h]
-##
-##                     for m in range(len(Countries)): # m = working location of those living in h
-##                         sInTemp = sInTemp + (popN[k, n] / sum(popN[k, :])) * airRand_temp[h, k] * (Ts1[h, m] / sum(popN[h, :]))
-##                         iInTemp = iInTemp + (popN[k, n] / sum(popN[k, :])) * airRand_temp[h, k] * (Ti1[h, m] / sum(popN[h, :]))
-##
-##                Estrav[k, n] = (tmStep * (2 / 3)) * (sInTemp - sOutTemp)
-##                Eitrav[k, n] = (tmStep * (2 / 3)) * (iInTemp - iOutTemp)
-##        del k
-##        del n
-##        del m
-##        del h
+        Estrav = (tmStep * (2 / 3)) * (sIn - sOut)
+        Eitrav = (tmStep * (2 / 3)) * (iIn - iOut)
 
         Eimmloss[np.where(Eimmloss < 0)] = 0 # set any values below 0 to 0
         Einf[np.where(Einf < 0)] = 0
@@ -459,30 +466,14 @@ def propagate_SIRS(tmStrt, tmEnd, tmStep, tmRange, S_0, I_0, popN, D_d, L_d, bet
         Einf = tmStep * (2 / 3) * (Ts2 * np.reshape(beta_d[t, :] * np.sum(Ti2, axis = 1) / np.sum(popN, axis = 1), [12, 1]))
         Erecov = tmStep * (2 / 3) * (Ti2 / D_d)
 
-        Estrav = np.zeros(S.shape)
-        Eitrav = np.zeros(S.shape)
+        sOut = np.transpose(np.transpose(Ts2) / np.sum(popN, 1) * np.sum(airRand_temp, 1))
+        iOut = np.transpose(np.transpose(Ti2) / np.sum(popN, 1) * np.sum(airRand_temp, 1))
+        
+        sIn = np.transpose(np.tile(np.matmul(np.sum(Ts2, 1) / np.sum(popN, 1), airRand_temp), (n_count, 1))) * popN / np.transpose(np.tile(np.sum(popN, 1), (n_count, 1)))
+        iIn = np.transpose(np.tile(np.matmul(np.sum(Ti2, 1) / np.sum(popN, 1), airRand_temp), (n_count, 1))) * popN / np.transpose(np.tile(np.sum(popN, 1), (n_count, 1)))
 
-##        for k in range(len(Countries)): # k = home
-##            for n in range(len(Countries)): # n = work
-##                sOutTemp = 0
-##                iOutTemp = 0
-##                sInTemp = 0
-##                iInTemp = 0
-##
-##                for h in range(len(Countries)): # h = travel to/from
-##                     sOutTemp = sOutTemp + (Ts2[k, n] / sum(popN[k, :])) * airRand_temp[k, h]
-##                     iOutTemp = iOutTemp + (Ti2[k, n] / sum(popN[k, :])) * airRand_temp[k, h]
-##
-##                     for m in range(len(Countries)): # m = working location of those living in h
-##                         sInTemp = sInTemp + (popN[k, n] / sum(popN[k, :])) * airRand_temp[h, k] * (Ts2[h, m] / sum(popN[h, :]))
-##                         iInTemp = iInTemp + (popN[k, n] / sum(popN[k, :])) * airRand_temp[h, k] * (Ti2[h, m] / sum(popN[h, :]))
-##
-##                Estrav[k, n] = (tmStep * (2 / 3)) * (sInTemp - sOutTemp)
-##                Eitrav[k, n] = (tmStep * (2 / 3)) * (iInTemp - iOutTemp)
-##        del k
-##        del n
-##        del m
-##        del h
+        Estrav = (tmStep * (2 / 3)) * (sIn - sOut)
+        Eitrav = (tmStep * (2 / 3)) * (iIn - iOut)
 
         Eimmloss[np.where(Eimmloss < 0)] = 0 # set any values below 0 to 0
         Einf[np.where(Einf < 0)] = 0
@@ -504,30 +495,14 @@ def propagate_SIRS(tmStrt, tmEnd, tmStep, tmRange, S_0, I_0, popN, D_d, L_d, bet
         Einf = tmStep * (2 / 3) * (Ts3 * np.reshape(beta_d[t, :] * np.sum(Ti3, axis = 1) / np.sum(popN, axis = 1), [12, 1]))
         Erecov = tmStep * (2 / 3) * (Ti3 / D_d)
 
-        Estrav = np.zeros(S.shape)
-        Eitrav = np.zeros(S.shape)
+        sOut = np.transpose(np.transpose(Ts3) / np.sum(popN, 1) * np.sum(airRand_temp, 1))
+        iOut = np.transpose(np.transpose(Ti3) / np.sum(popN, 1) * np.sum(airRand_temp, 1))
+        
+        sIn = np.transpose(np.tile(np.matmul(np.sum(Ts3, 1) / np.sum(popN, 1), airRand_temp), (n_count, 1))) * popN / np.transpose(np.tile(np.sum(popN, 1), (n_count, 1)))
+        iIn = np.transpose(np.tile(np.matmul(np.sum(Ti3, 1) / np.sum(popN, 1), airRand_temp), (n_count, 1))) * popN / np.transpose(np.tile(np.sum(popN, 1), (n_count, 1)))
 
-##        for k in range(len(Countries)): # k = home
-##            for n in range(len(Countries)): # n = work
-##                sOutTemp = 0
-##                iOutTemp = 0
-##                sInTemp = 0
-##                iInTemp = 0
-##
-##                for h in range(len(Countries)): # h = travel to/from
-##                     sOutTemp = sOutTemp + (Ts3[k, n] / sum(popN[k, :])) * airRand_temp[k, h]
-##                     iOutTemp = iOutTemp + (Ti3[k, n] / sum(popN[k, :])) * airRand_temp[k, h]
-##
-##                     for m in range(len(Countries)): # m = working location of those living in h
-##                         sInTemp = sInTemp + (popN[k, n] / sum(popN[k, :])) * airRand_temp[h, k] * (Ts3[h, m] / sum(popN[h, :]))
-##                         iInTemp = iInTemp + (popN[k, n] / sum(popN[k, :])) * airRand_temp[h, k] * (Ti3[h, m] / sum(popN[h, :]))
-##
-##                Estrav[k, n] = (tmStep * (2 / 3)) * (sInTemp - sOutTemp)
-##                Eitrav[k, n] = (tmStep * (2 / 3)) * (iInTemp - iOutTemp)
-##        del k
-##        del n
-##        del m
-##        del h
+        Estrav = (tmStep * (2 / 3)) * (sIn - sOut)
+        Eitrav = (tmStep * (2 / 3)) * (iIn - iOut)
 
         Eimmloss[np.where(Eimmloss < 0)] = 0 # set any values below 0 to 0
         Einf[np.where(Einf < 0)] = 0

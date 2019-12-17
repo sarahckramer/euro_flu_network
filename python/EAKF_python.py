@@ -1,5 +1,6 @@
 import numpy as np
 from SIRS_python import *
+from multiprocessing import *
 
 # EAKF code for python runs
 def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm_range, n, N, AH,
@@ -71,7 +72,13 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
     #print(beta_range)
 
     # Integrate 1 step forwards using SIRS code:
-    for i in range(1):
+##    xprior[range(xprior.shape[0] - 5), :, 0] = run_ensemble(tmStrt = tcurrent + dt, tmEnd = tcurrent + tm_step, tmStep = dt, tmRange = beta_range,
+##                                                            S0 = S0_temp, I0 = I0_temp, popN = N, D = D_temp, L = L_temp, beta = beta,
+##                                                            airScale = airScale_temp, Countries = countries, n = n, airRand = airRand,
+##                                                            num_ens = num_ens)
+##    print(xprior[:, 1, 0])
+    
+    for i in range(num_ens):
         Sr_tmp = propagate_SIRS(tmStrt = tcurrent + dt, tmEnd = tcurrent + tm_step, tmStep = dt, tmRange = beta_range,
                                 S_0 = S0_temp[:, :, i], I_0 = I0_temp[:, :, i], popN = N,
                                 D_d = D_temp[i], L_d = L_temp[i], beta_d = beta[:, :, i], airScale_d = airScale_temp[i],
@@ -82,10 +89,54 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
         xprior[newI_indices, i, 0] = Sr_tmp[2][:, :, Sr_tmp[2].shape[2] - 1].reshape([1, np.square(n)])
         
     del i
+    print(xprior[:, 1, 0])
+
+    
+##    proc = Process(target = run_ensemble, args = (tcurrent + dt, tcurrent + tm_step, dt, beta_range, S0_temp, I0_temp, N, D_temp, L_temp, beta, airScale_temp,
+##                                                  countries, n, airRand, num_ens))
+##    proc.start()
+##    print(proc.join().shape)
+    
+    
+##    check_output = [run_ensemble2(i, tmStrt = tcurrent + dt, tmEnd = tcurrent + tm_step, tmStep = dt, tmRange = beta_range,
+##                   S0 = S0_temp, I0 = I0_temp, popN = N, D = D_temp, L = L_temp, beta = beta, airScale = airScale_temp,
+##                   Countries = countries, n = n, airRand = airRand) for i in range(num_ens)]
+
+##    init_conditions_list = []
+##    for i in range(num_ens):
+##        init_dict = {}
+##        init_dict['S0'] = S0_temp[:, :, i]
+##        init_dict['I0'] = I0_temp[:, :, i]
+##        init_dict['N'] = N
+##        init_dict['beta'] = beta[:, :, i]
+##        init_dict['parms'] = [D_temp[i], L_temp[i], airScale_temp[i]]
+##        init_conditions_list.append(init_dict)
+##    print(init_conditions_list)
+
+##    check_output = map(run_ensemble2(p, tmStrt = tcurrent + dt, tmEnd = tcurrent + tm_step, tmStep = dt, tmRange = beta_range,
+##                                     S0 = S0_temp, I0 = I0_temp, popN = N, D = D_temp, L = L_temp, beta = beta,
+##                                     airScale = airScale_temp, Countries = countries, n = n, airRand = airRand),
+##                       range(num_ens))
+##    
+    #check_output = map(run_ensemble2, range(num_ens))
+    #pool = multiprocessing.Pool(processes=3)
+    #r = pool.map(run_ensemble2, i)
+    #pool.close()
+    #print('Output here!')
+    #print(check_output[0])
+    #print('-------------')
+    #for item in check_output:
+    #    print(item)
+    
+
+
     
     xprior[param_indices, :, 0] = init_parms
 
-    return(xprior[:, :, 0])
+    #return(xprior[:, :, 0])
+
+    #print(xprior[:, 1, 0])
+    
 
 '''
   ### Also calculate total newI for each COUNTRY, and call these "obs_ens"
