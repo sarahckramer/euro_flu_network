@@ -45,21 +45,20 @@ seasons <- c('2010-11', '2012-13', '2013-14', '2014-15', '2015-16', '2017-18') #
 # seasons <- c('2011-12', '2012-13', '2013-14', '2014-15', '2016-17') # H3
 # seasons <- c('2010-11', '2011-12', '2012-13', '2014-15', '2015-16', '2017-18') # B
 
-oevBase_list <- c(0.1, 0.25, 0.4)
-oevDenom_list <- c(1.0, 5.0, 10.0) #c(1.0, 2.0, 5.0, 10.0, 20.0, 50.0)
-lambdaList <- c(1.00, 1.02, 1.05)
+oevBase_list <- c(0.1, 0.3, 0.5)
+oevDenom_list <- c(0.2, 1.0, 5.0) #c(1.0, 2.0, 5.0, 10.0, 20.0, 50.0)
+#lambdaList <- c(1.00, 1.02, 1.05)
 #multList <- c(1.0, 2.0, 5.0, 10.0)
 ntrnList <- 5:30
-# 1:4212
+# 1:1404, if lambda held at 1.02 for now - just exploring OEV form!
 
 cmd_args = commandArgs(trailingOnly = T)
-task.index=as.numeric(cmd_args[1]) # 1:416; 1:3744
-# 1:624 for 3 lambdas, or 1:208 to just do the one
+task.index=as.numeric(cmd_args[1])
 
-season <- seasons[ceiling(task.index / 702)]
-oev_base <- oevBase_list[ceiling((task.index - 234) / 234) %% 3 + 1]
-oev_denom <- oevDenom_list[ceiling((task.index - 78) / 78) %% 3 + 1]
-lambda <- lambdaList[ceiling((task.index - 26) / 26) %% 3 + 1]
+season <- seasons[ceiling(task.index / 234)]
+oev_base <- oevBase_list[ceiling((task.index - 78) / 78) %% 3 + 1]
+oev_denom <- oevDenom_list[ceiling((task.index - 26) / 26) %% 3 + 1]
+lambda <- 1.02#lambdaList[ceiling((task.index - 26) / 26) %% 3 + 1]
 ntrn <- ntrnList[ceiling(task.index - 1) %% 26 + 1]
 print(paste(season, oev_base, oev_denom, lambda, ntrn, sep = '_'))
 
@@ -165,7 +164,7 @@ outputEns <- NULL
 
 # Get commuting data:
 load('formatTravelData/formattedData/comm_mat_by_year_05-07_RELIABLE_ONLY.RData')
-t.comm <- comm.by.year[[which(seasons == season)]]
+t.comm <- comm.by.year[[which(c('2010-11', '2011-12', '2012-13', '2013-14', '2014-15', '2015-16', '2016-17', '2017-18') == season)]]
 t.comm <- t.comm[countries, countries]
 
 # Get population counts:
@@ -208,12 +207,7 @@ test_i[test_i == 0 & !is.na(test_i)] <- NA
 # Variance of syndromic+ data:
 obs_vars <- calc_obsvars_nTest(obs = as.matrix(obs_i), syn_dat = as.matrix(syn_i), ntests = as.matrix(test_i), posprops = as.matrix(pos_i),
                                oev_base, oev_denom, tmp_exp = 2.0)
-# LU and DE look particularly uncertain
 # obs_vars <- calc_obsvars(obs = as.matrix(obs_i), oev_base, oev_denom)
-
-# ### SET MAX OEV #######################################
-# obs_vars[obs_vars > 1e6 & !is.na(obs_vars)] <- 1e6
-# #######################################################
 
 # Get the first and last date of the simulation:
 clim_start <- as.numeric(start_date - as.Date(paste('20',
@@ -264,19 +258,19 @@ outputMetrics[outputMetrics[, 'country'] == 'FR' & outputMetrics[, 'season'] %in
 ### Save results:
 print('Finished with loop; writing files...')
 
-write.csv(outputMetrics, file = paste('outputs/obs/outputMet', season, ntrn, '.csv', sep = '_'), row.names = FALSE)
-write.csv(outputOP, file = paste('outputs/obs/outputOP', season, ntrn, '.csv', sep = '_'), row.names = FALSE)
-write.csv(outputOPParams, file = paste('outputs/obs/outputOPParams', season, ntrn, '.csv', sep = '_'), row.names = FALSE)
-write.csv(outputDist, file = paste('outputs/obs/outputDist', season, ntrn, '.csv', sep = '_'), row.names = FALSE)
-write.csv(outputEns, file = paste('outputs/obs/outputEns', season, ntrn, '.csv', sep = '_'), row.names = FALSE)
+# write.csv(outputMetrics, file = paste('outputs/obs/outputMet', season, ntrn, '.csv', sep = '_'), row.names = FALSE)
+# write.csv(outputOP, file = paste('outputs/obs/outputOP', season, ntrn, '.csv', sep = '_'), row.names = FALSE)
+# write.csv(outputOPParams, file = paste('outputs/obs/outputOPParams', season, ntrn, '.csv', sep = '_'), row.names = FALSE)
+# write.csv(outputDist, file = paste('outputs/obs/outputDist', season, ntrn, '.csv', sep = '_'), row.names = FALSE)
+# write.csv(outputEns, file = paste('outputs/obs/outputEns', season, ntrn, '.csv', sep = '_'), row.names = FALSE)
 # write.csv(outputVars, file = paste('outputs/obs/outputVars', season, ntrn, '120219.csv', sep = '_'), row.names = FALSE)
 
-# write.csv(outputMetrics, file = paste('outputs/obs/outputMet', season, oev_base, oev_denom, lambda, ntrn, '120219.csv', sep = '_'), row.names = FALSE)
-# write.csv(outputOP, file = paste('outputs/obs/outputOP', season, oev_base, oev_denom, lambda, ntrn, '120219.csv', sep = '_'), row.names = FALSE)
-# write.csv(outputOPParams, file = paste('outputs/obs/outputOPParams', season, oev_base, oev_denom, lambda, ntrn, '120219.csv', sep = '_'), row.names = FALSE)
-# write.csv(outputDist, file = paste('outputs/obs/outputDist', season, oev_base, oev_denom, lambda, ntrn, '120219.csv', sep = '_'), row.names = FALSE)
-# write.csv(outputEns, file = paste('outputs/obs/outputEns', season, oev_base, oev_denom, lambda, ntrn, '120219.csv', sep = '_'), row.names = FALSE)
-# write.csv(outputVars, file = paste('outputs/obs/outputEns', season, oev_base, oev_denom, lambda, ntrn, '120219.csv', sep = '_'), row.names = FALSE)
+write.csv(outputMetrics, file = paste('outputs/obs/outputMet', season, oev_base, oev_denom, lambda, ntrn, '.csv', sep = '_'), row.names = FALSE)
+write.csv(outputOP, file = paste('outputs/obs/outputOP', season, oev_base, oev_denom, lambda, ntrn, '.csv', sep = '_'), row.names = FALSE)
+write.csv(outputOPParams, file = paste('outputs/obs/outputOPParams', season, oev_base, oev_denom, lambda, ntrn, '.csv', sep = '_'), row.names = FALSE)
+write.csv(outputDist, file = paste('outputs/obs/outputDist', season, oev_base, oev_denom, lambda, ntrn, '.csv', sep = '_'), row.names = FALSE)
+write.csv(outputEns, file = paste('outputs/obs/outputEns', season, oev_base, oev_denom, lambda, ntrn, '.csv', sep = '_'), row.names = FALSE)
+# write.csv(outputVars, file = paste('outputs/obs/outputEns', season, oev_base, oev_denom, lambda, ntrn, '.csv', sep = '_'), row.names = FALSE)
 
 print('Done.')
 
