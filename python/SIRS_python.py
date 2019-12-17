@@ -118,89 +118,53 @@ def propagate_SIRS(tmStrt, tmEnd, tmStep, tmRange, S_0, I_0, popN, D_d, L_d, bet
         #print(Erecov)
         
         # incorporate travel:
-##        EstravCheck = np.zeros(S.shape)
-##        EitravCheck = np.zeros(S.shape)
-##
-##        sOutCheck = np.zeros(S.shape)
-##        sInCheck = np.zeros(S.shape)
-##        iOutCheck = np.zeros(S.shape)
-##        iInCheck = np.zeros(S.shape)
-##
-##        for k in range(len(Countries)): # k = home
-##            for n in range(len(Countries)): # n = work
-##                sOutTemp = 0
-##                iOutTemp = 0
-##                sInTemp = 0
-##                iInTemp = 0
-##
-##                for m in range(len(Countries)): # m = travel to/from
-##                     sOutTemp = sOutTemp + (S[k, n] / sum(popN[:, n])) * airRand_temp[n, m]
-##                     iOutTemp = iOutTemp + (I[k, n] / sum(popN[:, n])) * airRand_temp[n, m]
-##
-##                     for h in range(len(Countries)): # h = current location of those living in k
-##                         sInTemp = sInTemp + (popN[k, n] / sum(popN[:, n])) * airRand_temp[m, n] * (S[h, m] / sum(popN[:, m]))
-##                         iInTemp = iInTemp + (popN[k, n] / sum(popN[:, n])) * airRand_temp[m, n] * (I[h, m] / sum(popN[:, m]))
-##
-##                sOutCheck[k, n] = sOutTemp
-##                sInCheck[k, n] = sInTemp
-##                iOutCheck[k, n] = iOutTemp
-##                iInCheck[k, n] = iInTemp
-##                
-##                EstravCheck[k, n] = (tmStep * (1 / 3)) * (sInTemp - sOutTemp)
-##                EitravCheck[k, n] = (tmStep * (1 / 3)) * (iInTemp - iOutTemp)
-##        del k
-##        del n
-##        del m
-##        del h
+        '''
+        EstravCheck = np.zeros(S.shape)
+        EitravCheck = np.zeros(S.shape)
 
-        #print(sOutCheck)
-        #print(iOutCheck)
-        
-        #print(sum(popN[:, 0]))
-        #print(np.sum(popN, 0))
+        sOutCheck = np.zeros(S.shape)
+        sInCheck = np.zeros(S.shape)
+        iOutCheck = np.zeros(S.shape)
+        iInCheck = np.zeros(S.shape)
 
-        #print(S)
-        #print(S / np.sum(popN, 0))
-        #print(S[1, 3] / np.sum(popN, 0)[3])
-        #print(S[1, 3] / np.sum(popN, 0)[1])
+        for k in range(len(Countries)): # k = home
+            for n in range(len(Countries)): # n = work
+                sOutTemp = 0
+                iOutTemp = 0
+                sInTemp = 0
+                iInTemp = 0
 
-        #print(S / np.sum(popN, 0) * np.sum(airRand_temp, 1))
-        #print(S[1, 3] / np.sum(popN, 0)[3] * np.sum(airRand_temp, 1)[3])
-        #print(S[1, 3] / np.sum(popN, 0)[3] * np.sum(airRand_temp, 1)[1])
+                for m in range(len(Countries)): # m = travel to/from
+                     sOutTemp = sOutTemp + (S[k, n] / sum(popN[:, n])) * airRand_temp[n, m]
+                     iOutTemp = iOutTemp + (I[k, n] / sum(popN[:, n])) * airRand_temp[n, m]
+
+                     for h in range(len(Countries)): # h = current location of those living in k
+                         sInTemp = sInTemp + (popN[k, n] / sum(popN[:, n])) * airRand_temp[m, n] * (S[h, m] / sum(popN[:, m]))
+                         iInTemp = iInTemp + (popN[k, n] / sum(popN[:, n])) * airRand_temp[m, n] * (I[h, m] / sum(popN[:, m]))
+
+                sOutCheck[k, n] = sOutTemp
+                sInCheck[k, n] = sInTemp
+                iOutCheck[k, n] = iOutTemp
+                iInCheck[k, n] = iInTemp
+                
+                EstravCheck[k, n] = (tmStep * (1 / 3)) * (sInTemp - sOutTemp)
+                EitravCheck[k, n] = (tmStep * (1 / 3)) * (iInTemp - iOutTemp)
+        del k
+        del n
+        del m
+        del h
+        '''
 
         sOut = (S / np.sum(popN, 0)) * np.sum(airRand_temp, 1) # works due to "broadcasting"
         iOut = (I / np.sum(popN, 0)) * np.sum(airRand_temp, 1)
 
-        #print(np.allclose(sOut, sOutCheck))
-        #print(np.array_equiv(sOut, sOutCheck))
-        #print(np.allclose(iOut, iOutCheck))
-
-        #print(np.matmul(np.sum(S, 0) / np.sum(popN, 0), airRand_temp))
-        
-        #print(np.tile(np.matmul(np.sum(S, 0) / np.sum(popN, 0), airRand_temp), (n_count, 1)))
-        #print(popN / np.tile(np.sum(popN, 0), (n_count, 1)))
-
         sIn = np.tile(np.matmul(np.sum(S, 0) / np.sum(popN, 0), airRand_temp), (n_count, 1)) * popN / np.tile(np.sum(popN, 0), (n_count, 1))
         iIn = np.tile(np.matmul(np.sum(I, 0) / np.sum(popN, 0), airRand_temp), (n_count, 1)) * popN / np.tile(np.sum(popN, 0), (n_count, 1))
-
-        #print(np.allclose(sIn, sInCheck))
-        #print(np.allclose(iIn, iInCheck))
 
         Estrav = (tmStep * (1 / 3)) * (sIn - sOut)
         Eitrav = (tmStep * (1 / 3)) * (iIn - iOut)
         #print(np.allclose(Estrav, EstravCheck))
         #print(np.allclose(Eitrav, EitravCheck))
-        
-        
-        '''
-      s.out <- sweep(sweep(S, 2, 1 / colSums(N), '*'), 2, rowSums(all.rand), '*')
-      i.out <- sweep(sweep(I, 2, 1 / colSums(N), '*'), 2, rowSums(all.rand), '*')
-      
-      s.in <- matrix((colSums(S) / colSums(N)) %*% all.rand, nrow = n, ncol = n, byrow = T) *
-        (N / matrix(colSums(N), nrow = n, ncol = n, byrow = T))
-      i.in <- matrix((colSums(I) / colSums(N)) %*% all.rand, nrow = n, ncol = n, byrow = T) *
-        (N / matrix(colSums(N), nrow = n, ncol = n, byrow = T))
-'''
 
         #print(airRand_temp)
         #print()
@@ -364,8 +328,9 @@ def propagate_SIRS(tmStrt, tmEnd, tmStep, tmRange, S_0, I_0, popN, D_d, L_d, bet
         #print()
         
         # incorporate travel:
-        Estrav = np.zeros(S.shape)
-        Eitrav = np.zeros(S.shape)
+        '''
+        EstravCheck = np.zeros(S.shape)
+        EitravCheck = np.zeros(S.shape)
 
         sOutCheck = np.zeros(S.shape)
         sInCheck = np.zeros(S.shape)
@@ -392,79 +357,43 @@ def propagate_SIRS(tmStrt, tmEnd, tmStep, tmRange, S_0, I_0, popN, D_d, L_d, bet
                 iOutCheck[k, n] = iOutTemp
                 iInCheck[k, n] = iInTemp
 
-                Estrav[k, n] = (tmStep * (2 / 3)) * (sInTemp - sOutTemp)
-                Eitrav[k, n] = (tmStep * (2 / 3)) * (iInTemp - iOutTemp)
+                EstravCheck[k, n] = (tmStep * (2 / 3)) * (sInTemp - sOutTemp)
+                EitravCheck[k, n] = (tmStep * (2 / 3)) * (iInTemp - iOutTemp)
         del k
         del n
         del m
         del h
+        '''
 
-        #print(Estrav)
-        #print(Eitrav)
-        #print()
+        #print(np.transpose(np.transpose(S) / np.sum(popN, 1)))
+        #print(S[1, 3] / np.sum(popN, 1)[1])
+        #print(S[1, 3] / np.sum(popN, 1)[3])
+        
+        #print(np.transpose(np.transpose(S) / np.sum(popN, 1) * np.sum(airRand_temp, 1)))
+        #print(S[1, 3] / np.sum(popN, 1)[1] * np.sum(airRand_temp, 1)[1])
+        #print(S[1, 3] / np.sum(popN, 1)[1] * np.sum(airRand_temp, 1)[3])
 
-        #print(sum(popN[:, 0]))
-        #print(np.sum(popN, 0))
-
-        #print(S)
-        #print(S / np.sum(popN, 0))
-        #print(S[1, 3] / np.sum(popN, 0)[3])
-        #print(S[1, 3] / np.sum(popN, 0)[1])
-
-        #print(S / np.sum(popN, 0) * np.sum(airRand_temp, 1))
-        #print(S[1, 3] / np.sum(popN, 0)[3] * np.sum(airRand_temp, 1)[3])
-        #print(S[1, 3] / np.sum(popN, 0)[3] * np.sum(airRand_temp, 1)[1])
-
-        #sOut = (S / np.sum(popN, 0)) * np.sum(airRand_temp, 1) # works due to "broadcasting"
-        #iOut = (I / np.sum(popN, 0)) * np.sum(airRand_temp, 1)
+        sOut = np.transpose(np.transpose(S) / np.sum(popN, 1) * np.sum(airRand_temp, 1))
+        iOut = np.transpose(np.transpose(I) / np.sum(popN, 1) * np.sum(airRand_temp, 1))
 
         #print(np.allclose(sOut, sOutCheck))
-        #print(np.array_equiv(sOut, sOutCheck))
         #print(np.allclose(iOut, iOutCheck))
 
-        #print(np.matmul(np.sum(S, 0) / np.sum(popN, 0), airRand_temp))
+        #print(np.transpose(np.tile(np.matmul(np.sum(S, 1) / np.sum(popN, 1), airRand_temp), (n_count, 1))))
+        #print(popN / np.transpose(np.tile(np.sum(popN, 1), (n_count, 1))))
+
+        sIn = np.transpose(np.tile(np.matmul(np.sum(S, 1) / np.sum(popN, 1), airRand_temp), (n_count, 1))) * popN / np.transpose(np.tile(np.sum(popN, 1), (n_count, 1)))
+        iIn = np.transpose(np.tile(np.matmul(np.sum(I, 1) / np.sum(popN, 1), airRand_temp), (n_count, 1))) * popN / np.transpose(np.tile(np.sum(popN, 1), (n_count, 1)))
         
-        #print(np.tile(np.matmul(np.sum(S, 0) / np.sum(popN, 0), airRand_temp), (n_count, 1)))
-        #print(popN / np.tile(np.sum(popN, 0), (n_count, 1)))
-
-        #sIn = np.tile(np.matmul(np.sum(S, 0) / np.sum(popN, 0), airRand_temp), (n_count, 1)) * popN / np.tile(np.sum(popN, 0), (n_count, 1))
-        #iIn = np.tile(np.matmul(np.sum(I, 0) / np.sum(popN, 0), airRand_temp), (n_count, 1)) * popN / np.tile(np.sum(popN, 0), (n_count, 1))
-
         #print(np.allclose(sIn, sInCheck))
         #print(np.allclose(iIn, iInCheck))
-        
-        
-        '''
-      s.out <- sweep(sweep(S, 1, 1 / rowSums(N), '*'), 1, rowSums(all.rand), '*')
-      i.out <- sweep(sweep(I, 1, 1 / rowSums(N), '*'), 1, rowSums(all.rand), '*')
 
-      s.in <- matrix((rowSums(S) / rowSums(N)) %*% all.rand, nrow = n, ncol = n, byrow = F) *
-        (N / matrix(rowSums(N), nrow = n, ncol = n, byrow = F))
-      i.in <- matrix((rowSums(I) / rowSums(N)) %*% all.rand, nrow = n, ncol = n, byrow = F) *
-        (N / matrix(rowSums(N), nrow = n, ncol = n, byrow = F))
+        Estrav = (tmStep * (2 / 3)) * (sIn - sOut)
+        Eitrav = (tmStep * (2 / 3)) * (iIn - iOut)
 
-        # daytime:
-      s.out <- sweep(sweep(S, 2, 1 / colSums(N), '*'), 2, rowSums(all.rand), '*')
-      i.out <- sweep(sweep(I, 2, 1 / colSums(N), '*'), 2, rowSums(all.rand), '*')
-      
-      s.in <- matrix((colSums(S) / colSums(N)) %*% all.rand, nrow = n, ncol = n, byrow = T) *
-        (N / matrix(colSums(N), nrow = n, ncol = n, byrow = T))
-      i.in <- matrix((colSums(I) / colSums(N)) %*% all.rand, nrow = n, ncol = n, byrow = T) *
-        (N / matrix(colSums(N), nrow = n, ncol = n, byrow = T))
-'''
+        #print(np.allclose(Estrav, EstravCheck))
+        #print(np.allclose(Eitrav, EitravCheck))
 
-
-
-
-
-
-
-
-
-
-
-        
-        
         Eimmloss[np.where(Eimmloss < 0)] = 0 # set any values below 0 to 0
         Einf[np.where(Einf < 0)] = 0
         Erecov[np.where(Erecov < 0)] = 0
