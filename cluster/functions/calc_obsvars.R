@@ -134,7 +134,7 @@ calc_obsvars_nTest <- function(obs, syn_dat, ntests, posprops, oev_base, oev_den
   
   # if last string of NAs can leave, but otherwise set to 1?
   
-  #print(tmp)
+  #print(max(tmp, na.rm = TRUE))
   #print(oev_base + ((tmp ** tmp_exp) / oev_denom))
   
   return(vars.temp)

@@ -45,25 +45,26 @@ seasons <- c('2010-11', '2012-13', '2013-14', '2014-15', '2015-16', '2017-18') #
 # seasons <- c('2011-12', '2012-13', '2013-14', '2014-15', '2016-17') # H3
 # seasons <- c('2010-11', '2011-12', '2012-13', '2014-15', '2015-16', '2017-18') # B
 
-# oevBase_list <- c(1e4, 1e5)
-# # oevBase_list <- c(2e5, 5e5) # test higher OEV bases - does this stop 1-4 week predictions from failing after the peak? (note: will likely be very inaccurate for the most part)
-# oevDenom_list <- c(1.0, 10.0, 50.0) #c(1.0, 2.0, 5.0, 10.0, 20.0, 50.0)
-# lambdaList <- c(1.00, 1.02, 1.05)
+oevBase_list <- c(0.1, 0.25, 0.4)
+oevDenom_list <- c(1.0, 5.0, 10.0) #c(1.0, 2.0, 5.0, 10.0, 20.0, 50.0)
+lambdaList <- c(1.00, 1.02, 1.05)
+#multList <- c(1.0, 2.0, 5.0, 10.0)
 ntrnList <- 5:30
+# 1:4212
 
 cmd_args = commandArgs(trailingOnly = T)
 task.index=as.numeric(cmd_args[1]) # 1:416; 1:3744
 # 1:624 for 3 lambdas, or 1:208 to just do the one
 
-season <- seasons[ceiling(task.index / 26)]
-oev_base <- 1e4 #oevBase_list[ceiling((task.index - 26) / 26) %% 2 + 1]
-oev_denom <- 10.0 #oevDenom_list[ceiling((task.index - 78) / 78) %% 3 + 1]
-lambda <- 1.02 #lambdaList[ceiling((task.index - 26) / 26) %% 3 + 1]
+season <- seasons[ceiling(task.index / 702)]
+oev_base <- oevBase_list[ceiling((task.index - 234) / 234) %% 3 + 1]
+oev_denom <- oevDenom_list[ceiling((task.index - 78) / 78) %% 3 + 1]
+lambda <- lambdaList[ceiling((task.index - 26) / 26) %% 3 + 1]
 ntrn <- ntrnList[ceiling(task.index - 1) %% 26 + 1]
 print(paste(season, oev_base, oev_denom, lambda, ntrn, sep = '_'))
 
 # # Check:
-# check <- unique(as.data.frame(cbind(season, oev_base, oev_denom, lambda)))
+# check <- unique(as.data.frame(cbind(season, oev_base, oev_denom, lambda, ntrn)))
 # print(dim(check))
 
 num_ens <- 300 # use 300 for ensemble filters, 10000 for particle filters
@@ -79,11 +80,11 @@ pop.size <- pop.size[pop.size$country %in% countries, ]; pop.size$country <- fac
 pop.size <- pop.size[match(countries, pop.size$country), ]
 
 ### Read in humidity data
-# ah <- read.csv('data/ah_Europe_07142019.csv')
-# AH <- rbind(ah[, count.indices], ah[, count.indices])
+ah <- read.csv('data/ah_Europe_07142019.csv')
+AH <- rbind(ah[, count.indices], ah[, count.indices])
 
-ah <- read.csv('data/ah_MEAN_120519.csv')
-AH <- rbind(ah, ah)
+# ah <- read.csv('data/ah_MEAN_120519.csv')
+# AH <- rbind(ah, ah)
 
 ### Read in influenza data
 # iliiso <- read.csv('data/WHO_data_05-09-19_SCALED.csv') # in same order as "countries" vector
@@ -126,16 +127,6 @@ scalings <- read.csv('data/by_subtype/scalings_frame_A(H1).csv')
 # scalings <- read.csv('data/by_subtype/scalings_frame_B.csv')
 
 for (i in 2:13) {
-  # if (names(iliiso)[i] == 'France') {
-  #   iliiso[1:286, i] <- iliiso[1:286, i] * 1.3
-  #   iliiso[287:495, i] <- iliiso[287:495, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
-  #   syn.dat[1:286, i] <- syn.dat[1:286, i] * 1.3
-  #   syn.dat[287:495, i] <- syn.dat[287:495, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
-  # } else {
-  #   iliiso[, i] <- iliiso[, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
-  #   syn.dat[, i] <- syn.dat[, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
-  # }
-  
   # iliiso[, i][iliiso[, i] < 0] <- NA # replace negatives with NAs
   # syn.dat[, i][syn.dat[, i] < 0] <- NA
   pos.dat[, i][pos.dat[, i] < 0] <- NA
