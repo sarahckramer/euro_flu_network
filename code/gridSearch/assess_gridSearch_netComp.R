@@ -3,21 +3,21 @@
 library(reshape2); library(ggplot2); library(gridExtra)
 
 # Save plots?:
-outputPlots <- FALSE
-fileSuffix <- '1'
+outputPlots <- TRUE
+fileSuffix <- '_AH'
 
 # Restrict the forecast start weeks for which results are shown?
 restrict.fc <- FALSE
 
 # Set model labels:
-m1.lab <- 'Indiv. (Mid)'
-m2.lab <- 'Indiv. (Narrow)'
-m3.lab <- 'Network (Mid)'
+m1.lab <- 'Network (Mean AH)'
+m2.lab <- 'Network (Full AH)'
+m3.lab <- 'Individual'
 
 # Set locations of model results to be compared:
-model1 <- 'results/A(H1)/indiv_mid/'
-model2 <- 'results/A(H1)/indiv_narrow/'
-model3 <- 'results/A(H1)/network_LHSmid/'
+model1 <- 'results/A(H1)/network_gridSearch/'
+model2 <- 'results/A(H1)/network_LHSmid/'
+model3 <- 'results/A(H1)/indiv_mid/'
 
 #########################################################################################################################################################
 #########################################################################################################################################################

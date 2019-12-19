@@ -90,7 +90,7 @@ for (season in seasons) {
   test_i[test_i == 0 & !is.na(test_i)] <- NA
   
   # Variance of syndromic+ data:
-  oev_base <- 1e4; oev_denom <- 10
+  oev_base <- 0.5; oev_denom <- 1
   obs_vars <- calc_obsvars_nTest(obs = as.matrix(obs_i), syn_dat = as.matrix(syn_i), ntests = as.matrix(test_i), posprops = as.matrix(pos_i),
                                  oev_base, oev_denom, tmp_exp = 2.0)
   
