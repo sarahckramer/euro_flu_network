@@ -34,8 +34,8 @@ seasons <- c('2010-11', '2012-13', '2013-14', '2014-15', '2015-16', '2017-18') #
 # seasons <- c('2011-12', '2012-13', '2013-14', '2014-15', '2016-17') # H3
 # seasons <- c('2010-11', '2011-12', '2012-13', '2014-15', '2015-16', '2017-18') # B
 
-oev_base <- 1e4 #oevBase_list[ceiling((task.index - 26) / 26) %% 2 + 1]
-oev_denom <- 10.0 #oevDenom_list[ceiling((task.index - 78) / 78) %% 3 + 1]
+oev_base <- 0.4 #oevBase_list[ceiling((task.index - 26) / 26) %% 2 + 1]
+oev_denom <- 1.0 #oevDenom_list[ceiling((task.index - 78) / 78) %% 3 + 1]
 lambda <- 1.02 #lambdaList[ceiling((task.index - 26) / 26) %% 3 + 1]
 
 num_ens <- 300 # use 300 for ensemble filters, 10000 for particle filters
@@ -108,11 +108,12 @@ outputDist <- NULL
 outputEns <- NULL
 
 ### Main fitting code:
-for (season in seasons) {
-  
+#for (season in seasons) {
+season <- '2012-13'  
+
   # Get commuting data:
   load('formatTravelData/formattedData/comm_mat_by_year_05-07_RELIABLE_ONLY.RData')
-  t.comm <- comm.by.year[[which(seasons == season)]]
+  t.comm <- comm.by.year[[which(c('2010-11', '2011-12', '2012-13', '2013-14', '2014-15', '2015-16', '2016-17', '2017-18') == season)]]
   t.comm <- t.comm[countries, countries]
   
   # Get population counts:
@@ -177,7 +178,7 @@ for (season in seasons) {
     # outputVars = rbind(outputVars, cbind(season, run, lambda, res$vars))
   }
   
-}
+#}
 
 colnames(outputMetrics)[6] <- 'scaling'
 

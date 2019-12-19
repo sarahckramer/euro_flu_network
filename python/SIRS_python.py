@@ -40,7 +40,6 @@ def run_ensemble2(i, tmStrt, tmEnd, tmStep, tmRange, S0, I0, popN, D, L, beta, a
                     Sr_tmp[1][:, :, Sr_tmp[1].shape[2] - 1].reshape([1, np.square(n)]),
                     Sr_tmp[2][:, :, Sr_tmp[2].shape[2] - 1].reshape([1, np.square(n)]))).reshape([1, np.square(n) * 3]))
     
-
 # SIRS (including air travel and commuting):
 def propagate_SIRS(tmStrt, tmEnd, tmStep, tmRange, S_0, I_0, popN, D_d, L_d, beta_d, airScale_d, Countries, n_count, airRand):
 
@@ -57,22 +56,17 @@ def propagate_SIRS(tmStrt, tmEnd, tmStep, tmRange, S_0, I_0, popN, D_d, L_d, bet
 
     tm_vec = list(range(tmStrt, tmEnd + 1))
     tm_sz = len(tm_vec) + 1 # plus 1 allows us to include the initial conditions
+    #print(tm_sz)
 
     S_list = np.empty([n_count, n_count, tm_sz])
     S_list[:, :, 0] = S_0
+    #print(S_list.shape)
     
     I_list = np.empty([n_count, n_count, tm_sz])
     I_list[:, :, 0] = I_0
     
     newI_list = np.empty([n_count, n_count, tm_sz])
     newI_list[:, :, 0] = np.zeros([n_count, n_count])
-    
-    #c1_index = [0, 1, 2]
-    #c2_index = [3, 4, 5]
-    #c3_index = [6, 7, 8]
-    #popN = np.asarray(([popN[i] for i in c1_index], [popN[i] for i in c2_index], [popN[i] for i in c3_index]))
-    #print(popN)
-    #print()
 
     for t in tm_vec:
         
@@ -129,14 +123,16 @@ def propagate_SIRS(tmStrt, tmEnd, tmStep, tmRange, S_0, I_0, popN, D_d, L_d, bet
         Eimmloss = tmStep * (1 / 3) * (1 / L_d) * (popN - S - I)
         Einf = tmStep * (1 / 3) * np.transpose(np.transpose(S) * np.reshape(beta_d[t, :] * np.sum(I, axis = 0) / np.sum(popN, axis = 0), [12, 1]))
         Erecov = tmStep * (1 / 3) * (I / D_d)
-
+        
+        '''
         Einf_check = np.zeros(S.shape)
         for k in range(len(Countries)):
             for n in range(len(Countries)):
                 Einf_check[k, n] = tmStep * (1 / 3) * beta_d[t, n] * S[k, n] * sum(I[:, n]) / sum(popN[:, n])
         del k
         del n
-
+        '''
+        
         #print(Einf)
         #print(Einf_check)
         #print(np.allclose(Einf, Einf_check))
@@ -205,12 +201,6 @@ def propagate_SIRS(tmStrt, tmEnd, tmStep, tmRange, S_0, I_0, popN, D_d, L_d, bet
         Eitrav = (tmStep * (1 / 3)) * (iIn - iOut)
         #print(np.allclose(Estrav, EstravCheck))
         #print(np.allclose(Eitrav, EitravCheck))
-
-        #print(airRand_temp)
-        #print()
-        #print(Estrav)
-        #print(Eitrav)
-        #print()
 
         Eimmloss[np.where(Eimmloss < 0)] = 0 # set any values below 0 to 0
         Einf[np.where(Einf < 0)] = 0
@@ -413,6 +403,9 @@ def propagate_SIRS(tmStrt, tmEnd, tmStep, tmRange, S_0, I_0, popN, D_d, L_d, bet
 
         Estrav = (tmStep * (2 / 3)) * (sIn - sOut)
         Eitrav = (tmStep * (2 / 3)) * (iIn - iOut)
+
+        #print(Estrav)
+        #print(EstravCheck)
 
         #print(np.allclose(Estrav, EstravCheck))
         #print(np.allclose(Eitrav, EitravCheck))

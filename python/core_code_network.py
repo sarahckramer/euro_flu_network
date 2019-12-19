@@ -48,7 +48,7 @@ I0_up = 0.00005
 
 # Parameters for filters
 discrete = False
-oev_base = 0.5
+oev_base = 0.4
 oev_denom = 1.0
 lambda_val = 1.02
 num_ens = 300
@@ -69,7 +69,7 @@ elif strain == 'A(all)':
     # DATA #
 elif strain == 'A(H1)':
     seasons = ('2010-11', '2012-13')#, '2013-14', '2014-15', '2015-16', '2017-18') # H1
-
+    
     iliiso = pd.read_csv('../data/by_subtype/WHO_data_A(H1)_SCALED.csv')
     test_dat = pd.read_csv('../data/testCounts_052719.csv', na_values = -1)
     syn_dat = pd.read_csv('../data/by_subtype/synDatCounts_A(H1)_SCALED.csv')
@@ -195,7 +195,7 @@ for season_index in range(len(seasons)):
 
     # Get OEV:    
     obs_vars = calc_obsvars_nTest(obs_i, syn_i, test_i, pos_i, oev_base, oev_denom, 2.0, n)
-    print(obs_vars)
+    #print(obs_vars)
 
     # DO WE NEED DATES?
 
@@ -207,7 +207,7 @@ for season_index in range(len(seasons)):
     tm_ini = clim_start_dict[season] - 2 # b/c python indexes at 0, while R does it at 1
     #print(tm_ini)
     #tm_range = range(clim_start_dict[season], clim_end_dict[season] + 1, 1)
-    tm_range = range(clim_start_dict[season] - 1, clim_end_dict[season] + 1, 1) # see previous note
+    tm_range = range(clim_start_dict[season] - 1, clim_end_dict[season], 1) # see previous note
     #print(tm_range)
     
     # Run forecasts!
@@ -220,9 +220,10 @@ for season_index in range(len(seasons)):
         #print(param_init.shape)
         
         # Run EAKF:
-        res = EAKF_fn(num_ens, tmstep, param_init, obs_i, 10, nsn, obs_vars, tm_ini, tm_range, n, N, ah,
-                      dt, countries, a_rand) # and variables needed for SIRS
+        res = EAKF_fn(num_ens, tmstep, param_init, obs_i, 30, nsn, obs_vars, tm_ini, tm_range, n, N, ah,
+                      dt, countries, a_rand, lambda_val, wk_start) # and variables needed for SIRS
         # loop through ntrns or run all as we go?
+        # for now, set ntrn to 30, which is our final forecast week
 
         #res = pd.Panel(res)
         #print(res.shape)
