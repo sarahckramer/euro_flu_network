@@ -5,13 +5,9 @@ import sys
 from EAKF_python import *
 
 # print(os.path.dirname(sys.executable))
+
 # Read in all necessary data/functions and run forecasts using network model
-# from numba import jit
-# import cython
-# from cython_start_try import *
-# from IPython import get_ipython
-# get_ipython().magic('load_ext cythonmagic')
-# from try_ensemble import *
+# It seems this is done automatically?
 
 # Turn off SettingWithCopyWarning:
 pd.options.mode.chained_assignment = None
@@ -72,14 +68,7 @@ elif strain == 'A(H1)':
     scalings = pd.read_csv('../data/by_subtype/scalings_frame_A(H1).csv')
 
     print(iliiso.columns)
-    # print(test_dat)
-    # print(pos_dat)
-    # print(scalings)
     print(test_dat.columns)
-    # print(syn_dat.columns)
-    # print(pos_dat.columns)
-    # print(pos_dat[iliiso.columns])
-    # print(test_dat)
 
 elif strain == 'A(H3)':
     seasons = ('2011-12', '2012-13', '2013-14', '2014-15', '2016-17')  # H3
@@ -96,24 +85,26 @@ else:
 # Read in humidity data:
 ah = pd.read_csv('../../GLDAS_data/ah_Europe_07142019.csv')
 ah = ah[ah.columns[count_indices]]
-# print(ah)
 ah = ah.append(ah)
-# print(ah)
 ah = ah.to_numpy()
 
 # Read in air travel data:
-a_rand = {'Jan': np.loadtxt('air_travel/aRand1.txt', unpack=True),
-          'Feb': np.loadtxt('air_travel/aRand2.txt', unpack=True),
-          'Mar': np.loadtxt('air_travel/aRand3.txt', unpack=True),
-          'Apr': np.loadtxt('air_travel/aRand4.txt', unpack=True),
-          'May': np.loadtxt('air_travel/aRand5.txt', unpack=True),
-          'Jun': np.loadtxt('air_travel/aRand6.txt', unpack=True),
-          'Jul': np.loadtxt('air_travel/aRand7.txt', unpack=True),
-          'Aug': np.loadtxt('air_travel/aRand8.txt', unpack=True),
-          'Sep': np.loadtxt('air_travel/aRand9.txt', unpack=True),
-          'Oct': np.loadtxt('air_travel/aRand10.txt', unpack=True),
-          'Nov': np.loadtxt('air_travel/aRand11.txt', unpack=True),
-          'Dec': np.loadtxt('air_travel/aRand12.txt', unpack=True)}
+a_rand = np.empty([n, n, 12])
+for i in range(n):
+    a_rand[:, :, i] = np.loadtxt('air_travel/aRand' + str(i + 1) + '.txt', unpack=True)
+
+a_rand_comp = {'Jan': np.loadtxt('air_travel/aRand1.txt', unpack=True),
+               'Feb': np.loadtxt('air_travel/aRand2.txt', unpack=True),
+               'Mar': np.loadtxt('air_travel/aRand3.txt', unpack=True),
+               'Apr': np.loadtxt('air_travel/aRand4.txt', unpack=True),
+               'May': np.loadtxt('air_travel/aRand5.txt', unpack=True),
+               'Jun': np.loadtxt('air_travel/aRand6.txt', unpack=True),
+               'Jul': np.loadtxt('air_travel/aRand7.txt', unpack=True),
+               'Aug': np.loadtxt('air_travel/aRand8.txt', unpack=True),
+               'Sep': np.loadtxt('air_travel/aRand9.txt', unpack=True),
+               'Oct': np.loadtxt('air_travel/aRand10.txt', unpack=True),
+               'Nov': np.loadtxt('air_travel/aRand11.txt', unpack=True),
+               'Dec': np.loadtxt('air_travel/aRand12.txt', unpack=True)}
 
 # print(a_rand['Aug'])
 
@@ -123,9 +114,8 @@ clim_start_dict = {'2010-11': 276, '2011-12': 275, '2012-13': 274, '2013-14': 27
 clim_end_dict = {'2010-11': 639, '2011-12': 638, '2012-13': 637, '2013-14': 635, '2014-15': 634, '2015-16': 640,
                  '2016-17': 639, '2017-18': 637}
 wks_dict = {'2010-11': range(78, 130), '2011-12': range(130, 182), '2012-13': range(182, 234),
-            '2013-14': range(234, 286),
-            '2014-15': range(286, 338), '2015-16': range(338, 391), '2016-17': range(391, 443),
-            '2017-18': range(443, 495)}
+            '2013-14': range(234, 286), '2014-15': range(286, 338), '2015-16': range(338, 391),
+            '2016-17': range(391, 443), '2017-18': range(443, 495)}
 season_len_dict = {'2010-11': 52, '2011-12': 52, '2012-13': 52, '2013-14': 52, '2014-15': 52, '2015-16': 53,
                    '2016-17': 52, '2017-18': 52}
 
@@ -139,30 +129,24 @@ outputEns = pd.DataFrame()
 
 # Loop through seasons and forecast:
 for season_index in range(len(seasons)):
-    # print(season_index)
-
     season = seasons[season_index]
     print(season)
 
     # Get season-specific population matrix:
     N = pd.read_csv(os.path.join('compartment_sizes/', 'N' + season + '.txt'), header=None, sep='\t')
     N = N.to_numpy()
-    # print(N)
 
     # Get observations for current season:
     obs_i = iliiso.iloc[wks_dict[season]]
     syn_i = syn_dat.iloc[wks_dict[season]]
     pos_i = pos_dat.iloc[wks_dict[season]]
     test_i = test_dat.iloc[wks_dict[season]]
-    # print(obs_i)
 
     # Get season duration:
     nsn = season_len_dict[season]
 
     # Reindex data:
     obs_i = obs_i.reset_index(drop=True)
-    # obs_i.index =
-    # print(obs_i)
 
     # Replace leading/lagging zeros:
     for count_index in range(n):
@@ -173,22 +157,19 @@ for season_index in range(len(seasons)):
     # Replace 0s in test_i w/ NA (b/c can't divide by 0!):
     # print(test_i)
     for count_index in range(n):
-        # print(test_i.iloc[:, count_index + 1])
-        # print(test_i.iloc[:, count_index + 1] == 0)
         if any(test_i.iloc[:, count_index + 1] == 0):
             print('0s found in test data!')
 
     # Get OEV:
     obs_vars = calc_obsvars_nTest(obs_i, syn_i, test_i, pos_i, oev_base, oev_denom, 2.0, n)
-    # print(obs_vars)
 
     # DO WE NEED DATES?
 
     # Get time start and time range:
     tm_ini = clim_start_dict[season] - 2  # b/c python indexes at 0, while R does it at 1
-    # print(tm_ini)
     # tm_range = range(clim_start_dict[season], clim_end_dict[season] + 1, 1)
     tm_range = range(clim_start_dict[season] - 1, clim_end_dict[season], 1)  # see previous note
+    tm_range = list(tm_range)
     # print(tm_range)
 
     # Run forecasts!
