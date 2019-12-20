@@ -8,10 +8,11 @@ from functions_all import *
 def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm_range, n, N, AH,
             dt, countries, airRand, lambda_val, wk_start):
 
-    num_times = np.floor(len(tm_range) / tm_step)
+    # num_times = np.floor(len(tm_range) / tm_step)
     # nfc = nsn - ntrn # number of weeks for forecasting
-    # tstep = range(tm_ini + tm_step, nsn * tm_step + tm_ini, tm_step)
+    tstep = np.arange(tm_ini + tm_step + 1, nsn * tm_step + tm_ini + 2, step=tm_step)
     # Question: don't need -1 b/c already adjusted tm_ini for off-by-one-ness?
+    fc_start = wk_start
 
     # Initialize arrays:
 
@@ -79,7 +80,7 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
     airScale_temp = init_parms[4, :]
 
     for i in range(num_ens):
-        Sr_tmp = propagate_SIRS(tmStrt=tcurrent + dt, tmEnd=tcurrent + tm_step, tmStep=dt, tmRange=beta_range,
+        Sr_tmp = propagate_SIRS(tmStrt=tcurrent + dt, tmEnd=tcurrent + tm_step, tmStep=dt, tmRange=tm_range,
                                 S_0=S0_temp[:, :, i], I_0=I0_temp[:, :, i], popN=N,
                                 D_d=D_temp[i], L_d=L_temp[i], beta_d=beta[:, :, i], airScale_d=airScale_temp[i],
                                 Countries=countries, n_count=n,
@@ -196,7 +197,7 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
 
         # Loop through all ensemble members:
         for i in range(num_ens):
-            Sr_tmp = propagate_SIRS(tmStrt=tcurrent + dt, tmEnd=tcurrent + tm_step, tmStep=dt, tmRange=beta_range,
+            Sr_tmp = propagate_SIRS(tmStrt=tcurrent + dt, tmEnd=tcurrent + tm_step, tmStep=dt, tmRange=tm_range,
                                     S_0=S0_temp[:, :, i], I_0=I0_temp[:, :, i], popN=N,
                                     D_d=D_temp[i], L_d=L_temp[i], beta_d=beta[:, :, i], airScale_d=airScale_temp[i],
                                     Countries=countries, n_count=n, airRand=airRand)
@@ -308,7 +309,7 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
             statesfcast = np.c_[states_weeks, states_countries, statesfcast]
 
             statesfcast = pd.DataFrame(statesfcast)
-            statesfcast.columns = ['week', 'country', 'S', 'S_sd', 'I', 'I_sd', 'newI', 'newI_sd']
+            statesfcast.columns = ['week', 'country', 'S', 'S_sd', 'I', 'I_sd', 'Est', 'Est_sd']
 
             # Calculate metrics to return:
             Y = np.r_[np.transpose(obspost_mean), np.transpose(obsfcast_mean)]  # 52 x 12
@@ -595,9 +596,6 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
             statesfcast = statesfcast[statesfcast.columns[[8, 10, 0, 9, 1, 2, 4, 6, 3, 5, 7]]]
             fc_op = fc_op.append(statesfcast, ignore_index=True)
 
-            # onsets5Dist['metric'] = 'onset5'
-            # peakWeeksDist['metric'] = 'pw'
-            # peakIntensitiesDist['metric'] = 'pi'
             dist_temp = pd.DataFrame(np.r_[np.c_[np.repeat('onset5', onsets5Dist.shape[0]), onsets5Dist],
                                            np.c_[np.repeat('pw', peakWeeksDist.shape[0]), peakWeeksDist],
                                            np.c_[np.repeat('pi', peakIntensitiesDist.shape[0]), peakIntensitiesDist]])
@@ -635,151 +633,98 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
 
         # End of forecasting
     # End of fitting, too
-    # Process priors and posteriors after fitting is finished for full period
-    print(fc_met)
-    print(fc_op)
-    print(fc_dist)
-    print(fc_ens)
 
+    # ### Process priors and posteriors after fitting is finished for full period ###
     # Calculate S and I by country (prior and post):
+    s_prior = xprior[S_indices, :, :]
+    s_post = xpost[S_indices, :, :]
+    i_prior = xprior[I_indices, :, :]
+    i_post = xpost[I_indices, :, :]
 
-    '''
-    # Calculate S and I by country:
-            s_fcast = fcast[S_indices, :, :]
-            i_fcast = fcast[I_indices, :, :]
-
-            s_fcast_by_count = np.empty([n, num_ens, nfc])
-            i_fcast_by_count = np.empty([n, num_ens, nfc])
-            for i in range(n):
-                country_vals = np.array([j + n * i for j in range(n)])
-                # s_temp = np.sum(s_fcast[country_vals, :, :], 0) / np.sum(N, 1)[i] * 100000
-                # print(s_temp.shape)
-                s_fcast_by_count[i, :, :] = np.sum(s_fcast[country_vals, :, :], 0) / np.sum(N, 1)[i] * 100000
-                i_fcast_by_count[i, :, :] = np.sum(i_fcast[country_vals, :, :], 0) / np.sum(N, 1)[i] * 100000
-            del i
-
-            # Calculate ensemble means and sds:
-            obsfcast_mean = np.mean(obsfcast, 1)
-            obsfcast_sd = np.std(obsfcast, 1, ddof=1)
-
-            obspost_mean = np.mean(obspost[:, :, range(tt + 1)], 1)  # temporary - used for assessing forecasts
-
-            sfcast_mean = np.mean(s_fcast_by_count, 1)
-            sfcast_sd = np.std(s_fcast_by_count, 1, ddof=1)
-            ifcast_mean = np.mean(i_fcast_by_count, 1)
-            ifcast_sd = np.std(i_fcast_by_count, 1, ddof=1)
-
-            # Store results so far in relevant data frames:
-            statesfcast = np.concatenate((sfcast_mean.reshape([n * nfc, 1]), sfcast_sd.reshape([n * nfc, 1]),
-                                          ifcast_mean.reshape([n * nfc, 1]), ifcast_sd.reshape([n * nfc, 1]),
-                                          obsfcast_mean.reshape([n * nfc, 1]), obsfcast_sd.reshape([n * nfc, 1])), 1)
-
-            states_weeks = np.array([i % nfc for i in range(
-                statesfcast.shape[0])]) + wk_start + tt  # this will give the actual week value, not a python index
-            states_countries = np.array([np.ceil((i + 1) / nfc) - 1 for i in range(statesfcast.shape[0])]).astype(int)
-            statesfcast = np.c_[states_weeks, states_countries, statesfcast]
-
-            statesfcast = pd.DataFrame(statesfcast)
-            statesfcast.columns = ['week', 'country', 'S', 'S_sd', 'I', 'I_sd', 'newI', 'newI_sd']
-
-    '''
-
+    s_prior_by_count = np.empty([n, num_ens, ntrn + 1])
+    i_prior_by_count = np.empty([n, num_ens, ntrn + 1])
+    s_post_by_count = np.empty([n, num_ens, ntrn])
+    i_post_by_count = np.empty([n, num_ens, ntrn])
+    for i in range(n):
+        country_vals = np.array([j + n * i for j in range(n)])
+        s_prior_by_count[i, :, :] = np.sum(s_prior[country_vals, :, :], 0) / np.sum(N, 1)[i] * 100000
+        i_prior_by_count[i, :, :] = np.sum(i_prior[country_vals, :, :], 0) / np.sum(N, 1)[i] * 100000
+        i_post_by_count[i, :, :] = np.sum(s_post[country_vals, :, :], 0) / np.sum(N, 1)[i] * 100000
+        i_post_by_count[i, :, :] = np.sum(i_post[country_vals, :, :], 0) / np.sum(N, 1)[i] * 100000
+    del i
 
     # Calculate ensemble means and sds (prior and post; S, I, newI):
+    obsprior_mean = np.mean(obsprior, 1)
+    obspost_mean = np.mean(obspost, 1)
+    obspost_sd = np.std(obspost, 1, ddof=1)
+
+    sprior_mean = np.mean(s_prior_by_count, 1)
+    spost_mean = np.mean(s_post_by_count, 1)
+    spost_sd = np.std(s_post_by_count, 1, ddof=1)
+
+    iprior_mean = np.mean(i_prior_by_count, 1)
+    ipost_mean = np.mean(i_post_by_count, 1)
+    ipost_sd = np.std(i_post_by_count, 1, ddof=1)
+
+    # And store these in relevant data frames:
+    statesprior = np.concatenate((sprior_mean.reshape([n * (ntrn + 1), 1]),
+                                  iprior_mean.reshape([n * (ntrn + 1), 1]),
+                                  obsprior_mean.reshape([n * (ntrn + 1), 1])), 1)
+    statespost = np.concatenate((spost_mean.reshape([n * ntrn, 1]),
+                                 ipost_mean.reshape([n * ntrn, 1]),
+                                 obspost_mean.reshape([n * ntrn, 1]),
+                                 spost_sd.reshape([n * ntrn, 1]),
+                                 ipost_sd.reshape([n * ntrn, 1]),
+                                 obspost_sd.reshape([n * ntrn, 1])), 1)
+
+    states_weeks = np.array([i % (ntrn + 1) for i in range(statesprior.shape[0])]) + wk_start
+    states_countries = np.array([np.ceil((i + 1) / (ntrn + 1)) - 1 for i in range(statesprior.shape[0])]).astype(int)
+    statesprior = np.c_[states_weeks, states_countries, statesprior]
+    statesprior = pd.DataFrame(statesprior)
+    statesprior.columns = ['week', 'country', 'S', 'I', 'Est']
+
+    states_weeks = np.array([i % ntrn for i in range(statespost.shape[0])]) + wk_start
+    states_countries = np.array([np.ceil((i + 1) / ntrn) - 1 for i in range(statespost.shape[0])]).astype(int)
+    statespost = np.c_[states_weeks, states_countries, statespost]
+    statespost = pd.DataFrame(statespost)
+    statespost.columns = ['week', 'country', 'S', 'I', 'Est', 'S_sd', 'I_sd', 'Est_sd']
 
     # Get parameter means and sds over time:
+    params_prior_mean = np.mean(xprior[param_indices, :, :], 1)
+    params_post_mean = np.mean(xpost[param_indices, :, :], 1)
+    params_post_sd = np.std(xpost[param_indices, :, :], 1, ddof=1)
+    params_post_df = pd.DataFrame(np.transpose(np.concatenate((params_post_mean, params_post_sd), 0)))
+    params_post_df.columns = ['L', 'D', 'R0mx', 'R0diff', 'airScale',
+                              'L_sd', 'D_sd', 'R0mx_sd', 'R0diff_sd', 'airScale_sd']
 
     # Format outputs:
+    fc_met.columns = ['fc_start', 'country',
+                      'obs_pkwk', 'pkwk_mean', 'delta_pkwk_mean', 'leadpkwk_mean', 'pkwk_sd',
+                      'obs_peak_int', 'peak_intensity', 'intensity_err', 'peak_intensity_sd',
+                     'totAttackObs', 'tot_attack', 'delta_AR', 'AR_sd',
+                      'obs_1week', 'obs_2week', 'obs_3week', 'obs_4week',
+                     'fcast_1week', 'fcast_2week', 'fcast_3week', 'fcast_4week',
+                      'onsetObs5', 'onset5', 'delta_onset5', 'onset5_sd',
+                      'corr', 'rmse', 'corr_fcast', 'rmse_fcast']
 
+    statespost['fc_start'] = fc_start
+    statespost['result'] = 'train'
+    statespost['time'] = pd.Series(np.tile(tstep[range(0, ntrn)], n))
+    # noinspection PyTypeChecker
+    statespost = statespost[statespost.columns[[8, 10, 0, 9] + list(range(1, 8))]]
 
-'''
+    out_op = statespost.append(fc_op, ignore_index=True)
 
-# SAVE FOR AFTER FORECASTING COMPLETED:
-### Calculate S and I by country (prior, post, and fcast):
-  s.post <- xpost[S0.indices,, ]; s.prior <- xprior[S0.indices,, ]
-  i.post <- xpost[I0.indices,, ]; i.prior <- xprior[I0.indices,, ]
-  
-s.post.by.count = i.post.by.count = array(0, c(n, num_ens, ntrn))
-  s.prior.by.count = i.prior.by.count = array(0, c(n, num_ens, ntrn + 1))
+    params_post_df['time'] = pd.Series(tstep[range(0, ntrn)])
+    params_post_df['week'] = pd.Series(range(ntrn)) + wk_start
+    params_post_df = params_post_df[params_post_df.columns[[10, 11] + list(range(10))]]
 
-  for (i in 1:n) {
-    country.vals <- (1:n) + n * (i - 1)
-    s.post.temp <- s.post[country.vals,, ]
-    s.prior.temp <- s.prior[country.vals,, ]
-    i.post.temp <- i.post[country.vals,, ]
-    i.prior.temp <- i.prior[country.vals,, ]
-    
-    for (j in 1:num_ens) {
-      s.post.by.count[i, j, ] <- colSums(s.post.temp[, j, ]) / pop.size$pop[i] * 100000
-      s.prior.by.count[i, j, ] <- colSums(s.prior.temp[, j, ]) / pop.size$pop[i] * 100000
-      i.post.by.count[i, j, ] <- colSums(i.post.temp[, j, ]) / pop.size$pop[i] * 100000
-      i.prior.by.count[i, j, ] <- colSums(i.prior.temp[, j, ]) / pop.size$pop[i] * 100000
-    }
-    
-  }
+    # noinspection PyTypeChecker
+    fc_dist = fc_dist[fc_dist.columns[[14] + list(range(0, 14))]]
+    fc_dist.columns = ['fc_start', 'metric', 'bin'] + list(countries)
+    fc_dist = fc_dist.melt(id_vars=('fc_start', 'metric', 'bin'))
+    fc_dist.columns = ['fc_start', 'metric', 'bin', 'country', 'value']
 
-### Calculate ensemble means and sds (prior, post, and fcast; S, I, newI):
-  obsprior_mean <- t(apply(obsprior[,, 1:(ntrn + 1)], c(1, 3), mean))
-  obspost_mean <- t(apply(obspost[,, 1:ntrn], c(1, 3), mean))
-  obspost_sd <- t(apply(obspost[,, 1:ntrn], c(1, 3), sd))
-  
-  sprior_mean <- t(apply(s.prior.by.count[,, 1:(ntrn + 1)], c(1, 3), mean))
-  spost_mean <- t(apply(s.post.by.count[,, 1:ntrn], c(1, 3), mean))
-  spost_sd <- t(apply(s.post.by.count[,, 1:ntrn], c(1, 3), sd))
-  
-  iprior_mean <- t(apply(i.prior.by.count[,, 1:(ntrn + 1)], c(1, 3), mean))
-  ipost_mean <- t(apply(i.post.by.count[,, 1:ntrn], c(1, 3), mean))
-  ipost_sd <- t(apply(i.post.by.count[,, 1:ntrn], c(1, 3), sd))
-  
-  statesprior <- cbind(melt(sprior_mean), melt(iprior_mean), melt(obsprior_mean)); statesprior <- statesprior[, c(1:3, 6, 9)];
-  names(statesprior) <- c('week', 'country', 'S', 'I', 'newI');
-  statesprior$week <- statesprior$week + wk_start - 1; statesprior$country <- countries[statesprior$country]
-  
-  statespost <- cbind(melt(spost_mean), melt(spost_sd), melt(ipost_mean), melt(ipost_sd), melt(obspost_mean), melt(obspost_sd));
-  statespost <- statespost[, c(1:3, 6, 9, 12, 15, 18)];
-  names(statespost) <- c('week', 'country', 'S', 'S_sd', 'I', 'I_sd', 'newI', 'newI_sd');
-  statespost$week <- statespost$week + wk_start - 1; statespost$country <- countries[statespost$country]
-  
-  ### Get parameter means and sds over time (prior and post):
-  params.prior_mean <- t(apply(xprior[param.indices,, 1:(ntrn + 1)], c(1, 3), mean))
-  params.post_mean <- t(apply(xpost[param.indices,, 1:ntrn], c(1, 3), mean))
-  params.post_sd <- t(apply(xpost[param.indices,, 1:ntrn], c(1, 3), sd))
-  # QUESTION: SD continues to increase near end of outbreak - okay?
-  params.post_df <- as.data.frame(cbind(params.post_mean, params.post_sd))
-  names(params.post_df) <- c('L', 'D', 'R0mx', 'R0diff', 'airScale', 'L_sd', 'D_sd', 'R0mx_sd', 'R0diff_sd', 'airScale_sd')
-  
+    fc_ens.columns = ['fc_start', 'country', 'metric'] + list(range(1, 301))
 
-
-
-
-  out1 <- cbind(fc_start, 'train', rep(tstep[1:ntrn], n), statespost)
-  out1 <- out1[, c(1, 3:4, 2, 5:6, 8, 10, 7, 9, 11)]
-
-  names(out5) <- c('fc_start', 'metric', 'bin', countries)
-  out5 <- melt(out5, id.vars = c('fc_start', 'metric', 'bin'))
-
-  out4 <- cbind(fc_start, tstep[1:ntrn], 1:ntrn, params.post_df)
-  names(out5)[4] <- 'country'
-names(out6) <- c('fc_start', 'country', 'metric', 1:300)
-  
-  colnames(out1) = colnames(out2) = c('fc_start', 'time', 'week', 'result', 'country', 'S', 'I', 'Est', 'S_sd', 'I_sd', 'Est_sd')
-  out1$result <- as.character(out1$result); out2$result <- as.character(out2$result)
-  out1 <- rbind(out1, out2)
-  out1$result <- factor(out1$result)
-  
-  colnames(out3) = c('fc_start', 'country', 'obs_pkwk', 'pkwk_mode', 'delta_pkwk_mode', 'pkwk_mean', 'delta_pkwk_mean',
-                     'leadpkwk_mode', 'leadpkwk_mean', 'pkwk_sd', 'obs_peak_int', 'peak_intensity', 'intensity_err', 'peak_intensity_sd',
-                     'totAttackObs', 'tot_attack', 'delta_AR', 'AR_sd', 'obs_1week', 'obs_2week', 'obs_3week', 'obs_4week',
-                     'fcast_1week', 'fcast_2week', 'fcast_3week', 'fcast_4week', 'delta_1w', 'delta_2w', 'delta_3w', 'delta_4w',
-                     'onsetObs3', 'onsetObs4', 'onsetObs5', 'onsetObs6', 'onset3', 'onset4', 'onset5', 'onset6', 'delta_onset3',
-                     'delta_onset4', 'delta_onset5', 'delta_onset6', 'onset3_sd','onset4_sd','onset5_sd','onset6_sd', 'endObs3',
-                     'endObs4', 'endObs5', 'endObs6', 'end3', 'end4', 'end5', 'end6', 'delta_end3', 'delta_end4', 'delta_end5', 'delta_end6',
-                     'end3_sd', 'end4_sd', 'end5_sd', 'end6_sd', 'durationObs3', 'durationObs4', 'durationObs5', 'durationObs6',
-                     'duration3', 'duration4', 'duration5', 'duration6', 'delta_dur3', 'delta_dur4', 'delta_dur5', 'delta_dur6',
-                     'duration3_sd', 'duration4_sd', 'duration5_sd', 'duration6_sd', 'corr', 'rmse', 'corr_fcast', 'rmse_fcast',
-                     'mape', 'wape', 'smape')
-  colnames(out4)[1:3] <- c('fc_start', 'time', 'week')
-  
-  out <- list(opStates = out1, metrics = out3, trainParams = out4, dist = out5, ensembles = out6, vars = var.df)
-        
-'''
+    return fc_met, out_op, params_post_df, fc_dist, fc_ens

@@ -93,20 +93,18 @@ a_rand = np.empty([n, n, 12])
 for i in range(n):
     a_rand[:, :, i] = np.loadtxt('air_travel/aRand' + str(i + 1) + '.txt', unpack=True)
 
-a_rand_comp = {'Jan': np.loadtxt('air_travel/aRand1.txt', unpack=True),
-               'Feb': np.loadtxt('air_travel/aRand2.txt', unpack=True),
-               'Mar': np.loadtxt('air_travel/aRand3.txt', unpack=True),
-               'Apr': np.loadtxt('air_travel/aRand4.txt', unpack=True),
-               'May': np.loadtxt('air_travel/aRand5.txt', unpack=True),
-               'Jun': np.loadtxt('air_travel/aRand6.txt', unpack=True),
-               'Jul': np.loadtxt('air_travel/aRand7.txt', unpack=True),
-               'Aug': np.loadtxt('air_travel/aRand8.txt', unpack=True),
-               'Sep': np.loadtxt('air_travel/aRand9.txt', unpack=True),
-               'Oct': np.loadtxt('air_travel/aRand10.txt', unpack=True),
-               'Nov': np.loadtxt('air_travel/aRand11.txt', unpack=True),
-               'Dec': np.loadtxt('air_travel/aRand12.txt', unpack=True)}
-
-# print(a_rand['Aug'])
+# a_rand_comp = {'Jan': np.loadtxt('air_travel/aRand1.txt', unpack=True),
+#                'Feb': np.loadtxt('air_travel/aRand2.txt', unpack=True),
+#                'Mar': np.loadtxt('air_travel/aRand3.txt', unpack=True),
+#                'Apr': np.loadtxt('air_travel/aRand4.txt', unpack=True),
+#                'May': np.loadtxt('air_travel/aRand5.txt', unpack=True),
+#                'Jun': np.loadtxt('air_travel/aRand6.txt', unpack=True),
+#                'Jul': np.loadtxt('air_travel/aRand7.txt', unpack=True),
+#                'Aug': np.loadtxt('air_travel/aRand8.txt', unpack=True),
+#                'Sep': np.loadtxt('air_travel/aRand9.txt', unpack=True),
+#                'Oct': np.loadtxt('air_travel/aRand10.txt', unpack=True),
+#                'Nov': np.loadtxt('air_travel/aRand11.txt', unpack=True),
+#                'Dec': np.loadtxt('air_travel/aRand12.txt', unpack=True)}
 
 # Season-specific start and end dates:
 clim_start_dict = {'2010-11': 276, '2011-12': 275, '2012-13': 274, '2013-14': 272, '2014-15': 271, '2015-16': 270,
@@ -168,8 +166,9 @@ for season_index in range(len(seasons)):
     # Get time start and time range:
     tm_ini = clim_start_dict[season] - 2  # b/c python indexes at 0, while R does it at 1
     # tm_range = range(clim_start_dict[season], clim_end_dict[season] + 1, 1)
-    tm_range = range(clim_start_dict[season] - 1, clim_end_dict[season], 1)  # see previous note
-    tm_range = list(tm_range)
+    #tm_range = range(clim_start_dict[season] - 1, clim_end_dict[season], 1)  # see previous note
+    #tm_range = list(tm_range)
+    tm_range = [i for i in range(clim_start_dict[season] - 1, clim_end_dict[season], 1)]
     # print(tm_range)
 
     # Run forecasts!
@@ -184,8 +183,15 @@ for season_index in range(len(seasons)):
         # Run EAKF:
         res = EAKF_fn(num_ens, tmstep, param_init, obs_i, 6, nsn, obs_vars, tm_ini, tm_range, n, N, ah,
                       dt, countries, a_rand, lambda_val, wk_start)  # and variables needed for SIRS
-        # loop through ntrns or run all as we go?
-        # for now, set ntrn to 30, which is our final forecast week
+
+        outputMet_temp = res[0]
+        outputOP_temp = res[1]
+        outputOPParams_temp = res[2]
+        outputDist_temp = res[3]
+        outputEns_temp = res[4]
+
+
+
 
         # res = pd.Panel(res)
         # print(res.shape)
