@@ -42,8 +42,8 @@ metricsonly <- FALSE # save all outputs
 
 # seasons <- c('2010-11', '2011-12', '2012-13', '2013-14', '2014-15', '2015-16', '2016-17', '2017-18') # ADD '2018-19'
 # seasons <- c('2010-11', '2012-13', '2013-14', '2014-15', '2015-16', '2017-18') # H1
-seasons <- c('2011-12', '2012-13', '2013-14', '2014-15', '2016-17') # H3
-# seasons <- c('2010-11', '2011-12', '2012-13', '2014-15', '2015-16', '2017-18') # B
+# seasons <- c('2011-12', '2012-13', '2013-14', '2014-15', '2016-17') # H3
+seasons <- c('2010-11', '2011-12', '2012-13', '2014-15', '2015-16', '2017-18') # B
 
 #oevBase_list <- c(0.1, 0.3, 0.5)
 #oevDenom_list <- c(0.2, 1.0, 5.0) #c(1.0, 2.0, 5.0, 10.0, 20.0, 50.0)
@@ -89,8 +89,8 @@ AH <- rbind(ah[, count.indices], ah[, count.indices])
 # iliiso <- read.csv('data/WHO_data_05-09-19_SCALED.csv') # in same order as "countries" vector
 # iliiso <- read.csv('data/by_subtype/WHO_data_A(all)_SCALED.csv')
 # iliiso <- read.csv('data/by_subtype/WHO_data_A(H1)_SCALED.csv')
-iliiso <- read.csv('data/by_subtype/WHO_data_A(H3)_SCALED.csv')
-# iliiso <- read.csv('data/by_subtype/WHO_data_B_SCALED.csv')
+# iliiso <- read.csv('data/by_subtype/WHO_data_A(H3)_SCALED.csv')
+iliiso <- read.csv('data/by_subtype/WHO_data_B_SCALED.csv')
 
 ### Read in syndromic/virologic counts:
 test.dat <- read.csv('data/testCounts_052719.csv')
@@ -104,11 +104,11 @@ test.dat <- read.csv('data/testCounts_052719.csv')
 # syn.dat <- read.csv('data/by_subtype/synDatCounts_A(H1)_SCALED.csv')
 # pos.dat <- read.csv('data/by_subtype/posprop_A(H1).csv')
 
-syn.dat <- read.csv('data/by_subtype/synDatCounts_A(H3)_SCALED.csv')
-pos.dat <- read.csv('data/by_subtype/posprop_A(H3).csv')
+# syn.dat <- read.csv('data/by_subtype/synDatCounts_A(H3)_SCALED.csv')
+# pos.dat <- read.csv('data/by_subtype/posprop_A(H3).csv')
 
-# syn.dat <- read.csv('data/by_subtype/synDatCounts_B_SCALED.csv')
-# pos.dat <- read.csv('data/by_subtype/posprop_B.csv')
+syn.dat <- read.csv('data/by_subtype/synDatCounts_B_SCALED.csv')
+pos.dat <- read.csv('data/by_subtype/posprop_B.csv')
 
 test.dat <- test.dat[, c(1, count.indices + 1)]
 # syn.dat <- syn.dat[, c(1, count.indices + 1)]
@@ -122,8 +122,8 @@ pos.dat <- pos.dat[, c(1, count.indices + 1)]
 # # # note: these are the "old" scalings
 # scalings <- read.csv('data/by_subtype/scalings_frame_A(all).csv')
 # scalings <- read.csv('data/by_subtype/scalings_frame_A(H1).csv')
-scalings <- read.csv('data/by_subtype/scalings_frame_A(H3).csv')
-# scalings <- read.csv('data/by_subtype/scalings_frame_B.csv')
+# scalings <- read.csv('data/by_subtype/scalings_frame_A(H3).csv')
+scalings <- read.csv('data/by_subtype/scalings_frame_B.csv')
 
 for (i in 2:13) {
   # iliiso[, i][iliiso[, i] < 0] <- NA # replace negatives with NAs
@@ -251,7 +251,7 @@ colnames(outputMetrics)[6] <- 'scaling'
 # I actually think all the other colnames are fine as-is...
 
 load('data/by_subtype/scalings_by_subtype_120219.RData')
-outputMetrics[outputMetrics[, 'country'] == 'FR' & outputMetrics[, 'season'] %in% seasons[1:4], 'scaling'] <- scalings.new[[3]][13]#1.3
+outputMetrics[outputMetrics[, 'country'] == 'FR' & outputMetrics[, 'season'] %in% seasons[1:4], 'scaling'] <- scalings.new[[4]][13]#1.3
 # outputMetrics[outputMetrics[, 'country'] == 'FR' & outputMetrics[, 'season'] %in% seasons[1:4], 'scaling'] <- new.scalings.mean[[6]][1]
 # FR has an alternative scaling for earlier
 
