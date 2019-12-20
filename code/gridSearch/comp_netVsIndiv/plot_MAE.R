@@ -74,7 +74,7 @@ if (restrict.fc) {
   m.4wk.agg <- aggregate(abs_err_4wk_perc ~ leadpkwk_mean + model + oev_base + oev_denom, data = m.temp.1wk, FUN = mean)
   m.4wk.agg$metric <- '4 Week'
 }
-names(m.1wk.agg)[4] = names(m.2wk.agg)[4] = names(m.3wk.agg)[4] = names(m.4wk.agg)[4] = 'mae'
+names(m.1wk.agg)[5] = names(m.2wk.agg)[5] = names(m.3wk.agg)[5] = names(m.4wk.agg)[5] = 'mae'
 
 m.agg <- rbind(m.1wk.agg, m.2wk.agg, m.3wk.agg, m.4wk.agg)
 m.agg$metric <- factor(m.agg$metric)
@@ -147,7 +147,7 @@ if (restrict.fc) {
   m.4wk.agg <- aggregate(abs_err_4wk_perc ~ FWeek_pkwk + model + oev_base + oev_denom, data = m.temp.1wk, FUN = mean)
   m.4wk.agg$metric <- '4 Week'
 }
-names(m.1wk.agg)[4] = names(m.2wk.agg)[4] = names(m.3wk.agg)[4] = names(m.4wk.agg)[4] = 'mae'
+names(m.1wk.agg)[5] = names(m.2wk.agg)[5] = names(m.3wk.agg)[5] = names(m.4wk.agg)[5] = 'mae'
 
 m.agg <- rbind(m.1wk.agg, m.2wk.agg, m.3wk.agg, m.4wk.agg)
 m.agg$metric <- factor(m.agg$metric)
