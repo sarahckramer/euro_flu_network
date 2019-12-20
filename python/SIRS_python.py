@@ -1,11 +1,20 @@
-
 import sys
 import numpy as np
+from numba import jit, njit
+from scipy import *
 
 
 # SIRS (including air travel and commuting):
+#@njit
 def propagate_SIRS(tmStrt, tmEnd, tmStep, tmRange, S_0, I_0, popN, D_d, L_d, beta_d, airScale_d, Countries, n_count,
                    airRand):
+    def remove_negatives(mat):
+        i, j = np.where(mat < 0.0)
+        for ix in i:
+            for jx in j:
+                mat[ix, jx] = 0.0
+        return mat
+
     cnt = 0
 
     # print(tmStrt)
@@ -22,15 +31,18 @@ def propagate_SIRS(tmStrt, tmEnd, tmStep, tmRange, S_0, I_0, popN, D_d, L_d, bet
     tm_sz = len(tm_vec) + 1  # plus 1 allows us to include the initial conditions
     # print(tm_sz)
 
-    S_list = np.empty([n_count, n_count, tm_sz])
+    # n_count = np.float64(n_count)
+    # tm_sz = np.float64(tm_sz)
+
+    S_list = np.empty((n_count, n_count, tm_sz), dtype=np.float64)
     S_list[:, :, 0] = S_0
     # print(S_list.shape)
 
-    I_list = np.empty([n_count, n_count, tm_sz])
+    I_list = np.empty((n_count, n_count, tm_sz), dtype=np.float64)
     I_list[:, :, 0] = I_0
 
-    newI_list = np.empty([n_count, n_count, tm_sz])
-    newI_list[:, :, 0] = np.zeros([n_count, n_count])
+    newI_list = np.empty((n_count, n_count, tm_sz), dtype=np.float64)
+    newI_list[:, :, 0] = np.zeros((n_count, n_count))
 
     for t in tm_vec:
 
@@ -41,39 +53,34 @@ def propagate_SIRS(tmStrt, tmEnd, tmStep, tmRange, S_0, I_0, popN, D_d, L_d, bet
         # print(t_true) # pretty sure this is correct! first value of 2010-11 corresponds to third day of October
 
         if t_true in range(0, 31) or t_true in range((0 + 365), (31 + 365)):
-            airRand_temp = airRand['Jan']
+            airRand_temp = airRand[:, :, 0]
         elif t_true in range(31, 59) or t_true in range((31 + 365), (59 + 365)):
-            airRand_temp = airRand['Feb']
+            airRand_temp = airRand[:, :, 1]
         elif t_true in range(59, 90) or t_true in range((59 + 365), (90 + 365)):
-            airRand_temp = airRand['Mar']
+            airRand_temp = airRand[:, :, 2]
         elif t_true in range(90, 120) or t_true in range((90 + 365), (120 + 365)):
-            airRand_temp = airRand['Apr']
+            airRand_temp = airRand[:, :, 3]
         elif t_true in range(120, 151) or t_true in range((120 + 365), (151 + 365)):
-            airRand_temp = airRand['May']
+            airRand_temp = airRand[:, :, 4]
         elif t_true in range(151, 181) or t_true in range((151 + 365), (181 + 365)):
-            airRand_temp = airRand['Jun']
+            airRand_temp = airRand[:, :, 5]
         elif t_true in range(181, 212) or t_true in range((181 + 365), (212 + 365)):
-            airRand_temp = airRand['Jul']
+            airRand_temp = airRand[:, :, 6]
         elif t_true in range(212, 243) or t_true in range((212 + 365), (243 + 365)):
-            airRand_temp = airRand['Aug']
+            airRand_temp = airRand[:, :, 7]
         elif t_true in range(243, 273) or t_true in range((243 + 365), (273 + 365)):
-            # print('September')
-            airRand_temp = airRand['Sep']
+            airRand_temp = airRand[:, :, 8]
         elif t_true in range(273, 304) or t_true in range((273 + 365), (304 + 365)):
-            # print('October')
-            airRand_temp = airRand['Oct']
+            airRand_temp = airRand[:, :, 9]
         elif t_true in range(304, 334) or t_true in range((304 + 365), (334 + 365)):
-            airRand_temp = airRand['Nov']
+            airRand_temp = airRand[:, :, 10]
         elif t_true in range(334, 365) or t_true in range((334 + 365), (365 + 365)):
-            airRand_temp = airRand['Dec']
+            airRand_temp = airRand[:, :, 11]
         else:
             print('ERROR: Out of seasonal range!')
-            sys.exit()
 
-        # airRand_temp = airRand['Jan'] # for now, just use one
         # Multiply airRand by airScale:
         airRand_temp = airScale_d * airRand_temp
-        # print(airRand_temp.shape)
 
         # Now move on to normal model code
         cnt = cnt + 1
@@ -88,7 +95,7 @@ def propagate_SIRS(tmStrt, tmEnd, tmStep, tmRange, S_0, I_0, popN, D_d, L_d, bet
         # Step 1 #
         Eimmloss = tmStep * (1 / 3) * (1 / L_d) * (popN - S - I)
         Einf = tmStep * (1 / 3) * np.transpose(
-            np.transpose(S) * np.reshape(beta_d[t, :] * np.sum(I, axis=0) / np.sum(popN, axis=0), [12, 1]))
+            np.transpose(S) * np.reshape(beta_d[t, :] * np.sum(I, axis=0) / np.sum(popN, axis=0), (12, 1)))
         Erecov = tmStep * (1 / 3) * (I / D_d)
 
         '''
@@ -163,19 +170,29 @@ def propagate_SIRS(tmStrt, tmEnd, tmStep, tmRange, S_0, I_0, popN, D_d, L_d, bet
         sOut = (S / np.sum(popN, 0)) * np.sum(airRand_temp, 1)  # works due to "broadcasting"
         iOut = (I / np.sum(popN, 0)) * np.sum(airRand_temp, 1)
 
-        sIn = np.tile(np.matmul(np.sum(S, 0) / np.sum(popN, 0), airRand_temp), (n_count, 1)) * popN / np.tile(
-            np.sum(popN, 0), (n_count, 1))
-        iIn = np.tile(np.matmul(np.sum(I, 0) / np.sum(popN, 0), airRand_temp), (n_count, 1)) * popN / np.tile(
-            np.sum(popN, 0), (n_count, 1))
+        sIn = np.transpose(np.reshape(np.repeat(np.dot(np.sum(S, 0) / np.sum(popN, 0), airRand_temp), n_count),
+                                      (n_count, n_count))) * popN / \
+              np.transpose(np.reshape(np.repeat(np.sum(popN, 0), n_count), (n_count, n_count)))
+        iIn = np.transpose(np.reshape(np.repeat(np.dot(np.sum(I, 0) / np.sum(popN, 0), airRand_temp), n_count),
+                                      (n_count, n_count))) * popN / \
+              np.transpose(np.reshape(np.repeat(np.sum(popN, 0), n_count), (n_count, n_count)))
 
         Estrav = (tmStep * (1 / 3)) * (sIn - sOut)
         Eitrav = (tmStep * (1 / 3)) * (iIn - iOut)
         # print(np.allclose(Estrav, EstravCheck))
         # print(np.allclose(Eitrav, EitravCheck))
 
-        Eimmloss[np.where(Eimmloss < 0)] = 0  # set any values below 0 to 0
-        Einf[np.where(Einf < 0)] = 0
-        Erecov[np.where(Erecov < 0)] = 0
+        # i, j = np.where(Eimmloss < 0.0)
+        # for ix in i:
+        #     for jx in j:
+        #         Eimmloss[ix, jx] = 0.0
+
+        Eimmloss = remove_negatives(Eimmloss)
+        Einf = remove_negatives(Einf)
+        Erecov = remove_negatives(Erecov)
+        # Eimmloss[np.where(Eimmloss < 0.0)[0], :] = 0.0 # set any values below 0 to 0
+        # Einf[np.where(Einf < 0)] = 0
+        # Erecov[np.where(Erecov < 0)] = 0
 
         smcl = Eimmloss
         smci = Einf
@@ -201,23 +218,25 @@ def propagate_SIRS(tmStrt, tmEnd, tmStep, tmRange, S_0, I_0, popN, D_d, L_d, bet
         # Step 2 #
         Eimmloss = tmStep * (1 / 3) * (1 / L_d) * (popN - Ts1 - Ti1)
         Einf = tmStep * (1 / 3) * np.transpose(
-            np.transpose(Ts1) * np.reshape(beta_d[t, :] * np.sum(Ti1, axis=0) / np.sum(popN, axis=0), [12, 1]))
+            np.transpose(Ts1) * np.reshape(beta_d[t, :] * np.sum(Ti1, axis=0) / np.sum(popN, axis=0), (12, 1)))
         Erecov = tmStep * (1 / 3) * (Ti1 / D_d)
 
         sOut = (Ts1 / np.sum(popN, 0)) * np.sum(airRand_temp, 1)  # works due to "broadcasting"
         iOut = (Ti1 / np.sum(popN, 0)) * np.sum(airRand_temp, 1)
-        sIn = np.tile(np.matmul(np.sum(Ts1, 0) / np.sum(popN, 0), airRand_temp), (n_count, 1)) * popN / np.tile(
-            np.sum(popN, 0), (n_count, 1))
-        iIn = np.tile(np.matmul(np.sum(Ti1, 0) / np.sum(popN, 0), airRand_temp), (n_count, 1)) * popN / np.tile(
-            np.sum(popN, 0), (n_count, 1))
+        sIn = np.transpose(np.reshape(np.repeat(np.dot(np.sum(Ts1, 0) / np.sum(popN, 0), airRand_temp), n_count),
+                                      (n_count, n_count))) * popN / \
+              np.transpose(np.reshape(np.repeat(np.sum(popN, 0), n_count), (n_count, n_count)))
+        iIn = np.transpose(np.reshape(np.repeat(np.dot(np.sum(Ti1, 0) / np.sum(popN, 0), airRand_temp), n_count),
+                                      (n_count, n_count))) * popN / \
+              np.transpose(np.reshape(np.repeat(np.sum(popN, 0), n_count), (n_count, n_count)))
 
         Estrav = (tmStep * (1 / 3)) * (sIn - sOut)
         Eitrav = (tmStep * (1 / 3)) * (iIn - iOut)
         # print(Estrav.shape)
 
-        Eimmloss[np.where(Eimmloss < 0)] = 0  # set any values below 0 to 0
-        Einf[np.where(Einf < 0)] = 0
-        Erecov[np.where(Erecov < 0)] = 0
+        Eimmloss = remove_negatives(Eimmloss)
+        Einf = remove_negatives(Einf)
+        Erecov = remove_negatives(Erecov)
 
         smcl = Eimmloss
         smci = Einf
@@ -236,22 +255,24 @@ def propagate_SIRS(tmStrt, tmEnd, tmStep, tmRange, S_0, I_0, popN, D_d, L_d, bet
         # Step 3 #
         Eimmloss = tmStep * (1 / 3) * (1 / L_d) * (popN - Ts2 - Ti2)
         Einf = tmStep * (1 / 3) * np.transpose(
-            np.transpose(Ts2) * np.reshape(beta_d[t, :] * np.sum(Ti2, axis=0) / np.sum(popN, axis=0), [12, 1]))
+            np.transpose(Ts2) * np.reshape(beta_d[t, :] * np.sum(Ti2, axis=0) / np.sum(popN, axis=0), (12, 1)))
         Erecov = tmStep * (1 / 3) * (Ti2 / D_d)
 
         sOut = (Ts2 / np.sum(popN, 0)) * np.sum(airRand_temp, 1)  # works due to "broadcasting"
         iOut = (Ti2 / np.sum(popN, 0)) * np.sum(airRand_temp, 1)
-        sIn = np.tile(np.matmul(np.sum(Ts2, 0) / np.sum(popN, 0), airRand_temp), (n_count, 1)) * popN / np.tile(
-            np.sum(popN, 0), (n_count, 1))
-        iIn = np.tile(np.matmul(np.sum(Ti2, 0) / np.sum(popN, 0), airRand_temp), (n_count, 1)) * popN / np.tile(
-            np.sum(popN, 0), (n_count, 1))
+        sIn = np.transpose(np.reshape(np.repeat(np.dot(np.sum(Ts2, 0) / np.sum(popN, 0), airRand_temp), n_count),
+                                      (n_count, n_count))) * popN / \
+              np.transpose(np.reshape(np.repeat(np.sum(popN, 0), n_count), (n_count, n_count)))
+        iIn = np.transpose(np.reshape(np.repeat(np.dot(np.sum(Ti2, 0) / np.sum(popN, 0), airRand_temp), n_count),
+                                      (n_count, n_count))) * popN / \
+              np.transpose(np.reshape(np.repeat(np.sum(popN, 0), n_count), (n_count, n_count)))
 
         Estrav = (tmStep * (1 / 3)) * (sIn - sOut)
         Eitrav = (tmStep * (1 / 3)) * (iIn - iOut)
 
-        Eimmloss[np.where(Eimmloss < 0)] = 0  # set any values below 0 to 0
-        Einf[np.where(Einf < 0)] = 0
-        Erecov[np.where(Erecov < 0)] = 0
+        Eimmloss = remove_negatives(Eimmloss)
+        Einf = remove_negatives(Einf)
+        Erecov = remove_negatives(Erecov)
 
         smcl = Eimmloss
         smci = Einf
@@ -271,22 +292,24 @@ def propagate_SIRS(tmStrt, tmEnd, tmStep, tmRange, S_0, I_0, popN, D_d, L_d, bet
         # Step 4 #
         Eimmloss = tmStep * (1 / 3) * (1 / L_d) * (popN - Ts3 - Ti3)
         Einf = tmStep * (1 / 3) * np.transpose(
-            np.transpose(Ts3) * np.reshape(beta_d[t, :] * np.sum(Ti3, axis=0) / np.sum(popN, axis=0), [12, 1]))
+            np.transpose(Ts3) * np.reshape(beta_d[t, :] * np.sum(Ti3, axis=0) / np.sum(popN, axis=0), (12, 1)))
         Erecov = tmStep * (1 / 3) * (Ti3 / D_d)
 
         sOut = (Ts3 / np.sum(popN, 0)) * np.sum(airRand_temp, 1)  # works due to "broadcasting"
         iOut = (Ti3 / np.sum(popN, 0)) * np.sum(airRand_temp, 1)
-        sIn = np.tile(np.matmul(np.sum(Ts3, 0) / np.sum(popN, 0), airRand_temp), (n_count, 1)) * popN / np.tile(
-            np.sum(popN, 0), (n_count, 1))
-        iIn = np.tile(np.matmul(np.sum(Ti3, 0) / np.sum(popN, 0), airRand_temp), (n_count, 1)) * popN / np.tile(
-            np.sum(popN, 0), (n_count, 1))
+        sIn = np.transpose(np.reshape(np.repeat(np.dot(np.sum(Ts3, 0) / np.sum(popN, 0), airRand_temp), n_count),
+                                      (n_count, n_count))) * popN / \
+              np.transpose(np.reshape(np.repeat(np.sum(popN, 0), n_count), (n_count, n_count)))
+        iIn = np.transpose(np.reshape(np.repeat(np.dot(np.sum(Ti3, 0) / np.sum(popN, 0), airRand_temp), n_count),
+                                      (n_count, n_count))) * popN / \
+              np.transpose(np.reshape(np.repeat(np.sum(popN, 0), n_count), (n_count, n_count)))
 
         Estrav = (tmStep * (1 / 3)) * (sIn - sOut)
         Eitrav = (tmStep * (1 / 3)) * (iIn - iOut)
 
-        Eimmloss[np.where(Eimmloss < 0)] = 0  # set any values below 0 to 0
-        Einf[np.where(Einf < 0)] = 0
-        Erecov[np.where(Erecov < 0)] = 0
+        Eimmloss = remove_negatives(Eimmloss)
+        Einf = remove_negatives(Einf)
+        Erecov = remove_negatives(Erecov)
 
         smcl = Eimmloss
         smci = Einf
@@ -314,7 +337,7 @@ def propagate_SIRS(tmStrt, tmEnd, tmStep, tmRange, S_0, I_0, popN, D_d, L_d, bet
         # ### Nighttime ###
         # Step 1 #
         Eimmloss = tmStep * (2 / 3) * (1 / L_d) * (popN - S - I)
-        Einf = tmStep * (2 / 3) * (S * np.reshape(beta_d[t, :] * np.sum(I, axis=1) / np.sum(popN, axis=1), [12, 1]))
+        Einf = tmStep * (2 / 3) * (S * np.reshape(beta_d[t, :] * np.sum(I, axis=1) / np.sum(popN, axis=1), (12, 1)))
         Erecov = tmStep * (2 / 3) * (I / D_d)
 
         '''
@@ -380,12 +403,12 @@ def propagate_SIRS(tmStrt, tmEnd, tmStep, tmRange, S_0, I_0, popN, D_d, L_d, bet
         sOut = np.transpose(np.transpose(S) / np.sum(popN, 1) * np.sum(airRand_temp, 1))
         iOut = np.transpose(np.transpose(I) / np.sum(popN, 1) * np.sum(airRand_temp, 1))
 
-        sIn = np.transpose(
-            np.tile(np.matmul(np.sum(S, 1) / np.sum(popN, 1), airRand_temp), (n_count, 1))) * popN / np.transpose(
-            np.tile(np.sum(popN, 1), (n_count, 1)))
-        iIn = np.transpose(
-            np.tile(np.matmul(np.sum(I, 1) / np.sum(popN, 1), airRand_temp), (n_count, 1))) * popN / np.transpose(
-            np.tile(np.sum(popN, 1), (n_count, 1)))
+        sIn = np.reshape(np.repeat(np.dot(np.sum(S, 1) / np.sum(popN, 1), airRand_temp), n_count),
+                         (n_count, n_count)) * popN / \
+              np.reshape(np.repeat(np.sum(popN, 1), n_count), (n_count, n_count))
+        iIn = np.reshape(np.repeat(np.dot(np.sum(I, 1) / np.sum(popN, 1), airRand_temp), n_count),
+                         (n_count, n_count)) * popN / \
+              np.reshape(np.repeat(np.sum(popN, 1), n_count), (n_count, n_count))
 
         Estrav = (tmStep * (2 / 3)) * (sIn - sOut)
         Eitrav = (tmStep * (2 / 3)) * (iIn - iOut)
@@ -396,9 +419,9 @@ def propagate_SIRS(tmStrt, tmEnd, tmStep, tmRange, S_0, I_0, popN, D_d, L_d, bet
         # print(np.allclose(Estrav, EstravCheck))
         # print(np.allclose(Eitrav, EitravCheck))
 
-        Eimmloss[np.where(Eimmloss < 0)] = 0  # set any values below 0 to 0
-        Einf[np.where(Einf < 0)] = 0
-        Erecov[np.where(Erecov < 0)] = 0
+        Eimmloss = remove_negatives(Eimmloss)
+        Einf = remove_negatives(Einf)
+        Erecov = remove_negatives(Erecov)
 
         smcl = Eimmloss
         smci = Einf
@@ -413,25 +436,25 @@ def propagate_SIRS(tmStrt, tmEnd, tmStep, tmRange, S_0, I_0, popN, D_d, L_d, bet
 
         # Step 2 #
         Eimmloss = tmStep * (2 / 3) * (1 / L_d) * (popN - Ts1 - Ti1)
-        Einf = tmStep * (2 / 3) * (Ts1 * np.reshape(beta_d[t, :] * np.sum(Ti1, axis=1) / np.sum(popN, axis=1), [12, 1]))
+        Einf = tmStep * (2 / 3) * (Ts1 * np.reshape(beta_d[t, :] * np.sum(Ti1, axis=1) / np.sum(popN, axis=1), (12, 1)))
         Erecov = tmStep * (2 / 3) * (Ti1 / D_d)
 
         sOut = np.transpose(np.transpose(Ts1) / np.sum(popN, 1) * np.sum(airRand_temp, 1))
         iOut = np.transpose(np.transpose(Ti1) / np.sum(popN, 1) * np.sum(airRand_temp, 1))
 
-        sIn = np.transpose(
-            np.tile(np.matmul(np.sum(Ts1, 1) / np.sum(popN, 1), airRand_temp), (n_count, 1))) * popN / np.transpose(
-            np.tile(np.sum(popN, 1), (n_count, 1)))
-        iIn = np.transpose(
-            np.tile(np.matmul(np.sum(Ti1, 1) / np.sum(popN, 1), airRand_temp), (n_count, 1))) * popN / np.transpose(
-            np.tile(np.sum(popN, 1), (n_count, 1)))
+        sIn = np.reshape(np.repeat(np.dot(np.sum(Ts1, 1) / np.sum(popN, 1), airRand_temp), n_count),
+                         (n_count, n_count)) * popN / \
+              np.reshape(np.repeat(np.sum(popN, 1), n_count), (n_count, n_count))
+        iIn = np.reshape(np.repeat(np.dot(np.sum(Ti1, 1) / np.sum(popN, 1), airRand_temp), n_count),
+                         (n_count, n_count)) * popN / \
+              np.reshape(np.repeat(np.sum(popN, 1), n_count), (n_count, n_count))
 
         Estrav = (tmStep * (2 / 3)) * (sIn - sOut)
         Eitrav = (tmStep * (2 / 3)) * (iIn - iOut)
 
-        Eimmloss[np.where(Eimmloss < 0)] = 0  # set any values below 0 to 0
-        Einf[np.where(Einf < 0)] = 0
-        Erecov[np.where(Erecov < 0)] = 0
+        Eimmloss = remove_negatives(Eimmloss)
+        Einf = remove_negatives(Einf)
+        Erecov = remove_negatives(Erecov)
 
         smcl = Eimmloss
         smci = Einf
@@ -446,25 +469,25 @@ def propagate_SIRS(tmStrt, tmEnd, tmStep, tmRange, S_0, I_0, popN, D_d, L_d, bet
 
         # Step 3 #
         Eimmloss = tmStep * (2 / 3) * (1 / L_d) * (popN - Ts2 - Ti2)
-        Einf = tmStep * (2 / 3) * (Ts2 * np.reshape(beta_d[t, :] * np.sum(Ti2, axis=1) / np.sum(popN, axis=1), [12, 1]))
+        Einf = tmStep * (2 / 3) * (Ts2 * np.reshape(beta_d[t, :] * np.sum(Ti2, axis=1) / np.sum(popN, axis=1), (12, 1)))
         Erecov = tmStep * (2 / 3) * (Ti2 / D_d)
 
         sOut = np.transpose(np.transpose(Ts2) / np.sum(popN, 1) * np.sum(airRand_temp, 1))
         iOut = np.transpose(np.transpose(Ti2) / np.sum(popN, 1) * np.sum(airRand_temp, 1))
 
-        sIn = np.transpose(
-            np.tile(np.matmul(np.sum(Ts2, 1) / np.sum(popN, 1), airRand_temp), (n_count, 1))) * popN / np.transpose(
-            np.tile(np.sum(popN, 1), (n_count, 1)))
-        iIn = np.transpose(
-            np.tile(np.matmul(np.sum(Ti2, 1) / np.sum(popN, 1), airRand_temp), (n_count, 1))) * popN / np.transpose(
-            np.tile(np.sum(popN, 1), (n_count, 1)))
+        sIn = np.reshape(np.repeat(np.dot(np.sum(Ts2, 1) / np.sum(popN, 1), airRand_temp), n_count),
+                         (n_count, n_count)) * popN / \
+              np.reshape(np.repeat(np.sum(popN, 1), n_count), (n_count, n_count))
+        iIn = np.reshape(np.repeat(np.dot(np.sum(Ti2, 1) / np.sum(popN, 1), airRand_temp), n_count),
+                         (n_count, n_count)) * popN / \
+              np.reshape(np.repeat(np.sum(popN, 1), n_count), (n_count, n_count))
 
         Estrav = (tmStep * (2 / 3)) * (sIn - sOut)
         Eitrav = (tmStep * (2 / 3)) * (iIn - iOut)
 
-        Eimmloss[np.where(Eimmloss < 0)] = 0  # set any values below 0 to 0
-        Einf[np.where(Einf < 0)] = 0
-        Erecov[np.where(Erecov < 0)] = 0
+        Eimmloss = remove_negatives(Eimmloss)
+        Einf = remove_negatives(Einf)
+        Erecov = remove_negatives(Erecov)
 
         smcl = Eimmloss
         smci = Einf
@@ -479,25 +502,25 @@ def propagate_SIRS(tmStrt, tmEnd, tmStep, tmRange, S_0, I_0, popN, D_d, L_d, bet
 
         # Step 4 #
         Eimmloss = tmStep * (2 / 3) * (1 / L_d) * (popN - Ts3 - Ti3)
-        Einf = tmStep * (2 / 3) * (Ts3 * np.reshape(beta_d[t, :] * np.sum(Ti3, axis=1) / np.sum(popN, axis=1), [12, 1]))
+        Einf = tmStep * (2 / 3) * (Ts3 * np.reshape(beta_d[t, :] * np.sum(Ti3, axis=1) / np.sum(popN, axis=1), (12, 1)))
         Erecov = tmStep * (2 / 3) * (Ti3 / D_d)
 
         sOut = np.transpose(np.transpose(Ts3) / np.sum(popN, 1) * np.sum(airRand_temp, 1))
         iOut = np.transpose(np.transpose(Ti3) / np.sum(popN, 1) * np.sum(airRand_temp, 1))
 
-        sIn = np.transpose(
-            np.tile(np.matmul(np.sum(Ts3, 1) / np.sum(popN, 1), airRand_temp), (n_count, 1))) * popN / np.transpose(
-            np.tile(np.sum(popN, 1), (n_count, 1)))
-        iIn = np.transpose(
-            np.tile(np.matmul(np.sum(Ti3, 1) / np.sum(popN, 1), airRand_temp), (n_count, 1))) * popN / np.transpose(
-            np.tile(np.sum(popN, 1), (n_count, 1)))
+        sIn = np.reshape(np.repeat(np.dot(np.sum(Ts3, 1) / np.sum(popN, 1), airRand_temp), n_count),
+                         (n_count, n_count)) * popN / \
+              np.reshape(np.repeat(np.sum(popN, 1), n_count), (n_count, n_count))
+        iIn = np.reshape(np.repeat(np.dot(np.sum(Ti3, 1) / np.sum(popN, 1), airRand_temp), n_count),
+                         (n_count, n_count)) * popN / \
+              np.reshape(np.repeat(np.sum(popN, 1), n_count), (n_count, n_count))
 
         Estrav = (tmStep * (2 / 3)) * (sIn - sOut)
         Eitrav = (tmStep * (2 / 3)) * (iIn - iOut)
 
-        Eimmloss[np.where(Eimmloss < 0)] = 0  # set any values below 0 to 0
-        Einf[np.where(Einf < 0)] = 0
-        Erecov[np.where(Erecov < 0)] = 0
+        Eimmloss = remove_negatives(Eimmloss)
+        Einf = remove_negatives(Einf)
+        Erecov = remove_negatives(Erecov)
 
         smcl = Eimmloss
         smci = Einf
@@ -517,13 +540,4 @@ def propagate_SIRS(tmStrt, tmEnd, tmStep, tmRange, S_0, I_0, popN, D_d, L_d, bet
     # print(S_list.shape)
     # print(newI_list.shape)
 
-    '''
-    # Format for returning?
-    newI_count = np.zeros((tm_sz, len(Countries)))
-    newI_count[:, 0] = newI_list[:, 0] + newI_list[:, 1] + newI_list[:, 2]
-    newI_count[:, 1] = newI_list[:, 3] + newI_list[:, 4] + newI_list[:, 5]
-    newI_count[:, 2] = newI_list[:, 6] + newI_list[:, 7] + newI_list[:, 8]
-    
-    return(newI_count)
-    '''
     return S_list, I_list, newI_list
