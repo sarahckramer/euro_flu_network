@@ -11,7 +11,7 @@ library(gtable); library(gridExtra); library(reshape2); library(stringr)
 dir.save <- 'code/gridSearch/plots/'
 
 # Read in results:
-output <- read.csv('results/A(H1)/indiv_mid/outputOP_PROC.csv')
+output <- read.csv('results/A(H3)/indiv_newOEV/outputOP_PROC.csv')
 
 output$year <- as.numeric(as.character(substr(output$season, start = 1, stop = 4)))
 output$year[output$week > 53] <- output$year[output$week > 53] + 1
@@ -42,7 +42,7 @@ output$time2 <- paste(output$year, output$week2, sep = '_')
 #   iliiso[, i][iliiso[, i] < 0] <- NA # replace negatives with NAs
 # }
 
-iliiso <- read.csv('data/by_subtype/WHO_data_A(H1)_SCALED.csv')
+iliiso <- read.csv('data/by_subtype/WHO_data_A(H3)_SCALED.csv')
 names(iliiso) <- c('time', 'AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
 iliiso <- melt(iliiso)
 names(iliiso)[3] <- 'observed'
@@ -58,7 +58,9 @@ output <- merge(output, iliiso, by.x = c('country', 'time2'), by.y = c('variable
 countries <- unique(output$country)
 seasons <- unique(output$season)
 fc_starts <- sort(unique(output$fc_start))
-output$group <- paste(output$run, output$oev_base, sep='_')
+output$group <- paste(output$run, output$oev_base, output$oev_denom, sep='_')
+output$oev_base <- factor(output$oev_base)
+output$oev_denom <- factor(output$oev_denom)
 
 for (season in seasons) {
   print(season)
@@ -75,6 +77,11 @@ for (season in seasons) {
         geom_point(data = sub, aes(x = time, y = observed), colour = 'black', cex = 0.9) +
         facet_wrap(~ country, ncol = 3, scale = 'free_y') + scale_color_brewer(palette = 'Set1') +
         labs(title = wk, x = 'Time', y = 'Syn.+', colour = '') + theme_bw()
+      # g <- ggplot(sub, aes(x = time, y = Est, group = factor(group), col = oev_base)) + geom_line() +
+      #   geom_point(data = sub, aes(x = time, y = observed), colour = 'black', cex = 0.9) +
+      #   facet_grid(oev_denom ~ country, scale = 'free_y') + scale_color_brewer(palette = 'Set1') +
+      #   labs(title = wk, x = 'Time', y = 'Syn.+', colour = '') + theme_bw() +
+      #   geom_vline(xintercept = 276 + 7 * (wk - 40), lwd = 1.0)
       graphs[[num.graphs]] <- g
       num.graphs <- num.graphs + 1
       
@@ -83,7 +90,7 @@ for (season in seasons) {
   
   print('Graph list completed.')
   glist <- marrangeGrob(grobs = graphs, nrow = 1, ncol = 1)
-  ggsave(paste(dir.save, 'output_', season, '_H1_INDIV.pdf', sep = ''), glist, width = 18, height = 9, dpi = 600)
+  ggsave(paste(dir.save, 'output_', season, '_H3_INDIV.pdf', sep = ''), glist, width = 25, height = 9, dpi = 600)
   print('Done.')
 }
 

@@ -49,16 +49,16 @@ grid.arrange(p1, p2, p3, ncol = 1)
 # Back to original code:
 if (restrict.fc) {
   m.temp.1wk <- m[m$leadpkwk_mean >= -8 & m$leadpkwk_mean < 5 & !is.na(m$abs_err_1wk_perc) & m$fc_start >= 50 & m$fc_start < 65, ]
-  m.1wk.agg <- aggregate(abs_err_1wk_perc ~ leadpkwk_mean + model + oev_base, data = m.temp.1wk, FUN = mean)
+  m.1wk.agg <- aggregate(abs_err_1wk_perc ~ leadpkwk_mean + model + oev_base + oev_denom, data = m.temp.1wk, FUN = mean)
   m.1wk.agg$metric <- '1 Week'
   m.temp.2wk <- m[m$leadpkwk_mean >= -8 & m$leadpkwk_mean < 5 & !is.na(m$abs_err_2wk_perc) & m$fc_start >= 50 & m$fc_start < 65, ]
-  m.2wk.agg <- aggregate(abs_err_2wk_perc ~ leadpkwk_mean + model + oev_base, data = m.temp.1wk, FUN = mean)
+  m.2wk.agg <- aggregate(abs_err_2wk_perc ~ leadpkwk_mean + model + oev_base + oev_denom, data = m.temp.1wk, FUN = mean)
   m.2wk.agg$metric <- '2 Week'
   m.temp.3wk <- m[m$leadpkwk_mean >= -8 & m$leadpkwk_mean < 5 & !is.na(m$abs_err_3wk_perc) & m$fc_start >= 50 & m$fc_start < 65, ]
-  m.3wk.agg <- aggregate(abs_err_3wk_perc ~ leadpkwk_mean + model + oev_base, data = m.temp.1wk, FUN = mean)
+  m.3wk.agg <- aggregate(abs_err_3wk_perc ~ leadpkwk_mean + model + oev_base + oev_denom, data = m.temp.1wk, FUN = mean)
   m.3wk.agg$metric <- '3 Week'
   m.temp.4wk <- m[m$leadpkwk_mean >= -8 & m$leadpkwk_mean < 5 & !is.na(m$abs_err_4wk_perc) & m$fc_start >= 50 & m$fc_start < 65, ]
-  m.4wk.agg <- aggregate(abs_err_4wk_perc ~ leadpkwk_mean + model + oev_base, data = m.temp.1wk, FUN = mean)
+  m.4wk.agg <- aggregate(abs_err_4wk_perc ~ leadpkwk_mean + model + oev_base + oev_denom, data = m.temp.1wk, FUN = mean)
   m.4wk.agg$metric <- '4 Week'
 } else {
   m.temp.1wk <- m[m$leadpkwk_mean >= -8 & m$leadpkwk_mean < 5 & !is.na(m$abs_err_1wk_perc), ]
@@ -122,16 +122,16 @@ grid.arrange(p1, p2, p3, ncol = 1)
 
 if (restrict.fc) {
   m.temp.1wk <- m[m$FWeek_pkwk >= -8 & m$FWeek_pkwk < 5 & !is.na(m$abs_err_1wk_perc) & m$fc_start >= 50 & m$fc_start < 65, ]
-  m.1wk.agg <- aggregate(abs_err_1wk_perc ~ FWeek_pkwk + model + oev_base, data = m.temp.1wk, FUN = mean)
+  m.1wk.agg <- aggregate(abs_err_1wk_perc ~ FWeek_pkwk + model + oev_base + oev_denom, data = m.temp.1wk, FUN = mean)
   m.1wk.agg$metric <- '1 Week'
   m.temp.2wk <- m[m$FWeek_pkwk >= -8 & m$FWeek_pkwk < 5 & !is.na(m$abs_err_2wk_perc) & m$fc_start >= 50 & m$fc_start < 65, ]
-  m.2wk.agg <- aggregate(abs_err_2wk_perc ~ FWeek_pkwk + model + oev_base, data = m.temp.1wk, FUN = mean)
+  m.2wk.agg <- aggregate(abs_err_2wk_perc ~ FWeek_pkwk + model + oev_base + oev_denom, data = m.temp.1wk, FUN = mean)
   m.2wk.agg$metric <- '2 Week'
   m.temp.3wk <- m[m$FWeek_pkwk >= -8 & m$FWeek_pkwk < 5 & !is.na(m$abs_err_3wk_perc) & m$fc_start >= 50 & m$fc_start < 65, ]
-  m.3wk.agg <- aggregate(abs_err_3wk_perc ~ FWeek_pkwk + model + oev_base, data = m.temp.1wk, FUN = mean)
+  m.3wk.agg <- aggregate(abs_err_3wk_perc ~ FWeek_pkwk + model + oev_base + oev_denom, data = m.temp.1wk, FUN = mean)
   m.3wk.agg$metric <- '3 Week'
   m.temp.4wk <- m[m$FWeek_pkwk >= -8 & m$FWeek_pkwk < 5 & !is.na(m$abs_err_4wk_perc) & m$fc_start >= 50 & m$fc_start < 65, ]
-  m.4wk.agg <- aggregate(abs_err_4wk_perc ~ FWeek_pkwk + model + oev_base, data = m.temp.1wk, FUN = mean)
+  m.4wk.agg <- aggregate(abs_err_4wk_perc ~ FWeek_pkwk + model + oev_base + oev_denom, data = m.temp.1wk, FUN = mean)
   m.4wk.agg$metric <- '4 Week'
 } else {
   m.temp.1wk <- m[m$FWeek_pkwk >= -8 & m$FWeek_pkwk < 5 & !is.na(m$abs_err_1wk_perc), ]

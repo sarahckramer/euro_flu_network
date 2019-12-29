@@ -3,20 +3,20 @@
 library(reshape2); library(ggplot2); library(gridExtra)
 
 # Save plots?:
-outputPlots <- TRUE
-fileSuffix <- '_AH'
+outputPlots <- FALSE
+fileSuffix <- '_A(H3)_base1e4'
 
 # Restrict the forecast start weeks for which results are shown?
 restrict.fc <- FALSE
 
 # Set model labels:
-m1.lab <- 'Network (Mean AH)'
-m2.lab <- 'Network (Full AH)'
-m3.lab <- 'Individual'
+m1.lab <- 'Network (Improved)'
+m2.lab <- 'Network (Old OEV)'
+m3.lab <- 'Indiv. (Old OEV)'
 
 # Set locations of model results to be compared:
-model1 <- 'results/A(H1)/network_gridSearch/'
-model2 <- 'results/A(H1)/network_LHSmid/'
+model1 <- 'results/A(H1)/network_base1e4_base05_lam105/'
+model2 <- 'results/A(H1)/network_oldOEV/'
 model3 <- 'results/A(H1)/indiv_mid/'
 
 #########################################################################################################################################################
@@ -41,6 +41,11 @@ m$model <- factor(m$model, levels = c(m1.lab, m2.lab, m3.lab))
 rm(m1, m2, m3)
 
 m <- m[!is.na(m$onsetObs5), ]
+
+### Equalize oev_base/oev_denom, just to avoid plotting errors ###
+m$oev_base <- 1.0
+m$oev_denom <- 1.0
+##################################################################
 
 m$oev_base <- factor(m$oev_base)
 m$oev_denom <- factor(m$oev_denom)
@@ -131,6 +136,12 @@ e.pi <- rbind(logs1[[2]], logs2[[2]], logs3[[2]])
 e <- rbind(logs1[[3]], logs2[[3]], logs3[[3]])
 # e.pi.alt <- rbind(logs1[[4]], logs2[[4]], logs3[[4]])
 # e.alt <- rbind(logs1[[5]], logs2[[5]], logs3[[5]])
+
+##########################################
+d$oev_base = 1.0; d$oev_denom = 1.0
+e.pi$oev_base = 1.0; e.pi$oev_denom = 1.0
+e$oev_base = 1.0; e$oev_denom = 1.0
+##########################################
 
 levels(d$metric) <- c('ot', 'pt')
 # e.pi.list <- list(e.pi[e.pi$metric == 'pi500', ], e.pi[e.pi$metric == 'pi250', ], e.pi.alt[e.pi.alt$metric == 500, ], e.pi.alt[e.pi.alt$metric == 250, ])
