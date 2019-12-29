@@ -1,5 +1,6 @@
 import os
 import sys
+from numba.typed import List
 
 # Read in all model functions:
 from EAKF_python import *
@@ -26,18 +27,18 @@ theta_low = (365.0, 2.0, 2.0, 0.2, 0.75)
 theta_up = (8 * 365.0, 7.0, 2.8, 1.0, 1.25)
 '''
 
-S0_low = 0.3
-S0_up = 0.9
-# sd_low = 0.05
-# sd_up = 0.18
-I0_low = 0
-I0_up = 0.00005
+# S0_low = 0.3
+# S0_up = 0.9
+# # sd_low = 0.05
+# # sd_up = 0.18
+# I0_low = 0
+# I0_up = 0.00005
 
 # Parameters for filters
 discrete = False
-oev_base = 0.3
-oev_denom = 1.0
-lambda_val = 1.02
+oev_base: float = 0.3
+oev_denom: float = 1.0
+lambda_val: float = 1.02
 num_ens = 300
 num_runs = 1  # EVENTUALLY WANT 5
 
@@ -57,7 +58,7 @@ elif strain == 'A(all)':
 elif strain == 'A(H1)':
     seasons = ('2010-11', '2012-13')  # , '2013-14', '2014-15', '2015-16', '2017-18') # H1
 
-    iliiso = pd.read_csv('../data/by_subtype/WHO_data_A(H1)_SCALED.csv')
+    iliiso = pd.read_csv('../data/by_subtype/WHO_data_A(H1)_SCALED.csv', dtype=np.float64)
     test_dat = pd.read_csv('../data/testCounts_052719.csv', na_values=-1)
     syn_dat = pd.read_csv('../data/by_subtype/synDatCounts_A(H1)_SCALED.csv')
     pos_dat = pd.read_csv('../data/by_subtype/posprop_A(H1).csv', na_values=-1)
@@ -89,9 +90,10 @@ ah = ah.append(ah)
 ah = ah.to_numpy()
 
 # Read in air travel data:
-a_rand = np.empty([n, n, 12])
+a_rand = np.empty([12, n, n])
 for i in range(n):
-    a_rand[:, :, i] = np.loadtxt('air_travel/aRand' + str(i + 1) + '.txt', unpack=True)
+    a_rand[i] = np.loadtxt('air_travel/aRand' + str(i + 1) + '.txt', unpack=True)
+a_rand.astype(dtype=np.float64, order='C')
 
 # a_rand_comp = {'Jan': np.loadtxt('air_travel/aRand1.txt', unpack=True),
 #                'Feb': np.loadtxt('air_travel/aRand2.txt', unpack=True),
@@ -145,12 +147,17 @@ for season_index in range(len(seasons)):
 
     # Reindex data:
     obs_i = obs_i.reset_index(drop=True)
+    syn_i = syn_i.reset_index(drop=True)
+    pos_i = pos_i.reset_index(drop=True)
+    test_i = test_i.reset_index(drop=True)
 
     # Replace leading/lagging zeros:
     for count_index in range(n):
         # print(count_index)
         # obs_i.iloc[:, count_index + 1]
         replaceLeadLag(obs_i.iloc[:, count_index + 1])
+        replaceLeadLag(syn_i.iloc[:, count_index + 1])
+        replaceLeadLag(pos_i.iloc[:, count_index + 1])
 
     # Replace 0s in test_i w/ NA (b/c can't divide by 0!):
     # print(test_i)
@@ -159,16 +166,18 @@ for season_index in range(len(seasons)):
             print('0s found in test data!')
 
     # Get OEV:
-    obs_vars = calc_obsvars_nTest(obs_i, syn_i, test_i, pos_i, oev_base, oev_denom, 2.0, n)
-
+    obs_vars = calc_obsvars_nTest(obs_i, syn_i, test_i, pos_i, oev_base, oev_denom, n)
+    obs_vars[np.where(np.less(obs_vars, 1e3, where=~isnan(obs_vars)) & ~np.isnan(obs_vars))] = 1e3
     # DO WE NEED DATES?
 
     # Get time start and time range:
     tm_ini = clim_start_dict[season] - 2  # b/c python indexes at 0, while R does it at 1
     # tm_range = range(clim_start_dict[season], clim_end_dict[season] + 1, 1)
-    #tm_range = range(clim_start_dict[season] - 1, clim_end_dict[season], 1)  # see previous note
-    #tm_range = list(tm_range)
-    tm_range = [i for i in range(clim_start_dict[season] - 1, clim_end_dict[season], 1)]
+    # tm_range = range(clim_start_dict[season] - 1, clim_end_dict[season], 1)  # see previous note
+    # tm_range = list(tm_range)
+    tm_range1 = [i for i in range(clim_start_dict[season] - 1, clim_end_dict[season], 1)]
+    tm_range = List()
+    [tm_range.append(i) for i in tm_range1]
     # print(tm_range)
 
     # Run forecasts!
@@ -181,7 +190,7 @@ for season_index in range(len(seasons)):
         # print(param_init.shape)
 
         # Run EAKF:
-        res = EAKF_fn(num_ens, tmstep, param_init, obs_i, 6, nsn, obs_vars, tm_ini, tm_range, n, N, ah,
+        res = EAKF_fn(num_ens, tmstep, param_init, obs_i, 20, nsn, obs_vars, tm_ini, tm_range, n, N, ah,
                       dt, countries, a_rand, lambda_val, wk_start)  # and variables needed for SIRS
 
         outputMet_temp = res[0]
@@ -190,26 +199,51 @@ for season_index in range(len(seasons)):
         outputDist_temp = res[3]
         outputEns_temp = res[4]
 
+        outputMet_temp['season'] = season
+        outputMet_temp['run'] = run
+        outputMet_temp['oev_base'] = oev_base
+        outputMet_temp['oev_denom'] = oev_denom
+        outputMet_temp['lambda'] = lambda_val
+        outputMet_temp['scaling'] = np.tile(scalings['gamma'], int(outputMet_temp.shape[0] / n))
 
+        outputMet_temp = outputMet_temp.assign(**{'season': season, 'run': run, 'oev_base': oev_base,
+                                                  'oev_denom': oev_denom, 'lambda': lambda_val,
+                                                  'scaling': np.tile(scalings['gamma'],
+                                                                     int(outputMet_temp.shape[0] / n))})
+        outputOP_temp = outputOP_temp.assign(**{'season': season, 'run': run, 'oev_base': oev_base,
+                                                'oev_denom': oev_denom, 'lambda': lambda_val})
+        outputOPParams_temp = outputOPParams_temp.assign(**{'season': season, 'run': run, 'oev_base': oev_base,
+                                                            'oev_denom': oev_denom, 'lambda': lambda_val})
+        outputDist_temp = outputDist_temp.assign(**{'season': season, 'run': run, 'oev_base': oev_base,
+                                                    'oev_denom': oev_denom, 'lambda': lambda_val})
+        outputEns_temp = outputEns_temp.assign(**{'season': season, 'run': run, 'oev_base': oev_base,
+                                                  'oev_denom': oev_denom, 'lambda': lambda_val})
 
-
-        # res = pd.Panel(res)
-        # print(res.shape)
-        # np.savetxt(os.path.join('results/', 'xprior_ens_' + str(run) + '_' + season + '_NEW.txt'),
-        #            res, delimiter = ',')
+        outputMetrics = outputMetrics.append(outputMet_temp, ignore_index=True)
+        outputOP = outputOP.append(outputOP_temp, ignore_index=True)
+        outputOPParams = outputOPParams.append(outputOPParams_temp, ignore_index=True)
+        outputDist = outputDist.append(outputDist_temp, ignore_index=True)
+        outputEns = outputEns.append(outputEns_temp, ignore_index=True)
 
     print()
 
-'''
-# Specify variables for running model
-tm_strt = 273 # early September
-tm_end = 573
-tm_step = 1
-t = 1
-tm_range = []
-for i in range(tm_strt, tm_end + 1):
-    tm_range.append(i)
-'''
+# outputMetrics.to_csv('results/outputMet4.csv', na_rep='NA', index=False)
+# outputOP.to_csv('results/outputOP4.csv', na_rep='NA', index=False)
+# outputOPParams.to_csv('results/outputOPParams4.csv', na_rep='NA', index=False)
+# outputDist.to_csv('results/outputDist4.csv', na_rep='NA', index=False)
+# outputEns.to_csv('results/outputEns4.csv', na_rep='NA', index=False)
+
+# Then here we will collect all the results, fix scaling issue in FR (or do in R)?, and write to file
+# And add functionality for other subtypes!
+# Check against R code using same parameter/state inputs
+        # Fixed: S by country calculated wrong; week number for forecasts was one too low
+        # Still not exactly same as R code, though: check through code to see that all same; check that all float64; why first run best/what changed?
+# Try to get working on cluster? Or just focus on jit!
+# change to 32bit?
+# parallel
+# GPU?
+# error with correlations
+# exception handling
 
 # Save results
 # np.savetxt('results/res.txt', res, delimiter = ',')
