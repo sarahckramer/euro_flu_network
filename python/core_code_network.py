@@ -36,9 +36,9 @@ theta_up = (8 * 365.0, 7.0, 2.8, 1.0, 1.25)
 
 # Parameters for filters
 discrete = False
-oev_base: float = 0.3
-oev_denom: float = 1.0
-lambda_val: float = 1.02
+oev_base = np.float64(0.3)
+oev_denom = np.float64(1.0)
+lambda_val = np.float64(1.02)
 num_ens = 300
 num_runs = 1  # EVENTUALLY WANT 5
 
@@ -58,7 +58,7 @@ elif strain == 'A(all)':
 elif strain == 'A(H1)':
     seasons = ('2010-11', '2012-13')  # , '2013-14', '2014-15', '2015-16', '2017-18') # H1
 
-    iliiso = pd.read_csv('../data/by_subtype/WHO_data_A(H1)_SCALED.csv', dtype=np.float64)
+    iliiso = pd.read_csv('../data/by_subtype/WHO_data_A(H1)_SCALED.csv')
     test_dat = pd.read_csv('../data/testCounts_052719.csv', na_values=-1)
     syn_dat = pd.read_csv('../data/by_subtype/synDatCounts_A(H1)_SCALED.csv')
     pos_dat = pd.read_csv('../data/by_subtype/posprop_A(H1).csv', na_values=-1)
@@ -87,7 +87,7 @@ else:
 ah = pd.read_csv('../../GLDAS_data/ah_Europe_07142019.csv')
 ah = ah[ah.columns[count_indices]]
 ah = ah.append(ah)
-ah = ah.to_numpy()
+ah = ah.to_numpy(dtype=np.float64)
 
 # Read in air travel data:
 a_rand = np.empty([12, n, n])
@@ -134,7 +134,7 @@ for season_index in range(len(seasons)):
 
     # Get season-specific population matrix:
     N = pd.read_csv(os.path.join('compartment_sizes/', 'N' + season + '.txt'), header=None, sep='\t')
-    N = N.to_numpy()
+    N = N.to_numpy(dtype=np.float64)
 
     # Get observations for current season:
     obs_i = iliiso.iloc[wks_dict[season]]
@@ -186,7 +186,7 @@ for season_index in range(len(seasons)):
 
         # Get initial states/parameters for each ensemble member:
         param_init = pd.read_csv(os.path.join('initial_parms/', 'parms' + str(run) + '.txt'), header=None, sep='\t')
-        param_init = param_init.to_numpy()
+        param_init = param_init.to_numpy(dtype=np.float64)
         # print(param_init.shape)
 
         # Run EAKF:
@@ -227,8 +227,8 @@ for season_index in range(len(seasons)):
 
     print()
 
-# outputMetrics.to_csv('results/outputMet4.csv', na_rep='NA', index=False)
-# outputOP.to_csv('results/outputOP4.csv', na_rep='NA', index=False)
+outputMetrics.to_csv('results/outputMet5.csv', na_rep='NA', index=False)
+outputOP.to_csv('results/outputOP5.csv', na_rep='NA', index=False)
 # outputOPParams.to_csv('results/outputOPParams4.csv', na_rep='NA', index=False)
 # outputDist.to_csv('results/outputDist4.csv', na_rep='NA', index=False)
 # outputEns.to_csv('results/outputEns4.csv', na_rep='NA', index=False)
@@ -238,9 +238,10 @@ for season_index in range(len(seasons)):
 # Check against R code using same parameter/state inputs
         # Fixed: S by country calculated wrong; week number for forecasts was one too low
         # Still not exactly same as R code, though: check through code to see that all same; check that all float64; why first run best/what changed?
+        # Write out results at certain steps, all.equal in R to see where differences start/lie
 # Try to get working on cluster? Or just focus on jit!
-# change to 32bit?
-# parallel
+# change to 32bit? (to see what impact rounding error could have)
+# parallelize
 # GPU?
 # error with correlations
 # exception handling
