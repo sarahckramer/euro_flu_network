@@ -6,39 +6,56 @@ library(ggplot2)
 countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
 count.indices <- c(1:2, 4, 6:8, 11:14, 17, 19)
 
-# Read in syn+ data:
-iliiso <- read.csv('data/WHO_data_05-09-19.csv') # in same order as "countries" vector
-iliiso <- iliiso[, c(1, count.indices + 1)]
+# # Read in syn+ data:
+# iliiso <- read.csv('data/WHO_data_05-09-19.csv') # in same order as "countries" vector
+# iliiso <- iliiso[, c(1, count.indices + 1)]
+# 
+# # Read in syndromic/virologic counts:
+# test.dat <- read.csv('data/testCounts_052719.csv')
+# syn.dat <- read.csv('data/synDatCounts_060519.csv')
+# pos.dat <- read.csv('data/posProp_060519.csv')
+# 
+# test.dat <- test.dat[, c(1, count.indices + 1)]
+# syn.dat <- syn.dat[, c(1, count.indices + 1)]
+# pos.dat <- pos.dat[, c(1, count.indices + 1)]
+# 
+# # Scale syn+ and syn data:
+# scalings <- read.csv('data/scalings_frame_05-09-19.csv') # 1.3 for France in early seasons
+# scalings <- scalings[count.indices, ]
+# # note: these are the "old" scalings
+# for (i in 2:dim(iliiso)[2]) {
+#   if (names(iliiso)[i] == 'France') {
+#     iliiso[1:286, i] <- iliiso[1:286, i] * 1.3
+#     iliiso[287:495, i] <- iliiso[287:495, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
+#     syn.dat[1:286, i] <- syn.dat[1:286, i] * 1.3
+#     syn.dat[287:495, i] <- syn.dat[287:495, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
+#   } else {
+#     iliiso[, i] <- iliiso[, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
+#     syn.dat[, i] <- syn.dat[, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
+#   }
+#   
+#   iliiso[, i][iliiso[, i] < 0] <- NA # replace negatives with NAs
+#   syn.dat[, i][syn.dat[, i] < 0] <- NA
+#   pos.dat[, i][pos.dat[, i] < 0] <- NA
+#   test.dat[, i][test.dat[, i] < 0] <- NA
+# }
 
-# Read in syndromic/virologic counts:
+iliiso <- read.csv('data/by_subtype/WHO_data_A(H1)_SCALED.csv')
+syn.dat <- read.csv('data/by_subtype/synDatCounts_A(H1)_SCALED.csv')
+pos.dat <- read.csv('data/by_subtype/posprop_A(H1).csv')
 test.dat <- read.csv('data/testCounts_052719.csv')
-syn.dat <- read.csv('data/synDatCounts_060519.csv')
-pos.dat <- read.csv('data/posProp_060519.csv')
 
 test.dat <- test.dat[, c(1, count.indices + 1)]
-syn.dat <- syn.dat[, c(1, count.indices + 1)]
 pos.dat <- pos.dat[, c(1, count.indices + 1)]
 
-# Scale syn+ and syn data:
-scalings <- read.csv('data/scalings_frame_05-09-19.csv') # 1.3 for France in early seasons
-scalings <- scalings[count.indices, ]
-# note: these are the "old" scalings
 for (i in 2:dim(iliiso)[2]) {
-  if (names(iliiso)[i] == 'France') {
-    iliiso[1:286, i] <- iliiso[1:286, i] * 1.3
-    iliiso[287:495, i] <- iliiso[287:495, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
-    syn.dat[1:286, i] <- syn.dat[1:286, i] * 1.3
-    syn.dat[287:495, i] <- syn.dat[287:495, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
-  } else {
-    iliiso[, i] <- iliiso[, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
-    syn.dat[, i] <- syn.dat[, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
-  }
-  
-  iliiso[, i][iliiso[, i] < 0] <- NA # replace negatives with NAs
-  syn.dat[, i][syn.dat[, i] < 0] <- NA
   pos.dat[, i][pos.dat[, i] < 0] <- NA
   test.dat[, i][test.dat[, i] < 0] <- NA
 }
+
+seasons <- c('2010-11', '2012-13', '2013-14', '2014-15', '2015-16', '2017-18') # H1
+# seasons <- c('2011-12', '2012-13', '2013-14', '2014-15', '2016-17') # H3
+# seasons <- c('2010-11', '2011-12', '2012-13', '2014-15', '2015-16', '2017-18') # B
 
 # Set oev_base and oev_denom:
 oev_base <- 1e4
@@ -49,8 +66,8 @@ source('cluster/functions/Fn_initializations.R')
 source('cluster/functions/calc_obsvars.R')
 source('cluster/functions/replaceLeadingLaggingNAs.R')
 
-# List seasons:
-seasons <- c("2010-11", "2011-12", "2012-13", "2013-14", "2014-15", "2015-16", "2016-17", "2017-18")
+# # List seasons:
+# seasons <- c("2010-11", "2011-12", "2012-13", "2013-14", "2014-15", "2015-16", "2016-17", "2017-18")
 
 # Initiate lists to store OEVs:
 oev.new.alt = oev.new = oev.old = vector('list', length(seasons))
@@ -83,14 +100,16 @@ for (season.index in 1:length(seasons)) {
   test_i[test_i == 0 & !is.na(test_i)] <- NA
   
   # # Calculate OEVs used in network model:
-  obs_vars <- calc_obsvars_nTest(obs = obs_i, syn_dat = syn_i, ntests = test_i, posprops = pos_i, oev_base, oev_denom, tmp_exp = 2.0)
+  obs_vars <- calc_obsvars_nTest(obs = obs_i, syn_dat = sqrt(syn_i), ntests = test_i, posprops = pos_i, oev_base, oev_denom, tmp_exp = 2.0)
   
   # Calculate OEVs used in individual country models:
   obs_vars.indiv <- calc_obsvars(obs = obs_i, oev_base, oev_denom)
   
   # And calculate OEVs after "scaling" posprops:
   #pos_i <- pos_i * 100000
-  obs_vars.alt <- calc_obsvars_nTest(obs = obs_i, syn_dat = syn_i, ntests = test_i, posprops = pos_i, oev_base = 0.5, oev_denom = 1.0, tmp_exp = 2.0)
+  obs_vars.alt <- calc_obsvars_nTest(obs = obs_i, syn_dat = syn_i, ntests = test_i, posprops = pos_i, oev_base = 0.6, oev_denom = 2.5, tmp_exp = 2.0)
+  #print(obs_vars.alt)
+  #obs_vars.alt[obs_vars.alt < 1e4 & !is.na(obs_vars.alt) & obs_vars.alt > 0] <- 1e4
   
   # Store results in lists:
   oev.new[[season.index]] <- obs_vars
@@ -121,7 +140,7 @@ names(oev.new.df) = names(oev.old.df) = names(oev.alt.df) = c('time', 'country',
 
 # Combine:
 oev.new.df$model <- 'New'; oev.old.df$model <- 'Old'; oev.alt.df$model <- 'Alt'
-oev.df <- rbind(oev.old.df, oev.alt.df)
+oev.df <- rbind(oev.old.df, oev.alt.df, oev.new.df)
 
 # # Plot new and old by country:
 # p1 <- ggplot(data = oev.new.df) + labs(x = 'Weeks Since Season Start', y = 'OEV') +
