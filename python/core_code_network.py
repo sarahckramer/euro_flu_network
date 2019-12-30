@@ -1,14 +1,10 @@
+
+
 import os
 import sys
 from numba.typed import List
-
-# Read in all model functions:
 from EAKF_python import *
-
 # print(os.path.dirname(sys.executable))
-
-# Read in all necessary data/functions and run forecasts using network model
-# It seems this is done automatically?
 
 # Turn off SettingWithCopyWarning:
 pd.options.mode.chained_assignment = None
@@ -21,19 +17,6 @@ dt = 1
 tmstep = 7
 wk_start = 40
 
-'''
-# Parameter bounds
-theta_low = (365.0, 2.0, 2.0, 0.2, 0.75)
-theta_up = (8 * 365.0, 7.0, 2.8, 1.0, 1.25)
-'''
-
-# S0_low = 0.3
-# S0_up = 0.9
-# # sd_low = 0.05
-# # sd_up = 0.18
-# I0_low = 0
-# I0_up = 0.00005
-
 # Parameters for filters
 discrete = False
 oev_base = np.float64(0.3)
@@ -43,7 +26,7 @@ num_ens = 300
 num_runs = 1  # EVENTUALLY WANT 5
 
 # Vector of countries used
-countries = ('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
+countries = np.array(['AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES'])
 # count_indices = (1, 2, 4, 6, 7, 8, 11, 12, 13, 14, 17, 19)
 count_indices = [0, 1, 3, 5, 6, 7, 10, 11, 12, 13, 16, 18]
 n = len(countries)
@@ -67,9 +50,6 @@ elif strain == 'A(H1)':
     pos_dat = pos_dat[iliiso.columns]
 
     scalings = pd.read_csv('../data/by_subtype/scalings_frame_A(H1).csv')
-
-    print(iliiso.columns)
-    print(test_dat.columns)
 
 elif strain == 'A(H3)':
     seasons = ('2011-12', '2012-13', '2013-14', '2014-15', '2016-17')  # H3
@@ -178,7 +158,6 @@ for season_index in range(len(seasons)):
     tm_range1 = [i for i in range(clim_start_dict[season] - 1, clim_end_dict[season], 1)]
     tm_range = List()
     [tm_range.append(i) for i in tm_range1]
-    # print(tm_range)
 
     # Run forecasts!
     for run in range(num_runs):
@@ -227,8 +206,8 @@ for season_index in range(len(seasons)):
 
     print()
 
-outputMetrics.to_csv('results/outputMet5.csv', na_rep='NA', index=False)
-outputOP.to_csv('results/outputOP5.csv', na_rep='NA', index=False)
+# outputMetrics.to_csv('results/outputMet_parallel.csv', na_rep='NA', index=False)
+# outputOP.to_csv('results/outputOP_parallel.csv', na_rep='NA', index=False)
 # outputOPParams.to_csv('results/outputOPParams4.csv', na_rep='NA', index=False)
 # outputDist.to_csv('results/outputDist4.csv', na_rep='NA', index=False)
 # outputEns.to_csv('results/outputEns4.csv', na_rep='NA', index=False)
@@ -237,14 +216,14 @@ outputOP.to_csv('results/outputOP5.csv', na_rep='NA', index=False)
 # And add functionality for other subtypes!
 # Check against R code using same parameter/state inputs
         # Fixed: S by country calculated wrong; week number for forecasts was one too low
-        # Still not exactly same as R code, though: check through code to see that all same; check that all float64; why first run best/what changed?
+        # Still not exactly same as R code, though: check through code to see that all same; check that all float64 ("5"; same results as "4"); why first run best/what changed? (maybe base OEV?)
         # Write out results at certain steps, all.equal in R to see where differences start/lie
+        # Check that same when NOT using jit:
 # Try to get working on cluster? Or just focus on jit!
 # change to 32bit? (to see what impact rounding error could have)
-# parallelize
 # GPU?
 # error with correlations
-# exception handling
+# try changing matrices in SIRS to numpy.zeros - what does this change?
 
 # Save results
 # np.savetxt('results/res.txt', res, delimiter = ',')
