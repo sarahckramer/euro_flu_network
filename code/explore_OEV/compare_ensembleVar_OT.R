@@ -1,4 +1,6 @@
 
+### Explores the relationship between OEV and ensemble error variance over time ###
+
 # Read in ensemble members for all 4 models:
 e1 <- read.csv('results/original/outputDist_090119_ot.csv')
 e2 <- read.csv('results/newScalings/outputDist_090919_ot.csv')
