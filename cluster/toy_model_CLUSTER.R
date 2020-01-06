@@ -1,5 +1,6 @@
 
 ### Fit Network Model to Observed Data and Run Forecasts ###
+set.seed(1048576)
 
 ### Read in libraries
 library("truncnorm"); library("tgp"); library("MASS"); library(reshape2); require(plyr)
