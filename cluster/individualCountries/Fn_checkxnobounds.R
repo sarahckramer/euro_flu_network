@@ -32,6 +32,22 @@ Fn_checkxnobounds<-function(xnew){
           }
       }
   }
+  ug=min(xnew[5,]);     #  Corrects if R0mx < 1.0
+  if (ug<1.0){
+    for (jj in 1:n.ens){
+      if (xnew[5,jj]<1.0){
+        xnew[5,jj]=max(median(xnew[5,]),1.0);
+      }
+    }
+  }
+  ug=min(xnew[6,]);     #  Corrects if R0diff < 0.01
+  if (ug<0.01){
+    for (jj in 1:n.ens){
+      if (xnew[6,jj]<0.01){
+        xnew[6,jj]=max(median(xnew[6,]),0.01);
+      }
+    }
+  }
   ug=min(xnew[3,]);     #  Corrects if L < 200 days
   if (ug<200){
     for (jj in 1:n.ens){
