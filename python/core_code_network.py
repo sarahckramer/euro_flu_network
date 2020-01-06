@@ -70,7 +70,7 @@ ah = ah.append(ah)
 ah = ah.to_numpy(dtype=np.float64)
 
 # Read in air travel data:
-a_rand = np.empty([12, n, n])
+a_rand = np.zeros([12, n, n])
 for i in range(n):
     a_rand[i] = np.loadtxt('air_travel/aRand' + str(i + 1) + '.txt', unpack=True)
 a_rand.astype(dtype=np.float64, order='C')
@@ -206,11 +206,11 @@ for season_index in range(len(seasons)):
 
     print()
 
-# outputMetrics.to_csv('results/outputMet_parallel.csv', na_rep='NA', index=False)
-# outputOP.to_csv('results/outputOP_parallel.csv', na_rep='NA', index=False)
-# outputOPParams.to_csv('results/outputOPParams4.csv', na_rep='NA', index=False)
-# outputDist.to_csv('results/outputDist4.csv', na_rep='NA', index=False)
-# outputEns.to_csv('results/outputEns4.csv', na_rep='NA', index=False)
+outputMetrics.to_csv('results/outputMet_allZeros.csv', na_rep='NA', index=False)
+outputOP.to_csv('results/outputOP_allZeros.csv', na_rep='NA', index=False)
+# outputOPParams.to_csv('results/outputOPParams_parallel_nogil_zerosSIRS.csv', na_rep='NA', index=False)
+# outputDist.to_csv('results/outputDist_parallel_nogil_zerosSIRS.csv', na_rep='NA', index=False)
+# outputEns.to_csv('results/outputEns_parallel_nogil_zerosSIRS.csv', na_rep='NA', index=False)
 
 # Then here we will collect all the results, fix scaling issue in FR (or do in R)?, and write to file
 # And add functionality for other subtypes!

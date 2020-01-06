@@ -35,9 +35,9 @@ def run_forecast(tmStrt, tmEnd, tmStep, tmRange, S0, I0, popN, D, L, beta, airSc
                                 D_d=D[i], L_d=L[i], beta_d=beta[:, :, i], airScale_d=airScale[i],
                                 Countries=Countries, n_count=n, airRand=airRand)
 
-        statesresS = np.empty((nfc, np.square(n)))
-        statesresI = np.empty((nfc, np.square(n)))
-        statesresnewI = np.empty((nfc, np.square(n)))
+        statesresS = np.zeros((nfc, np.square(n)))
+        statesresI = np.zeros((nfc, np.square(n)))
+        statesresnewI = np.zeros((nfc, np.square(n)))
         prev_newI = Sr_tmp[2][0].reshape(np.square(n))
 
         for j in range(0, nfc):
