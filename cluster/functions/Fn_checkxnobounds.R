@@ -28,13 +28,35 @@ Fn_checkxnobounds<-function(xnew, S.rows, I.rows, param.rows){
     }
   }
   
-  ug <- min(xnew) # Corrects if any state or parameter nudges negative
+  ug <- min(xnew) # Corrects if any state or parameter nudges negative # use this just for R0mx/R0diff!
   if (ug < 0) {
     for (jj in 1:n.ens) {
       for (ii in 1:n.var) {
         if (xnew[ii, jj] <= 0) {
           xnew[ii, jj] <- max(mean(xnew[ii, ], na.rm = TRUE), 1)
         }
+      }
+    }
+  }
+  
+  # R0diff being set to 0 when negative is totally fine, I think
+  # but R0mx shouldn't be < 1, according to above code
+  # so let's fix that:
+  
+  ug <- min(xnew[param.rows[3], ]) # Corrects if R0mx < 1.0
+  if (ug < 1.0) {
+    for (jj in 1:n.ens) {
+      if (xnew[param.rows[3], jj] < 1.0) {
+        xnew[param.rows[3], jj] = max(median(xnew[param.rows[3], ]), 1.0)
+      }
+    }
+  }
+  
+  ug <- min(xnew[param.rows[4], ]) # Corrects if R0diff < 0.01
+  if (ug < 0.01) {
+    for (jj in 1:n.ens) {
+      if (xnew[param.rows[4], jj] < 0.01) {
+        xnew[param.rows[4], jj] = max(median(xnew[param.rows[4], ]), 0.01)
       }
     }
   }

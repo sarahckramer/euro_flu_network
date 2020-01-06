@@ -83,7 +83,9 @@ calc_obsvars_nTest <- function(obs, syn_dat, ntests, posprops, oev_base, oev_den
     tmp[2, i] <- mean(posprops[1:2, i], na.rm = TRUE)
     if (!is.na(posprops[1, i])) {
       tmp[1, i] <- posprops[1, i]
-    } # otherwise just leave as zero
+    } else {
+      tmp[1, i] <- NA # so that doesn't get overwritten w/ baseline
+    }
   }
   
   # Also do this for syn_dat and ntests:
@@ -95,7 +97,9 @@ calc_obsvars_nTest <- function(obs, syn_dat, ntests, posprops, oev_base, oev_den
     tmp.syn[2, i] <- mean(syn_dat[1:2, i], na.rm = TRUE)
     if (!is.na(syn_dat[1, i])) {
       tmp.syn[1, i] <- syn_dat[1, i]
-    } # otherwise just leave as zero
+    } else {
+      tmp.syn[1, i] <- NA # syn_dat[1, i]
+    }
   }
   
   tmp.test <- matrix(0, nrow = nrow(ntests), ncol = ncol(syn.dat))
