@@ -17,8 +17,8 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
     xpost = np.zeros([np.square(n) * 3 + 5, num_ens, ntrn], dtype=np.float64)
     # fcast = np.zeros([np.square(n) * 3, num_ens, nfc])
 
-    obsprior = np.empty([n, num_ens, ntrn + 1], dtype=np.float64)  # in R initialized with NAs - is "empty" okay?
-    obspost = np.empty([n, num_ens, ntrn], dtype=np.float64)
+    obsprior = np.zeros([n, num_ens, ntrn + 1], dtype=np.float64)  # in R initialized with NAs - is "empty" okay?
+    obspost = np.zeros([n, num_ens, ntrn], dtype=np.float64)
 
     '''
     xprior = np.zeros([np.square(n) * 3 + 5, num_ens, nsn + 1])
@@ -45,9 +45,9 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
     fc_ens = pd.DataFrame()
 
     # Set initial conditions based on input parameters:
-    S0_temp = np.empty([n, n, num_ens], dtype=np.float64)
+    S0_temp = np.zeros([n, n, num_ens], dtype=np.float64)
     #  originally had these stored as dictionaries, indexed by compartment
-    I0_temp = np.empty([n, n, num_ens], dtype=np.float64)
+    I0_temp = np.zeros([n, n, num_ens], dtype=np.float64)
     for i in range(num_ens):
         S0_temp[:, :, i] = np.multiply(np.reshape(init_parms[0:144, i], [n, n]), N)
         I0_temp[:, :, i] = np.multiply(np.reshape(init_parms[144:288, i], [n, n]), N)
@@ -63,7 +63,7 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
 
     a = -180
     b = np.log(init_parms[3, :])
-    beta = np.empty([AH.shape[0], AH.shape[1], num_ens], dtype=np.float64)
+    beta = np.zeros([AH.shape[0], AH.shape[1], num_ens], dtype=np.float64)
     # print(beta.shape)
     for i in range(num_ens):
         beta[:, :, i] = (np.exp(a * AH + b[i]) + (init_parms[2, i] - init_parms[3, i])) / init_parms[1, i]
@@ -153,7 +153,7 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
                 alp = np.sqrt(obs_var / (obs_var + prior_var))
                 dy = post_mean + alp * (obs_ens[loc, :] - prior_mean) - obs_ens[loc, :]
                 # Get covariances of the prior state space and the observations, and loop over each state variable:
-                rr = np.empty([x.shape[0]], dtype=np.float64)
+                rr = np.zeros([x.shape[0]], dtype=np.float64)
                 for j in range(x.shape[0]):
                     C = (np.cov(x[j, :], obs_ens[loc, :]) / prior_var)[0, 1]
                     rr[j] = C
@@ -179,7 +179,7 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
 
         # Integrate forward one time step to get priors for time tt+1:
         b = np.log(xpost[param_indices[3], :, tt])
-        beta = np.empty([AH.shape[0], AH.shape[1], num_ens], dtype=np.float64)
+        beta = np.zeros([AH.shape[0], AH.shape[1], num_ens], dtype=np.float64)
         for i in range(num_ens):
             beta[:, :, i] = (np.exp(a * AH + b[i]) + (
                     xpost[param_indices[2], i, tt] - xpost[param_indices[3], i, tt])) / xpost[
@@ -231,7 +231,7 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
 
             # Get states and parameters from most recent update:
             b = np.log(xpost[param_indices[3], :, tt])  # won't this be the same as above?
-            beta = np.empty([AH.shape[0], AH.shape[1], num_ens], dtype=np.float64)
+            beta = np.zeros([AH.shape[0], AH.shape[1], num_ens], dtype=np.float64)
             for i in range(num_ens):
                 beta[:, :, i] = (np.exp(a * AH + b[i]) + (
                         xpost[param_indices[2], i, tt] - xpost[param_indices[3], i, tt])) / xpost[
@@ -274,7 +274,7 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
             # del i
 
             # Also calculate total newI at the country level, and call these obsfcast:
-            obsfcast = np.empty([n, num_ens, nfc], dtype=np.float64)
+            obsfcast = np.zeros([n, num_ens, nfc], dtype=np.float64)
             # print(obsfcast.shape)
             for i in range(n):
                 temp_range = [j + n * i for j in range(n)]
@@ -290,8 +290,8 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
             s_fcast = fcast[S_indices, :, :]
             i_fcast = fcast[I_indices, :, :]
 
-            s_fcast_by_count = np.empty([n, num_ens, nfc], dtype=np.float64)
-            i_fcast_by_count = np.empty([n, num_ens, nfc], dtype=np.float64)
+            s_fcast_by_count = np.zeros([n, num_ens, nfc], dtype=np.float64)
+            i_fcast_by_count = np.zeros([n, num_ens, nfc], dtype=np.float64)
             for i in range(n):
                 country_vals = np.array([j + n * i for j in range(n)])
                 # s_temp = np.sum(s_fcast[country_vals, :, :], 0) / np.sum(N, 1)[i] * 100000
@@ -655,10 +655,10 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
     i_prior = xprior[I_indices, :, :]
     i_post = xpost[I_indices, :, :]
 
-    s_prior_by_count = np.empty([n, num_ens, ntrn + 1], dtype=np.float64)
-    i_prior_by_count = np.empty([n, num_ens, ntrn + 1], dtype=np.float64)
-    s_post_by_count = np.empty([n, num_ens, ntrn], dtype=np.float64)
-    i_post_by_count = np.empty([n, num_ens, ntrn], dtype=np.float64)
+    s_prior_by_count = np.zeros([n, num_ens, ntrn + 1], dtype=np.float64)
+    i_prior_by_count = np.zeros([n, num_ens, ntrn + 1], dtype=np.float64)
+    s_post_by_count = np.zeros([n, num_ens, ntrn], dtype=np.float64)
+    i_post_by_count = np.zeros([n, num_ens, ntrn], dtype=np.float64)
     for i in range(n):
         country_vals = np.array([j + n * i for j in range(n)])
         s_prior_by_count[i, :, :] = np.sum(s_prior[country_vals, :, :], 0) / np.sum(N, 1)[i] * 100000
