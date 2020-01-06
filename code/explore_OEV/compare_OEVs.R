@@ -7,7 +7,7 @@ countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK',
 count.indices <- c(1:2, 4, 6:8, 11:14, 17, 19)
 
 # Set strain.
-strain <- 'B'
+strain <- 'A(H1)'
 
 # Read in necessary data:
 iliiso <- read.csv(paste0('data/by_subtype/WHO_data_', strain, '_SCALED.csv'))
@@ -47,6 +47,10 @@ source('cluster/functions/replaceLeadingLaggingNAs.R')
 # Initiate lists to store OEVs:
 oev.new.post = oev.new = oev.old = vector('list', length(seasons))
 
+# # If calculating using rates:
+# iliiso[, 2:13] <- iliiso[, 2:13] / 100000
+# syn.dat[, 2:13] <- syn.dat[, 2:13] / 100000
+
 # Loop through seasons and calculate both "old" and "new" type of OEV:
 for (season.index in 1:length(seasons)) {
   season <- seasons[season.index]
@@ -81,6 +85,7 @@ for (season.index in 1:length(seasons)) {
   
   # Calculate OEVs used in individual country models:
   obs_vars.indiv <- calc_obsvars(obs = obs_i, 1e4, 10)
+  # obs_vars.indiv <- calc_obsvars(obs = obs_i, 0, 10)
   
   # And calculate OEVs without scaling:
   obs_vars.alt <- calc_obsvars_nTest(obs = obs_i, syn_dat = syn_i_unscaled, ntests = test_i, posprops = pos_i, oev_base = 0.6, oev_denom = 3.0, tmp_exp = 2.0)
@@ -151,7 +156,7 @@ p4 <- ggplot(data = oev.alt.df[oev.alt.df$time <= 33, ]) + labs(x = 'Weeks Since
   facet_wrap(~ country, scales = 'free_y') + theme_bw()
 
 # Save plots to pdf:
-pdf('results/explore_oev/OEV_comp_B.pdf', width = 12, height = 7)
+pdf('results/explore_oev/OEV_comp_H1.pdf', width = 12, height = 7)
 print(p2)
 print(p1)
 print(p3)
@@ -161,10 +166,12 @@ print(p4)
 # Now plot by country, comparing new to old:
 oev.df <- oev.df[oev.df$time < 33, ]
 oev.df <- oev.df[oev.df$model != 'No Scaling', ]
+# oev.df <- oev.df[oev.df$model != 'No Scaling' & oev.df$model != 'Post Scaling', ]
 oev.df$group <- paste(oev.df$season, oev.df$model, sep = '_'); oev.df$group <- factor(oev.df$group)
 p1 <- ggplot(data = oev.df, aes(x = time, y = value, group = group, colour = model)) + geom_line() +
   facet_wrap(~ country, scales = 'free_y') + theme_bw() + labs(x = 'Weeks Since Season Start', y = 'OEV', colour = '')
 print(p1)
+# dev.off()
 
 # But then also a comparison plot of scaling before vs. after:
 oev.df <- oev.df[oev.df$model != 'Old', ]
