@@ -56,8 +56,8 @@ cmd_args = commandArgs(trailingOnly = T)
 task.index=as.numeric(cmd_args[1])
 
 season <- seasons[ceiling(task.index / 26)]
-oev_base <- 0.5 #oevBase_list[ceiling((task.index - 78) / 78) %% 3 + 1]
-oev_denom <- 2.5 #oevDenom_list[ceiling((task.index - 26) / 26) %% 3 + 1]
+oev_base <- 1e4#0.5 #oevBase_list[ceiling((task.index - 78) / 78) %% 3 + 1]
+oev_denom <- 10#2.5 #oevDenom_list[ceiling((task.index - 26) / 26) %% 3 + 1]
 lambda <- 1.05 #lambdaList[ceiling((task.index - 26) / 26) %% 3 + 1]
 ntrn <- ntrnList[ceiling(task.index - 1) %% 26 + 1]
 print(paste(season, oev_base, oev_denom, lambda, ntrn, sep = '_'))
@@ -205,9 +205,9 @@ for (count.index in 1:n) {
 test_i[test_i == 0 & !is.na(test_i)] <- NA
 
 # Variance of syndromic+ data:
-obs_vars <- calc_obsvars_nTest(obs = as.matrix(obs_i), syn_dat = as.matrix(syn_i), ntests = as.matrix(test_i), posprops = as.matrix(pos_i),
-                               oev_base, oev_denom, tmp_exp = 2.0)
-# obs_vars <- calc_obsvars(obs = as.matrix(obs_i), oev_base, oev_denom)
+#obs_vars <- calc_obsvars_nTest(obs = as.matrix(obs_i), syn_dat = as.matrix(syn_i), ntests = as.matrix(test_i), posprops = as.matrix(pos_i),
+#                               oev_base, oev_denom, tmp_exp = 2.0)
+obs_vars <- calc_obsvars(obs = as.matrix(obs_i), oev_base, oev_denom)
 
 # Set minimum OEV value:
 obs_vars[obs_vars < 1e4 & !is.na(obs_vars)] <- 1e4
