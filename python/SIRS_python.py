@@ -2,6 +2,7 @@ import sys
 import numpy as np
 from numba import jit, prange
 from scipy import *
+import cupy as cp
 
 
 # Run full ensemble:
@@ -91,14 +92,14 @@ def propagate_SIRS(tmStrt, tmEnd, tmStep, tmRange, S_0, I_0, popN, D_d, L_d, bet
     # n_count = np.float64(n_count)
     # tm_sz = np.float64(tm_sz)
 
-    S_list = np.empty((tm_sz, n_count, n_count), dtype=np.float64)
+    S_list = np.zeros((tm_sz, n_count, n_count), dtype=np.float64)
     S_list[0] = S_0
     # print(S_list.shape)
 
-    I_list = np.empty((tm_sz, n_count, n_count), dtype=np.float64)
+    I_list = np.zeros((tm_sz, n_count, n_count), dtype=np.float64)
     I_list[0] = I_0
 
-    newI_list = np.empty((tm_sz, n_count, n_count), dtype=np.float64)
+    newI_list = np.zeros((tm_sz, n_count, n_count), dtype=np.float64)
     newI_list[0] = np.zeros((n_count, n_count), dtype=np.float64)
 
     for t in tm_vec:
