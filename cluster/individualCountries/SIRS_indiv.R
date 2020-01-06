@@ -279,7 +279,7 @@ propagateParSIR<-function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, reald
       cnt=cnt+1;
       
       Eimmloss=tm_step*(1/L*(N-S[,cnt-1]-I[,cnt-1]))
-      Einf=tm_step*((beta[t,]*I[,cnt-1]*S[,cnt-1]/N) + 0.1) # CHANGED
+      Einf=tm_step*((beta[t,]*I[,cnt-1]*S[,cnt-1]/N))# + 0.1) # CHANGED
       Erecov=tm_step*(1/D*I[,cnt-1])
       Eimmloss[Eimmloss<0]=0   # adjust, set <0 to 0
       Einf[Einf<0]=0
@@ -295,7 +295,7 @@ propagateParSIR<-function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, reald
       Ti1=I[,cnt-1]+ik1/2
       
       Eimmloss=tm_step*(1/L*(N-Ts1-Ti1))
-      Einf=tm_step*((beta[t,]*Ti1*Ts1/N) + 0.1)
+      Einf=tm_step*((beta[t,]*Ti1*Ts1/N))# + 0.1)
       Erecov=tm_step*(1/D*Ti1)
       Eimmloss[Eimmloss<0]=0   # adjust, set <0 to 0
       Einf[Einf<0]=0
@@ -310,7 +310,7 @@ propagateParSIR<-function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, reald
       Ti2=I[,cnt-1]+ik2/2
       
       Eimmloss=tm_step*(1/L*(N-Ts2-Ti2))
-      Einf=tm_step*((beta[t,]*Ti2*Ts2/N) + 0.1)
+      Einf=tm_step*((beta[t,]*Ti2*Ts2/N))# + 0.1)
       Erecov=tm_step*(1/D*Ti2)
       Eimmloss[Eimmloss<0]=0   # adjust, set <0 to 0
       Einf[Einf<0]=0
@@ -325,7 +325,7 @@ propagateParSIR<-function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, reald
       Ti3=I[,cnt-1]+ik3
       
       Eimmloss=tm_step*(1/L*(N-Ts3-Ti3))
-      Einf=tm_step*((beta[t,]*Ti3*Ts3/N) + 0.1)
+      Einf=tm_step*((beta[t,]*Ti3*Ts3/N))# + 0.1)
       Erecov=tm_step*(1/D*Ti3)
       Eimmloss[Eimmloss<0]=0   # adjust, set <0 to 0
       Einf[Einf<0]=0
@@ -338,7 +338,7 @@ propagateParSIR<-function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, reald
       ik4a=smci;
       
       # seed=rpois(Np,.1)
-      seed=.1;
+      seed=0.1;
       S[,cnt]=S[,cnt-1]+sk1/6+sk2/3+sk3/3+sk4/6-seed
       I[,cnt]=I[,cnt-1]+ik1/6+ik2/3+ik3/3+ik4/6+seed
       newI[,cnt]=newI[,cnt-1]+ik1a/6+ik2a/3+ik3a/3+ik4a/6+seed;
