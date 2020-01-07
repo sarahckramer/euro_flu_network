@@ -5,3 +5,5 @@
 .idea
 code/gridSearch/plots/
 results/
+syntheticTests/syntheticData/
+syntheticTests/outputs/
