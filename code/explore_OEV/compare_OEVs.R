@@ -7,7 +7,8 @@ countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK',
 count.indices <- c(1:2, 4, 6:8, 11:14, 17, 19)
 
 # Set strain.
-strain <- 'A(H1)'
+strain <- 'B'
+scaling.index <- 3
 
 # Read in necessary data:
 iliiso <- read.csv(paste0('data/by_subtype/WHO_data_', strain, '_SCALED.csv'))
@@ -15,7 +16,7 @@ syn.dat <- read.csv(paste0('data/by_subtype/synDatCounts_', strain, '_SCALED.csv
 syn.dat.unscaled <- read.csv('data/synDatCounts_060519.csv')
 pos.dat <- read.csv(paste0('data/by_subtype/posprop_', strain, '.csv'))
 test.dat <- read.csv('data/testCounts_052719.csv')
-load('data/by_subtype/scalings_by_subtype_120219.RData')
+load('data/by_subtype/scalings_noCutoff.RData')
 
 syn.dat.unscaled <- syn.dat.unscaled[, c(1, count.indices + 1)]
 test.dat <- test.dat[, c(1, count.indices + 1)]
@@ -30,7 +31,7 @@ for (i in 2:dim(iliiso)[2]) {
 if (strain == 'A(H1)') {
   seasons <- c('2010-11', '2012-13', '2013-14', '2014-15', '2015-16', '2017-18') # H1
 } else if (strain == 'A(H3)') {
-  seasons <- c('2011-12', '2012-13', '2013-14', '2014-15', '2016-17') # H3
+  seasons <- c('2011-12', '2013-14', '2014-15', '2016-17') # H3
 } else if (strain == 'B') {
   seasons <- c('2010-11', '2011-12', '2012-13', '2014-15', '2015-16', '2017-18') # B
 } else {
@@ -118,12 +119,12 @@ for (ix in 1:length(seasons)) {
   colnames(oev.new.post.real[[ix]]) <- countries
   for (jx in 1:12) {
     if (jx != 4) {
-      oev.new.post.real[[ix]][, jx] <- oev.new.post.real[[ix]][, jx] * scalings.new[[4]][jx]
+      oev.new.post.real[[ix]][, jx] <- oev.new.post.real[[ix]][, jx] * scalings.new[[scaling.index]][jx]
     } else {
       if (seasons[ix] %in% c('2012-13', '2013-14')) {
-        oev.new.post.real[[ix]][, jx] <- oev.new.post.real[[ix]][, jx] * scalings.new[[4]][13]
+        oev.new.post.real[[ix]][, jx] <- oev.new.post.real[[ix]][, jx] * scalings.new[[scaling.index]][13]
       } else {
-        oev.new.post.real[[ix]][, jx] <- oev.new.post.real[[ix]][, jx] * scalings.new[[4]][jx]
+        oev.new.post.real[[ix]][, jx] <- oev.new.post.real[[ix]][, jx] * scalings.new[[scaling.index]][jx]
       }
     }
   }
@@ -156,7 +157,7 @@ p4 <- ggplot(data = oev.alt.df[oev.alt.df$time <= 33, ]) + labs(x = 'Weeks Since
   facet_wrap(~ country, scales = 'free_y') + theme_bw()
 
 # Save plots to pdf:
-pdf('results/explore_oev/OEV_comp_H1.pdf', width = 12, height = 7)
+pdf('results/explore_oev/OEV_comp_B.pdf', width = 12, height = 7)
 print(p2)
 print(p1)
 print(p3)

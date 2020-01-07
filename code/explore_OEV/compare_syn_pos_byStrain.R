@@ -60,8 +60,8 @@ pos.b <- melt(pos.b); names(pos.b) <- c('time', 'country', 'value')
 pos.h1$strain <- 'H1'; pos.h3$strain <- 'H3'; pos.b$strain <- 'B'
 
 pos.dat <- rbind(pos.h1, pos.h3, pos.b)
-pos.dat$strain <- factor(pos.scaled$strain)
-# pos.dat$strain <- factor(pos.dat$strain, levels = levels(pos.dat$strain)[c(2:3, 1)])
+pos.dat$strain <- factor(pos.dat$strain)
+pos.dat$strain <- factor(pos.dat$strain, levels = levels(pos.dat$strain)[c(2:3, 1)])
 
 pos.dat$value[pos.dat$value < 0] <- NA
 

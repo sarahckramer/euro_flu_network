@@ -3,7 +3,7 @@
 
 # Read in all syndromic+ data:
 iliiso <- read.csv('data/WHO_data_05-09-19.csv')
-iliiso.A <- read.csv('data/by_subtype/WHO_data_A(all).csv')
+# iliiso.A <- read.csv('data/by_subtype/WHO_data_A(all).csv')
 iliiso.H1 <- read.csv('data/by_subtype/WHO_data_A(H1).csv')
 iliiso.H3 <- read.csv('data/by_subtype/WHO_data_A(H3).csv')
 iliiso.B <- read.csv('data/by_subtype/WHO_data_B.csv')
@@ -17,7 +17,7 @@ count.indices <- c(1:2, 4, 6:8, 11:14, 17, 19)
 
 # Restrict all to relevant countries:
 iliiso <- iliiso[, c(1, count.indices + 1)]
-iliiso.A <- iliiso.A[, c(1, count.indices + 1)]
+# iliiso.A <- iliiso.A[, c(1, count.indices + 1)]
 iliiso.H1 <- iliiso.H1[, c(1, count.indices + 1)]
 iliiso.H3 <- iliiso.H3[, c(1, count.indices + 1)]
 iliiso.B <- iliiso.B[, c(1, count.indices + 1)]
