@@ -1,5 +1,5 @@
 import numpy as np
-
+import cupy as cp
 
 def replaceLeadLag(vals_temp):
     # print(vals_temp)
@@ -39,7 +39,7 @@ def calc_obsvars_nTest(obs, syndat, ntests, posprops, oev_base, oev_denom, n):
     posprops = posprops.iloc[:, 1:(n + 1)].to_numpy(dtype=np.float64)
     # print(posprops.shape)
 
-    tmp = np.empty([posprops.shape[0], posprops.shape[1]], dtype=np.float64)
+    tmp = np.zeros([posprops.shape[0], posprops.shape[1]], dtype=np.float64)
     for i in range(posprops.shape[1]):
         for j in range(2, posprops.shape[0]):
             tmp[j, i] = np.NaN if np.all(
@@ -54,7 +54,7 @@ def calc_obsvars_nTest(obs, syndat, ntests, posprops, oev_base, oev_denom, n):
             tmp[0, i] = np.nan
     # print(tmp)
 
-    tmp_syn = np.empty([syndat.shape[0], syndat.shape[1]], dtype=np.float64)
+    tmp_syn = np.zeros([syndat.shape[0], syndat.shape[1]], dtype=np.float64)
     for i in range(syndat.shape[1]):
         for j in range(2, syndat.shape[0]):
             tmp_syn[j, i] = np.NaN if np.all(
@@ -67,7 +67,7 @@ def calc_obsvars_nTest(obs, syndat, ntests, posprops, oev_base, oev_denom, n):
             tmp_syn[0, i] = np.nan
     # print(tmp_syn)
 
-    tmp_test = np.empty([ntests.shape[0], ntests.shape[1]], dtype=np.float64)
+    tmp_test = np.zeros([ntests.shape[0], ntests.shape[1]], dtype=np.float64)
     for i in range(ntests.shape[1]):
         for j in range(2, ntests.shape[0]):
             tmp_test[j, i] = np.NaN if np.all(
@@ -84,7 +84,7 @@ def calc_obsvars_nTest(obs, syndat, ntests, posprops, oev_base, oev_denom, n):
     # Originally, error in first 2 weeks was just set to oev_base
 
     # Incorporate syndromic counts:
-    vars_temp = np.empty([posprops.shape[0], posprops.shape[1]], dtype=np.float64)
+    vars_temp = np.zeros([posprops.shape[0], posprops.shape[1]], dtype=np.float64)
     for i in range(posprops.shape[1]):
         # print(i)
         # print(tmp_syn[:, i])

@@ -208,9 +208,9 @@ for season_index in range(len(seasons)):
 
 outputMetrics.to_csv('results/outputMet_allZeros.csv', na_rep='NA', index=False)
 outputOP.to_csv('results/outputOP_allZeros.csv', na_rep='NA', index=False)
-# outputOPParams.to_csv('results/outputOPParams_parallel_nogil_zerosSIRS.csv', na_rep='NA', index=False)
-# outputDist.to_csv('results/outputDist_parallel_nogil_zerosSIRS.csv', na_rep='NA', index=False)
-# outputEns.to_csv('results/outputEns_parallel_nogil_zerosSIRS.csv', na_rep='NA', index=False)
+outputOPParams.to_csv('results/outputOPParams_allZeros.csv', na_rep='NA', index=False)
+outputDist.to_csv('results/outputDist_allZeros.csv', na_rep='NA', index=False)
+outputEns.to_csv('results/outputEns_allZeros.csv', na_rep='NA', index=False)
 
 # Then here we will collect all the results, fix scaling issue in FR (or do in R)?, and write to file
 # And add functionality for other subtypes!
