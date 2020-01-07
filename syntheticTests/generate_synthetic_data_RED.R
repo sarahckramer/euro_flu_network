@@ -10,7 +10,7 @@ library("truncnorm"); library("tgp"); library("MASS"); library(reshape2); librar
 set.seed(10489436)
 
 ### Read in model function
-source('code/SIRS_network.R')
+source('cluster/SIRS_network.R')
 
 ### Global variables
 dt <- 1 # time step for SIRS integration
@@ -23,11 +23,46 @@ tm_strt <- 273; tm_end <- 573; tm_step <- 1#; t <- 1 # 273 is first of October
 tm.range <- tm_strt:tm_end
 
 ### Parameter boundaries
-D_low <- 2; L_low <- 1*365; Rmx_low <- 2.0; Rdiff_low <- 0.2; airScale_low <- 0.75
-D_up <- 7; L_up <- 8*365; Rmx_up <- 2.8; Rdiff_up <- 1.0; airScale_up <- 1.25
-S0_low <- 0.55; S0_up <- 0.85
-sd_low <- 0.05; sd_up <- 0.18
+# D_low <- 2; L_low <- 1*365; Rmx_low <- 2.0; Rdiff_low <- 0.2; airScale_low <- 0.75
+# D_up <- 7; L_up <- 8*365; Rmx_up <- 2.8; Rdiff_up <- 1.0; airScale_up <- 1.25
+
+# D_low <- 1.5; L_low <- 1*365; Rmx_low <- 1.3; Rdiff_low <- 0.01; airScale_low <- 0.75
+# D_up <- 7; L_up <- 10*365; Rmx_up <- 4; Rdiff_up <- 1.29; airScale_up <- 1.25
+
+# # Step 1:
+# D_low <- 2; L_low <- 1*365; Rmx_low <- 2.0; Rdiff_low <- 0.2; airScale_low <- 0.75
+# D_up <- 7; L_up <- 10*365; Rmx_up <- 3.0; Rdiff_up <- 1.2; airScale_up <- 1.25
+
+# # Step 2:
+# D_low <- 2; L_low <- 1*365; Rmx_low <- 2.2; Rdiff_low <- 0.2; airScale_low <- 0.75
+# D_up <- 7; L_up <- 10*365; Rmx_up <- 2.8; Rdiff_up <- 1.0; airScale_up <- 1.25
+
+# # Step 3:
+# D_low <- 2; L_low <- 1*365; Rmx_low <- 2.2; Rdiff_low <- 0.4; airScale_low <- 0.75
+# D_up <- 7; L_up <- 10*365; Rmx_up <- 2.6; Rdiff_up <- 0.8; airScale_up <- 1.25
+# # more of an excessive step, just to see
+
+# Step 4:
+D_low <- 2; L_low <- 3*365; Rmx_low <- 2.2; Rdiff_low <- 0.2; airScale_low <- 0.75
+D_up <- 7; L_up <- 10*365; Rmx_up <- 2.8; Rdiff_up <- 1.2; airScale_up <- 1.25
+
+# # Step 5:
+# D_low <- 2; L_low <- 1*365; Rmx_low <- 2.0; Rdiff_low <- 0.2; airScale_low <- 0.75
+# D_up <- 7; L_up <- 8*365; Rmx_up <- 2.8; Rdiff_up <- 1.0; airScale_up <- 1.25
+
+# also try tweaking S0
+
+
+# S0_low <- 0.55; S0_up <- 0.85
+# sd_low <- 0.05; sd_up <- 0.18
 I0_low <- 0; I0_up <- 0.00005
+
+# or do we want to do this using LHS, or wider ranges of S0?
+# S0_low <- 0.30; S0_up <- 0.90
+S0_low <- 0.40; S0_up <- 0.90 # then again, we want scalings that will work when we use the ranges we're using for fitting, right?
+# unless we want to change the ranges we're fitting with?
+# but here we are trying to get REALISTIC outbreaks, which means we need some w-e
+
 # 422 onset, 50 realistic (out of 500); ~60% e-w, but 42% realistic w-e, including 1 sig
 
 theta_low <- c(L_low, D_low, Rmx_low, Rdiff_low, airScale_low)
@@ -59,18 +94,22 @@ ah <- read.csv('../GLDAS_data/ah_Europe_07142019.csv')
 AH <- rbind(ah[, count.indices], ah[, count.indices])
 
 ### Set initial conditions based on input parameters
-param.bound <- cbind(c(S0_low, sd_low, rep(I0_low, n), theta_low),
-                     c(S0_up, sd_up, rep(I0_up, n), theta_up))
+# param.bound <- cbind(c(S0_low, sd_low, rep(I0_low, n), theta_low),
+#                      c(S0_up, sd_up, rep(I0_up, n), theta_up))
+param.bound <- cbind(c(rep(S0_low, n), rep(I0_low, n), theta_low),
+                     c(rep(S0_up, n), rep(I0_up, n), theta_up))
+# param.bound <- cbind(c(rep(S0_low, n**2), rep(I0_low, n**2), theta_low),
+#                      c(rep(S0_up, n**2), rep(I0_up, n**2), theta_up)) # try true LHS?
 parms <- t(lhs(num_ens, param.bound))
 
 ### Read in functions to run model/format results:
-source('syntheticTests/synth_functions.R')
-source('code/functions/Util.R')
+source('cluster/functions/synth_functions.R')
+source('cluster/functions/Util.R')
 
 ### Run model!
-res <- run_model(parms, AH, num_ens, n, N, tm.range, tmstep, tm_strt, tm_end, dt, pop.size, s0.method = 'dist', r0.mn = FALSE) # time: <20 min
-# res <- run_model(parms, AH, num_ens, n, N, tm.range, tmstep, tm_strt, tm_end, dt, pop.size, s0.method = 'dist', r0.mn = TRUE)
-res.rates <- res[[1]][[1]]
+init.states <- allocate_S0I0(parms, num_ens, n, N, s0.method = 'lhs')
+res <- run_model(parms, init.states[[1]], init.states[[2]], AH, num_ens, n, N, tm.range, tmstep, tm_strt, tm_end, dt, pop.size, r0.mn = FALSE, multi = FALSE) # time: <20 min
+res.rates <- res[[1]]
 
 df.met <- check_realistic(res.rates)[[1]]
 is.real.check <- check_realistic(res.rates)[2:3]
@@ -85,15 +124,15 @@ runs.noReal <- (1:num_ens)[!((1:num_ens) %in% runs.realistic)]
 ### Optional: Look at what params yieled onsets/realistic outbreaks and which did not:
 # pdf('syntheticTests/outputs/explore/boxplots_redMod_s3.pdf', height = 9, width = 14)
 
-par(mfrow = c(2, 4), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+par(mfrow = c(2, 3), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 boxplot(parms[dim(parms)[1] - 4, runs.onset], parms[dim(parms)[1] - 4, runs.noOn], names = c('Incl.', 'Excl.'), ylab = 'L')
 boxplot(parms[dim(parms)[1] - 3, runs.onset], parms[dim(parms)[1] - 3, runs.noOn], names = c('Incl.', 'Excl.'), ylab = 'D')
 boxplot(parms[dim(parms)[1] - 2, runs.onset], parms[dim(parms)[1] - 2, runs.noOn], names = c('Incl.', 'Excl.'), ylab = 'R0max')
 boxplot(parms[dim(parms)[1] - 1, runs.onset], parms[dim(parms)[1] - 1, runs.noOn], names = c('Incl.', 'Excl.'), ylab = 'R0diff')
 boxplot(parms[dim(parms)[1], runs.onset], parms[dim(parms)[1], runs.noOn], names = c('Incl.', 'Excl.'), ylab = 'airScale')
 boxplot(parms[dim(parms)[1] - 2, runs.onset] - parms[dim(parms)[1] - 1, runs.onset], parms[dim(parms)[1] - 2, runs.noOn] - parms[dim(parms)[1] - 1, runs.noOn], names = c('Incl.', 'Excl.'), ylab = 'R0mn')
-boxplot(parms[1, runs.onset], parms[1, runs.noOn], names = c('Incl.', 'Excl.'), ylab = 'S0')
-boxplot(parms[2, runs.onset], parms[2, runs.noOn], names = c('Incl.', 'Excl.'), ylab = 'S0_sd')
+# boxplot(parms[1, runs.onset], parms[1, runs.noOn], names = c('Incl.', 'Excl.'), ylab = 'S0')
+# boxplot(parms[2, runs.onset], parms[2, runs.noOn], names = c('Incl.', 'Excl.'), ylab = 'S0_sd')
 
 boxplot(parms[dim(parms)[1] - 4, runs.realistic], parms[dim(parms)[1] - 4, runs.noReal], names = c('Incl.', 'Excl.'), ylab = 'L')
 boxplot(parms[dim(parms)[1] - 3, runs.realistic], parms[dim(parms)[1] - 3, runs.noReal], names = c('Incl.', 'Excl.'), ylab = 'D')
@@ -101,8 +140,8 @@ boxplot(parms[dim(parms)[1] - 2, runs.realistic], parms[dim(parms)[1] - 2, runs.
 boxplot(parms[dim(parms)[1] - 1, runs.realistic], parms[dim(parms)[1] - 1, runs.noReal], names = c('Incl.', 'Excl.'), ylab = 'R0diff')
 boxplot(parms[dim(parms)[1], runs.realistic], parms[dim(parms)[1], runs.noReal], names = c('Incl.', 'Excl.'), ylab = 'airScale')
 boxplot(parms[dim(parms)[1] - 2, runs.realistic] - parms[dim(parms)[1] - 1, runs.realistic], parms[dim(parms)[1] - 2, runs.noReal] - parms[dim(parms)[1] - 1, runs.noReal], names = c('Incl.', 'Excl.'), ylab = 'R0mn')
-boxplot(parms[1, runs.realistic], parms[1, runs.noReal], names = c('Incl.', 'Excl.'), ylab = 'S0')
-boxplot(parms[2, runs.realistic], parms[2, runs.noReal], names = c('Incl.', 'Excl.'), ylab = 'S0_sd')
+# boxplot(parms[1, runs.realistic], parms[1, runs.noReal], names = c('Incl.', 'Excl.'), ylab = 'S0')
+# boxplot(parms[2, runs.realistic], parms[2, runs.noReal], names = c('Incl.', 'Excl.'), ylab = 'S0_sd')
 
 ### Check geographic patterns, too:
 df.red <- df.met[df.met$onset, ]
@@ -144,8 +183,8 @@ boxplot(R0mx ~ patternSig, data = df.red)
 boxplot(R0diff ~ patternSig, data = df.red)
 boxplot(airScale ~ patternSig, data = df.red)
 boxplot(R0mn ~ patternSig, data = df.red)
-boxplot(S0 ~ patternSig, data = df.red)
-boxplot(S0_sd ~ patternSig, data = df.red)
+# boxplot(S0 ~ patternSig, data = df.red)
+# boxplot(S0_sd ~ patternSig, data = df.red)
 
 boxplot(L ~ patternSig, data = df.red[df.red$real, ])
 boxplot(D ~ patternSig, data = df.red[df.red$real, ])
@@ -153,10 +192,10 @@ boxplot(R0mx ~ patternSig, data = df.red[df.red$real, ])
 boxplot(R0diff ~ patternSig, data = df.red[df.red$real, ])
 boxplot(airScale ~ patternSig, data = df.red[df.red$real, ])
 boxplot(R0mn ~ patternSig, data = df.red[df.red$real, ])
-boxplot(S0 ~ patternSig, data = df.red[df.red$real, ])
-boxplot(S0_sd ~ patternSig, data = df.red[df.red$real, ])
+# boxplot(S0 ~ patternSig, data = df.red[df.red$real, ])
+# boxplot(S0_sd ~ patternSig, data = df.red[df.red$real, ])
 
-s0.by.count <- res[[2]]
+s0.by.count <- init.states[[3]]
 df.red$S0.ind <- NA
 for (run in unique(df.red$run)) {
   run <- as.numeric(as.character(run))
@@ -168,8 +207,6 @@ for (run in unique(df.red$run)) {
 ggplot(data = df.red, aes(x = patternSig, y = S0.ind)) + geom_boxplot(fill = 'gray95') + theme_classic() + facet_wrap(~ country)
 ggplot(data = df.red[df.red$real, ], aes(x = patternSig, y = S0.ind)) + geom_boxplot(fill = 'gray95') + theme_classic() + facet_wrap(~ country)
 
-ggplot(data = df.red, aes(x = patternSig, y = I0)) + geom_boxplot(fill = 'gray95') + theme_classic() + facet_wrap(~ country) # i don't think seeding will make much difference
-
 # # What do the strongly w-e ones look like? Why no "realistic"?
 # which.we <- unique(df.red$run[df.red$patternSig == 'westToEast_yes'])
 # par(mfrow = c(5, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
@@ -178,47 +215,23 @@ ggplot(data = df.red, aes(x = patternSig, y = I0)) + geom_boxplot(fill = 'gray95
 #   matplot(t(res.rates[[i]]), pch = 20, type = 'b', lty = 1, col = viridis(n), main = i)
 #   abline(v = c(13, 25))
 # }
-# 
-# which.we <- unique(df.red$run[df.red$patternSig == 'westToEast_no'])
-# par(mfrow = c(5, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-# for (i in which.we) {
-#   i <- as.numeric(as.character(i))
-#   matplot(t(res.rates[[i]]), pch = 20, type = 'b', lty = 1, col = viridis(n), main = i)
-#   abline(v = c(13, 25))
-# }
-# 
-# par(mfrow = c(5, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-# for (i in runs.realistic) {
-#   i <- as.numeric(as.character(i))
-#   matplot(t(res.rates[[i]]), pch = 20, type = 'b', lty = 1, col = viridis(n), main = i)
-#   abline(v = c(13, 25))
-# }
 
-# # What distinguishes later, more reasonable outbreaks from super early ones?:
-# look.reasonable <- c(914, 712, 810, 476, 674, 784, 661)
-# which.we <- unique(df.red$run[df.red$patternSig %in% c('westToEast_no', 'westToEast_sig')])
-# 
-# too.early <- which.we[!(which.we %in% look.reasonable)]
-# 
-# par(mfrow = c(1, 6), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-# boxplot(parms[dim(parms)[1] - 4, look.reasonable], parms[dim(parms)[1] - 4, too.early], names = c('Incl.', 'Excl.'), ylab = 'L')
-# boxplot(parms[dim(parms)[1] - 3, look.reasonable], parms[dim(parms)[1] - 3, too.early], names = c('Incl.', 'Excl.'), ylab = 'D')
-# boxplot(parms[dim(parms)[1] - 2, look.reasonable], parms[dim(parms)[1] - 2, too.early], names = c('Incl.', 'Excl.'), ylab = 'R0max')
-# boxplot(parms[dim(parms)[1] - 1, look.reasonable], parms[dim(parms)[1] - 1, too.early], names = c('Incl.', 'Excl.'), ylab = 'R0diff')
-# boxplot(parms[dim(parms)[1], look.reasonable], parms[dim(parms)[1], too.early], names = c('Incl.', 'Excl.'), ylab = 'airScale')
-# boxplot(parms[dim(parms)[1] - 2, look.reasonable] - parms[dim(parms)[1] - 1, look.reasonable], parms[dim(parms)[1] - 2, too.early] - parms[dim(parms)[1] - 1, too.early], names = c('Incl.', 'Excl.'), ylab = 'R0mn')
+# Try to choose a few to use for fitting:
+par(mfrow = c(5, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+for (i in runs.realistic) {
+  i <- as.numeric(as.character(i))
+  matplot(t(res.rates[[i]]), pch = 20, type = 'b', lty = 1, col = viridis(n), main = i)
+  abline(v = c(13, 25))
+}
 
 # Look at colinearity between parameters in onset/realistic/pattern:
-# p1 <- ggplot(data = df.red, aes(x = R0mx, y = R0mn)) + geom_point() + theme_classic() + facet_wrap(~ patternSig, nrow = 1)
-# p2 <- ggplot(data = df.red, aes(x = R0mx, y = R0diff)) + geom_point() + theme_classic() + facet_wrap(~ patternSig, nrow = 1)
-# # ggplot(data = df.red, aes(x = R0diff, y = R0mn)) + geom_point() + theme_classic() + facet_wrap(~ patternSig)
-# # ggplot(data = df.red, aes(x = R0mx, y = D)) + geom_point() + theme_classic() + facet_wrap(~ patternSig)
-# # ggplot(data = df.red, aes(x = R0mx, y = L)) + geom_point() + theme_classic() + facet_wrap(~ patternSig)
-# # ggplot(data = df.red, aes(x = R0mx, y = airScale)) + geom_point() + theme_classic() + facet_wrap(~ patternSig)
-# 
-# grid.arrange(p1, p2)
-ggplot(data = df.red, aes(x = R0mx, y = S0)) + geom_point() + theme_classic() + facet_wrap(~ patternSig)
-ggplot(data = df.red, aes(x = R0mx, y = S0_sd)) + geom_point() + theme_classic() + facet_wrap(~ patternSig)
+p1 <- ggplot(data = df.red, aes(x = R0mx, y = R0mn)) + geom_point() + theme_classic() + facet_wrap(~ patternSig, nrow = 1)
+p2 <- ggplot(data = df.red, aes(x = R0mx, y = R0diff)) + geom_point() + theme_classic() + facet_wrap(~ patternSig, nrow = 1)
+ggplot(data = df.red, aes(x = R0diff, y = R0mn)) + geom_point() + theme_classic() + facet_wrap(~ patternSig)
+ggplot(data = df.red, aes(x = R0mx, y = D)) + geom_point() + theme_classic() + facet_wrap(~ patternSig)
+ggplot(data = df.red, aes(x = R0mx, y = L)) + geom_point() + theme_classic() + facet_wrap(~ patternSig)
+ggplot(data = df.red, aes(x = R0mx, y = airScale)) + geom_point() + theme_classic() + facet_wrap(~ patternSig)
+grid.arrange(p1, p2)
 
 plot(df.red[df.red$real, 18:23])
 

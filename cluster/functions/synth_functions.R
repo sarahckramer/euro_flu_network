@@ -154,42 +154,51 @@ allocate_S0I0 <- function(in.parms, num.ens, n, N, s0.method = NULL) {
     } else if (s0.method == 'lhs') {
       diag(S0.temp[[i]]) <- in.parms[1:n, i]
       diag(I0.temp[[i]]) <- in.parms[(1:n) + n, i]
+    } else if (s0.method == 'lhs_full') {
+      print('Wait...')
     } else {
       print('No S0 method specified.')
       break
     }
     
-    s0.by.count <- rbind(s0.by.count, diag(S0.temp[[i]]))
-    
-    S0.temp[[i]][S0.temp[[i]] == 0] <- sapply(1:n, function(jx) {
-      rnorm(n - 1, mean = S0.temp[[i]][jx, jx], sd = 0.025)
-    })
-    
-    while (any(S0.temp[[i]] > 1)) {
-      to.redraw <- which(S0.temp[[i]] > 1, arr.ind = TRUE)
-      for (ix.r in dim(to.redraw)[1]) {
-        S0.temp[[i]][to.redraw[ix.r, 1], to.redraw[ix.r, 2]] <-
-          rnorm(1, mean = S0.temp[[i]][to.redraw[ix.r, 2], to.redraw[ix.r, 2]], sd = 0.025)
+    if (s0.method == 'lhs_full') {
+      S0.temp[[i]] <- matrix(in.parms[1:(n ** 2), i], nrow = n, ncol = n, byrow = T) * N
+      I0.temp[[i]] <- matrix(in.parms[1:(n ** 2) + (n ** 2), i], nrow = n, ncol = n, byrow = T) * N
+      
+    } else {
+      s0.by.count <- rbind(s0.by.count, diag(S0.temp[[i]]))
+      
+      S0.temp[[i]][S0.temp[[i]] == 0] <- sapply(1:n, function(jx) {
+        rnorm(n - 1, mean = S0.temp[[i]][jx, jx], sd = 0.025)
+      })
+      
+      while (any(S0.temp[[i]] > 1)) {
+        to.redraw <- which(S0.temp[[i]] > 1, arr.ind = TRUE)
+        for (ix.r in dim(to.redraw)[1]) {
+          S0.temp[[i]][to.redraw[ix.r, 1], to.redraw[ix.r, 2]] <-
+            rnorm(1, mean = S0.temp[[i]][to.redraw[ix.r, 2], to.redraw[ix.r, 2]], sd = 0.025)
+        }
       }
-    }
-    while (any(S0.temp[[i]] < 0)) {
-      to.redraw <- which(S0.temp[[i]] < 0, arr.ind = TRUE)
-      for (ix.r in dim(to.redraw)[1]) {
-        S0.temp[[i]][to.redraw[ix.r, 1], to.redraw[ix.r, 2]] <-
-          rnorm(1, mean = S0.temp[[i]][to.redraw[ix.r, 2], to.redraw[ix.r, 2]], sd = 0.025)
+      while (any(S0.temp[[i]] < 0)) {
+        to.redraw <- which(S0.temp[[i]] < 0, arr.ind = TRUE)
+        for (ix.r in dim(to.redraw)[1]) {
+          S0.temp[[i]][to.redraw[ix.r, 1], to.redraw[ix.r, 2]] <-
+            rnorm(1, mean = S0.temp[[i]][to.redraw[ix.r, 2], to.redraw[ix.r, 2]], sd = 0.025)
+        }
       }
+      
+      if (any(S0.temp[[i]] < 0)) {
+        print('Deal with negatives, too!')
+        print(i)
+      }
+      
+      S0.temp[[i]] <- t(S0.temp[[i]])
+      S0.temp[[i]] <- S0.temp[[i]] * N
+      
+      I0.temp[[i]] <- sweep(N / rowSums(N), 1, diag(I0.temp[[i]]), '*')
+      I0.temp[[i]] <- I0.temp[[i]] * N
     }
     
-    if (any(S0.temp[[i]] < 0)) {
-      print('Deal with negatives, too!')
-      print(i)
-    }
-    
-    S0.temp[[i]] <- t(S0.temp[[i]])
-    S0.temp[[i]] <- S0.temp[[i]] * N
-    
-    I0.temp[[i]] <- sweep(N / rowSums(N), 1, diag(I0.temp[[i]]), '*')
-    I0.temp[[i]] <- I0.temp[[i]] * N
   }
   
   return(list(S0.temp, I0.temp, s0.by.count))
@@ -344,7 +353,7 @@ check_realistic <- function(m) {
   is.onset = is.real = c()
   
   for (run in 1:length(unique(df$run))) {
-    if (length(which(is.na(df$ot[df$run == run]))) <= 2) {
+    if (length(which(is.na(df$ot[df$run == run]))) <= 5) {
       is.onset <- c(is.onset, T)
       
       if (length(which(!(df$pt[df$run == run] %in% 52:64) & !is.na(df$pt[df$run == run]))) < 2) { # if fewer than 2 (so, 0 or 1) have PT outside the range
