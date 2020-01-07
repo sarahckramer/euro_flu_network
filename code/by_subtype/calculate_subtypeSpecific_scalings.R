@@ -40,7 +40,7 @@ seasons[[1]] <- 1:78
 # Or could simply say: where certain strain was <X% of infections that year
     # 10%, 15%, 20%?, even 25%? - could do SA
 
-# First convert any 0s to NAs, just for the sake of this exercise - those "seasons" can obviouly be removed:
+# First convert any 0s to NAs, just for the sake of this exercise - those "seasons" can obviously be removed:
 dat.A[, 2:13][dat.A[, 2:13] == 0 & !is.na(dat.A[, 2:13])] <- NA
 dat.H1[, 2:13][dat.H1[, 2:13] == 0 & !is.na(dat.H1[, 2:13])] <- NA
 dat.H3[, 2:13][dat.H3[, 2:13] == 0 & !is.na(dat.H3[, 2:13])] <- NA
@@ -98,79 +98,183 @@ for (j in 2:4) {
 }
 rm(props.temp)
 
-# Start looping through to determine scalings:
+# List appropriate seasons by subtype:
+seasons.h1 <- c(1:2, 4:7, 9) # only look at pandemic for H1N1
+seasons.h3 <- c(3, 5:6, 8)
+seasons.b <- c(2:4, 6:7, 9)
+
+# First, calculate scalings for ALL seasons used for each subtype:
 countries <- names(dat.A)[2:13]
-scalings.new <- vector('list', 4)
+scalings.new <- vector('list', 3)
 
-for (ix in 1:length(props.strain.season)) {
-  print(ix)
-  for (count.index in 1:12) {
-    dat.temp <- dat.list[[ix]][, count.index + 1]
-    
-    min.scales = max.scales = c()
-    
-    for (season in 1:9) {
-      # first, determine wheter we use this season
-      if (props.strain.season[[ix]][[season]][count.index] >= 0.25 & !is.na(props.strain.season[[ix]][[season]][count.index])) {
-        ar <- sum(dat.temp[seasons[[season]]], na.rm = TRUE)
-        min.scales <- c(min.scales, 15000 / ar)
-        max.scales <- c(max.scales, 50000 / ar)
-      } else {
-        print(names(dat.A)[count.index + 1])
-        print(c('2009pdm', '10-11', '11-12', '12-13', '13-14', '14-15', '15-16', '16-17', '17-18')[season])
-      }
-    }
-    # then we have min and max scales only for those seasons where strain made up at least 25% of infections
-    
-    # print(names(dat.A)[count.index + 1])
-    
-    overlap <- max(min.scales[min.scales > 0 & min.scales != Inf])
-    no.overlap <- min(max.scales[max.scales > 0 & max.scales != Inf])
-    
-    scalings.new[[ix]] <- c(scalings.new[[ix]], min(overlap, no.overlap))
-    
-    # print(min.scales); print(max.scales); print('') # never a case of the vectors being completely empty
-  }
-  print(''); print('')
-}
-
-# Calculate appropriate scalings for France:
-for (ix in 1:length(props.strain.season)) {
-  dat.temp <- dat.list[[ix]]$France
-  
+# H1:
+subtype.index <- 2
+for (count.index in 1:12) {
+  dat.temp <- dat.list[[subtype.index]][, count.index + 1]
   min.scales = max.scales = c()
-  for (season in 4:5) {
+  
+  for (season in seasons.h1) {
+    ar <- sum(dat.temp[seasons[[season]]], na.rm = TRUE)
+    min.scales <- c(min.scales, 15000 / ar)
+    max.scales <- c(max.scales, 50000 / ar)
+    
+    # if (props.strain.season[[subtype.index]][[season]][count.index] >= 0.25 & !is.na(props.strain.season[[subtype.index]][[season]][count.index])) {
+    #   ar <- sum(dat.temp[seasons[[season]]], na.rm = TRUE)
+    #   min.scales <- c(min.scales, 15000 / ar)
+    #   max.scales <- c(max.scales, 50000 / ar)
+    # } else {
+    #   print(names(dat.A)[count.index + 1])
+    #   print(c('2009pdm', '10-11', '11-12', '12-13', '13-14', '14-15', '15-16', '16-17', '17-18')[season])
+    # }
+  }
+  
+  overlap <- max(min.scales[min.scales > 0 & min.scales != Inf])
+  no.overlap <- min(max.scales[max.scales > 0 & max.scales != Inf])
+  
+  scalings.new[[subtype.index - 1]] <- c(scalings.new[[subtype.index - 1]], min(overlap, no.overlap))
+}
+# FR:
+dat.temp <- dat.list[[subtype.index]]$France
+min.scales = max.scales = c()
+for (season in 4:5) {
+  if (season %in% seasons.h1) {
     ar <- sum(dat.temp[seasons[[season]]], na.rm = TRUE)
     min.scales <- c(min.scales, 15000 / ar)
     max.scales <- c(max.scales, 50000 / ar)
   }
-  overlap <- max(min.scales[min.scales > 0 & min.scales != Inf])
-  no.overlap <- min(max.scales[max.scales > 0 & max.scales != Inf])
-  scale1 <- min(overlap, no.overlap)
-  
-  min.scales = max.scales = c()
-  for (season in 6:9) {
+}
+overlap <- max(min.scales[min.scales > 0 & min.scales != Inf])
+no.overlap <- min(max.scales[max.scales > 0 & max.scales != Inf])
+scale1 <- min(overlap, no.overlap)
+min.scales = max.scales = c()
+for (season in 6:9) {
+  if (season %in% seasons.h1) {
     ar <- sum(dat.temp[seasons[[season]]], na.rm = TRUE)
     min.scales <- c(min.scales, 15000 / ar)
     max.scales <- c(max.scales, 50000 / ar)
   }
-  overlap <- max(min.scales[min.scales > 0 & min.scales != Inf])
-  no.overlap <- min(max.scales[max.scales > 0 & max.scales != Inf])
-  scale2 <- min(overlap, no.overlap)
-  
-  scalings.new[[ix]][4] <- scale2; scalings.new[[ix]] <- c(scalings.new[[ix]], scale1)
 }
+overlap <- max(min.scales[min.scales > 0 & min.scales != Inf])
+no.overlap <- min(max.scales[max.scales > 0 & max.scales != Inf])
+scale2 <- min(overlap, no.overlap)
+scalings.new[[subtype.index - 1]][4] <- scale2; scalings.new[[subtype.index - 1]] <- c(scalings.new[[subtype.index - 1]], scale1)
 # so the scaling in FR's place is for the later 4 seasons; whereas the one "extra" value at the end is for the 2 earlier seasons (ARI)
+
+# H3:
+subtype.index <- 3
+for (count.index in 1:12) {
+  dat.temp <- dat.list[[subtype.index]][, count.index + 1]
+  min.scales = max.scales = c()
+  
+  for (season in seasons.h3) {
+    ar <- sum(dat.temp[seasons[[season]]], na.rm = TRUE)
+    min.scales <- c(min.scales, 15000 / ar)
+    max.scales <- c(max.scales, 50000 / ar)
+    
+    # if (props.strain.season[[subtype.index]][[season]][count.index] >= 0.25 & !is.na(props.strain.season[[subtype.index]][[season]][count.index])) {
+    #   ar <- sum(dat.temp[seasons[[season]]], na.rm = TRUE)
+    #   min.scales <- c(min.scales, 15000 / ar)
+    #   max.scales <- c(max.scales, 50000 / ar)
+    # } else {
+    #   print(names(dat.A)[count.index + 1])
+    #   print(c('2009pdm', '10-11', '11-12', '12-13', '13-14', '14-15', '15-16', '16-17', '17-18')[season])
+    # }
+  }
+  
+  overlap <- max(min.scales[min.scales > 0 & min.scales != Inf])
+  no.overlap <- min(max.scales[max.scales > 0 & max.scales != Inf])
+  
+  scalings.new[[subtype.index - 1]] <- c(scalings.new[[subtype.index - 1]], min(overlap, no.overlap))
+}
+# FR:
+dat.temp <- dat.list[[subtype.index]]$France
+min.scales = max.scales = c()
+for (season in 4:5) {
+  if (season %in% seasons.h3) {
+    ar <- sum(dat.temp[seasons[[season]]], na.rm = TRUE)
+    min.scales <- c(min.scales, 15000 / ar)
+    max.scales <- c(max.scales, 50000 / ar)
+  }
+}
+overlap <- max(min.scales[min.scales > 0 & min.scales != Inf])
+no.overlap <- min(max.scales[max.scales > 0 & max.scales != Inf])
+scale1 <- min(overlap, no.overlap)
+min.scales = max.scales = c()
+for (season in 6:9) {
+  if (season %in% seasons.h3) {
+    ar <- sum(dat.temp[seasons[[season]]], na.rm = TRUE)
+    min.scales <- c(min.scales, 15000 / ar)
+    max.scales <- c(max.scales, 50000 / ar)
+  }
+}
+overlap <- max(min.scales[min.scales > 0 & min.scales != Inf])
+no.overlap <- min(max.scales[max.scales > 0 & max.scales != Inf])
+scale2 <- min(overlap, no.overlap)
+scalings.new[[subtype.index - 1]][4] <- scale2; scalings.new[[subtype.index - 1]] <- c(scalings.new[[subtype.index - 1]], scale1)
+
+# B:
+subtype.index <- 4
+for (count.index in 1:12) {
+  dat.temp <- dat.list[[subtype.index]][, count.index + 1]
+  min.scales = max.scales = c()
+  
+  for (season in seasons.b) {
+    ar <- sum(dat.temp[seasons[[season]]], na.rm = TRUE)
+    min.scales <- c(min.scales, 15000 / ar)
+    max.scales <- c(max.scales, 50000 / ar)
+    
+    # if (props.strain.season[[subtype.index]][[season]][count.index] >= 0.25 & !is.na(props.strain.season[[subtype.index]][[season]][count.index])) {
+    #   ar <- sum(dat.temp[seasons[[season]]], na.rm = TRUE)
+    #   min.scales <- c(min.scales, 15000 / ar)
+    #   max.scales <- c(max.scales, 50000 / ar)
+    # } else {
+    #   print(names(dat.A)[count.index + 1])
+    #   print(c('2009pdm', '10-11', '11-12', '12-13', '13-14', '14-15', '15-16', '16-17', '17-18')[season])
+    # }
+  }
+  
+  overlap <- max(min.scales[min.scales > 0 & min.scales != Inf])
+  no.overlap <- min(max.scales[max.scales > 0 & max.scales != Inf])
+  
+  scalings.new[[subtype.index - 1]] <- c(scalings.new[[subtype.index - 1]], min(overlap, no.overlap))
+}
+# FR:
+dat.temp <- dat.list[[subtype.index]]$France
+min.scales = max.scales = c()
+for (season in 4:5) {
+  if (season %in% seasons.b) {
+    ar <- sum(dat.temp[seasons[[season]]], na.rm = TRUE)
+    min.scales <- c(min.scales, 15000 / ar)
+    max.scales <- c(max.scales, 50000 / ar)
+  }
+}
+overlap <- max(min.scales[min.scales > 0 & min.scales != Inf])
+no.overlap <- min(max.scales[max.scales > 0 & max.scales != Inf])
+scale1 <- min(overlap, no.overlap)
+min.scales = max.scales = c()
+for (season in 6:9) {
+  if (season %in% seasons.b) {
+    ar <- sum(dat.temp[seasons[[season]]], na.rm = TRUE)
+    min.scales <- c(min.scales, 15000 / ar)
+    max.scales <- c(max.scales, 50000 / ar)
+  }
+}
+overlap <- max(min.scales[min.scales > 0 & min.scales != Inf])
+no.overlap <- min(max.scales[max.scales > 0 & max.scales != Inf])
+scale2 <- min(overlap, no.overlap)
+scalings.new[[subtype.index - 1]][4] <- scale2; scalings.new[[subtype.index - 1]] <- c(scalings.new[[subtype.index - 1]], scale1)
 
 # Round scalings
 # Doubt this is super necessary - just use the values that were calculated
 
 # Save:
-save(scalings.new, file = 'data/scalings_by_subtype_120219.RData')
+save(scalings.new, file = 'code/by_subtype/scalings_SA/scalings_noCutoff.RData')
 
-
-
-
+# Compare.
+scalings.noCut <- scalings.new
+rm(scalings.new)
+load('data/by_subtype/scalings_by_subtype_120219.RData')
+# most are pretty similar, but there are some considerable differences
 
 
 

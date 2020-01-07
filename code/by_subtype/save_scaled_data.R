@@ -26,13 +26,13 @@ syn.dat <- syn.dat[, c(1, count.indices + 1)]
 # Get scalings for each type/subtype:
 scalings <- read.csv('data/scalings_frame_05-09-19.csv') # 1.3 for France in early seasons
 scalings <- scalings[count.indices, ]
-load('data/by_subtype/scalings_by_subtype_120219.RData')
+load('data/by_subtype/scalings_noCutoff.RData')
 
 # Create lists of syndromic+ and syndromic to loop through:
-syn.plus.dat <- list(iliiso, iliiso.A, iliiso.H1, iliiso.H3, iliiso.B)
-syn.pure.dat <- list(syn.dat, syn.dat, syn.dat, syn.dat, syn.dat)
+syn.plus.dat <- list(iliiso, iliiso.H1, iliiso.H3, iliiso.B)
+syn.pure.dat <- list(syn.dat, syn.dat, syn.dat, syn.dat)
 
-for (ix in 1:5) {
+for (ix in 1:4) {
   
   if (ix == 1) {
     for (i in 2:13) {
@@ -73,27 +73,27 @@ for (ix in 1:5) {
 
 # Remove data from lists:
 iliiso <- syn.plus.dat[[1]]
-iliiso.A <- syn.plus.dat[[2]]
-iliiso.H1 <- syn.plus.dat[[3]]
-iliiso.H3 <- syn.plus.dat[[4]]
-iliiso.B <- syn.plus.dat[[5]]
+# iliiso.A <- syn.plus.dat[[2]]
+iliiso.H1 <- syn.plus.dat[[2]]
+iliiso.H3 <- syn.plus.dat[[3]]
+iliiso.B <- syn.plus.dat[[4]]
 
 synDat <- syn.pure.dat[[1]]
-synDat.A <- syn.pure.dat[[2]]
-synDat.H1 <- syn.pure.dat[[3]]
-synDat.H3 <- syn.pure.dat[[4]]
-synDat.B <- syn.pure.dat[[5]]
+# synDat.A <- syn.pure.dat[[2]]
+synDat.H1 <- syn.pure.dat[[2]]
+synDat.H3 <- syn.pure.dat[[3]]
+synDat.B <- syn.pure.dat[[4]]
 
 # Save:
 write.csv(iliiso, file = 'data/WHO_data_05-09-19_SCALED.csv', row.names = FALSE)
 write.csv(synDat, file = 'data/synDatCounts_060519_SCALED.csv', row.names = FALSE)
 
-write.csv(iliiso.A, file = 'data/by_subtype/WHO_data_A(all)_SCALED.csv', row.names = FALSE)
+# write.csv(iliiso.A, file = 'data/by_subtype/WHO_data_A(all)_SCALED.csv', row.names = FALSE)
 write.csv(iliiso.H1, file = 'data/by_subtype/WHO_data_A(H1)_SCALED.csv', row.names = FALSE)
 write.csv(iliiso.H3, file = 'data/by_subtype/WHO_data_A(H3)_SCALED.csv', row.names = FALSE)
 write.csv(iliiso.B, file = 'data/by_subtype/WHO_data_B_SCALED.csv', row.names = FALSE)
 
-write.csv(synDat.A, file = 'data/by_subtype/synDatCounts_A(all)_SCALED.csv', row.names = FALSE)
+# write.csv(synDat.A, file = 'data/by_subtype/synDatCounts_A(all)_SCALED.csv', row.names = FALSE)
 write.csv(synDat.H1, file = 'data/by_subtype/synDatCounts_A(H1)_SCALED.csv', row.names = FALSE)
 write.csv(synDat.H3, file = 'data/by_subtype/synDatCounts_A(H3)_SCALED.csv', row.names = FALSE)
 write.csv(synDat.B, file = 'data/by_subtype/synDatCounts_B_SCALED.csv', row.names = FALSE)
@@ -103,16 +103,16 @@ write.csv(synDat.B, file = 'data/by_subtype/synDatCounts_B_SCALED.csv', row.name
 ################################################################################################################################
 
 # Get scalings_frame for all subtypes:
-scalings$gamma <- scalings.new[[1]][1:12]
-write.csv(scalings, 'data/by_subtype/scalings_frame_A(all).csv', row.names = FALSE)
+# scalings$gamma <- scalings.new[[1]][1:12]
+# write.csv(scalings, 'data/by_subtype/scalings_frame_A(all).csv', row.names = FALSE)
 
-scalings$gamma <- scalings.new[[2]][1:12]
+scalings$gamma <- scalings.new[[1]][1:12]
 write.csv(scalings, 'data/by_subtype/scalings_frame_A(H1).csv', row.names = FALSE)
 
-scalings$gamma <- scalings.new[[3]][1:12]
+scalings$gamma <- scalings.new[[2]][1:12]
 write.csv(scalings, 'data/by_subtype/scalings_frame_A(H3).csv', row.names = FALSE)
 
-scalings$gamma <- scalings.new[[4]][1:12]
+scalings$gamma <- scalings.new[[3]][1:12]
 write.csv(scalings, 'data/by_subtype/scalings_frame_B.csv', row.names = FALSE)
 
 
