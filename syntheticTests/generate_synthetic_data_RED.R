@@ -8,6 +8,8 @@ library("truncnorm"); library("tgp"); library("MASS"); library(reshape2); librar
 
 ### Set seed
 set.seed(10489436)
+set.seed(10489437)
+# set.seed(10489438)
 
 ### Read in model function
 source('cluster/SIRS_network.R')
@@ -18,52 +20,28 @@ tmstep <- 7 #data is weekly
 wk_start <- 40
 
 ### Set parameters
-num_ens <- 500
+num_ens <- 1000
 tm_strt <- 273; tm_end <- 573; tm_step <- 1#; t <- 1 # 273 is first of October
 tm.range <- tm_strt:tm_end
 
 ### Parameter boundaries
-# D_low <- 2; L_low <- 1*365; Rmx_low <- 2.0; Rdiff_low <- 0.2; airScale_low <- 0.75
-# D_up <- 7; L_up <- 8*365; Rmx_up <- 2.8; Rdiff_up <- 1.0; airScale_up <- 1.25
-
-# D_low <- 1.5; L_low <- 1*365; Rmx_low <- 1.3; Rdiff_low <- 0.01; airScale_low <- 0.75
-# D_up <- 7; L_up <- 10*365; Rmx_up <- 4; Rdiff_up <- 1.29; airScale_up <- 1.25
-
-# # Step 1:
-# D_low <- 2; L_low <- 1*365; Rmx_low <- 2.0; Rdiff_low <- 0.2; airScale_low <- 0.75
-# D_up <- 7; L_up <- 10*365; Rmx_up <- 3.0; Rdiff_up <- 1.2; airScale_up <- 1.25
-
-# # Step 2:
-# D_low <- 2; L_low <- 1*365; Rmx_low <- 2.2; Rdiff_low <- 0.2; airScale_low <- 0.75
-# D_up <- 7; L_up <- 10*365; Rmx_up <- 2.8; Rdiff_up <- 1.0; airScale_up <- 1.25
-
-# # Step 3:
-# D_low <- 2; L_low <- 1*365; Rmx_low <- 2.2; Rdiff_low <- 0.4; airScale_low <- 0.75
-# D_up <- 7; L_up <- 10*365; Rmx_up <- 2.6; Rdiff_up <- 0.8; airScale_up <- 1.25
-# # more of an excessive step, just to see
-
-# Step 4:
 D_low <- 2; L_low <- 3*365; Rmx_low <- 2.2; Rdiff_low <- 0.2; airScale_low <- 0.75
 D_up <- 7; L_up <- 10*365; Rmx_up <- 2.8; Rdiff_up <- 1.2; airScale_up <- 1.25
 
-# # Step 5:
-# D_low <- 2; L_low <- 1*365; Rmx_low <- 2.0; Rdiff_low <- 0.2; airScale_low <- 0.75
-# D_up <- 7; L_up <- 8*365; Rmx_up <- 2.8; Rdiff_up <- 1.0; airScale_up <- 1.25
+# D_low <- 2; L_low <- 3*365; Rmx_low <- 2.2; Rdiff_low <- 0.2; airScale_low <- 0.75
+# D_up <- 7; L_up <- 10*365; Rmx_up <- 2.8; Rdiff_up <- 1.0; airScale_up <- 1.25
 
-# also try tweaking S0
+D_low <- 2; L_low <- 3*365; Rmx_low <- 2.0; Rdiff_low <- 0.2; airScale_low <- 0.75
+D_up <- 7; L_up <- 10*365; Rmx_up <- 2.8; Rdiff_up <- 1.2; airScale_up <- 1.25
 
+# D_low <- 2; L_low <- 3*365; Rmx_low <- 2.2; Rdiff_low <- 0.2; airScale_low <- 0.75
+# D_up <- 6; L_up <- 10*365; Rmx_up <- 2.8; Rdiff_up <- 1.2; airScale_up <- 1.25
 
-# S0_low <- 0.55; S0_up <- 0.85
-# sd_low <- 0.05; sd_up <- 0.18
-I0_low <- 0; I0_up <- 0.00005
-
-# or do we want to do this using LHS, or wider ranges of S0?
-# S0_low <- 0.30; S0_up <- 0.90
 S0_low <- 0.40; S0_up <- 0.90 # then again, we want scalings that will work when we use the ranges we're using for fitting, right?
+I0_low <- 0; I0_up <- 0.00005
+# I0_low <- 0; I0_up <- 0.000001
 # unless we want to change the ranges we're fitting with?
 # but here we are trying to get REALISTIC outbreaks, which means we need some w-e
-
-# 422 onset, 50 realistic (out of 500); ~60% e-w, but 42% realistic w-e, including 1 sig
 
 theta_low <- c(L_low, D_low, Rmx_low, Rdiff_low, airScale_low)
 theta_up <- c(L_up, D_up, Rmx_up, Rdiff_up, airScale_up)
@@ -108,6 +86,7 @@ source('cluster/functions/Util.R')
 
 ### Run model!
 init.states <- allocate_S0I0(parms, num_ens, n, N, s0.method = 'lhs')
+# init.states <- allocate_S0I0(parms, num_ens, n, N, s0.method = 'lhs_full')
 res <- run_model(parms, init.states[[1]], init.states[[2]], AH, num_ens, n, N, tm.range, tmstep, tm_strt, tm_end, dt, pop.size, r0.mn = FALSE, multi = FALSE) # time: <20 min
 res.rates <- res[[1]]
 
@@ -122,7 +101,7 @@ runs.noReal <- (1:num_ens)[!((1:num_ens) %in% runs.realistic)]
 # runs.noReal <- runs.onset[!(runs.onset %in% runs.realistic)] # choose realistic vs. ALL, and compare to onset vs. ALL - easier to see what ranges to select
 
 ### Optional: Look at what params yieled onsets/realistic outbreaks and which did not:
-# pdf('syntheticTests/outputs/explore/boxplots_redMod_s3.pdf', height = 9, width = 14)
+# pdf('syntheticTests/outputs/boxplots_redMod.pdf', height = 9, width = 14)
 
 par(mfrow = c(2, 3), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 boxplot(parms[dim(parms)[1] - 4, runs.onset], parms[dim(parms)[1] - 4, runs.noOn], names = c('Incl.', 'Excl.'), ylab = 'L')
