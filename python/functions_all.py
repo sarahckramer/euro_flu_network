@@ -1,6 +1,7 @@
 import numpy as np
 import cupy as cp
 
+
 def replaceLeadLag(vals_temp):
     # print(vals_temp)
     # print(np.isnan(vals_temp).all())
@@ -9,7 +10,7 @@ def replaceLeadLag(vals_temp):
         # print(vals_temp[start_index])
         while vals_temp[start_index] == 0 or np.isnan(vals_temp[start_index]):
             start_index += 1
-        start_index = start_index - 1
+        start_index = start_index  # - 1
 
         # print(start_index)
 
