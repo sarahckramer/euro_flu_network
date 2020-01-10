@@ -107,6 +107,7 @@ def fn_checkxnobounds(xnew, S_rows, I_rows, param_rows, popN, n_count):
             ind1 = ii % n_count
             for jj in range(n_ens):
                 if xnew[ii, jj] > popN[ind0, ind1]:
+                    # print('We did it! (S)')
                     xnew[ii, jj] = popN[ind0, ind1]
     # print('check')
     for ii in I_rows:
@@ -116,6 +117,7 @@ def fn_checkxnobounds(xnew, S_rows, I_rows, param_rows, popN, n_count):
             ind1 = ii % n_count
             for jj in range(n_ens):
                 if xnew[ii, jj] > popN[ind0, ind1]:
+                    print('We did it! (I)')
                     xnew[ii, jj] = popN[ind0, ind1]
     # print('check')
 
@@ -128,16 +130,17 @@ def fn_checkxnobounds(xnew, S_rows, I_rows, param_rows, popN, n_count):
                     xnew[ii, jj] = np.max(np.mean(xnew[ii, :]), 0)
                     # Sasi had it as max of mean and 1, but we don't want 1's in empty compartments!
     '''
-    ug = np.min(xnew[param_rows[2], :])  # Correct if R0mx < 1.0
-    if ug < 1.0:
-        for jj in range(n_ens):
-            if xnew[param_rows[2], jj] < 1.0:
-                xnew[param_rows[2], jj] = np.maximum(np.median(xnew[param_rows[2], :]), 1.0)
+    # ug = np.min(xnew[param_rows[2], :])  # Correct if R0mx < 1.0
+    # if ug < 1.0:
+    #     for jj in range(n_ens):
+    #         if xnew[param_rows[2], jj] < 1.0:
+    #             xnew[param_rows[2], jj] = np.maximum(np.median(xnew[param_rows[2], :]), 1.0)
 
     ug = np.min(xnew[param_rows[3], :])  # Correct if R0diff < 0.01
     if ug < 0.01:
         for jj in range(n_ens):
             if xnew[param_rows[3], jj] < 0.01:
+                # print('We did it! (R0diff)')
                 xnew[param_rows[3], jj] = np.maximum(np.median(xnew[param_rows[3], :]), 0.01)
 
     ug = np.min(xnew[param_rows[0], :])  # Correct if L < 200 days
@@ -145,6 +148,7 @@ def fn_checkxnobounds(xnew, S_rows, I_rows, param_rows, popN, n_count):
     if ug < 200.0:
         for jj in range(n_ens):
             if xnew[param_rows[0], jj] < 200.0:
+                # print('We did it! (L)')
                 xnew[param_rows[0], jj] = np.maximum(np.median(xnew[param_rows[0], :]), 200.0)
 
     ug = np.min(xnew[param_rows[1], :])  # Correct if D < 0.5 days
@@ -152,6 +156,7 @@ def fn_checkxnobounds(xnew, S_rows, I_rows, param_rows, popN, n_count):
     if ug <= 1.0:
         for jj in range(n_ens):
             if xnew[param_rows[1], jj] < 0.5:
+                print('We did it! (D)')
                 xnew[param_rows[1], jj] = np.maximum(np.median(xnew[param_rows[1], :]), 0.5)
 
     ug = np.min(xnew[param_rows[2], :] - xnew[param_rows[3], :])  # Correct if R0mx < R0diff
@@ -159,9 +164,10 @@ def fn_checkxnobounds(xnew, S_rows, I_rows, param_rows, popN, n_count):
     if ug <= 0:
         for jj in range(n_ens):
             if xnew[param_rows[2], jj] < xnew[param_rows[3], jj]:
+                # print('We did it! (R0mx/R0diff)')
                 xnew[param_rows[2], jj] = xnew[param_rows[3], jj]
 
-    return (xnew)
+    return xnew
 
 
 def findOnset(vals, baseline):

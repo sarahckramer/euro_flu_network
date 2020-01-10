@@ -4,6 +4,7 @@ from functions_all import *
 
 
 # EAKF code for python runs
+# noinspection PyShadowingNames
 def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm_range, n, N, AH,
             dt, countries, airRand, lambda_val, wk_start):
     # num_times = np.floor(len(tm_range) / tm_step)
@@ -105,6 +106,9 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
     obs_i = obs_i.iloc[:, 1:(n + 1)].to_numpy(dtype=np.float64)
     # print(obs_i)
 
+    # # Check!:
+    np.savetxt('results/xprior.txt', xprior[:, 4, 0], delimiter=',')
+
     for tt in range(ntrn):
         print('Time: ' + str(tt))
 
@@ -127,6 +131,10 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
         # Update priors with inflated values:
         xprior[:, :, tt] = x
         obsprior[:, :, tt] = obs_ens
+
+        # # Check!:
+        np.savetxt('results/xprior_' + str(tt) + '.txt', x[:, 4], delimiter=',')
+        np.savetxt('results/obsprior_' + str(tt) + '.txt', obs_ens[:, 4], delimiter=',')
 
         # Loop through observations:
         for loc in range(n):
@@ -151,7 +159,12 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
 
                 # Compute alpha and adjust distribution to conform to posterior moments:
                 alp = np.sqrt(obs_var / (obs_var + prior_var))
+                to_save = np.array([prior_var, post_var, prior_mean, post_mean, alp])
+                np.savetxt('results/check_' + str(tt) + '_' + str(loc) + '.txt', to_save, delimiter=',')
+
                 dy = post_mean + alp * (obs_ens[loc, :] - prior_mean) - obs_ens[loc, :]
+                np.savetxt('results/dy_' + str(tt) + '_' + str(loc) + '.txt', dy, delimiter=',')
+
                 # Get covariances of the prior state space and the observations, and loop over each state variable:
                 rr = np.zeros([x.shape[0]], dtype=np.float64)
                 for j in range(x.shape[0]):
@@ -163,6 +176,8 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
                 # Get adjusted ensemble and obs_ens:
                 x = x + dx
                 obs_ens[loc, :] = obs_ens[loc, :] + dy
+                np.savetxt('results/post_' + str(tt) + '_' + str(loc) + '.txt', x[:, 4], delimiter=',')
+                np.savetxt('results/obspost_' + str(tt) + '_' + str(loc) + '.txt', obs_ens[:, 4], delimiter=',')
 
                 # Question: Do we want to check for S0 values being reduced below 0, like in R code?
 
@@ -170,6 +185,8 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
                 x[np.where(x < 0)] = 0
                 x = fn_checkxnobounds(x, S_indices, I_indices, param_indices, N, n)
                 obs_ens[loc, :][np.where(obs_ens[loc, :] < 0)] = 0
+                np.savetxt('results/post_corrected_' + str(tt) + '_' + str(loc) + '.txt', x[:, 4], delimiter=',')
+                np.savetxt('results/obspost_corrected_' + str(tt) + '_' + str(loc) + '.txt', obs_ens[:, 4], delimiter=',')
         del loc
 
         # And store posteriors in proper locations:
@@ -259,10 +276,9 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
             # for i in range(num_ens):
             #     # print(tm_range)
             #     Sr_tmp = propagate_SIRS(tmStrt=tcurrent + dt, tmEnd=tcurrent + tm_step * (nsn - tt - 1), tmStep=dt,
-            #                             tmRange=tm_range,
-            #                             S_0=S0_temp[:, :, i], I_0=I0_temp[:, :, i], popN=N,
-            #                             D_d=D_temp[i], L_d=L_temp[i], beta_d=beta[:, :, i], airScale_d=airScale_temp[i],
-            #                             Countries=countries, n_count=n, airRand=airRand)
+            #                             tmRange=tm_range, S_0=S0_temp[:, :, i], I_0=I0_temp[:, :, i], popN=N,
+            #                             D_d=D_temp[i], L_d=L_temp[i], beta_d=beta[:, :, i],
+            #                             airScale_d=airScale_temp[i], Countries=countries, n_count=n, airRand=airRand)
             #
             #     fcast[S_indices, i, :] = np.transpose(Sr_tmp[0][[tm_step * j for j in range(1, nfc + 1)]].reshape(
             #         [nsn - tt - 1, np.square(n)]))
@@ -284,6 +300,8 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
             del i
 
             #  return(fcast, obsfcast)
+            np.savetxt('results/fcast_' + str(tt) + '.txt', fcast[:, 4, :], delimiter=',')
+            np.savetxt('results/obsfcast_' + str(tt) + '.txt', obsfcast[:, 4, :], delimiter=',')
 
             # Begin processing forecast results
             # Calculate S and I by country:

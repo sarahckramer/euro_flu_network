@@ -1,5 +1,4 @@
 
-
 import os
 import sys
 from numba.typed import List
@@ -150,6 +149,9 @@ for season_index in range(len(seasons)):
     obs_vars[np.where(np.less(obs_vars, 1e3, where=~isnan(obs_vars)) & ~np.isnan(obs_vars))] = 1e3
     # DO WE NEED DATES?
 
+    obs_i.to_csv('results/obs_i.csv', na_rep='NA', index=False)
+    np.savetxt('results/obs_vars.txt', obs_vars, delimiter=',')
+
     # Get time start and time range:
     tm_ini = clim_start_dict[season] - 2  # b/c python indexes at 0, while R does it at 1
     # tm_range = range(clim_start_dict[season], clim_end_dict[season] + 1, 1)
@@ -206,26 +208,20 @@ for season_index in range(len(seasons)):
 
     print()
 
-outputMetrics.to_csv('results/outputMet_allZeros.csv', na_rep='NA', index=False)
-outputOP.to_csv('results/outputOP_allZeros.csv', na_rep='NA', index=False)
-outputOPParams.to_csv('results/outputOPParams_allZeros.csv', na_rep='NA', index=False)
-outputDist.to_csv('results/outputDist_allZeros.csv', na_rep='NA', index=False)
-outputEns.to_csv('results/outputEns_allZeros.csv', na_rep='NA', index=False)
+outputMetrics.to_csv('results/outputMet1.csv', na_rep='NA', index=False)
+outputOP.to_csv('results/outputOP1.csv', na_rep='NA', index=False)
+outputOPParams.to_csv('results/outputOPParams1.csv', na_rep='NA', index=False)
+outputDist.to_csv('results/outputDist1.csv', na_rep='NA', index=False)
+outputEns.to_csv('results/outputEns1.csv', na_rep='NA', index=False)
+
 
 # Then here we will collect all the results, fix scaling issue in FR (or do in R)?, and write to file
 # And add functionality for other subtypes!
 # Check against R code using same parameter/state inputs
         # Fixed: S by country calculated wrong; week number for forecasts was one too low
-        # Still not exactly same as R code, though: check through code to see that all same; check that all float64 ("5"; same results as "4"); why first run best/what changed? (maybe base OEV?)
-        # Write out results at certain steps, all.equal in R to see where differences start/lie
-        # Check that same when NOT using jit:
-# Try to get working on cluster? Or just focus on jit!
+        # Fixed: replaceLeadLag didn't go all the way to start
+        # Still not exactly same as R code, though: check through code to see that all same; check that all float64
 # change to 32bit? (to see what impact rounding error could have)
 # GPU?
 # error with correlations
-# try changing matrices in SIRS to numpy.zeros - what does this change?
-
-# Save results
-# np.savetxt('results/res.txt', res, delimiter = ',')
-# np.savetxt('results/resAirOnly.txt', resA, delimiter = ',')
-# np.savetxt('results/resAll_1.txt', resAll, delimiter = ',')
+# deal with warnings on right sidebar
