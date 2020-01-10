@@ -26,7 +26,7 @@ syn.dat <- syn.dat[, c(1, count.indices + 1)]
 # Get scalings for each type/subtype:
 scalings <- read.csv('data/scalings_frame_05-09-19.csv') # 1.3 for France in early seasons
 scalings <- scalings[count.indices, ]
-load('data/by_subtype/scalings_noCutoff.RData')
+load('data/by_subtype/scalings_noCutoff_threeOverPointOne.RData')
 
 # Create lists of syndromic+ and syndromic to loop through:
 syn.plus.dat <- list(iliiso, iliiso.H1, iliiso.H3, iliiso.B)

@@ -2,7 +2,6 @@
 # Read in subtype-specific syndromic+:
 dat.H1 <- read.csv('data/by_subtype/WHO_data_A(H1).csv')
 dat.H3 <- read.csv('data/by_subtype/WHO_data_A(H3).csv')
-dat.A <- read.csv('data/by_subtype/WHO_data_A(all).csv')
 dat.B <- read.csv('data/by_subtype/WHO_data_B.csv')
 
 # Get only countries of interest:
@@ -11,7 +10,6 @@ count.indices <- c(1:2, 4, 6:8, 11:14, 17, 19)
 
 dat.H1 <- dat.H1[, c(1, count.indices + 1)]
 dat.H3 <- dat.H3[, c(1, count.indices + 1)]
-dat.A <- dat.A[, c(1, count.indices + 1)]
 dat.B <- dat.B[, c(1, count.indices + 1)]
 
 # Season delineations
@@ -41,31 +39,12 @@ seasons[[1]] <- 1:78
     # 10%, 15%, 20%?, even 25%? - could do SA
 
 # First convert any 0s to NAs, just for the sake of this exercise - those "seasons" can obviously be removed:
-dat.A[, 2:13][dat.A[, 2:13] == 0 & !is.na(dat.A[, 2:13])] <- NA
 dat.H1[, 2:13][dat.H1[, 2:13] == 0 & !is.na(dat.H1[, 2:13])] <- NA
 dat.H3[, 2:13][dat.H3[, 2:13] == 0 & !is.na(dat.H3[, 2:13])] <- NA
 dat.B[, 2:13][dat.B[, 2:13] == 0 & !is.na(dat.B[, 2:13])] <- NA
 
-# Check that dat.A is really same as H1+H3:
-# for (i in 2:13) {
-#   for (row in 1:495) {
-#     if (!(is.na(dat.H1[row, i]) & is.na(dat.H3[row, i]))) {
-#       if (!all.equal(sum(dat.H1[row, i], dat.H3[row, i], na.rm = TRUE), dat.A[row, i])) {
-#         print(sum(dat.H1[row, i], dat.H3[row, i], na.rm = TRUE))
-#         print(dat.A[row, i])
-#         print('')
-#       }
-#     }
-#   }
-# }
-# # Fix accordingly? It seems like there are spots where dat.A is NA, even though there were either H1 or H3 involved
-#     # But INF_A was only ever used for checking against other math I did - it wasn't edited; so I think we need to trust these NAs
-all.equal(dat.H1[, 2:13] + dat.H3[, 2:13], dat.A[, 2:13])
-# differences in NAs are all that are present
-# seems extra NAs come in when proportions are over 1 when compared to # of tests conducted
-
 # Get list of data frames:
-dat.list <- list(dat.A, dat.H1, dat.H3, dat.B)
+dat.list <- list(dat.H1, dat.H3, dat.B)
 
 # Calculate proportion of each strain for each country/season pair:
 cases.strain.season <- lapply(dat.list, function(dat.ix) {
@@ -75,24 +54,16 @@ cases.strain.season <- lapply(dat.list, function(dat.ix) {
 })
 # use full week 40-week 39, since that seems to be what we've done for scaling in the past
 
-total1 = total2 = vector('list', 9)
+total1 = vector('list', 9)
 for (i in 1:9) {
-  total1[[i]] <- cases.strain.season[[1]][[i]] + cases.strain.season[[4]][[i]] # used for full A
-  total2[[i]] <- cases.strain.season[[2]][[i]] + cases.strain.season[[3]][[i]] + cases.strain.season[[4]][[i]] # used for other 3 types/subtypes
+  total1[[i]] <- cases.strain.season[[1]][[i]] + cases.strain.season[[2]][[i]] + cases.strain.season[[3]][[i]] # used for 3 types/subtypes
 }
 
-props.strain.season <- vector('list', 4)
-
-props.temp <- vector('list', 9)
-for (i in 1:9) {
-  props.temp[[i]] <- cases.strain.season[[1]][[i]] / total1[[i]]
-}
-props.strain.season[[1]] <- props.temp
-
-for (j in 2:4) {
+props.strain.season <- vector('list', 3)
+for (j in 1:3) {
   props.temp <- vector('list', 9)
   for (i in 1:9) {
-    props.temp[[i]] <- cases.strain.season[[j]][[i]] / total2[[i]]
+    props.temp[[i]] <- cases.strain.season[[j]][[i]] / total1[[i]]
   }
   props.strain.season[[j]] <- props.temp
 }
@@ -100,15 +71,15 @@ rm(props.temp)
 
 # List appropriate seasons by subtype:
 seasons.h1 <- c(1:2, 4:7, 9) # only look at pandemic for H1N1
-seasons.h3 <- c(3, 5:6, 8)
-seasons.b <- c(2:4, 6:7, 9)
+seasons.h3 <- c(3:6, 8)
+seasons.b <- c(2, 4, 6:9)
 
 # First, calculate scalings for ALL seasons used for each subtype:
-countries <- names(dat.A)[2:13]
+countries <- names(dat.H1)[2:13]
 scalings.new <- vector('list', 3)
 
 # H1:
-subtype.index <- 2
+subtype.index <- 1
 for (count.index in 1:12) {
   dat.temp <- dat.list[[subtype.index]][, count.index + 1]
   min.scales = max.scales = c()
@@ -131,7 +102,7 @@ for (count.index in 1:12) {
   overlap <- max(min.scales[min.scales > 0 & min.scales != Inf])
   no.overlap <- min(max.scales[max.scales > 0 & max.scales != Inf])
   
-  scalings.new[[subtype.index - 1]] <- c(scalings.new[[subtype.index - 1]], min(overlap, no.overlap))
+  scalings.new[[subtype.index]] <- c(scalings.new[[subtype.index]], min(overlap, no.overlap))
 }
 # FR:
 dat.temp <- dat.list[[subtype.index]]$France
@@ -157,11 +128,11 @@ for (season in 6:9) {
 overlap <- max(min.scales[min.scales > 0 & min.scales != Inf])
 no.overlap <- min(max.scales[max.scales > 0 & max.scales != Inf])
 scale2 <- min(overlap, no.overlap)
-scalings.new[[subtype.index - 1]][4] <- scale2; scalings.new[[subtype.index - 1]] <- c(scalings.new[[subtype.index - 1]], scale1)
+scalings.new[[subtype.index]][4] <- scale2; scalings.new[[subtype.index]] <- c(scalings.new[[subtype.index]], scale1)
 # so the scaling in FR's place is for the later 4 seasons; whereas the one "extra" value at the end is for the 2 earlier seasons (ARI)
 
 # H3:
-subtype.index <- 3
+subtype.index <- 2
 for (count.index in 1:12) {
   dat.temp <- dat.list[[subtype.index]][, count.index + 1]
   min.scales = max.scales = c()
@@ -184,7 +155,7 @@ for (count.index in 1:12) {
   overlap <- max(min.scales[min.scales > 0 & min.scales != Inf])
   no.overlap <- min(max.scales[max.scales > 0 & max.scales != Inf])
   
-  scalings.new[[subtype.index - 1]] <- c(scalings.new[[subtype.index - 1]], min(overlap, no.overlap))
+  scalings.new[[subtype.index]] <- c(scalings.new[[subtype.index]], min(overlap, no.overlap))
 }
 # FR:
 dat.temp <- dat.list[[subtype.index]]$France
@@ -210,10 +181,10 @@ for (season in 6:9) {
 overlap <- max(min.scales[min.scales > 0 & min.scales != Inf])
 no.overlap <- min(max.scales[max.scales > 0 & max.scales != Inf])
 scale2 <- min(overlap, no.overlap)
-scalings.new[[subtype.index - 1]][4] <- scale2; scalings.new[[subtype.index - 1]] <- c(scalings.new[[subtype.index - 1]], scale1)
+scalings.new[[subtype.index]][4] <- scale2; scalings.new[[subtype.index]] <- c(scalings.new[[subtype.index]], scale1)
 
 # B:
-subtype.index <- 4
+subtype.index <- 3
 for (count.index in 1:12) {
   dat.temp <- dat.list[[subtype.index]][, count.index + 1]
   min.scales = max.scales = c()
@@ -236,7 +207,7 @@ for (count.index in 1:12) {
   overlap <- max(min.scales[min.scales > 0 & min.scales != Inf])
   no.overlap <- min(max.scales[max.scales > 0 & max.scales != Inf])
   
-  scalings.new[[subtype.index - 1]] <- c(scalings.new[[subtype.index - 1]], min(overlap, no.overlap))
+  scalings.new[[subtype.index]] <- c(scalings.new[[subtype.index]], min(overlap, no.overlap))
 }
 # FR:
 dat.temp <- dat.list[[subtype.index]]$France
@@ -262,20 +233,19 @@ for (season in 6:9) {
 overlap <- max(min.scales[min.scales > 0 & min.scales != Inf])
 no.overlap <- min(max.scales[max.scales > 0 & max.scales != Inf])
 scale2 <- min(overlap, no.overlap)
-scalings.new[[subtype.index - 1]][4] <- scale2; scalings.new[[subtype.index - 1]] <- c(scalings.new[[subtype.index - 1]], scale1)
+scalings.new[[subtype.index]][4] <- scale2; scalings.new[[subtype.index]] <- c(scalings.new[[subtype.index]], scale1)
 
 # Round scalings
 # Doubt this is super necessary - just use the values that were calculated
 
 # Save:
-save(scalings.new, file = 'code/by_subtype/scalings_SA/scalings_noCutoff.RData')
+save(scalings.new, file = 'code/by_subtype/scalings_SA/scalings_noCutoff_threeOverPointOne.RData')
 
 # Compare.
-scalings.noCut <- scalings.new
+scalings.newMet <- scalings.new
 rm(scalings.new)
-load('data/by_subtype/scalings_by_subtype_120219.RData')
-# most are pretty similar, but there are some considerable differences
-
+load('data/by_subtype/scalings_noCutoff.RData')
+# very similar to before
 
 
 
