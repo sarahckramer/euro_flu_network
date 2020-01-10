@@ -23,9 +23,9 @@ source('code/individualCountries/EAKF_indiv.R')
 
 ### Seasons:
 # seasons <- c('2010-11', '2011-12', '2012-13', '2013-14', '2014-15', '2015-16', '2016-17', '2017-18')
-# seasons <- c('2010-11', '2012-13', '2013-14', '2014-15', '2015-16', '2017-18') # H1
+seasons <- c('2010-11', '2012-13', '2013-14', '2014-15', '2015-16', '2017-18') # H1
 # seasons <- c('2011-12', '2012-13', '2013-14', '2014-15', '2016-17') # H3
-seasons <- c('2010-11', '2011-12', '2012-13', '2014-15', '2015-16', '2017-18') # B
+# seasons <- c('2010-11', '2012-13', '2014-15', '2015-16', '2016-17', '2017-18') # B
 
 ### Global variables:
 dt <- 1 # time step for SIRS integration
@@ -64,9 +64,9 @@ metricsonly <- FALSE # save all outputs
 # cmd_args = commandArgs(trailingOnly = T)
 # task.index=as.numeric(cmd_args[1]) # 1:144 # 1:240 # 1:480
 
-oev_base <- 0.3 #0.3 or 1e4 #oevBaseList[ceiling((task.index - 9) / 9) %% 2 + 1]
-oev_denom <- 1.0 #1.0 or 10.0 #oevDenomList[ceiling((task.index - 3) / 3) %% 3 + 1]
-lambda <- 1.02 #lambdaList[ceiling(task.index - 1) %% 3 + 1]
+oev_base <- 0.0 #0.3 or 1e4 #oevBaseList[ceiling((task.index - 9) / 9) %% 2 + 1]
+oev_denom <- 2.0 #1.0 or 10.0 #oevDenomList[ceiling((task.index - 3) / 3) %% 3 + 1]
+lambda <- 1.05 #lambdaList[ceiling(task.index - 1) %% 3 + 1]
 
 # oev_denom <- 100
 # lamdba <- 1.05
@@ -93,7 +93,7 @@ iliiso <- read.csv('data/by_subtype/WHO_data_B_SCALED.csv')
 print(dim(iliiso))
 
 ### Read in syndromic/virologic counts:
-test.dat <- read.csv('data/testCounts_052719.csv')
+test.dat <- read.csv('data/testRates_010820.csv')
 
 # syn.dat <- read.csv('data/synDatCounts_060519_SCALED.csv')
 # pos.dat <- read.csv('data/posProp_060519.csv')
@@ -110,7 +110,7 @@ test.dat <- read.csv('data/testCounts_052719.csv')
 syn.dat <- read.csv('data/by_subtype/synDatCounts_B_SCALED.csv')
 pos.dat <- read.csv('data/by_subtype/posprop_B.csv')
 
-test.dat <- test.dat[, c(1, count.indices + 1)]
+# test.dat <- test.dat[, c(1, count.indices + 1)]
 # syn.dat <- syn.dat[, c(1, count.indices + 1)]
 pos.dat <- pos.dat[, c(1, count.indices + 1)]
 
@@ -122,23 +122,6 @@ pos.dat <- pos.dat[, c(1, count.indices + 1)]
 # scalings <- read.csv('data/by_subtype/scalings_frame_A(H1).csv')
 # scalings <- read.csv('data/by_subtype/scalings_frame_A(H3).csv')
 scalings <- read.csv('data/by_subtype/scalings_frame_B.csv')
-
-for (i in 2:13) {
-  # if (names(iliiso)[i] == 'France') {
-  #   iliiso[1:286, i] <- iliiso[1:286, i] * 1.3
-  #   iliiso[287:495, i] <- iliiso[287:495, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
-  #   syn.dat[1:286, i] <- syn.dat[1:286, i] * 1.3
-  #   syn.dat[287:495, i] <- syn.dat[287:495, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
-  # } else {
-  #   iliiso[, i] <- iliiso[, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
-  #   syn.dat[, i] <- syn.dat[, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
-  # }
-  # 
-  # iliiso[, i][iliiso[, i] < 0] <- NA # replace negatives with NAs
-  # syn.dat[, i][syn.dat[, i] < 0] <- NA
-  pos.dat[, i][pos.dat[, i] < 0] <- NA
-  test.dat[, i][test.dat[, i] < 0] <- NA
-}
 
 ### Loop through countries to generate forecasts:
 for (count.index in 1:length(countries)) {
@@ -194,7 +177,7 @@ for (count.index in 1:length(countries)) {
       # # par(mfrow = c(6, 5), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 
       # Calculate OEV:
-      obs_vars <- calc_obsvars_nTest(obs = obs_i, syn_dat = syn_i, ntests = test_i, posprops = pos_i, oev_base, oev_denom, tmp_exp = 2.0)
+      obs_vars <- 1e5 + calc_obsvars_nTest(obs = obs_i, syn_dat = syn_i, ntests = test_i, posprops = pos_i, oev_base, oev_denom, tmp_exp = 2.0)
       # obs_vars <- calc_obsvars(obs = as.matrix(obs_i), oev_base, oev_denom)
       # print(obs_vars[1:3, ])
 

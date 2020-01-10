@@ -44,7 +44,7 @@ metricsonly <- FALSE # save all outputs
 # seasons <- c('2010-11', '2011-12', '2012-13', '2013-14', '2014-15', '2015-16', '2016-17', '2017-18') # ADD '2018-19'
 seasons <- c('2010-11', '2012-13', '2013-14', '2014-15', '2015-16', '2017-18') # H1
 # seasons <- c('2011-12', '2012-13', '2013-14', '2014-15', '2016-17') # H3
-# seasons <- c('2010-11', '2011-12', '2012-13', '2014-15', '2015-16', '2017-18') # B
+# seasons <- c('2010-11', '2012-13', '2014-15', '2015-16', '2016-17', '2017-18') # B
 
 #oevBase_list <- c(0.1, 0.3, 0.5)
 #oevDenom_list <- c(0.2, 1.0, 5.0) #c(1.0, 2.0, 5.0, 10.0, 20.0, 50.0)
@@ -57,8 +57,8 @@ cmd_args = commandArgs(trailingOnly = T)
 task.index=as.numeric(cmd_args[1])
 
 season <- seasons[ceiling(task.index / 26)]
-oev_base <- 1e4#0.5 #oevBase_list[ceiling((task.index - 78) / 78) %% 3 + 1]
-oev_denom <- 10#2.5 #oevDenom_list[ceiling((task.index - 26) / 26) %% 3 + 1]
+oev_base <- 0.0 #oevBase_list[ceiling((task.index - 78) / 78) %% 3 + 1]
+oev_denom <- 2.0 #2.5 #oevDenom_list[ceiling((task.index - 26) / 26) %% 3 + 1]
 lambda <- 1.05 #lambdaList[ceiling((task.index - 26) / 26) %% 3 + 1]
 ntrn <- ntrnList[ceiling(task.index - 1) %% 26 + 1]
 print(paste(season, oev_base, oev_denom, lambda, ntrn, sep = '_'))
@@ -94,7 +94,7 @@ iliiso <- read.csv('data/by_subtype/WHO_data_A(H1)_SCALED.csv')
 # iliiso <- read.csv('data/by_subtype/WHO_data_B_SCALED.csv')
 
 ### Read in syndromic/virologic counts:
-test.dat <- read.csv('data/testCounts_052719.csv')
+test.dat <- read.csv('data/testRates_010820.csv')
 
 # syn.dat <- read.csv('data/synDatCounts_060519_SCALED.csv')
 # pos.dat <- read.csv('data/posProp_060519.csv')
@@ -111,7 +111,7 @@ pos.dat <- read.csv('data/by_subtype/posprop_A(H1).csv')
 # syn.dat <- read.csv('data/by_subtype/synDatCounts_B_SCALED.csv')
 # pos.dat <- read.csv('data/by_subtype/posprop_B.csv')
 
-test.dat <- test.dat[, c(1, count.indices + 1)]
+# test.dat <- test.dat[, c(1, count.indices + 1)]
 # syn.dat <- syn.dat[, c(1, count.indices + 1)]
 pos.dat <- pos.dat[, c(1, count.indices + 1)]
 
@@ -126,12 +126,6 @@ scalings <- read.csv('data/by_subtype/scalings_frame_A(H1).csv')
 # scalings <- read.csv('data/by_subtype/scalings_frame_A(H3).csv')
 # scalings <- read.csv('data/by_subtype/scalings_frame_B.csv')
 
-for (i in 2:13) {
-  # iliiso[, i][iliiso[, i] < 0] <- NA # replace negatives with NAs
-  # syn.dat[, i][syn.dat[, i] < 0] <- NA
-  pos.dat[, i][pos.dat[, i] < 0] <- NA
-  test.dat[, i][test.dat[, i] < 0] <- NA
-}
 # iliiso.scale <- iliiso
 # syn.dat.scale <- syn.dat
 
@@ -206,12 +200,12 @@ for (count.index in 1:n) {
 test_i[test_i == 0 & !is.na(test_i)] <- NA
 
 # Variance of syndromic+ data:
-#obs_vars <- calc_obsvars_nTest(obs = as.matrix(obs_i), syn_dat = as.matrix(syn_i), ntests = as.matrix(test_i), posprops = as.matrix(pos_i),
-#                               oev_base, oev_denom, tmp_exp = 2.0)
-obs_vars <- calc_obsvars(obs = as.matrix(obs_i), oev_base, oev_denom)
+obs_vars <- 1e5 + calc_obsvars_nTest(obs = as.matrix(obs_i), syn_dat = as.matrix(syn_i), ntests = as.matrix(test_i), posprops = as.matrix(pos_i),
+                                     oev_base, oev_denom, tmp_exp = 2.0)
+# obs_vars <- calc_obsvars(obs = as.matrix(obs_i), oev_base, oev_denom)
 
-# Set minimum OEV value:
-obs_vars[obs_vars < 1e4 & !is.na(obs_vars)] <- 1e4
+# # Set minimum OEV value:
+# obs_vars[obs_vars < 1e4 & !is.na(obs_vars)] <- 1e4
 
 # Get the first and last date of the simulation:
 clim_start <- as.numeric(start_date - as.Date(paste('20',
@@ -254,8 +248,8 @@ for (run in 1:num_runs) {
 colnames(outputMetrics)[6] <- 'scaling'
 # I actually think all the other colnames are fine as-is...
 
-load('data/by_subtype/scalings_by_subtype_120219.RData')
-outputMetrics[outputMetrics[, 'country'] == 'FR' & outputMetrics[, 'season'] %in% seasons[1:4], 'scaling'] <- scalings.new[[2]][13]#1.3
+load('data/by_subtype/scalings_noCutoff_threeOverPointOne.RData')
+outputMetrics[outputMetrics[, 'country'] == 'FR' & outputMetrics[, 'season'] %in% seasons[1:4], 'scaling'] <- scalings.new[[1]][13]#1.3
 # outputMetrics[outputMetrics[, 'country'] == 'FR' & outputMetrics[, 'season'] %in% seasons[1:4], 'scaling'] <- new.scalings.mean[[6]][1]
 # FR has an alternative scaling for earlier
 

@@ -18,9 +18,9 @@ wk_start = 40
 
 # Parameters for filters
 discrete = False
-oev_base = np.float64(0.3)
-oev_denom = np.float64(1.0)
-lambda_val = np.float64(1.02)
+oev_base = np.float64(0)
+oev_denom = np.float64(2.0)
+lambda_val = np.float64(1.05)
 num_ens = 300
 num_runs = 1  # EVENTUALLY WANT 5
 
@@ -41,11 +41,11 @@ elif strain == 'A(H1)':
     seasons = ('2010-11', '2012-13')  # , '2013-14', '2014-15', '2015-16', '2017-18') # H1
 
     iliiso = pd.read_csv('../data/by_subtype/WHO_data_A(H1)_SCALED.csv')
-    test_dat = pd.read_csv('../data/testCounts_052719.csv', na_values=-1)
+    test_dat = pd.read_csv('../data/testRates_010820.csv')
     syn_dat = pd.read_csv('../data/by_subtype/synDatCounts_A(H1)_SCALED.csv')
-    pos_dat = pd.read_csv('../data/by_subtype/posprop_A(H1).csv', na_values=-1)
+    pos_dat = pd.read_csv('../data/by_subtype/posprop_A(H1).csv')
 
-    test_dat = test_dat[iliiso.columns]
+    # test_dat = test_dat[iliiso.columns]
     pos_dat = pos_dat[iliiso.columns]
 
     scalings = pd.read_csv('../data/by_subtype/scalings_frame_A(H1).csv')
@@ -54,7 +54,7 @@ elif strain == 'A(H3)':
     seasons = ('2011-12', '2012-13', '2013-14', '2014-15', '2016-17')  # H3
     # DATA #
 elif strain == 'B':
-    seasons = ('2010-11', '2011-12', '2012-13', '2014-15', '2015-16', '2017-18')  # B
+    seasons = ('2010-11', '2012-13', '2014-15', '2015-16', '2016-17', '2017-18')  # B
     # DATA #
 else:
     print('Error: Subtype not recognized.')
@@ -145,8 +145,8 @@ for season_index in range(len(seasons)):
             print('0s found in test data!')
 
     # Get OEV:
-    obs_vars = calc_obsvars_nTest(obs_i, syn_i, test_i, pos_i, oev_base, oev_denom, n)
-    obs_vars[np.where(np.less(obs_vars, 1e3, where=~isnan(obs_vars)) & ~np.isnan(obs_vars))] = 1e3
+    obs_vars = 1e5 + calc_obsvars_nTest(obs_i, syn_i, test_i, pos_i, oev_base, oev_denom, n)
+    # obs_vars[np.where(np.less(obs_vars, 1e3, where=~isnan(obs_vars)) & ~np.isnan(obs_vars))] = 1e3
     # DO WE NEED DATES?
 
     obs_i.to_csv('results/obs_i.csv', na_rep='NA', index=False)

@@ -32,11 +32,11 @@ metricsonly <- FALSE # save all outputs
 # seasons <- c('2010-11', '2011-12', '2012-13', '2013-14', '2014-15', '2015-16', '2016-17', '2017-18') # ADD '2018-19'
 seasons <- c('2010-11', '2012-13', '2013-14', '2014-15', '2015-16', '2017-18') # H1
 # seasons <- c('2011-12', '2012-13', '2013-14', '2014-15', '2016-17') # H3
-# seasons <- c('2010-11', '2011-12', '2012-13', '2014-15', '2015-16', '2017-18') # B
+# seasons <- c('2010-11', '2012-13', '2014-15', '2015-16', '2016-17', '2017-18') # B
 
-oev_base <- 0.3 #oevBase_list[ceiling((task.index - 26) / 26) %% 2 + 1]
-oev_denom <- 1.0 #oevDenom_list[ceiling((task.index - 78) / 78) %% 3 + 1]
-lambda <- 1.02 #lambdaList[ceiling((task.index - 26) / 26) %% 3 + 1]
+oev_base <- 0.0 #oevBase_list[ceiling((task.index - 26) / 26) %% 2 + 1]
+oev_denom <- 2.0 #oevDenom_list[ceiling((task.index - 78) / 78) %% 3 + 1]
+lambda <- 1.05 #lambdaList[ceiling((task.index - 26) / 26) %% 3 + 1]
 
 num_ens <- 300 # use 300 for ensemble filters, 10000 for particle filters
 num_runs <- 2
@@ -65,7 +65,7 @@ iliiso <- read.csv('data/by_subtype/WHO_data_A(H1)_SCALED.csv')
 # iliiso <- read.csv('data/by_subtype/WHO_data_B_SCALED.csv')
 
 # Read in syndromic/virologic counts:
-test.dat <- read.csv('data/testCounts_052719.csv')
+test.dat <- read.csv('data/testRates_010820.csv')
 
 # syn.dat <- read.csv('data/synDatCounts_060519_SCALED.csv')
 # pos.dat <- read.csv('data/posProp_060519.csv')
@@ -82,7 +82,7 @@ pos.dat <- read.csv('data/by_subtype/posprop_A(H1).csv')
 # syn.dat <- read.csv('data/by_subtype/synDatCounts_B_SCALED.csv')
 # pos.dat <- read.csv('data/by_subtype/posprop_B.csv')
 
-test.dat <- test.dat[, c(1, count.indices + 1)]
+# test.dat <- test.dat[, c(1, count.indices + 1)]
 # syn.dat <- syn.dat[, c(1, count.indices + 1)]
 pos.dat <- pos.dat[, c(1, count.indices + 1)]
 
@@ -94,11 +94,6 @@ pos.dat <- pos.dat[, c(1, count.indices + 1)]
 scalings <- read.csv('data/by_subtype/scalings_frame_A(H1).csv')
 # scalings <- read.csv('data/by_subtype/scalings_frame_A(H3).csv')
 # scalings <- read.csv('data/by_subtype/scalings_frame_B.csv')
-
-for (i in 2:13) {
-  pos.dat[, i][pos.dat[, i] < 0] <- NA
-  test.dat[, i][test.dat[, i] < 0] <- NA
-}
 
 # Initialize output data frame
 outputMetrics <- NULL
@@ -147,9 +142,9 @@ season <- '2012-13'
   test_i[test_i == 0 & !is.na(test_i)] <- NA
   
   # Variance of syndromic+ data:
-  obs_vars <- calc_obsvars_nTest(obs = as.matrix(obs_i), syn_dat = as.matrix(syn_i), ntests = as.matrix(test_i), posprops = as.matrix(pos_i),
-                                 oev_base, oev_denom, tmp_exp = 2.0)
-  obs_vars[obs_vars < 1e3 & !is.na(obs_vars)] <- 1e3
+  obs_vars <- 1e5 + calc_obsvars_nTest(obs = as.matrix(obs_i), syn_dat = as.matrix(syn_i), ntests = as.matrix(test_i), posprops = as.matrix(pos_i),
+                                       oev_base, oev_denom, tmp_exp = 2.0)
+  # obs_vars[obs_vars < 1e3 & !is.na(obs_vars)] <- 1e3
   
   # Get the first and last date of the simulation:
   clim_start <- as.numeric(start_date - as.Date(paste('20',
@@ -185,8 +180,8 @@ season <- '2012-13'
 
 colnames(outputMetrics)[6] <- 'scaling'
 
-load('data/by_subtype/scalings_by_subtype_120219.RData')
-outputMetrics[outputMetrics[, 'country'] == 'FR' & outputMetrics[, 'season'] %in% seasons[1:4], 'scaling'] <- scalings.new[[2]][13]#1.3
+load('data/by_subtype/scalings_noCutoff_threeOverPointOne.RData')
+outputMetrics[outputMetrics[, 'country'] == 'FR' & outputMetrics[, 'season'] %in% seasons[1:4], 'scaling'] <- scalings.new[[1]][13]#1.3
 
 # Read in and compare xprior after initiating model run:
 # res.py <- read.table(file = 'python/results/xprior_ens_0_2010-11.txt', header = FALSE, sep = ',')
