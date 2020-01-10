@@ -34,7 +34,7 @@ seasons <- c('2010-11', '2012-13', '2013-14', '2014-15', '2015-16', '2017-18') #
 # seasons <- c('2011-12', '2012-13', '2013-14', '2014-15', '2016-17') # H3
 # seasons <- c('2010-11', '2011-12', '2012-13', '2014-15', '2015-16', '2017-18') # B
 
-oev_base <- 0.4 #oevBase_list[ceiling((task.index - 26) / 26) %% 2 + 1]
+oev_base <- 0.3 #oevBase_list[ceiling((task.index - 26) / 26) %% 2 + 1]
 oev_denom <- 1.0 #oevDenom_list[ceiling((task.index - 78) / 78) %% 3 + 1]
 lambda <- 1.02 #lambdaList[ceiling((task.index - 26) / 26) %% 3 + 1]
 
@@ -149,6 +149,7 @@ season <- '2012-13'
   # Variance of syndromic+ data:
   obs_vars <- calc_obsvars_nTest(obs = as.matrix(obs_i), syn_dat = as.matrix(syn_i), ntests = as.matrix(test_i), posprops = as.matrix(pos_i),
                                  oev_base, oev_denom, tmp_exp = 2.0)
+  obs_vars[obs_vars < 1e3 & !is.na(obs_vars)] <- 1e3
   
   # Get the first and last date of the simulation:
   clim_start <- as.numeric(start_date - as.Date(paste('20',
@@ -164,17 +165,19 @@ season <- '2012-13'
   tm.ini <- clim_start - 1 # the end of the former week
   tm.range <- clim_start:clim_end
   
+  ntrn <- 10
+  run <- 1
   
   for (run in 1:num_runs) {
-    ntrn <- 10 # this is how I set it in python, so whatever
+    # ntrn <- 10
     res <- EAKF_rFC(num_ens, tmstep, param.bound, obs_i, ntrn, obs_vars, tm.ini, tm.range,
                     updates = FALSE, do.reprobing = FALSE)
     
-    # outputMetrics <- rbind(outputMetrics, cbind(season, run, oev_base, oev_denom, lambda, scalings$gamma, res$metrics))
-    # outputOP <- rbind(outputOP, cbind(season, run, oev_base, oev_denom, lambda, res$opStates))
-    # outputOPParams <- rbind(outputOPParams, cbind(season, run, oev_base, oev_denom, lambda, res$trainParams))
-    # outputDist = rbind(outputDist, cbind(season, run, oev_base, oev_denom, lambda, res$dist))
-    # outputEns = rbind(outputEns, cbind(season, run, oev_base, oev_denom, lambda, res$ensembles))
+    outputMetrics <- rbind(outputMetrics, cbind(season, run, oev_base, oev_denom, lambda, scalings$gamma, res$metrics))
+    outputOP <- rbind(outputOP, cbind(season, run, oev_base, oev_denom, lambda, res$opStates))
+    outputOPParams <- rbind(outputOPParams, cbind(season, run, oev_base, oev_denom, lambda, res$trainParams))
+    outputDist = rbind(outputDist, cbind(season, run, oev_base, oev_denom, lambda, res$dist))
+    outputEns = rbind(outputEns, cbind(season, run, oev_base, oev_denom, lambda, res$ensembles))
     # outputVars = rbind(outputVars, cbind(season, run, lambda, res$vars))
   }
   
@@ -186,15 +189,50 @@ load('data/by_subtype/scalings_by_subtype_120219.RData')
 outputMetrics[outputMetrics[, 'country'] == 'FR' & outputMetrics[, 'season'] %in% seasons[1:4], 'scaling'] <- scalings.new[[2]][13]#1.3
 
 # Read in and compare xprior after initiating model run:
-res.py <- read.table(file = 'python/results/xprior_ens_0_2010-11.txt', header = FALSE, sep = ',')
-res.py <- res.py[, 1:20]
+# res.py <- read.table(file = 'python/results/xprior_ens_0_2010-11.txt', header = FALSE, sep = ',')
+# res.py <- res.py[, 1:20]
+# 
+# res <- as.data.frame(res)
+# 
+# all.equal(res, res.py)
 
-res <- as.data.frame(res)
+write.csv(outputMetrics, file = 'python/results/outputMet_Rcomp3.csv', row.names = FALSE)
+write.csv(outputOP, file = 'python/results/outputOP_Rcomp3.csv', row.names = FALSE)
+write.csv(outputOPParams, file = 'python/results/outputOPParams_Rcomp3.csv', row.names = FALSE)
+write.csv(outputDist, file = 'python/results/outputDist_Rcomp3.csv', row.names = FALSE)
+write.csv(outputEns, file = 'python/results/outputEns_Rcomp3.csv', row.names = FALSE)
 
-all.equal(res, res.py)
+rm(list = ls())
+
+outputMetrics <- read.csv('python/results/outputMet_Rcomp3.csv')
+outputOP <- read.csv('python/results/outputOP_Rcomp3.csv')
+outputDist <- read.csv('python/results/outputDist_Rcomp3.csv')
 
 
+a <- read.csv('python/results/outputMet4.csv')
+b <- read.csv('python/results/outputOP4.csv')
 
+b <- b[b$season == '2012-13' & b$fc_start == 59, ]
+op <- outputOP[outputOP$run == 1, ]
+
+countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
+b$country <- factor(b$country)
+levels(b$country) <- countries
+
+p1 <- ggplot(data = b, aes(x = week, y = Est, colour = result)) + geom_line() + facet_wrap(~ country) + theme_classic() +
+  geom_point(data = op, size = 1.1)
+p1
+
+d <- merge(b, op, by = c('country', 'result', 'week'))
+all.equal(d$Est.x, d$Est.y)
+all.equal(d$Est.x[d$result == 'train'], d$Est.y[d$result == 'train'])
+all.equal(d$Est.x[d$result == 'fcast'], d$Est.y[d$result == 'fcast'])
+# still higher error than with first try, though
+
+which(d$Est.x == d$Est.y) # only SK, week 40, training
+which(d$S.x == d$S.y) # never
+which(d$I.x == d$I.y) # DE, week 40, training
+# so only exactly equal very early on
 
 
 
