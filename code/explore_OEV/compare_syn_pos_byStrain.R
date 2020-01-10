@@ -22,20 +22,25 @@ syn.dat <- read.csv('data/synDatCounts_060519.csv')
 syn.dat <- syn.dat[, c(1, count.indices + 1)]
 test.dat <- read.csv('data/testCounts_052719.csv')
 test.dat <- test.dat[, c(1, count.indices + 1)]
+test.rate <- read.csv('data/testRates_010820.csv')
 
 # First, plot variabilitiy in raw synthetic and test data by country:
 syn.dat <- melt(syn.dat); names(syn.dat) <- c('time', 'country', 'value')
 test.dat <- melt(test.dat); names(test.dat) <- c('time', 'country', 'value')
+test.rate <- melt(test.rate); names(test.rate) <- c('time', 'country', 'value')
 
 syn.dat$value[syn.dat$value < 0] <- NA
 test.dat$value[test.dat$value < 0] <- NA
 
 p1 <- ggplot(data = syn.dat, aes(x = time, y = value, group = country)) + geom_line() +
-  facet_wrap(~country, scales = 'free_y', ncol = 1) + theme_classic()
+  facet_wrap(~country, scales = 'free_y', ncol = 1) + theme_classic() + labs(y = 'Syndromic Data')
 p1
 p2 <- ggplot(data = test.dat, aes(x = time, y = value, group = country)) + geom_line() +
-  facet_wrap(~country, scales = 'free_y', ncol = 1) + theme_classic()
+  facet_wrap(~country, scales = 'free_y', ncol = 1) + theme_classic() + labs(y = 'Test Counts (Raw)')
 p2
+p25 <- ggplot(data = test.rate, aes(x = time, y = value, group = country)) + geom_line() +
+  facet_wrap(~country, scales = 'free_y', ncol = 1) + theme_classic() + labs(y = 'Test Counts (Scaled)')
+p25
 
 # Plot out scaled syndromic data by strain/country
 syn.h1 <- melt(syn.h1); names(syn.h1) <- c('time', 'country', 'value')
@@ -49,7 +54,7 @@ syn.scaled$strain <- factor(syn.scaled$strain)
 syn.scaled$strain <- factor(syn.scaled$strain, levels = levels(syn.scaled$strain)[c(2:3, 1)])
 
 p3 <- ggplot(data = syn.scaled, aes(x = time, y = value, group = strain, colour = strain)) + geom_line() + 
-  facet_wrap(~country, scale = 'free_y', ncol = 1) + theme_classic()
+  facet_wrap(~country, scale = 'free_y', ncol = 1) + theme_classic() + labs(y = 'Syndromic (Scaled)')
 p3
 
 # Plot out posprop by strain/country
@@ -66,13 +71,14 @@ pos.dat$strain <- factor(pos.dat$strain, levels = levels(pos.dat$strain)[c(2:3, 
 pos.dat$value[pos.dat$value < 0] <- NA
 
 p4 <- ggplot(data = pos.dat, aes(x = time, y = value, group = strain, colour = strain)) + geom_line() + 
-  facet_wrap(~country, scale = 'free_y', ncol = 1) + theme_classic()
+  facet_wrap(~country, scale = 'free_y', ncol = 1) + theme_classic() + labs(y = '% Positive')
 p4
 
 # Save:
 pdf('results/explore_oev/plot_out_syn_test_prop_data.pdf', height = 10, width = 13)
 print(p1)
 print(p2)
+print(p25)
 print(p3)
 print(p4)
 dev.off()

@@ -27,9 +27,9 @@ pos.dat <- pos.dat[, c(1, count.indices + 1)]
 if (strain == 'A(H1)') {
   seasons <- c('2010-11', '2012-13', '2013-14', '2014-15', '2015-16', '2017-18') # H1
 } else if (strain == 'A(H3)') {
-  seasons <- c('2011-12', '2013-14', '2014-15', '2016-17') # H3
+  seasons <- c('2011-12', '2012-13', '2013-14', '2014-15', '2016-17') # H3
 } else if (strain == 'B') {
-  seasons <- c('2010-11', '2011-12', '2012-13', '2014-15', '2015-16', '2017-18') # B
+  seasons <- c('2010-11', '2012-13', '2014-15', '2015-16', '2016-17', '2017-18') # B
 } else {
   print('AAAAGGGGGHHHHHH')
 }
@@ -113,10 +113,10 @@ for (o1 in oev_bases) {
       test_i[test_i == 0 & !is.na(test_i)] <- NA
       
       # Calculate OEVs used in network model:
-      obs_vars <- calc_obsvars_nTest(obs = obs_i, syn_dat = syn_i, ntests = test_i, posprops = pos_i, oev_base = o1, oev_denom = o2, tmp_exp = 2.0)
+      obs_vars <- 1e5 + calc_obsvars_nTest(obs = obs_i, syn_dat = syn_i, ntests = test_i, posprops = pos_i, oev_base = o1, oev_denom = o2, tmp_exp = 2.0)
       # obs_vars_old <- calc_obsvars(obs = obs_i, 1e4, 10)
       # obs_vars[obs_vars == 0 & !is.na(obs_vars)] <- NA # allow zeros to be set to min - preserve more points, and this is what would be done with a baseline anyway
-      obs_vars[obs_vars < 1e4 & !is.na(obs_vars)] <- 1e4
+      # obs_vars[obs_vars < 1e4 & !is.na(obs_vars)] <- 1e4
       
       # Store results in lists:
       oev.list[[season.index]] <- obs_vars

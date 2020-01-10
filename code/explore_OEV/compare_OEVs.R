@@ -7,7 +7,7 @@ countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK',
 count.indices <- c(1:2, 4, 6:8, 11:14, 17, 19)
 
 # Set strain.
-strain <- 'A(H3)'
+strain <- 'A(H1)'
 
 # Read in necessary data:
 iliiso <- read.csv(paste0('data/by_subtype/WHO_data_', strain, '_SCALED.csv'))
@@ -19,12 +19,13 @@ test.dat <- read.csv('data/testRates_010820.csv')
 # test.dat <- test.dat[, c(1, count.indices + 1)]
 pos.dat <- pos.dat[, c(1, count.indices + 1)]
 
+# Get relevant seasons:
 if (strain == 'A(H1)') {
   seasons <- c('2010-11', '2012-13', '2013-14', '2014-15', '2015-16', '2017-18') # H1
 } else if (strain == 'A(H3)') {
-  seasons <- c('2011-12', '2013-14', '2014-15', '2016-17') # H3
+  seasons <- c('2011-12', '2012-13', '2013-14', '2014-15', '2016-17') # H3
 } else if (strain == 'B') {
-  seasons <- c('2010-11', '2011-12', '2012-13', '2014-15', '2015-16', '2017-18') # B
+  seasons <- c('2010-11', '2012-13', '2014-15', '2015-16', '2016-17', '2017-18') # B
 } else {
   print('AAAAGGGGGHHHHHH')
 }
@@ -67,10 +68,10 @@ for (season.index in 1:length(seasons)) {
   test_i[test_i == 0 & !is.na(test_i)] <- NA
   
   # Calculate OEVs used in network model:
-  obs_vars <- calc_obsvars_nTest(obs = obs_i, syn_dat = syn_i, ntests = test_i, posprops = pos_i, 0, 2.0, tmp_exp = 2.0)
+  obs_vars <- 1e5 + calc_obsvars_nTest(obs = obs_i, syn_dat = syn_i, ntests = test_i, posprops = pos_i, 0, 2.0, tmp_exp = 2.0)
   
   # Calculate OEVs used in individual country models:
-  obs_vars.indiv <- calc_obsvars(obs = obs_i, 1e4, 10)
+  obs_vars.indiv <- calc_obsvars(obs = obs_i, 1e5, 10)
 
   # Store results in lists:
   oev.new[[season.index]] <- obs_vars
@@ -100,10 +101,10 @@ oev.df <- rbind(oev.old.df, oev.new.df)
 ### PLOTS ###
 
 # Only for season?
-p1 <- ggplot(data = oev.new.df[oev.new.df$time <= 33, ]) + labs(x = 'Weeks Since Season Start', y = 'OEV', title = 'New') +
+p1 <- ggplot(data = oev.new.df[oev.new.df$time <= 33, ]) + labs(x = 'Weeks Since Season Start', y = 'OEV', title = 'New OEV Format') +
   geom_line(aes(x = time, y = value, group = season, colour = season)) +
   facet_wrap(~ country, scales = 'free_y') + theme_bw()
-p2 <- ggplot(data = oev.old.df[oev.old.df$time <= 33, ]) + labs(x = 'Weeks Since Season Start', y = 'OEV', title = 'Old') +
+p2 <- ggplot(data = oev.old.df[oev.old.df$time <= 33, ]) + labs(x = 'Weeks Since Season Start', y = 'OEV', title = 'Old OEV Format') +
   geom_line(aes(x = time, y = value, group = season, colour = season)) +
   facet_wrap(~ country, scales = 'free_y') + theme_bw()
 
@@ -116,20 +117,20 @@ print(p1)
 oev.df <- oev.df[oev.df$time < 33, ]
 oev.df$group <- paste(oev.df$season, oev.df$model, sep = '_'); oev.df$group <- factor(oev.df$group)
 p1 <- ggplot(data = oev.df, aes(x = time, y = value, group = group, colour = model)) + geom_line() +
-  facet_wrap(~ country, scales = 'free_y') + theme_bw() + labs(x = 'Weeks Since Season Start', y = 'OEV', colour = '')
+  facet_wrap(~ country, scales = 'free_y') + theme_bw() + labs(x = 'Weeks Since Season Start', y = 'OEV', title = 'Comparison', colour = '')
 print(p1)
-# dev.off()
-
-# What about the order at which the countries are weighted?
-p1 <- ggplot(oev.old.df[oev.old.df$time <= 33, ]) + labs(x = 'Weeks Since Season Start', y = 'log(OEV)', title = 'Old') +
-  geom_line(aes(x = time, y = value, group = country, colour = country)) +
-  facet_wrap(~ season, scales = 'free_y', ncol = 3) + theme_bw() + scale_y_log10()
-p2 <- ggplot(oev.new.df[oev.new.df$time <= 33, ]) + labs(x = 'Weeks Since Season Start', y = 'log(OEV)', title = 'New') +
-  geom_line(aes(x = time, y = value, group = country, colour = country)) +
-  facet_wrap(~ season, scales = 'free_y', ncol = 3) + theme_bw() + scale_y_log10()
-grid.arrange(p1, p2, ncol = 1)
-
 dev.off()
+
+# # What about the order at which the countries are weighted?
+# p1 <- ggplot(oev.old.df[oev.old.df$time <= 33, ]) + labs(x = 'Weeks Since Season Start', y = 'log(OEV)', title = 'Old') +
+#   geom_line(aes(x = time, y = value, group = country, colour = country)) +
+#   facet_wrap(~ season, scales = 'free_y', ncol = 3) + theme_bw() + scale_y_log10()
+# p2 <- ggplot(oev.new.df[oev.new.df$time <= 33, ]) + labs(x = 'Weeks Since Season Start', y = 'log(OEV)', title = 'New') +
+#   geom_line(aes(x = time, y = value, group = country, colour = country)) +
+#   facet_wrap(~ season, scales = 'free_y', ncol = 3) + theme_bw() + scale_y_log10()
+# grid.arrange(p1, p2, ncol = 1)
+# 
+# dev.off()
 
 rm(list = ls())
 

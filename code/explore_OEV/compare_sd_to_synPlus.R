@@ -7,7 +7,7 @@ countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK',
 count.indices <- c(1:2, 4, 6:8, 11:14, 17, 19)
 
 # Set strain.
-strain <- 'B'
+strain <- 'A(H1)'
 # scaling.index <- 3
 
 # Read in necessary data:
@@ -16,17 +16,18 @@ syn.dat <- read.csv(paste0('data/by_subtype/synDatCounts_', strain, '_SCALED.csv
 pos.dat <- read.csv(paste0('data/by_subtype/posprop_', strain, '.csv'))
 test.dat <- read.csv('data/testRates_010820.csv')
 # test.dat <- read.csv('data/testCounts_052719.csv')
-load('data/by_subtype/scalings_noCutoff.RData')
+load('data/by_subtype/scalings_noCutoff_threeOverPointOne.RData')
 
 # test.dat <- test.dat[, c(1, count.indices + 1)]
 pos.dat <- pos.dat[, c(1, count.indices + 1)]
 
+# Get relevant seasons:
 if (strain == 'A(H1)') {
   seasons <- c('2010-11', '2012-13', '2013-14', '2014-15', '2015-16', '2017-18') # H1
 } else if (strain == 'A(H3)') {
-  seasons <- c('2011-12', '2013-14', '2014-15', '2016-17') # H3
+  seasons <- c('2011-12', '2012-13', '2013-14', '2014-15', '2016-17') # H3
 } else if (strain == 'B') {
-  seasons <- c('2010-11', '2011-12', '2012-13', '2014-15', '2015-16', '2017-18') # B
+  seasons <- c('2010-11', '2012-13', '2014-15', '2015-16', '2016-17', '2017-18') # B
 } else {
   print('AAAAGGGGGHHHHHH')
 }
@@ -67,8 +68,8 @@ for (season.index in 1:length(seasons)) {
   test_i[test_i == 0 & !is.na(test_i)] <- NA
   
   # Calculate OEVs used in network model:
-  obs_vars <- calc_obsvars(obs = obs_i, 1e4, 10)# calc_obsvars_nTest(obs = obs_i, syn_dat = syn_i, ntests = test_i, posprops = pos_i, 0, 2.0, tmp_exp = 2.0)
-  obs_vars_old <- calc_obsvars(obs = obs_i, 1e4, 10)
+  obs_vars <- 1e5 + calc_obsvars_nTest(obs = obs_i, syn_dat = syn_i, ntests = test_i, posprops = pos_i, 0, 2.0, tmp_exp = 2.0)
+  obs_vars_old <- calc_obsvars(obs = obs_i, 1e5, 10)
   
   # # Calculate OEVs used in individual country models:
   # obs_vars.indiv <- calc_obsvars(obs = obs_i, 1e4, 10)
@@ -141,10 +142,10 @@ p5 <- ggplot(data = rat.df) + labs(x = 'Weeks Since Season Start', y = 'Sqrt(OEV
   facet_wrap(~ country, scales = 'free_y') + theme_bw() + geom_abline(intercept = c(0.1, 0.5), slope = 0) + scale_y_continuous(limits = c(0, 1))
 
 # Save plots to pdf:
-pdf(paste0('results/explore_oev/OEV_rat_', strain, '_Old.pdf'), width = 12, height = 7)
+pdf(paste0('results/explore_oev/OEV_rat_', strain, '_testsScaled.pdf'), width = 12, height = 7)
 print(p1)
 print(p2)
-# print(p3)
+print(p3)
 print(p4)
 print(p5)
 dev.off()
@@ -159,13 +160,7 @@ dev.off()
     # But should this be? Shouldn't some countries look worse by comparison?
 # Also: Might still need to set some minimum, for very early/late in the season - maybe like 1e4? (or even 1e5)
 
-
-
-
-
-
-
-
+rm(list = ls())
 
 
 
