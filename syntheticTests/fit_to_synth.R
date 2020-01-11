@@ -1,49 +1,17 @@
 
-# This is just to plot out preliminary results
-# Eventually run in cluster and get full output files
-
-# Questions for Sen: Any issues with parameters not fitting well? What modifications did you make to the model? I0 randomly initiated everywhere or only in
-# one/some locations? Was alp consistently lower than for single-state forecasts?
-
-# [x] Try reinitiating/reprobing
-# [x] Check Sen's paper
-# [x] Check Sen's code - different start conditions (more narrow S, D up to 12, R0mn lowest at 1.0)
-# [x] Try with various amounts of error added
-    # [] And various error formats (tmp_exp)?
-# See list in Word doc
-
-# Notes from meeting w/ Jeff:
-    # [x] Also look at incidence relative to the TRUE newI, not just error-laden observations
-    # [x] Look at beta, R0, Re, S (truth)
-    # [x] Re-check humidity data; humidity data by population density?
-    # [x] Remove IS
-    # [x] Proportional random movement (~0-5%)
-    # [x] For fitting: draw all S and I from LHS
-    # [x] Use j-2 and j for first two points
-    # [x] Recode EAKF to loop through each country (like Sen), rather than using matrices?
-
-# Using alp, 0.95 is sometimes hit before t=10, and 0.9 is often hit in this time period; both again before 20 and on
-    # although 0.98 not until after main peak has passed
-# 50% error hit sometimes before 15, and much of the time after
-
-# Any reason to tune oev_base more so that it better matches up with prior_var at tt=1? Right now it's quite a bit smaller
-    # But 1e5 oev_base basically does this, and it doesn't have a strong impact on fit
-    # It does look like SE always has a relatively low initial alp - why is prior_var so large for SE?
-    # Actually not always! But does have a tendency to be on the low side
-
 ### Read in libraries
 library("truncnorm"); library("tgp"); library("MASS"); library(reshape2); require(plyr)
 library(viridis)
 
 ### Read in model functions
-source('code/SIRS_network.R')
-source('code/functions/Fn_initializations.R')
-source('code/functions/Fn_checkxnobounds.R')
-source('code/functions/Util.R')
-source('code/functions/calc_obsvars.R')
+source('cluster/SIRS_network.R')
+source('cluster/functions/Fn_initializations.R')
+source('cluster/functions/Fn_checkxnobounds.R')
+source('cluster/functions/Util.R')
+source('cluster/functions/calc_obsvars.R')
 
-### Read in filter function
-source('syntheticTests/EAKF_rFC_Synth.R')
+# ### Read in filter function
+# source('syntheticTests/EAKF_rFC_Synth.R')
 
 ### Headers for output functions:
 metrics_header <- c('outbreak', 'run', 'oev_base', 'oev_denom', 'lambda', 'country', 'pkwk',
@@ -62,31 +30,36 @@ tmstep <- 7 # "data" are weekly
 wk_start <- 40
 
 ### Parameter boundaries
-D_low <- 1.5; L_low <- 1*365; Rmx_low <- 1.3; Rmn_low <- 0.8; airScale_low <- 0.75
-D_up <- 7; L_up <- 10*365; Rmx_up <- 4; Rmn_up <- 1.2; airScale_up <- 1.25
+# D_low <- 1.5; L_low <- 1*365; Rmx_low <- 1.3; Rmn_low <- 0.8; airScale_low <- 0.75
+# D_up <- 7; L_up <- 10*365; Rmx_up <- 4; Rmn_up <- 1.2; airScale_up <- 1.25
+
+D_low <- 2; L_low <- 1*365; Rmx_low <- 2.0; Rdiff_low <- 0.2; airScale_low <- 0.75
+D_up <- 7; L_up <- 8*365; Rmx_up <- 2.8; Rdiff_up <- 1.0; airScale_up <- 1.25
+
 theta_low <- c(L_low, D_low, Rmx_low, Rmn_low, airScale_low)
 theta_up <- c(L_up, D_up, Rmx_up, Rmn_up, airScale_up)
 param.bound <- cbind(theta_low, theta_up)
 
 ### Initial state variable values
-S0_low <- 0.50; S0_up <- 0.90 # proportion of population
-I0_low <- 0; I0_up <- 0.001 # proportion of population
+S0_low <- 0.30; S0_up <- 0.90 # proportion of population
+I0_low <- 0; I0_up <- 0.00005 # proportion of population
 
 ### Parameters for the filters
 discrete <- FALSE # run the SIRS model continuously
 metricsonly <- FALSE # save all outputs
-lambda <- 1.01 # inflation factor for the ensemble filters c(1.00, 1.01, 1.02, 1.03, 1.05, 1.075?)
-oev_base <- 1e4; oev_denom <- 10.00
+
+lambda <- 1.01 # 1.01, 1.03, 1.05
+oev_base <- 1e4 # 1e4, 1e5 (but probably 1e4)
+oev_denom <- 10.00 # 1, 10, 100
 # most similar to observed data seem to be 1e4/10, 1e4/20, and 1e5/20 (even 1e5/10, although a lot of error), based on visual similarity
 # OEVs look more like those calculated from Aim1 if denominator is 10 (although I know this isn't a great test)
 
 num_ens <- 300 # use 300 for ensemble filters, 10000 for particle filters
-num_runs <- 1
+num_runs <- 3
 
 ### Specify the country for which we are performing a forecast
-countries <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'FR', 'DE', 'HU', 'IE', 'IT',
-               'LU', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'UK')
-count.indices <- c(1:8, 10:21)
+countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
+count.indices <- c(1:2, 4, 6:8, 11:14, 17, 19)
 
 ### Set population sizes and # of countries used
 pop.size <- read.csv('data/popcounts_02-07.csv')
@@ -97,11 +70,11 @@ pop.size <- pop.size[match(countries, pop.size$country), ]
 ah <- read.csv('../GLDAS_data/ah_Europe_07142019.csv')
 AH <- rbind(ah[, count.indices], ah[, count.indices])
 
-### Read in influenza "data":
-load('syntheticTests/syntheticData/synth_07-14_RATES.RData')
-synth.runs.TRUE <- synth.runs.RATES
-load('syntheticTests/syntheticData/synth_07-14_RATES_wError_1e4_10.RData')
-# use rates b/c for observed data we used scaled data, which are meant to represent rates per 100,000 population
+# ### Read in influenza "data":
+# load('syntheticTests/syntheticData/synth_07-14_RATES.RData')
+# synth.runs.TRUE <- synth.runs.RATES
+# load('syntheticTests/syntheticData/synth_07-14_RATES_wError_1e4_10.RData')
+# # use rates b/c for observed data we used scaled data, which are meant to represent rates per 100,000 population
 
 ### Initialize output data frames
 outputMetrics <- NULL
@@ -109,7 +82,7 @@ outputOP <- NULL
 outputS = outputI = outputS_sd = outputI_sd = outputAlps = vector('list', length(to.keep) * num_runs)
 
 ### Load commuting data:
-load('formatTravelData/formattedData/comm_mat_by_year_05-07.RData')
+load('formatTravelData/formattedData/comm_mat_by_year_05-07_RELIABLE_ONLY.RData')
 t.comm <- apply(simplify2array(comm.by.year), 1:2, mean); rm(comm.by.year)
 t.comm <- t.comm[countries, countries]
 
@@ -122,7 +95,7 @@ diag(N) <- unlist(lapply(1:n, function(ix) {
 
 ### Set important values for fitting: #!!!
 tm.ini <- 273 - 1 #270 - 1
-tm.range <- 273:600 #270:600
+tm.range <- 273:573 #270:600
 
 ### Loop through synthetic runs:
 pos <- 1
@@ -130,7 +103,7 @@ for (outbreak in 1:length(to.keep)) {
   # outbreak <- 1
   
   # Get true parameter values:
-  load('syntheticTests/syntheticData/params_07-14.RData')
+  # load('syntheticTests/syntheticData/params_07-14.RData')
   true.params <- select.parms[to.keep[outbreak], ]
   print(true.params)
   

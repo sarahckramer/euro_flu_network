@@ -32,7 +32,7 @@ D_up <- 7; L_up <- 10*365; Rmx_up <- 2.8; Rdiff_up <- 1.2; airScale_up <- 1.25
 # D_up <- 7; L_up <- 10*365; Rmx_up <- 2.8; Rdiff_up <- 1.0; airScale_up <- 1.25
 
 D_low <- 2; L_low <- 3*365; Rmx_low <- 2.0; Rdiff_low <- 0.2; airScale_low <- 0.75
-D_up <- 7; L_up <- 10*365; Rmx_up <- 2.8; Rdiff_up <- 1.2; airScale_up <- 1.25
+D_up <- 7; L_up <- 10*365; Rmx_up <- 2.8; Rdiff_up <- 1.0; airScale_up <- 1.25
 
 # D_low <- 2; L_low <- 3*365; Rmx_low <- 2.2; Rdiff_low <- 0.2; airScale_low <- 0.75
 # D_up <- 6; L_up <- 10*365; Rmx_up <- 2.8; Rdiff_up <- 1.2; airScale_up <- 1.25
