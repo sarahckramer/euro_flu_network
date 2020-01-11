@@ -30,7 +30,7 @@ discrete <- FALSE # run the SIRS model continuously
 metricsonly <- FALSE # save all outputs
 
 # seasons <- c('2010-11', '2011-12', '2012-13', '2013-14', '2014-15', '2015-16', '2016-17', '2017-18') # ADD '2018-19'
-seasons <- c('2010-11', '2012-13', '2013-14', '2014-15', '2015-16', '2017-18') # H1
+seasons <- c('2010-11', '2012-13')#, '2013-14', '2014-15', '2015-16', '2017-18') # H1
 # seasons <- c('2011-12', '2012-13', '2013-14', '2014-15', '2016-17') # H3
 # seasons <- c('2010-11', '2012-13', '2014-15', '2015-16', '2016-17', '2017-18') # B
 
@@ -39,7 +39,7 @@ oev_denom <- 2.0 #oevDenom_list[ceiling((task.index - 78) / 78) %% 3 + 1]
 lambda <- 1.05 #lambdaList[ceiling((task.index - 26) / 26) %% 3 + 1]
 
 num_ens <- 300 # use 300 for ensemble filters, 10000 for particle filters
-num_runs <- 2
+num_runs <- 1
 
 # Specify countries:
 countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
@@ -103,8 +103,8 @@ outputDist <- NULL
 outputEns <- NULL
 
 ### Main fitting code:
-#for (season in seasons) {
-season <- '2012-13'  
+for (season in seasons) {
+# season <- '2010-11'  
 
   # Get commuting data:
   load('formatTravelData/formattedData/comm_mat_by_year_05-07_RELIABLE_ONLY.RData')
@@ -160,7 +160,7 @@ season <- '2012-13'
   tm.ini <- clim_start - 1 # the end of the former week
   tm.range <- clim_start:clim_end
   
-  ntrn <- 10
+  ntrn <- 20
   run <- 1
   
   for (run in 1:num_runs) {
@@ -176,7 +176,7 @@ season <- '2012-13'
     # outputVars = rbind(outputVars, cbind(season, run, lambda, res$vars))
   }
   
-#}
+}
 
 colnames(outputMetrics)[6] <- 'scaling'
 
@@ -191,43 +191,137 @@ outputMetrics[outputMetrics[, 'country'] == 'FR' & outputMetrics[, 'season'] %in
 # 
 # all.equal(res, res.py)
 
-write.csv(outputMetrics, file = 'python/results/outputMet_Rcomp3.csv', row.names = FALSE)
-write.csv(outputOP, file = 'python/results/outputOP_Rcomp3.csv', row.names = FALSE)
-write.csv(outputOPParams, file = 'python/results/outputOPParams_Rcomp3.csv', row.names = FALSE)
-write.csv(outputDist, file = 'python/results/outputDist_Rcomp3.csv', row.names = FALSE)
-write.csv(outputEns, file = 'python/results/outputEns_Rcomp3.csv', row.names = FALSE)
+write.csv(outputMetrics, file = 'python/results/outputMet_Rcomp_20.csv', row.names = FALSE)
+write.csv(outputOP, file = 'python/results/outputOP_Rcomp_20.csv', row.names = FALSE)
+write.csv(outputOPParams, file = 'python/results/outputOPParams_Rcomp_20.csv', row.names = FALSE)
+write.csv(outputDist, file = 'python/results/outputDist_Rcomp_20.csv', row.names = FALSE)
+write.csv(outputEns, file = 'python/results/outputEns_Rcomp_20.csv', row.names = FALSE)
 
 rm(list = ls())
 
-outputMetrics <- read.csv('python/results/outputMet_Rcomp3.csv')
-outputOP <- read.csv('python/results/outputOP_Rcomp3.csv')
-outputDist <- read.csv('python/results/outputDist_Rcomp3.csv')
+outputMetrics <- read.csv('python/results/outputMet_Rcomp_20.csv')
+outputOP <- read.csv('python/results/outputOP_Rcomp_20.csv')
 
+a <- read.csv('python/results/outputMet_updated2.csv')
+b <- read.csv('python/results/outputOP_updated2.csv')
 
-a <- read.csv('python/results/outputMet4.csv')
-b <- read.csv('python/results/outputOP4.csv')
-
-b <- b[b$season == '2012-13' & b$fc_start == 59, ]
+b <- b[b$fc_start == 59, ]
 op <- outputOP[outputOP$run == 1, ]
 
 countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
 b$country <- factor(b$country)
 levels(b$country) <- countries
 
-p1 <- ggplot(data = b, aes(x = week, y = Est, colour = result)) + geom_line() + facet_wrap(~ country) + theme_classic() +
+p1 <- ggplot(data = b, aes(x = week, y = Est, colour = result, group = season)) + geom_line() + facet_wrap(~ country) + theme_classic() +
   geom_point(data = op, size = 1.1)
 p1
 
-d <- merge(b, op, by = c('country', 'result', 'week'))
+d <- merge(b, op, by = c('country', 'result', 'week', 'season', 'fc_start', 'oev_base', 'oev_denom', 'lambda', 'time'))
 all.equal(d$Est.x, d$Est.y)
 all.equal(d$Est.x[d$result == 'train'], d$Est.y[d$result == 'train'])
 all.equal(d$Est.x[d$result == 'fcast'], d$Est.y[d$result == 'fcast'])
-# still higher error than with first try, though
+# these all say all equal
+# at 20, mean relative difference of ~0.0004; worse for fcast part since accumulation has happened (~0.0016)
 
-which(d$Est.x == d$Est.y) # only SK, week 40, training
-which(d$S.x == d$S.y) # never
-which(d$I.x == d$I.y) # DE, week 40, training
-# so only exactly equal very early on
+which(d$Est.x == d$Est.y)
+which(d$S.x == d$S.y)
+which(d$I.x == d$I.y)
+# never exactly equal...
+# 20: some actually are exactly equal here? but these are weeks that weren't caught before, so maybe tolerance changed
+
+# op <- op[op$result == 'fcast', ]
+
+all.equal(op$S, b$S)
+all.equal(op$I, b$I)
+all.equal(op$Est, b$Est)
+all.equal(op$S_sd, b$S_sd)
+all.equal(op$I_sd, b$I_sd)
+all.equal(op$Est_sd, b$Est_sd)
+# all equal at fc_start 44
+# all diff at fc_start 59 - but within 0.0003ish (0.003 for I_sd/Est_sd)
+
+a <- a[a$fc_start == 59, ]
+outputMetrics <- outputMetrics[outputMetrics$run == 1, ]
+all.equal(a$obs_pkwk, outputMetrics$obs_pkwk) # same
+all.equal(a$pkwk_mean, outputMetrics$pkwk_mean) # same
+all.equal(a$pkwk_sd, outputMetrics$pkwk_sd) # 0.00028
+all.equal(a$obs_peak_int, outputMetrics$obs_peak_int) # same
+all.equal(a$peak_intensity, outputMetrics$peak_intensity) # 6.5e-5
+all.equal(a$peak_intensity_sd, outputMetrics$peak_intensity_sd) # 0.00019
+all.equal(a$obs_1week, outputMetrics$obs_1week) # these are equal now!
+all.equal(a$obs_2week, outputMetrics$obs_2week)
+all.equal(a$obs_3week, outputMetrics$obs_3week)
+all.equal(a$obs_4week, outputMetrics$obs_4week)
+all.equal(a$fcast_1week, outputMetrics$fcast_1week) # this and next 3 have small errors (~0.0002-4, more as further)
+all.equal(a$fcast_2week, outputMetrics$fcast_2week)
+all.equal(a$fcast_3week, outputMetrics$fcast_3week)
+all.equal(a$fcast_4week, outputMetrics$fcast_4week)
+all.equal(a$onsetObs5, outputMetrics$onsetObs5)
+all.equal(a$onset5, outputMetrics$onset5)
+all.equal(a$onset5_sd, outputMetrics$onset5_sd) # all onsets same
+all.equal(a$corr, outputMetrics$corr)
+all.equal(a$rmse, outputMetrics$rmse)
+all.equal(a$corr_fcast, outputMetrics$corr_fcast)
+all.equal(a$rmse_fcast, outputMetrics$rmse_fcast)
+# small errors on those last 4, but not seeing anything extreme
+  # are they all handling NAs correctly? - doesn't look to be a problem!
+
+outputDist <- read.csv('python/results/outputDist_Rcomp_20.csv')
+outputEns <- read.csv('python/results/outputEns_Rcomp_20.csv')
+outputOPParams <- read.csv('python/results/outputOPParams_Rcomp_20.csv')
+
+d <- read.csv('python/results/outputDist_updated2.csv')
+e <- read.csv('python/results/outputEns_updated2.csv')
+op <- read.csv('python/results/outputOPParams_updated2.csv')
+
+# # Stuff should no longer equal old:
+# b <- read.csv('python/results/outputOP_updated.csv')
+# o.old <- read.csv('python/results/outputOP1.csv')
+# o.old2 <- read.csv('python/results/outputOP_allZeros.csv')
+# all.equal(o.old, o.old2)
+# all.equal(b, o.old)
+# all.equal(b, o.old2)
+
+# opparams: these we'll check at 20
+all.equal(op[, 3:12], outputOPParams[, 9:18])
+# minor differences, mostly <0.0001 with L as exception
+plot(op$L); lines(outputOPParams$L)
+
+d <- d[d$fc_start == 59, ]
+# d <- d[d$season == '2012-13', ]
+# d <- d[, c(2:5)]
+levels(d$metric)
+levels(outputDist$metric)
+outputDist <- outputDist[outputDist$metric %in% levels(outputDist$metric)[c(5:8, 11, 14:15)], ]
+outputDist$metric <- factor(outputDist$metric)
+levels(outputDist$metric) <- c('nextweek1', 'nextweek2', 'nextweek3', 'nextweek4', 'onset5', 'pi', 'pw')
+outputDist <- outputDist[outputDist$run == 1, ]
+# outputDist <- outputDist[, c(7:10)]
+d$run <- NULL; outputDist$run <- NULL
+d.new <- merge(d, outputDist, by = c('fc_start', 'metric', 'bin', 'country', 'season'))
+all.equal(d.new$value.x, d.new$value.y) # 0.9765098 - that's not great - something in labeling the bins is wrong here
+# at time point 5 all are equal here
+# 0.0308 - not great, but might be just rounding error now?
+all.equal(d.new$value.x[d.new$metric == 'nextweek1'], d.new$value.y[d.new$metric == 'nextweek1'])
+all.equal(d.new$value.x[d.new$metric == 'nextweek2'], d.new$value.y[d.new$metric == 'nextweek2'])
+all.equal(d.new$value.x[d.new$metric == 'nextweek3'], d.new$value.y[d.new$metric == 'nextweek3'])
+all.equal(d.new$value.x[d.new$metric == 'nextweek4'], d.new$value.y[d.new$metric == 'nextweek4'])
+# 0.01-0.05, depending
+all.equal(d.new$value.x[d.new$metric == 'onset5'], d.new$value.y[d.new$metric == 'onset5']) # all equal!
+all.equal(d.new$value.x[d.new$metric == 'pi'], d.new$value.y[d.new$metric == 'pi']) # 0.044
+all.equal(d.new$value.x[d.new$metric == 'pw'], d.new$value.y[d.new$metric == 'pw']) # 0.026
+
+all.equal(outputDist$metric, d$metric)
+all.equal(outputDist$bin, d$bin)
+all.equal(outputDist$country, d$country)
+all.equal(outputDist$value, d$value)
+# all equal except maybe a one-off with weeks for PT/onset
+
+e <- e[e$fc_start == 59, ]
+outputEns <- outputEns[outputEns$metric != 'ar', ]; outputEns$metric <- factor(outputEns$metric)
+all.equal(outputEns[, 9:308], e[, 4:303])
+# only a few ensemble members off (10^-7-^-8 range)
+# yep, all pretty small-scale differences
 
 
 

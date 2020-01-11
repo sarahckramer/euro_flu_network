@@ -22,23 +22,19 @@ oev_base = np.float64(0)
 oev_denom = np.float64(2.0)
 lambda_val = np.float64(1.05)
 num_ens = 300
-num_runs = 1  # EVENTUALLY WANT 5
+num_runs = 3  # EVENTUALLY WANT 5
 
 # Vector of countries used
 countries = np.array(['AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES'])
-# count_indices = (1, 2, 4, 6, 7, 8, 11, 12, 13, 14, 17, 19)
 count_indices = [0, 1, 3, 5, 6, 7, 10, 11, 12, 13, 16, 18]
 n = len(countries)
 
+# Read in additional French scalings:
+scalings_fr = pd.read_csv('../data/by_subtype/scalings_frame_FR.csv')
+
 # Read in data and set seasons:
-if strain == 'all':
-    seasons = ('2010-11', '2011-12', '2012-13', '2013-14', '2014-15', '2015-16', '2016-17', '2017-18')
-    # DATA #
-elif strain == 'A(all)':
-    seasons = ('2010-11', '2011-12', '2012-13', '2013-14', '2014-15', '2015-16', '2016-17', '2017-18')
-    # DATA #
-elif strain == 'A(H1)':
-    seasons = ('2010-11', '2012-13')  # , '2013-14', '2014-15', '2015-16', '2017-18') # H1
+if strain == 'A(H1)':
+    seasons = ('2010-11', '2012-13', '2013-14', '2014-15', '2015-16', '2017-18') # H1
 
     iliiso = pd.read_csv('../data/by_subtype/WHO_data_A(H1)_SCALED.csv')
     test_dat = pd.read_csv('../data/testRates_010820.csv')
@@ -49,13 +45,39 @@ elif strain == 'A(H1)':
     pos_dat = pos_dat[iliiso.columns]
 
     scalings = pd.read_csv('../data/by_subtype/scalings_frame_A(H1).csv')
+    scalings_early = pd.read_csv('../data/by_subtype/scalings_frame_A(H1).csv')
+    scalings_early['gamma'][3] = scalings_fr['x'][0]
 
 elif strain == 'A(H3)':
     seasons = ('2011-12', '2012-13', '2013-14', '2014-15', '2016-17')  # H3
-    # DATA #
+
+    iliiso = pd.read_csv('../data/by_subtype/WHO_data_A(H3)_SCALED.csv')
+    test_dat = pd.read_csv('../data/testRates_010820.csv')
+    syn_dat = pd.read_csv('../data/by_subtype/synDatCounts_A(H3)_SCALED.csv')
+    pos_dat = pd.read_csv('../data/by_subtype/posprop_A(H3).csv')
+
+    # test_dat = test_dat[iliiso.columns]
+    pos_dat = pos_dat[iliiso.columns]
+
+    scalings = pd.read_csv('../data/by_subtype/scalings_frame_A(H3).csv')
+    scalings_early = pd.read_csv('../data/by_subtype/scalings_frame_A(H3).csv')
+    scalings_early['gamma'][3] = scalings_fr['x'][1]
+
 elif strain == 'B':
     seasons = ('2010-11', '2012-13', '2014-15', '2015-16', '2016-17', '2017-18')  # B
-    # DATA #
+
+    iliiso = pd.read_csv('../data/by_subtype/WHO_data_B_SCALED.csv')
+    test_dat = pd.read_csv('../data/testRates_010820.csv')
+    syn_dat = pd.read_csv('../data/by_subtype/synDatCounts_B_SCALED.csv')
+    pos_dat = pd.read_csv('../data/by_subtype/posprop_B.csv')
+
+    # test_dat = test_dat[iliiso.columns]
+    pos_dat = pos_dat[iliiso.columns]
+
+    scalings = pd.read_csv('../data/by_subtype/scalings_frame_B.csv')
+    scalings_early = pd.read_csv('../data/by_subtype/scalings_frame_B.csv')
+    scalings_early['gamma'][3] = scalings_fr['x'][2]
+
 else:
     print('Error: Subtype not recognized.')
     sys.exit()
@@ -69,23 +91,10 @@ ah = ah.append(ah)
 ah = ah.to_numpy(dtype=np.float64)
 
 # Read in air travel data:
-a_rand = np.zeros([12, n, n])
+a_rand = np.zeros([12, n, n], dtype=np.float64)
 for i in range(n):
     a_rand[i] = np.loadtxt('air_travel/aRand' + str(i + 1) + '.txt', unpack=True)
 a_rand.astype(dtype=np.float64, order='C')
-
-# a_rand_comp = {'Jan': np.loadtxt('air_travel/aRand1.txt', unpack=True),
-#                'Feb': np.loadtxt('air_travel/aRand2.txt', unpack=True),
-#                'Mar': np.loadtxt('air_travel/aRand3.txt', unpack=True),
-#                'Apr': np.loadtxt('air_travel/aRand4.txt', unpack=True),
-#                'May': np.loadtxt('air_travel/aRand5.txt', unpack=True),
-#                'Jun': np.loadtxt('air_travel/aRand6.txt', unpack=True),
-#                'Jul': np.loadtxt('air_travel/aRand7.txt', unpack=True),
-#                'Aug': np.loadtxt('air_travel/aRand8.txt', unpack=True),
-#                'Sep': np.loadtxt('air_travel/aRand9.txt', unpack=True),
-#                'Oct': np.loadtxt('air_travel/aRand10.txt', unpack=True),
-#                'Nov': np.loadtxt('air_travel/aRand11.txt', unpack=True),
-#                'Dec': np.loadtxt('air_travel/aRand12.txt', unpack=True)}
 
 # Season-specific start and end dates:
 clim_start_dict = {'2010-11': 276, '2011-12': 275, '2012-13': 274, '2013-14': 272, '2014-15': 271, '2015-16': 270,
@@ -132,14 +141,11 @@ for season_index in range(len(seasons)):
 
     # Replace leading/lagging zeros:
     for count_index in range(n):
-        # print(count_index)
-        # obs_i.iloc[:, count_index + 1]
         replaceLeadLag(obs_i.iloc[:, count_index + 1])
         replaceLeadLag(syn_i.iloc[:, count_index + 1])
         replaceLeadLag(pos_i.iloc[:, count_index + 1])
 
     # Replace 0s in test_i w/ NA (b/c can't divide by 0!):
-    # print(test_i)
     for count_index in range(n):
         if any(test_i.iloc[:, count_index + 1] == 0):
             print('0s found in test data!')
@@ -149,14 +155,8 @@ for season_index in range(len(seasons)):
     # obs_vars[np.where(np.less(obs_vars, 1e3, where=~isnan(obs_vars)) & ~np.isnan(obs_vars))] = 1e3
     # DO WE NEED DATES?
 
-    obs_i.to_csv('results/obs_i.csv', na_rep='NA', index=False)
-    np.savetxt('results/obs_vars.txt', obs_vars, delimiter=',')
-
     # Get time start and time range:
     tm_ini = clim_start_dict[season] - 2  # b/c python indexes at 0, while R does it at 1
-    # tm_range = range(clim_start_dict[season], clim_end_dict[season] + 1, 1)
-    # tm_range = range(clim_start_dict[season] - 1, clim_end_dict[season], 1)  # see previous note
-    # tm_range = list(tm_range)
     tm_range1 = [i for i in range(clim_start_dict[season] - 1, clim_end_dict[season], 1)]
     tm_range = List()
     [tm_range.append(i) for i in tm_range1]
@@ -185,7 +185,10 @@ for season_index in range(len(seasons)):
         outputMet_temp['oev_base'] = oev_base
         outputMet_temp['oev_denom'] = oev_denom
         outputMet_temp['lambda'] = lambda_val
-        outputMet_temp['scaling'] = np.tile(scalings['gamma'], int(outputMet_temp.shape[0] / n))
+        if season in ('2010-11', '2011-12', '2012-13', '2013-14'):
+            outputMet_temp['scaling'] = np.tile(scalings_early['gamma'], int(outputMet_temp.shape[0] / n))
+        else:
+            outputMet_temp['scaling'] = np.tile(scalings['gamma'], int(outputMet_temp.shape[0] / n))
 
         outputMet_temp = outputMet_temp.assign(**{'season': season, 'run': run, 'oev_base': oev_base,
                                                   'oev_denom': oev_denom, 'lambda': lambda_val,
@@ -208,20 +211,19 @@ for season_index in range(len(seasons)):
 
     print()
 
-outputMetrics.to_csv('results/outputMet1.csv', na_rep='NA', index=False)
-outputOP.to_csv('results/outputOP1.csv', na_rep='NA', index=False)
-outputOPParams.to_csv('results/outputOPParams1.csv', na_rep='NA', index=False)
-outputDist.to_csv('results/outputDist1.csv', na_rep='NA', index=False)
-outputEns.to_csv('results/outputEns1.csv', na_rep='NA', index=False)
+# Fix scaling value for early season FR?:
+# Think I managed to do that up earlier
 
+# outputMetrics.to_csv('results/outputMet_check.csv', na_rep='NA', index=False)
+# outputOP.to_csv('results/outputOP_check.csv', na_rep='NA', index=False)
+# outputOPParams.to_csv('results/outputOPParams_check.csv', na_rep='NA', index=False)
+# outputDist.to_csv('results/outputDist_check.csv', na_rep='NA', index=False)
+# outputEns.to_csv('results/outputEns_check.csv', na_rep='NA', index=False)
 
-# Then here we will collect all the results, fix scaling issue in FR (or do in R)?, and write to file
-# And add functionality for other subtypes!
-# Check against R code using same parameter/state inputs
-        # Fixed: S by country calculated wrong; week number for forecasts was one too low
-        # Fixed: replaceLeadLag didn't go all the way to start
-        # Still not exactly same as R code, though: check through code to see that all same; check that all float64
-# change to 32bit? (to see what impact rounding error could have)
-# GPU?
-# error with correlations
-# deal with warnings on right sidebar
+outputMetrics.to_csv('results/outputMet_H1_0_2.csv', na_rep='NA', index=False)
+outputOP.to_csv('results/outputOP_H1_0_2.csv', na_rep='NA', index=False)
+outputOPParams.to_csv('results/outputOPParams_H1_0_2.csv', na_rep='NA', index=False)
+outputDist.to_csv('results/outputDist_H1_0_2.csv', na_rep='NA', index=False)
+outputEns.to_csv('results/outputEns_H1_0_2.csv', na_rep='NA', index=False)
+
+# error with correlations? i think it's okay to ignore - just passes nan when there's nothing to correlate I assume

@@ -1,25 +1,18 @@
 import numpy as np
-import cupy as cp
+# import cupy as cp
 
 
 def replaceLeadLag(vals_temp):
-    # print(vals_temp)
-    # print(np.isnan(vals_temp).all())
     if any(np.isnan(vals_temp)) and not np.isnan(vals_temp).all():
         start_index = 0
-        # print(vals_temp[start_index])
         while vals_temp[start_index] == 0 or np.isnan(vals_temp[start_index]):
             start_index += 1
         start_index = start_index  # - 1
-
-        # print(start_index)
 
         end_index = len(vals_temp) - 1
         while vals_temp[end_index] == 0 or np.isnan(vals_temp[end_index]):
             end_index -= 1
         end_index = end_index + 1
-
-        # print(end_index)
 
         if start_index >= 0:
             vals_temp[:start_index] = 0
@@ -27,13 +20,34 @@ def replaceLeadLag(vals_temp):
         if end_index < len(vals_temp):
             vals_temp[end_index:] = 0
 
-        # print(vals_temp)
     return vals_temp
 
 
-def calc_obsvars_nTest(obs, syndat, ntests, posprops, oev_base, oev_denom, n):
-    # print(posprops.iloc[:, 1:(n+1)])
+def calc_obsvars(obs, oev_base, oev_denom, n):
+    # NOT TESTED
+    obs = obs.iloc[:, 1:(n + 1)].to_numpy(dtype=np.float64)
 
+    tmp = np.zeros([obs.shape[0], obs.shape[1]], dtype=np.float64)
+    for i in range(obs.shape[1]):
+        for j in range(2, obs.shape[0]):
+            tmp[j, i] = np.NaN if np.all(
+                obs[range(j - 2, j + 1), i] != obs[range(j - 2, j + 1), i]) else np.nanmean(
+                obs[range(j - 2, j + 1), i])
+        tmp[1, i] = np.NaN if np.all(obs[0:2, i] != obs[0:2, i]) else np.nanmean(obs[0:2, i])
+        if not np.isnan(obs[0, i]):
+            tmp[0, i] = obs[0, i]
+        else:
+            tmp[0, i] = np.nan
+
+    vars_temp = np.zeros([obs.shape[0], obs.shape[1]], dtype=np.float64)
+    for i in range(obs.shape[1]):
+        vars_temp[:, i] = oev_base + (np.square(tmp[:, i]) / oev_denom)
+
+    return vars_temp
+
+
+def calc_obsvars_nTest(obs, syndat, ntests, posprops, oev_base, oev_denom, n):
+    # noinspection PyUnusedLocal
     obs = obs.iloc[:, 1:(n + 1)].to_numpy(dtype=np.float64)
     syndat = syndat.iloc[:, 1:(n + 1)].to_numpy(dtype=np.float64)
     ntests = ntests.iloc[:, 1:(n + 1)].to_numpy(dtype=np.float64)
@@ -53,7 +67,6 @@ def calc_obsvars_nTest(obs, syndat, ntests, posprops, oev_base, oev_denom, n):
             tmp[0, i] = posprops[0, i]
         else:
             tmp[0, i] = np.nan
-    # print(tmp)
 
     tmp_syn = np.zeros([syndat.shape[0], syndat.shape[1]], dtype=np.float64)
     for i in range(syndat.shape[1]):
@@ -66,7 +79,6 @@ def calc_obsvars_nTest(obs, syndat, ntests, posprops, oev_base, oev_denom, n):
             tmp_syn[0, i] = syndat[0, i]
         else:
             tmp_syn[0, i] = np.nan
-    # print(tmp_syn)
 
     tmp_test = np.zeros([ntests.shape[0], ntests.shape[1]], dtype=np.float64)
     for i in range(ntests.shape[1]):
@@ -79,7 +91,6 @@ def calc_obsvars_nTest(obs, syndat, ntests, posprops, oev_base, oev_denom, n):
             tmp_test[0, i] = ntests[0, i]
         else:
             tmp_test[0, i] = np.nan
-    # print(tmp_test)
 
     # NAs here are either NAs in data, or else leading/lagging 0s (which were originally NAs)
     # Originally, error in first 2 weeks was just set to oev_base
@@ -87,12 +98,7 @@ def calc_obsvars_nTest(obs, syndat, ntests, posprops, oev_base, oev_denom, n):
     # Incorporate syndromic counts:
     vars_temp = np.zeros([posprops.shape[0], posprops.shape[1]], dtype=np.float64)
     for i in range(posprops.shape[1]):
-        # print(i)
-        # print(tmp_syn[:, i])
-        # print(tmp_test[:, i])
-        # print(tmp_syn[:, i] / tmp_test[:, i])
         vars_temp[:, i] = (np.square(tmp_syn[:, i]) / tmp_test[:, i]) * (oev_base + (np.square(tmp[:, i]) / oev_denom))
-    # print(vars_temp.shape)
 
     return vars_temp
 
@@ -156,7 +162,7 @@ def fn_checkxnobounds(xnew, S_rows, I_rows, param_rows, popN, n_count):
     if ug <= 1.0:
         for jj in range(n_ens):
             if xnew[param_rows[1], jj] < 0.5:
-                print('We did it! (D)')
+                # print('We did it! (D)')
                 xnew[param_rows[1], jj] = np.maximum(np.median(xnew[param_rows[1], :]), 0.5)
 
     ug = np.min(xnew[param_rows[2], :] - xnew[param_rows[3], :])  # Correct if R0mx < R0diff
@@ -192,4 +198,4 @@ def findOnset(vals, baseline):
         if not np.isnan(onset) and not np.isnan(end):
             duration = end - onset + 1
 
-    return (onset, end, duration)
+    return onset, end, duration

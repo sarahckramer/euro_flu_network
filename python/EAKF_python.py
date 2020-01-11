@@ -16,22 +16,9 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
     # Initialize arrays:
     xprior = np.zeros([np.square(n) * 3 + 5, num_ens, ntrn + 1], dtype=np.float64)
     xpost = np.zeros([np.square(n) * 3 + 5, num_ens, ntrn], dtype=np.float64)
-    # fcast = np.zeros([np.square(n) * 3, num_ens, nfc])
 
     obsprior = np.zeros([n, num_ens, ntrn + 1], dtype=np.float64)  # in R initialized with NAs - is "empty" okay?
     obspost = np.zeros([n, num_ens, ntrn], dtype=np.float64)
-
-    '''
-    xprior = np.zeros([np.square(n) * 3 + 5, num_ens, nsn + 1])
-    xpost = np.zeros([np.square(n) * 3 + 5, num_ens, nsn])
-    #fcast = np.zeros([np.square(n) * 3, num_ens, nfc])
-
-    obsprior = np.empty([n, num_ens, nsn + 1])
-    obspost = np.empty([n, num_ens, nsn])
-    # set these instead so that they can run for the entire outbreak period, and we can generate forecasts at each
-    # time step as we go?
-    # but in reality we only train through week 30, since this is our final forecast - so just put 30 in for ntrn?
-    '''
 
     # Where each state/param stored:
     S_indices = range(np.square(n))
@@ -81,20 +68,7 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
     xprior[range(np.square(n) * 3), :, 0] = run_ensemble(tmStrt=tcurrent + dt, tmEnd=tcurrent + tm_step, tmStep=dt,
                                                          tmRange=tm_range, S0=S0_temp, I0=I0_temp, popN=N,
                                                          D=D_temp, L=L_temp, beta=beta, airScale=airScale_temp,
-                                                         Countries=countries, n=n, airRand=airRand, num_ens=300)
-    # for i in range(num_ens):
-    #     Sr_tmp = propagate_SIRS(tmStrt=tcurrent + dt, tmEnd=tcurrent + tm_step, tmStep=dt, tmRange=tm_range,
-    #                             S_0=S0_temp[:, :, i], I_0=I0_temp[:, :, i], popN=N,
-    #                             D_d=D_temp[i], L_d=L_temp[i], beta_d=beta[:, :, i], airScale_d=airScale_temp[i],
-    #                             Countries=countries, n_count=n, airRand=airRand)
-    #     # Question: tmRange is beta_range or tm_range? - SIRS code only ever uses index 0, which is same for both,
-    #     # so it doesn't matter
-    #
-    #     xprior[S_indices, i, 0] = Sr_tmp[0][Sr_tmp[0].shape[0] - 1].reshape([1, np.square(n)])
-    #     xprior[I_indices, i, 0] = Sr_tmp[1][Sr_tmp[1].shape[0] - 1].reshape([1, np.square(n)])
-    #     xprior[newI_indices, i, 0] = Sr_tmp[2][Sr_tmp[2].shape[0] - 1].reshape([1, np.square(n)])
-    # del i
-
+                                                         n=n, airRand=airRand, num_ens=300)
     xprior[param_indices, :, 0] = init_parms
 
     # Also calculate total newI for each country:
@@ -105,9 +79,6 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
     # Begin training:
     obs_i = obs_i.iloc[:, 1:(n + 1)].to_numpy(dtype=np.float64)
     # print(obs_i)
-
-    # # Check!:
-    np.savetxt('results/xprior.txt', xprior[:, 4, 0], delimiter=',')
 
     for tt in range(ntrn):
         print('Time: ' + str(tt))
@@ -132,10 +103,6 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
         xprior[:, :, tt] = x
         obsprior[:, :, tt] = obs_ens
 
-        # # Check!:
-        np.savetxt('results/xprior_' + str(tt) + '.txt', x[:, 4], delimiter=',')
-        np.savetxt('results/obsprior_' + str(tt) + '.txt', obs_ens[:, 4], delimiter=',')
-
         # Loop through observations:
         for loc in range(n):
             # print('Location: ' + countries[loc])
@@ -159,11 +126,7 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
 
                 # Compute alpha and adjust distribution to conform to posterior moments:
                 alp = np.sqrt(obs_var / (obs_var + prior_var))
-                to_save = np.array([prior_var, post_var, prior_mean, post_mean, alp])
-                np.savetxt('results/check_' + str(tt) + '_' + str(loc) + '.txt', to_save, delimiter=',')
-
                 dy = post_mean + alp * (obs_ens[loc, :] - prior_mean) - obs_ens[loc, :]
-                np.savetxt('results/dy_' + str(tt) + '_' + str(loc) + '.txt', dy, delimiter=',')
 
                 # Get covariances of the prior state space and the observations, and loop over each state variable:
                 rr = np.zeros([x.shape[0]], dtype=np.float64)
@@ -176,17 +139,13 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
                 # Get adjusted ensemble and obs_ens:
                 x = x + dx
                 obs_ens[loc, :] = obs_ens[loc, :] + dy
-                np.savetxt('results/post_' + str(tt) + '_' + str(loc) + '.txt', x[:, 4], delimiter=',')
-                np.savetxt('results/obspost_' + str(tt) + '_' + str(loc) + '.txt', obs_ens[:, 4], delimiter=',')
-
                 # Question: Do we want to check for S0 values being reduced below 0, like in R code?
 
                 # Correct for values adjusted out of bounds:
                 x[np.where(x < 0)] = 0
                 x = fn_checkxnobounds(x, S_indices, I_indices, param_indices, N, n)
                 obs_ens[loc, :][np.where(obs_ens[loc, :] < 0)] = 0
-                np.savetxt('results/post_corrected_' + str(tt) + '_' + str(loc) + '.txt', x[:, 4], delimiter=',')
-                np.savetxt('results/obspost_corrected_' + str(tt) + '_' + str(loc) + '.txt', obs_ens[:, 4], delimiter=',')
+
         del loc
 
         # And store posteriors in proper locations:
@@ -217,19 +176,7 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
         xprior[range(np.square(n) * 3), :, tt + 1] = run_ensemble(tmStrt=tcurrent+dt, tmEnd=tcurrent+tm_step, tmStep=dt,
                                                                   tmRange=tm_range, S0=S0_temp, I0=I0_temp, popN=N,
                                                                   D=D_temp, L=L_temp, beta=beta, airScale=airScale_temp,
-                                                                  Countries=countries, n=n, airRand=airRand,
-                                                                  num_ens=300)
-        # for i in range(num_ens):
-        #     Sr_tmp = propagate_SIRS(tmStrt=tcurrent + dt, tmEnd=tcurrent + tm_step, tmStep=dt, tmRange=tm_range,
-        #                             S_0=S0_temp[:, :, i], I_0=I0_temp[:, :, i], popN=N,
-        #                             D_d=D_temp[i], L_d=L_temp[i], beta_d=beta[:, :, i], airScale_d=airScale_temp[i],
-        #                             Countries=countries, n_count=n, airRand=airRand)
-        #
-        #     xprior[S_indices, i, tt + 1] = Sr_tmp[0][Sr_tmp[0].shape[0] - 1].reshape([1, np.square(n)])
-        #     xprior[I_indices, i, tt + 1] = Sr_tmp[1][Sr_tmp[1].shape[0] - 1].reshape([1, np.square(n)])
-        #     xprior[newI_indices, i, tt + 1] = Sr_tmp[2][Sr_tmp[2].shape[0] - 1].reshape([1, np.square(n)])
-        # del i
-
+                                                                  n=n, airRand=airRand, num_ens=300)
         xprior[param_indices, :, tt + 1] = xpost[param_indices, :, tt]
 
         # Also calculate total newI for each country, and store in obsprior:
@@ -238,13 +185,10 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
             obsprior[i, :, tt+1] = np.sum(xprior[newI_indices, :, tt + 1][temp_range, :], 0) / np.sum(N, 1)[i] * 100000
 
         # END OF TRAINING
-        # Up to tt=3 at least, pretty close match between here and R - think there might be some rounding differences,
-        # but seems okay?
 
         # If tt >= 4 (at least 4 weeks of training data / at week 44), also perform a forecast:
         if tt >= 4:
             nfc = nsn - (tt + 1)
-            # fcast = np.zeros([np.square(n) * 3, num_ens, nfc], dtype=np.float64)
 
             # Get states and parameters from most recent update:
             b = np.log(xpost[param_indices[3], :, tt])  # won't this be the same as above?
@@ -267,27 +211,9 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
 
             # Loop through all ensemble members:
             print('Forecasting...')
-
             fcast = run_forecast(tmStrt=tcurrent + dt, tmEnd=tcurrent + tm_step * (nsn - tt - 1), tmStep=dt,
                                  tmRange=tm_range, S0=S0_temp, I0=I0_temp, popN=N, D=D_temp, L=L_temp, beta=beta,
-                                 airScale=airScale_temp, Countries=countries, n=n, airRand=airRand, num_ens=300,
-                                 nfc=nfc, tm_step=tm_step)
-
-            # for i in range(num_ens):
-            #     # print(tm_range)
-            #     Sr_tmp = propagate_SIRS(tmStrt=tcurrent + dt, tmEnd=tcurrent + tm_step * (nsn - tt - 1), tmStep=dt,
-            #                             tmRange=tm_range, S_0=S0_temp[:, :, i], I_0=I0_temp[:, :, i], popN=N,
-            #                             D_d=D_temp[i], L_d=L_temp[i], beta_d=beta[:, :, i],
-            #                             airScale_d=airScale_temp[i], Countries=countries, n_count=n, airRand=airRand)
-            #
-            #     fcast[S_indices, i, :] = np.transpose(Sr_tmp[0][[tm_step * j for j in range(1, nfc + 1)]].reshape(
-            #         [nsn - tt - 1, np.square(n)]))
-            #     fcast[I_indices, i, :] = np.transpose(Sr_tmp[1][[tm_step * j for j in range(1, nfc + 1)]].reshape(
-            #         [nsn - tt - 1, np.square(n)]))
-            #     fcast[newI_indices, i, :] = np.transpose((Sr_tmp[2][[tm_step * j for j in range(1, nfc + 1)]] -
-            #                                               Sr_tmp[2][[tm_step * j for j in range(0, nfc)]]).reshape(
-            #         [nsn - tt - 1, np.square(n), ]))
-            # del i
+                                 airScale=airScale_temp, n=n, airRand=airRand, num_ens=300, nfc=nfc, tm_step=tm_step)
 
             # Also calculate total newI at the country level, and call these obsfcast:
             obsfcast = np.zeros([n, num_ens, nfc], dtype=np.float64)
@@ -299,10 +225,6 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
                 obsfcast[i, :, :] = obs_temp
             del i
 
-            #  return(fcast, obsfcast)
-            np.savetxt('results/fcast_' + str(tt) + '.txt', fcast[:, 4, :], delimiter=',')
-            np.savetxt('results/obsfcast_' + str(tt) + '.txt', obsfcast[:, 4, :], delimiter=',')
-
             # Begin processing forecast results
             # Calculate S and I by country:
             s_fcast = fcast[S_indices, :, :]
@@ -312,8 +234,6 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
             i_fcast_by_count = np.zeros([n, num_ens, nfc], dtype=np.float64)
             for i in range(n):
                 country_vals = np.array([j + n * i for j in range(n)])
-                # s_temp = np.sum(s_fcast[country_vals, :, :], 0) / np.sum(N, 1)[i] * 100000
-                # print(s_temp.shape)
                 s_fcast_by_count[i, :, :] = np.sum(s_fcast[country_vals, :, :], 0) / np.sum(N, 1)[i] * 100000
                 i_fcast_by_count[i, :, :] = np.sum(i_fcast[country_vals, :, :], 0) / np.sum(N, 1)[i] * 100000
             del i
@@ -334,8 +254,8 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
                                           ifcast_mean.reshape([n * nfc, 1]), ifcast_sd.reshape([n * nfc, 1]),
                                           obsfcast_mean.reshape([n * nfc, 1]), obsfcast_sd.reshape([n * nfc, 1])), 1)
 
-            states_weeks = np.array([i % nfc for i in range(
-                statesfcast.shape[0])]) + wk_start + tt + 1  # this will give the actual week value, not a python index
+            states_weeks = np.array([i % nfc for i in range(statesfcast.shape[0])]) + wk_start + tt + 1
+            # this will give the actual week value, not a python index
             states_countries = np.array([np.ceil((i + 1) / nfc) - 1 for i in range(statesfcast.shape[0])]).astype(int)
             statesfcast = np.c_[states_weeks, states_countries, statesfcast]
 
@@ -345,7 +265,7 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
             # Calculate metrics to return:
             Y = np.r_[np.transpose(obspost_mean), np.transpose(obsfcast_mean)]  # 52 x 12
 
-            Y_ens = np.empty([n, num_ens, nsn], dtype=np.float64)  # 12 x 300 x 52
+            Y_ens = np.zeros([n, num_ens, nsn], dtype=np.float64)  # 12 x 300 x 52
             Y_ens[:, :, range(tt + 1)] = obspost[:, :, range(tt + 1)]
             Y_ens[:, :, range(tt + 1, nsn)] = obsfcast
 
@@ -402,7 +322,7 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
                     for ensmem in range(num_ens):
                         yy = Y_ens[i, ensmem, :]
 
-                        peakWeeks[i, ensmem] = np.nanargmax(yy)
+                        peakWeeks[i, ensmem] = np.nanargmax(yy) + 1
                         peakIntensities[i, ensmem] = np.nanmax(yy)
                         totalARs[i, ensmem] = np.nansum(yy)
                         onsets5[i, ensmem] = findOnset(yy, 500.0)[0]
@@ -440,15 +360,27 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
                     if obsfcast_mean.shape[1] > 0 and ~np.isnan(obs_i[tt + 1, i]):
                         obs1wk[0, i] = obs_i[tt + 1, i]
                         fcast1wk[0, i] = obsfcast_mean[i, 0]
+                    else:
+                        obs1wk[0, i] = np.nan
+                        fcast1wk[0, i] = np.nan
                     if obsfcast_mean.shape[1] > 1 and ~np.isnan(obs_i[tt + 2, i]):
                         obs2wk[0, i] = obs_i[tt + 2, i]
                         fcast2wk[0, i] = obsfcast_mean[i, 1]
+                    else:
+                        obs2wk[0, i] = np.nan
+                        fcast2wk[0, i] = np.nan
                     if obsfcast_mean.shape[1] > 2 and ~np.isnan(obs_i[tt + 3, i]):
                         obs3wk[0, i] = obs_i[tt + 3, i]
                         fcast3wk[0, i] = obsfcast_mean[i, 2]
+                    else:
+                        obs3wk[0, i] = np.nan
+                        fcast3wk[0, i] = np.nan
                     if obsfcast_mean.shape[1] > 3 and ~np.isnan(obs_i[tt + 4, i]):
                         obs4wk[0, i] = obs_i[tt + 4, i]
                         fcast4wk[0, i] = obsfcast_mean[i, 3]
+                    else:
+                        obs4wk[0, i] = np.nan
+                        fcast4wk[0, i] = np.nan
 
                 else:
                     obs_pkwk[0, i] = np.nan
@@ -467,6 +399,18 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
                     peakIntensities[i, :] = np.nan
                     totalARs[i, :] = np.nan
                     onsets5[i, :] = np.nan
+                    corr[0, i] = np.nan
+                    rmse[0, i] = np.nan
+                    corr_fcast[0, i] = np.nan
+                    rmse_fcast[0, i] = np.nan
+                    obs1wk[0, i] = np.nan
+                    obs2wk[0, i] = np.nan
+                    obs3wk[0, i] = np.nan
+                    obs4wk[0, i] = np.nan
+                    fcast1wk[0, i] = np.nan
+                    fcast2wk[0, i] = np.nan
+                    fcast3wk[0, i] = np.nan
+                    fcast4wk[0, i] = np.nan
 
             del i
 
@@ -722,7 +666,7 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
     statespost.columns = ['week', 'country', 'S', 'I', 'Est', 'S_sd', 'I_sd', 'Est_sd']
 
     # Get parameter means and sds over time:
-    params_prior_mean = np.mean(xprior[param_indices, :, :], 1)
+    # params_prior_mean = np.mean(xprior[param_indices, :, :], 1)
     params_post_mean = np.mean(xpost[param_indices, :, :], 1)
     params_post_sd = np.std(xpost[param_indices, :, :], 1, ddof=1)
     params_post_df = pd.DataFrame(np.transpose(np.concatenate((params_post_mean, params_post_sd), 0)))
