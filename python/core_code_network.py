@@ -3,10 +3,15 @@ import os
 import sys
 from numba.typed import List
 from EAKF_python import *
+import datetime
+
 # print(os.path.dirname(sys.executable))
 
 # Turn off SettingWithCopyWarning:
 pd.options.mode.chained_assignment = None
+
+# Time benchmark start:
+timestamp_start = datetime.datetime.now()
 
 # Specify subtype:
 strain = 'A(H1)'
@@ -85,7 +90,7 @@ else:
 # print(seasons)
 
 # Read in humidity data:
-ah = pd.read_csv('../../GLDAS_data/ah_Europe_07142019.csv')
+ah = pd.read_csv('../data/ah_Europe_07142019.csv')
 ah = ah[ah.columns[count_indices]]
 ah = ah.append(ah)
 ah = ah.to_numpy(dtype=np.float64)
@@ -94,7 +99,7 @@ ah = ah.to_numpy(dtype=np.float64)
 a_rand = np.zeros([12, n, n], dtype=np.float64)
 for i in range(n):
     a_rand[i] = np.loadtxt('air_travel/aRand' + str(i + 1) + '.txt', unpack=True)
-a_rand.astype(dtype=np.float64, order='C')
+a_rand = a_rand.astype(dtype=np.float64, order='C')
 
 # Season-specific start and end dates:
 clim_start_dict = {'2010-11': 276, '2011-12': 275, '2012-13': 274, '2013-14': 272, '2014-15': 271, '2015-16': 270,
@@ -214,11 +219,10 @@ for season_index in range(len(seasons)):
 # Fix scaling value for early season FR?:
 # Think I managed to do that up earlier
 
-# outputMetrics.to_csv('results/outputMet_check.csv', na_rep='NA', index=False)
-# outputOP.to_csv('results/outputOP_check.csv', na_rep='NA', index=False)
-# outputOPParams.to_csv('results/outputOPParams_check.csv', na_rep='NA', index=False)
-# outputDist.to_csv('results/outputDist_check.csv', na_rep='NA', index=False)
-# outputEns.to_csv('results/outputEns_check.csv', na_rep='NA', index=False)
+# Time benchmark end
+print('Done.')
+timestamp_end = datetime.datetime.now()
+print('Time Elapsed: ' + str(timestamp_end - timestamp_start))
 
 outputMetrics.to_csv('results/outputMet_H1_0_2.csv', na_rep='NA', index=False)
 outputOP.to_csv('results/outputOP_H1_0_2.csv', na_rep='NA', index=False)
