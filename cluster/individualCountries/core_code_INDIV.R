@@ -56,16 +56,18 @@ I0_low <- 0; I0_up <- 0.00005
 discrete <- FALSE # run the SIRS model continuously
 metricsonly <- FALSE # save all outputs
 
-# oevBaseList <- c(1e4, 1e5)
-# oevDenomList <- c(1.0, 10.0, 50.0)
+oevBaseList <- c(1e4, 1e5)
+oevDenomList <- c(1.0, 10.0, 100.0)
 # lambdaList <- c(1.00, 1.02, 1.05)
 # 
 # # task.index <- 1:18
-# cmd_args = commandArgs(trailingOnly = T)
-# task.index=as.numeric(cmd_args[1]) # 1:144 # 1:240 # 1:480
+cmd_args = commandArgs(trailingOnly = T)
+task.index=as.numeric(cmd_args[1])
 
-oev_base <- 0.0 #0.3 or 1e4 #oevBaseList[ceiling((task.index - 9) / 9) %% 2 + 1]
-oev_denom <- 2.0 #1.0 or 10.0 #oevDenomList[ceiling((task.index - 3) / 3) %% 3 + 1]
+# oev_base <- 0.0 #0.3 or 1e4 #oevBaseList[ceiling((task.index - 9) / 9) %% 2 + 1]
+# oev_denom <- 2.0 #1.0 or 10.0 #oevDenomList[ceiling((task.index - 3) / 3) %% 3 + 1]
+oev_base <- oevBaseList[ceiling((task.index - 3) / 3) %% 2 + 1]
+oev_denom <- oevDenomList[ceiling((task.index - 1) / 1) %% 3 + 1]
 lambda <- 1.05 #lambdaList[ceiling(task.index - 1) %% 3 + 1]
 
 # oev_denom <- 100
@@ -74,7 +76,7 @@ lambda <- 1.05 #lambdaList[ceiling(task.index - 1) %% 3 + 1]
 print(paste(oev_base, oev_denom, lambda, sep = '_'))
 
 num_ens <- 300 # use 300 for ensemble filters, 10000 for particle filters
-num_runs <- 2
+num_runs <- 3
 
 ### Specify the country for which we are performing a forecast
 countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
@@ -87,9 +89,9 @@ AH <- rbind(ah[, count.indices], ah[, count.indices])
 ### Read in influenza data
 # iliiso <- read.csv('data/WHO_data_05-09-19_SCALED.csv') # in same order as "countries" vector
 # iliiso <- read.csv('data/by_subtype/WHO_data_A(all)_SCALED.csv')
-# iliiso <- read.csv('data/by_subtype/WHO_data_A(H1)_SCALED.csv')
+iliiso <- read.csv('data/by_subtype/WHO_data_A(H1)_SCALED.csv')
 # iliiso <- read.csv('data/by_subtype/WHO_data_A(H3)_SCALED.csv')
-iliiso <- read.csv('data/by_subtype/WHO_data_B_SCALED.csv')
+# iliiso <- read.csv('data/by_subtype/WHO_data_B_SCALED.csv')
 print(dim(iliiso))
 
 ### Read in syndromic/virologic counts:
@@ -101,17 +103,16 @@ test.dat <- read.csv('data/testRates_010820.csv')
 # syn.dat <- read.csv('data/by_subtype/synDatCounts_A(all)_SCALED.csv')
 # pos.dat <- read.csv('data/by_subtype/posprop_A(all).csv')
 
-# syn.dat <- read.csv('data/by_subtype/synDatCounts_A(H1)_SCALED.csv')
-# pos.dat <- read.csv('data/by_subtype/posprop_A(H1).csv')
+syn.dat <- read.csv('data/by_subtype/synDatCounts_A(H1)_SCALED.csv')
+pos.dat <- read.csv('data/by_subtype/posprop_A(H1).csv')
 
 # syn.dat <- read.csv('data/by_subtype/synDatCounts_A(H3)_SCALED.csv')
 # pos.dat <- read.csv('data/by_subtype/posprop_A(H3).csv')
 
-syn.dat <- read.csv('data/by_subtype/synDatCounts_B_SCALED.csv')
-pos.dat <- read.csv('data/by_subtype/posprop_B.csv')
+# syn.dat <- read.csv('data/by_subtype/synDatCounts_B_SCALED.csv')
+# pos.dat <- read.csv('data/by_subtype/posprop_B.csv')
 
 # test.dat <- test.dat[, c(1, count.indices + 1)]
-# syn.dat <- syn.dat[, c(1, count.indices + 1)]
 pos.dat <- pos.dat[, c(1, count.indices + 1)]
 
 ### Scale data:
@@ -119,9 +120,9 @@ pos.dat <- pos.dat[, c(1, count.indices + 1)]
 # scalings <- scalings[count.indices, ]
 # note: these are the "old" scalings
 # scalings <- read.csv('data/by_subtype/scalings_frame_A(all).csv')
-# scalings <- read.csv('data/by_subtype/scalings_frame_A(H1).csv')
+scalings <- read.csv('data/by_subtype/scalings_frame_A(H1).csv')
 # scalings <- read.csv('data/by_subtype/scalings_frame_A(H3).csv')
-scalings <- read.csv('data/by_subtype/scalings_frame_B.csv')
+# scalings <- read.csv('data/by_subtype/scalings_frame_B.csv')
 
 ### Loop through countries to generate forecasts:
 for (count.index in 1:length(countries)) {
@@ -177,8 +178,8 @@ for (count.index in 1:length(countries)) {
       # # par(mfrow = c(6, 5), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 
       # Calculate OEV:
-      obs_vars <- 1e5 + calc_obsvars_nTest(obs = obs_i, syn_dat = syn_i, ntests = test_i, posprops = pos_i, oev_base, oev_denom, tmp_exp = 2.0)
-      # obs_vars <- calc_obsvars(obs = as.matrix(obs_i), oev_base, oev_denom)
+      # obs_vars <- 1e5 + calc_obsvars_nTest(obs = obs_i, syn_dat = syn_i, ntests = test_i, posprops = pos_i, oev_base, oev_denom, tmp_exp = 2.0)
+      obs_vars <- calc_obsvars(obs = as.matrix(obs_i), oev_base, oev_denom)
       # print(obs_vars[1:3, ])
 
       # Get the first and last date of the simulation
@@ -253,9 +254,14 @@ for (country in countries) {
 }
 print('Results compiled.')
 
-write.csv(metrics.all, file = paste0('code/individualCountries/outputs/outputMet_', oev_base, '_', oev_denom, '_', lambda, '_B_OEVnew.csv'), row.names = FALSE)
-write.csv(output.all, file = paste0('code/individualCountries/outputs/outputOP_', oev_base, '_', oev_denom, '_', lambda, '_B_OEVnew.csv'), row.names = FALSE)
-write.csv(dist.all, file = paste0('code/individualCountries/outputs/outputDist_', oev_base, '_', oev_denom, '_', lambda, '_B_OEVnew.csv'), row.names = FALSE)
-write.csv(ens.all, file = paste0('code/individualCountries/outputs/outputEns_', oev_base, '_', oev_denom, '_', lambda, '_B_OEVnew.csv'), row.names = FALSE)
+# Update scalings for FR:
+load('data/by_subtype/scalings_noCutoff_threeOverPointOne.RData')
+metrics.all[metrics.all[, 'country'] == 'FR' & metrics.all[, 'season'] %in% c('2010-11', '2011-12', '2012-13', '2013-14', '2014-15', '2015-16', '2016-17', '2017-18')[1:4], 'scaling'] <- scalings.new[[1]][13]#1.3
+
+# Save!
+write.csv(metrics.all, file = paste0('code/individualCountries/outputs/outputMet_', oev_base, '_', oev_denom, '_A(H1)_OEVold.csv'), row.names = FALSE)
+write.csv(output.all, file = paste0('code/individualCountries/outputs/outputOP_', oev_base, '_', oev_denom, '_A(H1)_OEVold.csv'), row.names = FALSE)
+write.csv(dist.all, file = paste0('code/individualCountries/outputs/outputDist_', oev_base, '_', oev_denom, '_A(H1)_OEVold.csv'), row.names = FALSE)
+write.csv(ens.all, file = paste0('code/individualCountries/outputs/outputEns_', oev_base, '_', oev_denom, '_A(H1)_OEVold.csv'), row.names = FALSE)
 
 print('Done.')
