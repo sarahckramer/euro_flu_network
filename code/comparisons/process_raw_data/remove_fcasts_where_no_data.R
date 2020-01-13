@@ -134,6 +134,5 @@ for (i in 1:length(d)) {
 # }
 
 # Clean up!
-rm(m.store, m.mini, iliiso, syn.dat, test.dat, pos.dat, obs_i, syn_i, test_i, pos_i, obs_vars, tmp, weeks, nsn, count.index, fc, model.type,
-   oev_base, oev_denom, season, seasons)
+rm(m.store, m.mini, iliiso, syn.dat, test.dat, pos.dat, obs_i, syn_i, test_i, pos_i, obs_vars, tmp, weeks, nsn, count.index, fc, oev_base, oev_denom, season, seasons)
 

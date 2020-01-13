@@ -1,10 +1,10 @@
 
 ### Run to process files downloaded from cluster (network model only) ###
-# model.type <- 'Network'
-model.type <- 'Individual'
+model.type <- 'Network'
+# model.type <- 'Individual'
 
 # Set strain:
-strain <- 'A(H1)'
+strain <- 'A(H3)'
 
 # 1. Process metrics file:
 source('code/comparisons/process_raw_data/process_metrics_file.R')

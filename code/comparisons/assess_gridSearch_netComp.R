@@ -4,35 +4,35 @@ library(reshape2); library(ggplot2); library(gridExtra)
 
 # Save plots?:
 outputPlots <- FALSE
-fileSuffix <- '_A(H3)_base1e4'
+fileSuffix <- '_A(H1)'
 
 # Restrict the forecast start weeks for which results are shown?
 restrict.fc <- FALSE
 
 # Set model labels:
-m1.lab <- 'Network (Improved)'
-m2.lab <- 'Network (Old OEV)'
+m1.lab <- 'Network (0/2)'
+m2.lab <- 'Network (0/2)(H3)'
 m3.lab <- 'Indiv. (Old OEV)'
 
 # Set locations of model results to be compared:
-model1 <- 'results/A(H1)/network_base1e4_base05_lam105/'
-model2 <- 'results/A(H1)/network_oldOEV/'
+model1 <- 'results/A(H1)/network_NEW/'
+model2 <- 'results/A(H3)/network_NEW/'
 model3 <- 'results/A(H1)/indiv_mid/'
 
 #########################################################################################################################################################
 #########################################################################################################################################################
 
 # Read in all plotting code:
-source('code/gridSearch/comp_netVsIndiv/plotting_functions.R')
+source('code/comparisons/comp_netVsIndiv/plotting_functions.R')
 
 # Read in and format metrics files:
 m1 <- read.csv(file = paste0(model1, list.files(path = model1, pattern = 'Met_pro')))
 m2 <- read.csv(file = paste0(model2, list.files(path = model2, pattern = 'Met_pro')))
 m3 <- read.csv(file = paste0(model3, list.files(path = model3, pattern = 'Met_pro')))
 
-m1 <- m1[, c(1:9, 12:13, 15, 17:19, 25:32, 39, 43, 47, 60:63, 65, 67:69, 78)]
-m2 <- m2[, c(1:9, 12:13, 15, 17:19, 25:32, 39, 43, 47, 60:63, 65, 67:69, 78)]
-m3 <- m3[, c(1:9, 12:13, 15, 17:19, 25:32, 39, 43, 47, 60:63, 65, 67:69, 78)]
+# m1 <- m1[, c(1:9, 12:13, 15, 17:19, 25:32, 39, 43, 47, 60:63, 65, 67:69, 78)]
+# m2 <- m2[, c(1:9, 12:13, 15, 17:19, 25:32, 39, 43, 47, 60:63, 65, 67:69, 78)]
+# m3 <- m3[, c(1:9, 12:13, 15, 17:19, 25:32, 39, 43, 47, 60:63, 65, 67:69, 78)]
 
 m1$model <- m1.lab; m2$model <- m2.lab; m3$model <- m3.lab
 
@@ -43,8 +43,8 @@ rm(m1, m2, m3)
 m <- m[!is.na(m$onsetObs5), ]
 
 ### Equalize oev_base/oev_denom, just to avoid plotting errors ###
-m$oev_base <- 1.0
-m$oev_denom <- 1.0
+m$oev_base <- 0
+m$oev_denom <- 2.0
 ##################################################################
 
 m$oev_base <- factor(m$oev_base)
@@ -70,56 +70,49 @@ m$abs_err_4wk_perc[m$abs_err_4wk_perc == Inf & !is.na(m$abs_err_4wk_perc)] <- NA
 
 # Plot overall PT, PI, and OT by PREDICTED lead week:
 if (outputPlots) {
-  pdf(paste0('code/gridSearch/plots/comp_byPred_', fileSuffix, '.pdf'), width = 14, height = 9)
-  source('code/gridSearch/comp_netVsIndiv/by_pred.R')
+  pdf(paste0('code/comparisons/plots/comp_byPred_', fileSuffix, '.pdf'), width = 14, height = 9)
+  source('code/comparisons/comp_netVsIndiv/by_pred.R')
   print(plots.by.pred)
   dev.off()
 } else {
-  source('code/gridSearch/comp_netVsIndiv/by_pred.R')
+  source('code/comparisons/comp_netVsIndiv/by_pred.R')
   print(plots.by.pred)
 }
 rm(plots.by.pred)
 
 # Plot overall PT, PI, and OT by OBSERVED lead week:
 if (outputPlots) {
-  pdf(paste0('code/gridSearch/plots/comp_byObs_', fileSuffix, '.pdf'), width = 14, height = 9)
-  source('code/gridSearch/comp_netVsIndiv/by_obs.R')
+  pdf(paste0('code/comparisons/plots/comp_byObs_', fileSuffix, '.pdf'), width = 14, height = 9)
+  source('code/comparisons/comp_netVsIndiv/by_obs.R')
   print(plots.by.obs)
   dev.off()
 } else {
-  source('code/gridSearch/comp_netVsIndiv/by_obs.R')
+  source('code/comparisons/comp_netVsIndiv/by_obs.R')
   print(plots.by.obs)
 }
 rm(plots.by.obs)
 
 # Plot MAEs:
 if (outputPlots) {
-  pdf(paste0('code/gridSearch/plots/comp_MAE_', fileSuffix,'.pdf'), width = 14, height = 9)
-  source('code/gridSearch/comp_netVsIndiv/plot_MAE.R')
+  pdf(paste0('code/comparisons/plots/comp_MAE_', fileSuffix,'.pdf'), width = 14, height = 9)
+  source('code/comparisons/comp_netVsIndiv/plot_MAE.R')
   dev.off()
 } else {
-  source('code/gridSearch/comp_netVsIndiv/plot_MAE.R')
+  source('code/comparisons/comp_netVsIndiv/plot_MAE.R')
 }
 
 # Read in all log scores files:
-# source('code/gridSearch/comp_netVsIndiv/readIn_logScores_ALL.R')
 d1 <- read.csv(paste0(model1, list.files(path = model1, pattern = '_pt_ot')))
 e.pi1 <- read.csv(paste0(model1, list.files(path = model1, pattern = '_pi_bin')))
 e1 <- read.csv(paste0(model1, list.files(path = model1, pattern = '_1-4wks_bin')))
-# e.pi.alt1 <- read.csv(paste0(model1, list.files(path = model1, pattern = '_pi_kd')))
-# e.alt1 <- read.csv(paste0(model1, list.files(path = model1, pattern = '_1-4wks_kd')))
 
 d2 <- read.csv(paste0(model2, list.files(path = model2, pattern = '_pt_ot')))
 e.pi2 <- read.csv(paste0(model2, list.files(path = model2, pattern = '_pi_bin')))
 e2 <- read.csv(paste0(model2, list.files(path = model2, pattern = '_1-4wks_bin')))
-# e.pi.alt2 <- read.csv(paste0(model2, list.files(path = model2, pattern = '_pi_kd')))
-# e.alt2 <- read.csv(paste0(model2, list.files(path = model2, pattern = '_1-4wks_kd')))
 
 d3 <- read.csv(paste0(model3, list.files(path = model3, pattern = '_pt_ot')))
 e.pi3 <- read.csv(paste0(model3, list.files(path = model3, pattern = '_pi_bin')))
 e3 <- read.csv(paste0(model3, list.files(path = model3, pattern = '_1-4wks_bin')))
-# e.pi.alt3 <- read.csv(paste0(model3, list.files(path = model3, pattern = '_pi_kd')))
-# e.alt3 <- read.csv(paste0(model3, list.files(path = model3, pattern = '_1-4wks_kd')))
 
 logs1 <- list(d1, e.pi1, e1)#, e.pi.alt1, e.alt1)
 logs2 <- list(d2, e.pi2, e2)#, e.pi.alt2, e.alt2)
@@ -144,41 +137,35 @@ e$oev_base = 1.0; e$oev_denom = 1.0
 ##########################################
 
 levels(d$metric) <- c('ot', 'pt')
-# e.pi.list <- list(e.pi[e.pi$metric == 'pi500', ], e.pi[e.pi$metric == 'pi250', ], e.pi.alt[e.pi.alt$metric == 500, ], e.pi.alt[e.pi.alt$metric == 250, ])
-# e.list <- list(e[e$metric2 == 'bin500', ], e[e$metric2 == 'bin250', ], e.alt[e.alt$metric2 == 500, ], e.alt[e.alt$metric2 == 250, ])
-e.pi.list <- list(e.pi[e.pi$metric %in% c('pi500', 'pi'), ])#, e.pi.alt[e.pi.alt$metric %in% c('500', 'pi'), ])
-e.list <- list(e[e$metric2 == 'bin500', ])#, e.alt[e.alt$metric2 == '500', ])
-
-# rm(d1, d2, d3, e.pi1, e.pi2, e.pi3, e1, e2, e3, e.pi.alt1, e.pi.alt2, e.pi.alt3, e.alt1, e.alt2, e.alt3, logs1, logs2, logs3, e.pi, e.pi.alt, e, e.alt)
-rm(d1, d2, d3, e.pi1, e.pi2, e.pi3, e1, e2, e3, logs1, logs2, logs3, e.pi, e)
+rm(d1, d2, d3, e.pi1, e.pi2, e.pi3, e1, e2, e3, logs1, logs2, logs3)
 
 # Plot log scores for PT, PI, OT, 1-4 weeks, by PREDICTED lead week:
 # Question: Remove where obs are 0 for 1-4 weeks? Or where obs below some value?
 # Question: Remove where no onset predicted before calculating these?
 if (outputPlots) {
-  pdf(paste0('code/gridSearch/plots/comp_logScores_byPred_', fileSuffix, '.pdf'), width = 14, height = 9)
+  pdf(paste0('code/comparisons/plots/comp_logScores_byPred_', fileSuffix, '.pdf'), width = 14, height = 9)
   byWeek <- 'Predicted'
-  source('code/gridSearch/comp_netVsIndiv/plot_logScores.R')
+  source('code/comparisons/comp_netVsIndiv/plot_logScores.R')
   dev.off()
-  pdf(paste0('code/gridSearch/plots/comp_logScores_byObs_', fileSuffix, '.pdf'), width = 14, height = 9)
+  pdf(paste0('code/comparisons/plots/comp_logScores_byObs_', fileSuffix, '.pdf'), width = 14, height = 9)
   byWeek <- 'Observed'
-  source('code/gridSearch/comp_netVsIndiv/plot_logScores.R')
+  source('code/comparisons/comp_netVsIndiv/plot_logScores.R')
   dev.off()
 } else {
   byWeek <- 'Predicted'
-  source('code/gridSearch/comp_netVsIndiv/plot_logScores.R')
+  source('code/comparisons/comp_netVsIndiv/plot_logScores.R')
   byWeek <- 'Observed'
-  source('code/gridSearch/comp_netVsIndiv/plot_logScores.R')
+  source('code/comparisons/comp_netVsIndiv/plot_logScores.R')
 }
-rm(d, e.pi.list, e.list, byWeek)
+rm(d, e.pi, e, byWeek)
 
 # # Plot calibration for PT, PI, OT, and 1-4 weeks:
 # if (outputPlots) {
-#   pdf('code/gridSearch/plots/comp_calib.pdf', width = 14, height = 9)
-#   source('code/gridSearch/comp_netVsIndiv/plot_calibrationMethod2.R')
+#   pdf('code/comparisons/plots/comp_calib.pdf', width = 14, height = 9)
+#   source('code/comparisons/comp_netVsIndiv/plot_calibrationMethod2.R')
 #   dev.off()
 # } else {
-#   source('code/gridSearch/comp_netVsIndiv/plot_calibrationMethod2.R')
+#   source('code/comparisons/comp_netVsIndiv/plot_calibrationMethod2.R')
 # }
 
 # # Plot inferred parameter values at each time step (network only - individual allows parameter values to differ by country):
@@ -204,7 +191,7 @@ rm(d, e.pi.list, e.list, byWeek)
 #   scale_color_brewer(palette = 'Set1')
 # 
 # if (outputPlots) {
-#   pdf('code/gridSearch/plots/param_ests.pdf', width = 14, height = 14)
+#   pdf('code/comparisons/plots/param_ests.pdf', width = 14, height = 14)
 #   grid.arrange(p1, p2, p3, p4, p5, ncol = 1)
 #   dev.off()
 # } else {
