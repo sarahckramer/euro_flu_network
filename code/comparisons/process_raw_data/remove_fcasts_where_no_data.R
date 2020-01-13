@@ -3,8 +3,8 @@
 # To make for a fair comparison, remove forecasts made for a country when these conditions were met
 
 # Read in all results:
-m <- read.csv(list.files(pattern = 'Met_pro.csv'))
-o <- read.csv(list.files(pattern = 'OP.csv'))
+m <- m.store #read.csv(list.files(pattern = 'Met_pro.csv'))
+o <- read.csv(list.files(pattern = 'OP_'))
 d <- list()
 logScore.files <- list.files(pattern = 'logScores')
 for (i in 1:length(logScore.files)) {
@@ -16,6 +16,10 @@ rm(i)
 countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
 count.indices <- c(1:2, 4, 6:8, 11:14, 17, 19)
 n <- length(countries)
+
+# Change country labels in O:
+o$country <- countries[o$country + 1]
+o$country <- factor(o$country)
 
 # # Get observations:
 # iliiso <- read.csv('../../data/WHO_data_05-09-19.csv')
@@ -39,31 +43,25 @@ n <- length(countries)
 # }
 
 # Or, for individual "strains":
-iliiso <- read.csv(paste0('../../data/by_subtype/WHO_data_', strain, '_SCALED.csv'))
+iliiso <- read.csv(paste0('../../../data/by_subtype/WHO_data_', strain, '_SCALED.csv'))
 
-test.dat <- read.csv('../../data/testCounts_052719.csv')
-syn.dat <- read.csv(paste0('../../data/by_subtype/synDatCounts_', strain, '_SCALED.csv'))
-pos.dat <- read.csv(paste0('../../data/by_subtype/posprop_', strain, '.csv'))
+test.dat <- read.csv('../../../data/testRates_010820.csv')
+syn.dat <- read.csv(paste0('../../../data/by_subtype/synDatCounts_', strain, '_SCALED.csv'))
+pos.dat <- read.csv(paste0('../../../data/by_subtype/posprop_', strain, '.csv'))
 
-test.dat <- test.dat[, c(1, count.indices + 1)]
+# test.dat <- test.dat[, c(1, count.indices + 1)]
 pos.dat <- pos.dat[, c(1, count.indices + 1)]
-
-# Replace -1 with NA:
-for (i in 2:13) {
-  pos.dat[, i][pos.dat[, i] < 0] <- NA
-  test.dat[, i][test.dat[, i] < 0] <- NA
-}
 
 # # And rename the columns:
 # names(iliiso) = names(syn.dat) = names(pos.dat) = names(test.dat)
 
 # Load required functions:
-source('../../cluster/functions/Fn_initializations.R')
-source('../../cluster/functions/replaceLeadingLaggingNAs.R')
-source('../../cluster/functions/calc_obsvars.R')
+source('../../../cluster/functions/Fn_initializations.R')
+source('../../../cluster/functions/replaceLeadingLaggingNAs.R')
+source('../../../cluster/functions/calc_obsvars.R')
 
 # Get mini-dataset that can be matched with larger ones later:
-m.mini <- unique(m[, c(1, 7:8)])
+m.mini <- unique(m[, c(1:2, 32)]) # want: season, country, fc_start
 m.mini$oev = m.mini$obs <- NA
 
 # Loop through seasons to get matching observations:
@@ -90,9 +88,9 @@ for (season in seasons) {
   test_i[test_i == 0 & !is.na(test_i)] <- NA
   
   # Variance of syndromic+ data:
-  oev_base <- 0.5; oev_denom <- 2.5
-  obs_vars <- calc_obsvars_nTest(obs = as.matrix(obs_i), syn_dat = as.matrix(syn_i), ntests = as.matrix(test_i), posprops = as.matrix(pos_i),
-                                 oev_base, oev_denom, tmp_exp = 2.0)
+  oev_base <- 0; oev_denom <- 2.0
+  obs_vars <- 1e5 + calc_obsvars_nTest(obs = as.matrix(obs_i), syn_dat = as.matrix(syn_i), ntests = as.matrix(test_i), posprops = as.matrix(pos_i),
+                                       oev_base, oev_denom, tmp_exp = 2.0)
   
   # Match obs_i/obs_vars to appropriate season/country/fc_start:
   for (count.index in 1:n) {
@@ -122,19 +120,20 @@ for (i in 1:length(d)) {
   d[[i]]$obs <- NULL; d[[i]]$oev <- NULL
 }
 
-# Put correct column order back:
-m <- m[, c(1, 4:8, 3, 2, 9:78)]
-o <- o[, c(1, 4:7, 3, 8:10, 2, 11:16)]
+# # Put correct column order back:
+# m <- m[, c(1, 4:8, 3, 2, 9:78)]
+# o <- o[, c(1, 4:7, 3, 8:10, 2, 11:16)]
 
-# Save new results files:
-write.csv(m, file = 'outputMet_pro_PROC.csv', row.names = FALSE)
-write.csv(o, file = 'outputOP_PROC.csv', row.names = FALSE)
-
-for (i in 1:length(d)) {
-  d.temp <- d[[i]]
-  write.csv(d.temp, file = paste0('PROC_', logScore.files[i]), row.names = FALSE)
-}
+# # Save new results files:
+# write.csv(m, file = 'outputMet_pro_PROC.csv', row.names = FALSE)
+# write.csv(o, file = 'outputOP_PROC.csv', row.names = FALSE)
+# 
+# for (i in 1:length(d)) {
+#   d.temp <- d[[i]]
+#   write.csv(d.temp, file = paste0('PROC_', logScore.files[i]), row.names = FALSE)
+# }
 
 # Clean up!
-rm(list = ls())
+rm(m.store, m.mini, iliiso, syn.dat, test.dat, pos.dat, obs_i, syn_i, test_i, pos_i, obs_vars, tmp, weeks, nsn, count.index, fc, model.type,
+   oev_base, oev_denom, season, seasons)
 

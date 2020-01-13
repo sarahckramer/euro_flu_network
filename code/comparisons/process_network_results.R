@@ -1,49 +1,42 @@
 
 ### Run to process files downloaded from cluster (network model only) ###
-model.type <- 'Network'
-# model.type <- 'Individual'
+# model.type <- 'Network'
+model.type <- 'Individual'
 
 # Set strain:
 strain <- 'A(H1)'
 
-# 1. Read in and compile:
-if (model.type == 'Network') {
-  source('code/gridSearch/process_raw_data/compile_fcasts_from_cluster.R')
-}
-
-# 2. Process metrics file:
-source('code/gridSearch/process_raw_data/process_metrics_file.R')
+# 1. Process metrics file:
+source('code/comparisons/process_raw_data/process_metrics_file.R')
 m.store <- m
 
-# 3. Calculate log scores:
+# 2. Calculate log scores:
 if (model.type == 'Network') {
-  source('../../code/gridSearch/process_raw_data/calculate_log_scores.R')
+  source('../../../code/comparisons/process_raw_data/calculate_log_scores.R')
   
 } else if (model.type == 'Individual') {
-  source('../../code/individualCountries/calculate_log_scores.R')
+  source('../../../code/individualCountries/calculate_log_scores.R')
   write.csv(m.store, file = 'outputMet_pro.csv', row.names = FALSE)
 }
 
-# 4. Reorder columns as necessary:
+# 3. Remove where there would be no forecasts in individual model:
 if (model.type == 'Network') {
-  source('../../code/gridSearch/process_raw_data/standardize_all_output_files.R')
-}
-
-# 5. Remove where there would be no forecasts in individual model:
-if (model.type == 'Network') {
-  source('../../code/gridSearch/process_raw_data/remove_fcasts_where_no_data.R')
+  source('../../../code/comparisons/process_raw_data/remove_fcasts_where_no_data.R')
 } else if (model.type == 'Individual') {
   source('../../code/individualCountries/remove_fcasts_where_oevNew0NA.R')
 }
 
-# 6: Reset directory:
-setwd('../../')
-
-# 7: Delete files in "raw":
-file.list <- list.files(path = 'results/raw/')
-for (file in file.list) {
-  file.remove(paste0('results/raw/', file))
+# 4. Reorder columns as necessary:
+if (model.type == 'Network') {
+  source('../../../code/comparisons/process_raw_data/standardize_all_output_files.R')
 }
-rm(file, file.list)
 
+# 5: Reset directory:
+if (exists('model.type')) {
+  setwd('../../..')
+} else {
+  setwd('../../')
+}
+
+# Clear environment:
 rm(list = ls())

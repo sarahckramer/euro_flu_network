@@ -77,7 +77,7 @@ d <- d[, c(1:3, 8, 5:7, 9, 13:14, 16)]
 m <- unique(m.store[, c(1:5, 7:9, 15, 60, 67, 78)])
 
 d <- merge(d, m, by = c('season', 'country', 'run', 'fc_start', 'oev_base', 'oev_denom', 'lambda'))
-d <- d[, c(1:8, 12, 9:10, 13:16, 11)]
+d <- d[, c(1:8, 9:10, 13:16, 11)]
 
 # Save:
 write.csv(d, file = 'logScores_pi_bin.csv', row.names = FALSE)
@@ -143,7 +143,7 @@ d <- d[, c(1:8, 13:14, 16:17)]
 m <- unique(m.store[, c(1:5, 7:9, 15, 60, 67, 78)])
 
 d <- merge(d, m, by = c('season', 'country', 'run', 'fc_start', 'oev_base', 'oev_denom', 'lambda'))
-d <- d[, c(1:2, 4, 3, 5:8, 12, 9:10, 13:17, 11)]
+d <- d[, c(1:2, 4, 3, 5:8, 9:10, 14:17, 11)]
 
 # Save:
 write.csv(d, file = 'logScores_1-4wks_bin.csv', row.names = FALSE)

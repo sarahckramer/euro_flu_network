@@ -1,27 +1,16 @@
 
-### METRICS ###
-if (model.type == 'Network') {
-  # m <- read.csv(list.files(pattern = 'Met_pro'))
-  m <- m.store; rm(m.store)
-  write.csv(m, file = 'outputMet_pro_FULL.csv', row.names = FALSE)
-  
-  m <- m[, c(1:52, 85:110)]
-  write.csv(m, file = 'outputMet_pro.csv', row.names = FALSE)
-  
-} else if (model.type == 'Individual') {
-  
-  
-  
+# Reorder metrics and output:
+m <- m[, c(1, 33:37, 3, 2, 4:32, 38:56)]
+o <- o[, c(1, 13:16, 3:6, 2, 7:12)]
+
+# Save new results files:
+write.csv(m, file = 'outputMet_pro_PROC.csv', row.names = FALSE)
+write.csv(o, file = 'outputOP_PROC.csv', row.names = FALSE)
+for (i in 1:length(d)) {
+  d.temp <- d[[i]]
+  write.csv(d.temp, file = paste0('PROC_', logScore.files[i]), row.names = FALSE)
 }
 
-# ### ENS ###
-# e.pi <- read.csv('results/original/logScores_pi.csv')
-# e.pi2 <- read.csv('results/indiv_new/logScores_pi.csv')
-#
-# e.pi2$scaling <- NULL
-# names(e.pi2)[6] = names(e2)[6] <- 'metric'
-# 
-# write.csv(e.pi2, file = 'results/indiv_new/logScores_pi.csv', row.names = FALSE)
 
 
 

@@ -8,15 +8,25 @@ north.ili <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'HU', 'IE', 'IT', 'NL', 'PL', 'PT',
 north.ari <- c('LU', 'UK', 'DE', 'SI', 'FR')
 
 # Read in results
-setwd('results/PROCESS/')
+if (model.type == 'Network') {
+  setwd('python/results/PROCESS/')
+} else if (model.type == 'Individual') {
+  setwd('results/PROCESS/')
+}
 m <- read.csv(file = list.files(pattern = 'Met'))
+
+# for now, need to fix FR scalings - but work on this!
+load('../../../data/by_subtype/scalings_noCutoff_threeOverPointOne.RData')
+m$scaling[m$country == 'FR' & m$season %in% c('2010-11', '2011-12', '2012-13', '2013-14')] <- scalings.new[[1]][13]
+rm(i)
+rm(scalings.new)
 
 if (model.type == 'Individual') {
   names(m)[4] <- 'scaling'
   
-  load('../../data/by_subtype/scalings_by_subtype_120219.RData') # 1:A, 2:H1, 3:H3, 4:B
+  load('../../data/by_subtype/scalings_noCutoff_threeOverPointOne.RData')
+  m$scaling[m$country == 'FR' & m$season %in% c('2010-11', '2011-12', '2012-13', '2013-14')] <- scalings.new[[1]][13]
   
-  m$scaling[m$country == 'FR' & m$season %in% c('2010-11', '2011-12', '2012-13', '2013-14')] <- scalings.new[[4]][13] # 1.3
   for (i in 37:44) {
     m[, i] <- m[, i] + 40 - 1
   }
@@ -141,7 +151,7 @@ if (model.type == 'Individual') {
 }
 
 # Write new metrics file
-write.csv(m, file = '../PROCESS/outputMet_pro.csv', row.names = F)
+write.csv(m, file = 'outputMet_pro.csv', row.names = F)
 # write.csv(m, file = 'code/individualCountries/outputs/outputMet_082819_pro.csv', row.names = F)
 # write.csv(m, file = 'results/newScalings/outputMet_090919_pro.csv', row.names = F)
 # write.csv(m, file = 'results/propRandTravel/outputMet_090919_pro.csv', row.names = F)

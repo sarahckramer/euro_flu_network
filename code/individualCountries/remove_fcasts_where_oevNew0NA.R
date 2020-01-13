@@ -41,18 +41,12 @@ n <- length(countries)
 # Or, for individual "strains":
 iliiso <- read.csv(paste0('../../data/by_subtype/WHO_data_', strain, '_SCALED.csv'))
 
-test.dat <- read.csv('../../data/testCounts_052719.csv')
+test.dat <- read.csv('../../data/testRates_010820.csv')
 syn.dat <- read.csv(paste0('../../data/by_subtype/synDatCounts_', strain, '_SCALED.csv'))
 pos.dat <- read.csv(paste0('../../data/by_subtype/posprop_', strain, '.csv'))
 
-test.dat <- test.dat[, c(1, count.indices + 1)]
+# test.dat <- test.dat[, c(1, count.indices + 1)]
 pos.dat <- pos.dat[, c(1, count.indices + 1)]
-
-# Replace -1 with NA:
-for (i in 2:13) {
-  pos.dat[, i][pos.dat[, i] < 0] <- NA
-  test.dat[, i][test.dat[, i] < 0] <- NA
-}
 
 # # And rename the columns:
 # names(iliiso) = names(syn.dat) = names(pos.dat) = names(test.dat)
@@ -90,9 +84,9 @@ for (season in seasons) {
   test_i[test_i == 0 & !is.na(test_i)] <- NA
   
   # Variance of syndromic+ data:
-  oev_base <- 0.3; oev_denom <- 1
-  obs_vars <- calc_obsvars_nTest(obs = as.matrix(obs_i), syn_dat = as.matrix(syn_i), ntests = as.matrix(test_i), posprops = as.matrix(pos_i),
-                                 oev_base, oev_denom, tmp_exp = 2.0)
+  oev_base <- 0; oev_denom <- 2.0
+  obs_vars <- 1e5 + calc_obsvars_nTest(obs = as.matrix(obs_i), syn_dat = as.matrix(syn_i), ntests = as.matrix(test_i), posprops = as.matrix(pos_i),
+                                       oev_base, oev_denom, tmp_exp = 2.0)
   
   # Match obs_i/obs_vars to appropriate season/country/fc_start:
   for (count.index in 1:n) {
@@ -126,6 +120,9 @@ for (i in 1:length(d)) {
 # Put correct column order back:
 m.store <- m.store[, c(1, 4:8, 3, 2, 9:78)]
 o <- o[, c(1, 4, 6:8, 3, 9:11, 2, 12:13, 18, 14:17, 19:20, 25, 21:24)]
+
+# Go ahead and remove unnecessary columns from m:
+m.store <- m.store[, c(1:9, 12:13, 15:32, 39, 43, 47, 51, 53:56, 60:78)]
 
 # Save new results files:
 write.csv(m.store, file = 'outputMet_pro_PROC.csv', row.names = FALSE)
