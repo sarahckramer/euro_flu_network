@@ -1,6 +1,7 @@
 .Rproj.user
 .Rhistory
 .idea
+python/__pycache__/
 *.Rproj
 *.RData
 *.Rdata
