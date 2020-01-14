@@ -16,8 +16,10 @@ if (byWeek == 'Predicted') {
   d.agg <- aggregate(score ~ leadpkwk_mean + oev_base + oev_denom + model, data = d.temp, FUN = median)
   d.agg$group <- paste(d.agg$leadpkwk_mean, d.agg$model, d.agg$oev_base, d.agg$oev_denom, sep = '_')
   
-  d.temp$model <- factor(d.temp$model, levels = c(m1.lab, m2.lab, m3.lab))
-  d.agg$model <- factor(d.agg$model, levels = c(m1.lab, m2.lab, m3.lab))
+  if (!exists('gridSearch')) {
+    d.temp$model <- factor(d.temp$model, levels = c(m1.lab, m2.lab, m3.lab))
+    d.agg$model <- factor(d.agg$model, levels = c(m1.lab, m2.lab, m3.lab))
+  }
   
   p1 <- ggplot(data = d.temp) + geom_boxplot(aes(x = leadpkwk_mean, y = score, group = group, fill = model)) +
     facet_wrap(~ oev_denom, ncol = 3) + theme_bw() + scale_fill_brewer(palette = 'Set1') +
@@ -43,8 +45,10 @@ if (byWeek == 'Predicted') {
   d.agg <- aggregate(score ~ leadonset5 + oev_base + oev_denom + model, data = d.temp, FUN = median)
   d.agg$group <- paste(d.agg$leadpkwk_mean, d.agg$model, d.agg$oev_base, d.agg$oev_denom, sep = '_')
   
-  d.temp$model <- factor(d.temp$model, levels = c(m1.lab, m2.lab, m3.lab))
-  d.agg$model <- factor(d.agg$model, levels = c(m1.lab, m2.lab, m3.lab))
+  if (!exists('gridSearch')) {
+    d.temp$model <- factor(d.temp$model, levels = c(m1.lab, m2.lab, m3.lab))
+    d.agg$model <- factor(d.agg$model, levels = c(m1.lab, m2.lab, m3.lab))
+  }
   
   p1 <- ggplot(data = d.temp) + geom_boxplot(aes(x = leadonset5, y = score, group = group, fill = model)) +
     facet_wrap(~ oev_denom, ncol = 3) + theme_bw() + scale_fill_brewer(palette = 'Set1') +
@@ -70,8 +74,10 @@ if (byWeek == 'Predicted') {
   e.agg <- aggregate(score ~ leadpkwk_mean + oev_base + oev_denom + model, data = e.temp, FUN = median)
   e.agg$group <- paste(e.agg$leadpkwk_mean, e.agg$model, e.agg$oev_base, e.agg$oev_denom, paste = '_')
   
-  e.temp$model <- factor(e.temp$model, levels = c(m1.lab, m2.lab, m3.lab))
-  e.agg$model <- factor(e.agg$model, levels = c(m1.lab, m2.lab, m3.lab))
+  if (!exists('gridSearch')) {
+    e.temp$model <- factor(e.temp$model, levels = c(m1.lab, m2.lab, m3.lab))
+    e.agg$model <- factor(e.agg$model, levels = c(m1.lab, m2.lab, m3.lab))
+  }
   
   p1 <- ggplot(data = e.temp) + geom_boxplot(aes(x = leadpkwk_mean, y = score, group = group, fill = model)) +
     facet_wrap(~ oev_denom, ncol = 3) + theme_bw() + scale_fill_brewer(palette = 'Set1') +
@@ -99,8 +105,10 @@ if (byWeek == 'Predicted') {
     e.agg <- aggregate(score ~ leadpkwk_mean + oev_base + oev_denom + model, data = e.temp, FUN = median)
     e.agg$group <- paste(e.agg$leadpkwk_mean, e.agg$model, e.agg$oev_base, e.agg$oev_denom, sep = '_')
     
-    e.temp$model <- factor(e.temp$model, levels = c(m1.lab, m2.lab, m3.lab))
-    e.agg$model <- factor(e.agg$model, levels = c(m1.lab, m2.lab, m3.lab))
+    if (!exists('gridSearch')) {
+      e.temp$model <- factor(e.temp$model, levels = c(m1.lab, m2.lab, m3.lab))
+      e.agg$model <- factor(e.agg$model, levels = c(m1.lab, m2.lab, m3.lab))
+    }
     
     p1 <- ggplot(data = e.temp) + geom_boxplot(aes(x = leadpkwk_mean, y = score, group = group, fill = model)) +
       facet_wrap(~ oev_denom, ncol = 3) + theme_bw() + scale_fill_brewer(palette = 'Set1') +
@@ -167,8 +175,10 @@ if (byWeek == 'Predicted') {
   d.agg <- aggregate(score ~ FWeek_pkwk + oev_base + oev_denom + model, data = d.temp, FUN = median)
   d.agg$group <- paste(d.agg$FWeek_pkwk, d.agg$model, d.agg$oev_base, d.agg$oev_denom, sep = '_')
   
-  d.temp$model <- factor(d.temp$model, levels = c(m1.lab, m2.lab, m3.lab))
-  d.agg$model <- factor(d.agg$model, levels = c(m1.lab, m2.lab, m3.lab))
+  if (!exists('gridSearch')) {
+    d.temp$model <- factor(d.temp$model, levels = c(m1.lab, m2.lab, m3.lab))
+    d.agg$model <- factor(d.agg$model, levels = c(m1.lab, m2.lab, m3.lab))
+  }
   
   p1 <- ggplot(data = d.temp) + geom_boxplot(aes(x = FWeek_pkwk, y = score, group = group, fill = model)) +
     facet_wrap(~ oev_denom, ncol = 3) + theme_bw() + scale_fill_brewer(palette = 'Set1') +
@@ -193,8 +203,10 @@ if (byWeek == 'Predicted') {
   d.agg <- aggregate(score ~ FWeek_onwk + oev_base + oev_denom + model, data = d.temp, FUN = median)
   d.agg$group <- paste(d.agg$FWeek_onwk, d.agg$model, d.agg$oev_base, d.agg$oev_denom, sep = '_')
   
-  d.temp$model <- factor(d.temp$model, levels = c(m1.lab, m2.lab, m3.lab))
-  d.agg$model <- factor(d.agg$model, levels = c(m1.lab, m2.lab, m3.lab))
+  if (!exists('gridSearch')) {
+    d.temp$model <- factor(d.temp$model, levels = c(m1.lab, m2.lab, m3.lab))
+    d.agg$model <- factor(d.agg$model, levels = c(m1.lab, m2.lab, m3.lab))
+  }
   
   p1 <- ggplot(data = d.temp) + geom_boxplot(aes(x = FWeek_onwk, y = score, group = group, fill = model)) +
     facet_wrap(~ oev_denom, ncol = 3) + theme_bw() + scale_fill_brewer(palette = 'Set1') +
@@ -244,8 +256,10 @@ if (byWeek == 'Predicted') {
   e.agg <- aggregate(score ~ FWeek_pkwk + oev_base + oev_denom + model, data = e.temp, FUN = median)
   e.agg$group <- paste(e.agg$FWeek_pkwk, e.agg$model, e.agg$oev_base, e.agg$oev_denom, sep = '_')
   
-  e.temp$model <- factor(e.temp$model, levels = c(m1.lab, m2.lab, m3.lab))
-  e.agg$model <- factor(e.agg$model, levels = c(m1.lab, m2.lab, m3.lab))
+  if (!exists('gridSearch')) {
+    e.temp$model <- factor(e.temp$model, levels = c(m1.lab, m2.lab, m3.lab))
+    e.agg$model <- factor(e.agg$model, levels = c(m1.lab, m2.lab, m3.lab))
+  }
   
   p1 <- ggplot(data = e.temp) + geom_boxplot(aes(x = FWeek_pkwk, y = score, group = group, fill = model)) +
     facet_wrap(~ oev_denom, ncol = 3) + theme_bw() + scale_fill_brewer(palette = 'Set1') +
@@ -273,8 +287,10 @@ if (byWeek == 'Predicted') {
     e.agg <- aggregate(score ~ FWeek_pkwk + oev_base + oev_denom + model, data = e.temp, FUN = median)
     e.agg$group <- paste(e.agg$FWeek_pkwk, e.agg$model, e.agg$oev_base, e.agg$oev_denom, sep = '_')
     
-    e.temp$model <- factor(e.temp$model, levels = c(m1.lab, m2.lab, m3.lab))
-    e.agg$model <- factor(e.agg$model, levels = c(m1.lab, m2.lab, m3.lab))
+    if (!exists('gridSearch')) {
+      e.temp$model <- factor(e.temp$model, levels = c(m1.lab, m2.lab, m3.lab))
+      e.agg$model <- factor(e.agg$model, levels = c(m1.lab, m2.lab, m3.lab))
+    }
     
     p1 <- ggplot(data = e.temp) + geom_boxplot(aes(x = FWeek_pkwk, y = score, group = group, fill = model)) +
       facet_wrap(~ oev_denom, ncol = 3) + theme_bw() + scale_fill_brewer(palette = 'Set1') +

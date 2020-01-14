@@ -91,6 +91,7 @@ for (season in seasons) {
   oev_base <- 0; oev_denom <- 2.0
   obs_vars <- 1e5 + calc_obsvars_nTest(obs = as.matrix(obs_i), syn_dat = as.matrix(syn_i), ntests = as.matrix(test_i), posprops = as.matrix(pos_i),
                                        oev_base, oev_denom, tmp_exp = 2.0)
+  # obs_vars <- calc_obsvars(obs = as.matrix(obs_i), oev_base = 1e5, oev_denom = 1)
   
   # Match obs_i/obs_vars to appropriate season/country/fc_start:
   for (count.index in 1:n) {

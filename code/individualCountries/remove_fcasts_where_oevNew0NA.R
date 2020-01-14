@@ -103,23 +103,23 @@ for (season in seasons) {
 m.mini <- m.mini[!is.na(m.mini$oev) & m.mini$oev != 0, ]
 # honestly, this doesn't remove much
 
-# Merge m.mini with all important data frames:
-m.store <- merge(m.store, m.mini, by = c('season', 'country', 'fc_start'))
-o <- merge(o, m.mini, by = c('season', 'country', 'fc_start'))
-for (i in 1:length(d)) {
-  d[[i]] <- merge(d[[i]], m.mini, c('season', 'country', 'fc_start'))
-}
-
-# Remove relevant columns to put these into correct format:
-m.store$obs <- NULL; m.store$oev <- NULL
-o$obs <- NULL; o$oev <- NULL
-for (i in 1:length(d)) {
-  d[[i]]$obs <- NULL; d[[i]]$oev <- NULL
-}
-
-# Put correct column order back:
-m.store <- m.store[, c(1, 4:8, 3, 2, 9:78)]
-o <- o[, c(1, 4, 6:8, 3, 9:11, 2, 12:13, 18, 14:17, 19:20, 25, 21:24)]
+# # Merge m.mini with all important data frames:
+# m.store <- merge(m.store, m.mini, by = c('season', 'country', 'fc_start'))
+# o <- merge(o, m.mini, by = c('season', 'country', 'fc_start'))
+# for (i in 1:length(d)) {
+#   d[[i]] <- merge(d[[i]], m.mini, c('season', 'country', 'fc_start'))
+# }
+# 
+# # Remove relevant columns to put these into correct format:
+# m.store$obs <- NULL; m.store$oev <- NULL
+# o$obs <- NULL; o$oev <- NULL
+# for (i in 1:length(d)) {
+#   d[[i]]$obs <- NULL; d[[i]]$oev <- NULL
+# }
+# 
+# # Put correct column order back:
+# m.store <- m.store[, c(1, 4:8, 3, 2, 9:78)]
+# o <- o[, c(1, 4, 6:8, 3, 9:11, 2, 12:13, 18, 14:17, 19:20, 25, 21:24)]
 
 # Go ahead and remove unnecessary columns from m:
 m.store <- m.store[, c(1:9, 12:13, 15:32, 39, 43, 47, 51, 53:56, 60:78)]
@@ -133,6 +133,6 @@ for (i in 1:length(d)) {
   write.csv(d.temp, file = paste0('PROC_', logScore.files[i]), row.names = FALSE)
 }
 
-# Clean up!
-rm(list = ls())
+# # Clean up!
+# rm(list = ls())
 

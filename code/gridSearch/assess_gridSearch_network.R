@@ -5,19 +5,16 @@ library(reshape2); library(ggplot2); library(gridExtra)
 # Save plots?:
 outputPlots <- FALSE
 fileSuffix <- '_A(H1)'
+pdf('results/gridSearch/network_grid_OEVnew_H1.pdf', width = 14, height = 9)
 
 # Restrict the forecast start weeks for which results are shown?
 restrict.fc <- FALSE
 
-# Set model labels:
-m1.lab <- 'Network (0/2)'
-m2.lab <- 'Network (0/2)(H3)'
-m3.lab <- 'Indiv. (Old OEV)'
+# Set locations of model results:
+model.loc <- 'results/gridSearch/network_grid_OEVnew1e5_H1/'
 
-# Set locations of model results to be compared:
-model1 <- 'results/A(H1)/network_NEW/'
-model2 <- 'results/A(H3)/network_NEW/'
-model3 <- 'results/A(H1)/indiv_mid/'
+# Stipulate that grid search:
+gridSearch <- TRUE
 
 #########################################################################################################################################################
 #########################################################################################################################################################
@@ -25,28 +22,14 @@ model3 <- 'results/A(H1)/indiv_mid/'
 # Read in all plotting code:
 source('code/comparisons/comp_netVsIndiv/plotting_functions.R')
 
-# Read in and format metrics files:
-m1 <- read.csv(file = paste0(model1, list.files(path = model1, pattern = 'Met_pro')))
-m2 <- read.csv(file = paste0(model2, list.files(path = model2, pattern = 'Met_pro')))
-m3 <- read.csv(file = paste0(model3, list.files(path = model3, pattern = 'Met_pro')))
-
-# m1 <- m1[, c(1:9, 12:13, 15, 17:19, 25:32, 39, 43, 47, 60:63, 65, 67:69, 78)]
-# m2 <- m2[, c(1:9, 12:13, 15, 17:19, 25:32, 39, 43, 47, 60:63, 65, 67:69, 78)]
-# m3 <- m3[, c(1:9, 12:13, 15, 17:19, 25:32, 39, 43, 47, 60:63, 65, 67:69, 78)]
-
-m1$model <- m1.lab; m2$model <- m2.lab; m3$model <- m3.lab
-
-m <- rbind(m1, m2, m3)
-m$model <- factor(m$model, levels = c(m1.lab, m2.lab, m3.lab))
-rm(m1, m2, m3)
-
+# Read in and format metrics file:
+m <- read.csv(file = paste0(model.loc, list.files(path = model.loc, pattern = 'Met_pro')))
 m <- m[!is.na(m$onsetObs5), ]
 
-### Equalize oev_base/oev_denom, just to avoid plotting errors ###
-m$oev_base <- 0
-m$oev_denom <- 2.0
-##################################################################
+# Trick pre-existing code into giving me results?:
+m$model <- m$oev_base
 
+# Continue formatting:
 m$oev_base <- factor(m$oev_base)
 m$oev_denom <- factor(m$oev_denom)
 m$lambda <- factor(m$lambda)
@@ -102,42 +85,19 @@ if (outputPlots) {
 }
 
 # Read in all log scores files:
-d1 <- read.csv(paste0(model1, list.files(path = model1, pattern = '_pt_ot')))
-e.pi1 <- read.csv(paste0(model1, list.files(path = model1, pattern = '_pi_bin')))
-e1 <- read.csv(paste0(model1, list.files(path = model1, pattern = '_1-4wks_bin')))
+d <- read.csv(paste0(model.loc, list.files(path = model.loc, pattern = '_pt_ot')))
+e.pi <- read.csv(paste0(model.loc, list.files(path = model.loc, pattern = '_pi_bin')))
+e <- read.csv(paste0(model.loc, list.files(path = model.loc, pattern = '_1-4wks_bin')))
 
-d2 <- read.csv(paste0(model2, list.files(path = model2, pattern = '_pt_ot')))
-e.pi2 <- read.csv(paste0(model2, list.files(path = model2, pattern = '_pi_bin')))
-e2 <- read.csv(paste0(model2, list.files(path = model2, pattern = '_1-4wks_bin')))
-
-d3 <- read.csv(paste0(model3, list.files(path = model3, pattern = '_pt_ot')))
-e.pi3 <- read.csv(paste0(model3, list.files(path = model3, pattern = '_pi_bin')))
-e3 <- read.csv(paste0(model3, list.files(path = model3, pattern = '_1-4wks_bin')))
-
-logs1 <- list(d1, e.pi1, e1)#, e.pi.alt1, e.alt1)
-logs2 <- list(d2, e.pi2, e2)#, e.pi.alt2, e.alt2)
-logs3 <- list(d3, e.pi3, e3)#, e.pi.alt3, e.alt3)
-
-for (i in 1:3) {# 5) {
-  logs1[[i]]$model <- m1.lab
-  logs2[[i]]$model <- m2.lab
-  logs3[[i]]$model <- m3.lab
-}
-
-d <- rbind(logs1[[1]], logs2[[1]], logs3[[1]])
-e.pi <- rbind(logs1[[2]], logs2[[2]], logs3[[2]])
-e <- rbind(logs1[[3]], logs2[[3]], logs3[[3]])
-# e.pi.alt <- rbind(logs1[[4]], logs2[[4]], logs3[[4]])
-# e.alt <- rbind(logs1[[5]], logs2[[5]], logs3[[5]])
-
-##########################################
-d$oev_base = 1.0; d$oev_denom = 1.0
-e.pi$oev_base = 1.0; e.pi$oev_denom = 1.0
-e$oev_base = 1.0; e$oev_denom = 1.0
-##########################################
+d$model <- d$oev_base
+e.pi$model <- e.pi$oev_base
+e$model <- e$oev_base
 
 levels(d$metric) <- c('ot', 'pt')
-rm(d1, d2, d3, e.pi1, e.pi2, e.pi3, e1, e2, e3, logs1, logs2, logs3)
+
+d$model <- factor(d$model)
+e.pi$model <- factor(e.pi$model)
+e$model <- factor(e$model)
 
 # Plot log scores for PT, PI, OT, 1-4 weeks, by PREDICTED lead week:
 # Question: Remove where obs are 0 for 1-4 weeks? Or where obs below some value?
@@ -197,6 +157,8 @@ rm(d, e.pi, e, byWeek)
 # } else {
 #   grid.arrange(p1, p2, p3, p4, p5, ncol = 1)
 # }
+
+dev.off()
 
 rm(list = ls())
 

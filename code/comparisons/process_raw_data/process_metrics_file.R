@@ -15,24 +15,23 @@ if (model.type == 'Network') {
 }
 m <- read.csv(file = list.files(pattern = 'Met'))
 
-# for now, need to fix FR scalings - but work on this!
-load('../../../data/by_subtype/scalings_noCutoff_threeOverPointOne.RData')
-m$scaling[m$country == 'FR' & m$season %in% c('2010-11', '2011-12', '2012-13', '2013-14')] <- scalings.new[[1]][13]
-rm(i)
-rm(scalings.new)
+# # for now, need to fix FR scalings - but work on this!
+# load('../../../data/by_subtype/scalings_noCutoff_threeOverPointOne.RData')
+# m$scaling[m$country == 'FR' & m$season %in% c('2010-11', '2011-12', '2012-13', '2013-14')] <- scalings.new[[1]][13]
+# rm(scalings.new)
 
 if (model.type == 'Individual') {
   names(m)[4] <- 'scaling'
   
-  load('../../data/by_subtype/scalings_noCutoff_threeOverPointOne.RData')
-  m$scaling[m$country == 'FR' & m$season %in% c('2010-11', '2011-12', '2012-13', '2013-14')] <- scalings.new[[1]][13]
+  # load('../../data/by_subtype/scalings_noCutoff_threeOverPointOne.RData')
+  # m$scaling[m$country == 'FR' & m$season %in% c('2010-11', '2011-12', '2012-13', '2013-14')] <- scalings.new[[1]][13]
   
   for (i in 37:44) {
     m[, i] <- m[, i] + 40 - 1
   }
   
   rm(i)
-  rm(scalings.new)
+  # rm(scalings.new)
 }
 
 # m <- read.csv('results/newScalings/outputMet_090919.csv')

@@ -4,7 +4,7 @@ model.type <- 'Network'
 # model.type <- 'Individual'
 
 # Set strain:
-strain <- 'A(H3)'
+strain <- 'A(H1)'
 
 # 1. Process metrics file:
 source('code/comparisons/process_raw_data/process_metrics_file.R')
@@ -15,7 +15,7 @@ if (model.type == 'Network') {
   source('../../../code/comparisons/process_raw_data/calculate_log_scores.R')
   
 } else if (model.type == 'Individual') {
-  source('../../../code/individualCountries/calculate_log_scores.R')
+  source('../../code/individualCountries/calculate_log_scores.R')
   write.csv(m.store, file = 'outputMet_pro.csv', row.names = FALSE)
 }
 
@@ -32,7 +32,7 @@ if (model.type == 'Network') {
 }
 
 # 5: Reset directory:
-if (exists('model.type')) {
+if (model.type == 'Network') {
   setwd('../../..')
 } else {
   setwd('../../')
