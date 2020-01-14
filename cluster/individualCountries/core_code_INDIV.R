@@ -23,8 +23,8 @@ source('code/individualCountries/EAKF_indiv.R')
 
 ### Seasons:
 # seasons <- c('2010-11', '2011-12', '2012-13', '2013-14', '2014-15', '2015-16', '2016-17', '2017-18')
-seasons <- c('2010-11', '2012-13', '2013-14', '2014-15', '2015-16', '2017-18') # H1
-# seasons <- c('2011-12', '2012-13', '2013-14', '2014-15', '2016-17') # H3
+# seasons <- c('2010-11', '2012-13', '2013-14', '2014-15', '2015-16', '2017-18') # H1
+seasons <- c('2011-12', '2012-13', '2013-14', '2014-15', '2016-17') # H3
 # seasons <- c('2010-11', '2012-13', '2014-15', '2015-16', '2016-17', '2017-18') # B
 
 ### Global variables:
@@ -56,7 +56,7 @@ I0_low <- 0; I0_up <- 0.00005
 discrete <- FALSE # run the SIRS model continuously
 metricsonly <- FALSE # save all outputs
 
-oevBaseList <- c(1e4, 1e5)
+oevBaseList <- c(5e4, 1e5)
 oevDenomList <- c(1.0, 10.0, 100.0)
 # lambdaList <- c(1.00, 1.02, 1.05)
 # 
@@ -89,8 +89,8 @@ AH <- rbind(ah[, count.indices], ah[, count.indices])
 ### Read in influenza data
 # iliiso <- read.csv('data/WHO_data_05-09-19_SCALED.csv') # in same order as "countries" vector
 # iliiso <- read.csv('data/by_subtype/WHO_data_A(all)_SCALED.csv')
-iliiso <- read.csv('data/by_subtype/WHO_data_A(H1)_SCALED.csv')
-# iliiso <- read.csv('data/by_subtype/WHO_data_A(H3)_SCALED.csv')
+# iliiso <- read.csv('data/by_subtype/WHO_data_A(H1)_SCALED.csv')
+iliiso <- read.csv('data/by_subtype/WHO_data_A(H3)_SCALED.csv')
 # iliiso <- read.csv('data/by_subtype/WHO_data_B_SCALED.csv')
 print(dim(iliiso))
 
@@ -103,11 +103,11 @@ test.dat <- read.csv('data/testRates_010820.csv')
 # syn.dat <- read.csv('data/by_subtype/synDatCounts_A(all)_SCALED.csv')
 # pos.dat <- read.csv('data/by_subtype/posprop_A(all).csv')
 
-syn.dat <- read.csv('data/by_subtype/synDatCounts_A(H1)_SCALED.csv')
-pos.dat <- read.csv('data/by_subtype/posprop_A(H1).csv')
+# syn.dat <- read.csv('data/by_subtype/synDatCounts_A(H1)_SCALED.csv')
+# pos.dat <- read.csv('data/by_subtype/posprop_A(H1).csv')
 
-# syn.dat <- read.csv('data/by_subtype/synDatCounts_A(H3)_SCALED.csv')
-# pos.dat <- read.csv('data/by_subtype/posprop_A(H3).csv')
+syn.dat <- read.csv('data/by_subtype/synDatCounts_A(H3)_SCALED.csv')
+pos.dat <- read.csv('data/by_subtype/posprop_A(H3).csv')
 
 # syn.dat <- read.csv('data/by_subtype/synDatCounts_B_SCALED.csv')
 # pos.dat <- read.csv('data/by_subtype/posprop_B.csv')
@@ -120,8 +120,8 @@ pos.dat <- pos.dat[, c(1, count.indices + 1)]
 # scalings <- scalings[count.indices, ]
 # note: these are the "old" scalings
 # scalings <- read.csv('data/by_subtype/scalings_frame_A(all).csv')
-scalings <- read.csv('data/by_subtype/scalings_frame_A(H1).csv')
-# scalings <- read.csv('data/by_subtype/scalings_frame_A(H3).csv')
+# scalings <- read.csv('data/by_subtype/scalings_frame_A(H1).csv')
+scalings <- read.csv('data/by_subtype/scalings_frame_A(H3).csv')
 # scalings <- read.csv('data/by_subtype/scalings_frame_B.csv')
 
 ### Loop through countries to generate forecasts:
@@ -256,12 +256,12 @@ print('Results compiled.')
 
 # Update scalings for FR:
 load('data/by_subtype/scalings_noCutoff_threeOverPointOne.RData')
-metrics.all[metrics.all[, 'country'] == 'FR' & metrics.all[, 'season'] %in% c('2010-11', '2011-12', '2012-13', '2013-14', '2014-15', '2015-16', '2016-17', '2017-18')[1:4], 'scaling'] <- scalings.new[[1]][13]#1.3
+metrics.all[metrics.all[, 'country'] == 'FR' & metrics.all[, 'season'] %in% c('2010-11', '2011-12', '2012-13', '2013-14', '2014-15', '2015-16', '2016-17', '2017-18')[1:4], 'gamma'] <- scalings.new[[2]][13]#1.3
 
 # Save!
-write.csv(metrics.all, file = paste0('code/individualCountries/outputs/outputMet_', oev_base, '_', oev_denom, '_A(H1)_OEVold.csv'), row.names = FALSE)
-write.csv(output.all, file = paste0('code/individualCountries/outputs/outputOP_', oev_base, '_', oev_denom, '_A(H1)_OEVold.csv'), row.names = FALSE)
-write.csv(dist.all, file = paste0('code/individualCountries/outputs/outputDist_', oev_base, '_', oev_denom, '_A(H1)_OEVold.csv'), row.names = FALSE)
-write.csv(ens.all, file = paste0('code/individualCountries/outputs/outputEns_', oev_base, '_', oev_denom, '_A(H1)_OEVold.csv'), row.names = FALSE)
+write.csv(metrics.all, file = paste0('code/individualCountries/outputs/outputMet_', oev_base, '_', oev_denom, '_A(H3)_OEVold.csv'), row.names = FALSE)
+write.csv(output.all, file = paste0('code/individualCountries/outputs/outputOP_', oev_base, '_', oev_denom, '_A(H3)_OEVold.csv'), row.names = FALSE)
+write.csv(dist.all, file = paste0('code/individualCountries/outputs/outputDist_', oev_base, '_', oev_denom, '_A(H3)_OEVold.csv'), row.names = FALSE)
+write.csv(ens.all, file = paste0('code/individualCountries/outputs/outputEns_', oev_base, '_', oev_denom, '_A(H3)_OEVold.csv'), row.names = FALSE)
 
 print('Done.')
