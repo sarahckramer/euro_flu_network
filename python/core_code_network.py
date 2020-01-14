@@ -1,4 +1,3 @@
-
 import os
 import sys
 from numba.typed import List
@@ -16,6 +15,9 @@ timestamp_start = datetime.datetime.now()
 # Specify subtype:
 strain = 'A(H1)'
 
+# Specifiy experiment:
+experiment = 'lowerOnset'
+
 # Specify global variables
 dt = 1
 tmstep = 7
@@ -23,8 +25,8 @@ wk_start = 40
 
 # Parameters for filters
 discrete = False
-oev_base = np.float64(0)
-oev_denom = np.float64(2.0)
+oev_base = np.float64(1e5)
+oev_denom = np.float64(10.0)
 lambda_val = np.float64(1.05)
 num_ens = 300
 num_runs = 3  # EVENTUALLY WANT 5
@@ -39,7 +41,7 @@ scalings_fr = pd.read_csv('../data/by_subtype/scalings_frame_FR.csv')
 
 # Read in data and set seasons:
 if strain == 'A(H1)':
-    seasons = ('2010-11', '2012-13', '2013-14', '2014-15', '2015-16', '2017-18') # H1
+    seasons = ('2010-11', '2012-13', '2013-14', '2014-15', '2015-16', '2017-18')  # H1
 
     iliiso = pd.read_csv('../data/by_subtype/WHO_data_A(H1)_SCALED.csv')
     test_dat = pd.read_csv('../data/testRates_010820.csv')
@@ -98,8 +100,7 @@ ah = ah.to_numpy(dtype=np.float64)
 # Read in air travel data:
 a_rand = np.zeros([12, n, n], dtype=np.float64)
 for i in range(n):
-    a_rand[i] = np.loadtxt('air_travel/aRand' + str(i + 1) + '.txt', unpack=True)
-a_rand = a_rand.astype(dtype=np.float64, order='C')
+    a_rand[i] = np.loadtxt('air_travel/aRand' + str(i + 1) + '.txt', unpack=True, dtype=np.float64)
 
 # Season-specific start and end dates:
 clim_start_dict = {'2010-11': 276, '2011-12': 275, '2012-13': 274, '2013-14': 272, '2014-15': 271, '2015-16': 270,
@@ -119,6 +120,15 @@ outputOP = pd.DataFrame()
 outputOPParams = pd.DataFrame()
 outputDist = pd.DataFrame()
 outputEns = pd.DataFrame()
+
+# GRID SEARCH:
+# for oev_base in [5e4, 1e5]:  # 0.0, 0.1 or 5e4, 1e5
+#     oev_base = np.float64(oev_base)
+#     print(oev_base)
+#
+# for oev_denom in [1.0, 2.0, 10.0, 50.0]:  # 1.0, 2.0, 10.0 or 1.0, 10.0, 100.0
+#     oev_denom = np.float64(oev_denom)
+#     print(oev_denom)
 
 # Loop through seasons and forecast:
 for season_index in range(len(seasons)):
@@ -156,9 +166,10 @@ for season_index in range(len(seasons)):
             print('0s found in test data!')
 
     # Get OEV:
-    obs_vars = 1e5 + calc_obsvars_nTest(obs_i, syn_i, test_i, pos_i, oev_base, oev_denom, n)
-    # obs_vars[np.where(np.less(obs_vars, 1e3, where=~isnan(obs_vars)) & ~np.isnan(obs_vars))] = 1e3
+    # obs_vars = 1e5 + calc_obsvars_nTest(obs_i, syn_i, test_i, pos_i, oev_base, oev_denom, n)
+    obs_vars = calc_obsvars(obs_i, oev_base, oev_denom, n)
     # DO WE NEED DATES?
+    # np.savetxt('results/original_checks_R/obs_vars_old.txt', obs_vars, delimiter=',')
 
     # Get time start and time range:
     tm_ini = clim_start_dict[season] - 2  # b/c python indexes at 0, while R does it at 1
@@ -171,12 +182,13 @@ for season_index in range(len(seasons)):
         print(run)
 
         # Get initial states/parameters for each ensemble member:
-        param_init = pd.read_csv(os.path.join('initial_parms/', 'parms' + str(run) + '.txt'), header=None, sep='\t')
+        param_init = pd.read_csv(os.path.join('initial_parms/', 'parms' + str(run) + '.txt'), header=None,
+                                 sep='\t')
         param_init = param_init.to_numpy(dtype=np.float64)
         # print(param_init.shape)
 
         # Run EAKF:
-        res = EAKF_fn(num_ens, tmstep, param_init, obs_i, 20, nsn, obs_vars, tm_ini, tm_range, n, N, ah,
+        res = EAKF_fn(num_ens, tmstep, param_init, obs_i, 30, nsn, obs_vars, tm_ini, tm_range, n, N, ah,
                       dt, countries, a_rand, lambda_val, wk_start)  # and variables needed for SIRS
 
         outputMet_temp = res[0]
@@ -195,10 +207,17 @@ for season_index in range(len(seasons)):
         else:
             outputMet_temp['scaling'] = np.tile(scalings['gamma'], int(outputMet_temp.shape[0] / n))
 
-        outputMet_temp = outputMet_temp.assign(**{'season': season, 'run': run, 'oev_base': oev_base,
-                                                  'oev_denom': oev_denom, 'lambda': lambda_val,
-                                                  'scaling': np.tile(scalings['gamma'],
-                                                                     int(outputMet_temp.shape[0] / n))})
+        if season in ('2010-11', '2011-12', '2012-13', '2013-14'):
+            outputMet_temp = outputMet_temp.assign(**{'season': season, 'run': run, 'oev_base': oev_base,
+                                                      'oev_denom': oev_denom, 'lambda': lambda_val,
+                                                      'scaling': np.tile(scalings_early['gamma'],
+                                                                         int(outputMet_temp.shape[0] / n))})
+        else:
+            outputMet_temp = outputMet_temp.assign(**{'season': season, 'run': run, 'oev_base': oev_base,
+                                                      'oev_denom': oev_denom, 'lambda': lambda_val,
+                                                      'scaling': np.tile(scalings['gamma'],
+                                                                         int(outputMet_temp.shape[0] / n))})
+
         outputOP_temp = outputOP_temp.assign(**{'season': season, 'run': run, 'oev_base': oev_base,
                                                 'oev_denom': oev_denom, 'lambda': lambda_val})
         outputOPParams_temp = outputOPParams_temp.assign(**{'season': season, 'run': run, 'oev_base': oev_base,
@@ -224,10 +243,17 @@ print('Done.')
 timestamp_end = datetime.datetime.now()
 print('Time Elapsed: ' + str(timestamp_end - timestamp_start))
 
-outputMetrics.to_csv('results/outputMet_H1_0_2.csv', na_rep='NA', index=False)
-outputOP.to_csv('results/outputOP_H1_0_2.csv', na_rep='NA', index=False)
-outputOPParams.to_csv('results/outputOPParams_H1_0_2.csv', na_rep='NA', index=False)
-outputDist.to_csv('results/outputDist_H1_0_2.csv', na_rep='NA', index=False)
-outputEns.to_csv('results/outputEns_H1_0_2.csv', na_rep='NA', index=False)
+outputMetrics.to_csv('results/explore/outputMet_' + strain + '_' + experiment + '.csv', na_rep='NA', index=False)
+outputOP.to_csv('results/explore/outputOP_' + strain + '_' + experiment + '.csv', na_rep='NA', index=False)
+outputOPParams.to_csv('results/explore/outputOPParams_' + strain + '_' + experiment + '.csv', na_rep='NA', index=False)
+outputDist.to_csv('results/explore/outputDist_' + strain + '_' + experiment + '.csv', na_rep='NA', index=False)
+outputEns.to_csv('results/explore/outputEns_' + strain + '_' + experiment + '.csv', na_rep='NA', index=False)
+
+# outputMetrics.to_csv('results/outputMet_H3_newOEV_1e5.csv', na_rep='NA', index=False)
+# outputOP.to_csv('results/outputOP_H3_newOEV_1e5.csv', na_rep='NA', index=False)
+# outputOPParams.to_csv('results/outputOPParams_H3_newOEV_1e5.csv', na_rep='NA', index=False)
+# outputDist.to_csv('results/outputDist_H3_newOEV_1e5.csv', na_rep='NA', index=False)
+# outputEns.to_csv('results/outputEns_H3_newOEV_1e5.csv', na_rep='NA', index=False)
+print('Finished writing to file!')
 
 # error with correlations? i think it's okay to ignore - just passes nan when there's nothing to correlate I assume
