@@ -51,7 +51,7 @@ pop.size <- pop.size[pop.size$country %in% countries, ]; pop.size$country <- fac
 pop.size <- pop.size[match(countries, pop.size$country), ]
 
 # Read in humidity data:
-ah <- read.csv('../GLDAS_data/ah_Europe_07142019.csv')
+ah <- read.csv('data/ah_Europe_07142019.csv')
 AH <- rbind(ah[, count.indices], ah[, count.indices])
 
 # ah <- read.csv('data/ah_MEAN_120519.csv')
