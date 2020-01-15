@@ -76,6 +76,9 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
         temp_range = [j + n * i for j in range(n)]
         obsprior[i, :, 0] = np.sum(xprior[newI_indices, :, 0][temp_range, :], 0) / np.sum(N, 1)[i] * 100000
 
+    # Set onset baseline:
+    baseline = np.float64(500.0)
+
     # Begin training:
     obs_i = obs_i.iloc[:, 1:(n + 1)].to_numpy(dtype=np.float64)
     # print(obs_i)
@@ -325,7 +328,7 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
                         peakWeeks[i, ensmem] = np.nanargmax(yy) + 1
                         peakIntensities[i, ensmem] = np.nanmax(yy)
                         totalARs[i, ensmem] = np.nansum(yy)
-                        onsets5[i, ensmem] = findOnset(yy, 500.0)[0]
+                        onsets5[i, ensmem] = findOnset(yy, baseline)[0]
                     del ensmem
 
                     # point metrics:
@@ -341,8 +344,8 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
                     tot_attack[0, i] = np.nansum(Y[:, i])
                     ar_var[0, i] = np.var(totalARs[i, :], ddof=1)
 
-                    onsetObs5[0, i] = findOnset(obs_i[:, i], 500.0)[0]
-                    # onset5[0, i] = findOnset(Y[:, i], 500.0)[0] # this is done later!
+                    onsetObs5[0, i] = findOnset(obs_i[:, i], baseline)[0]
+                    # onset5[0, i] = findOnset(Y[:, i], baseline)[0] # this is done later!
                     onset5_var[0, i] = np.nanvar(onsets5[i, :], ddof=1) if ~all(np.isnan(onsets5[i, :])) else np.nan
 
                     # continuous error metrics:
@@ -448,7 +451,7 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
                 if not all(np.isnan(obs_i[:, j])):
                     # print(onsets5Dist[:, j + 1])
                     if onsets5DistNA[:, j + 1] <= np.max(onsets5Dist[:, j + 1]):
-                        onset5[0, j] = findOnset(Y[:, j], 500.0)[0]
+                        onset5[0, j] = findOnset(Y[:, j], baseline)[0]
                     else:
                         onset5[0, j] = np.nan
                 else:

@@ -23,7 +23,6 @@ def replaceLeadLag(vals_temp):
 
 
 def calc_obsvars(obs, oev_base, oev_denom, n):
-    # NOT TESTED
     obs = obs.iloc[:, 1:(n + 1)].to_numpy(dtype=np.float64)
 
     tmp = np.zeros([obs.shape[0], obs.shape[1]], dtype=np.float64)
