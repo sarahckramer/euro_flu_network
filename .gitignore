@@ -16,3 +16,4 @@ python/__pycache__/
 *.txt
 *.7z
 *.zip
+*.tmp
