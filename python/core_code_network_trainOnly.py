@@ -12,6 +12,9 @@ pd.options.mode.chained_assignment = None
 # Time benchmark start:
 timestamp_start = datetime.datetime.now()
 
+# Specify subtype:
+strain = 'B'
+
 # Specify global variables
 dt = 1
 tmstep = 7
@@ -30,9 +33,37 @@ countries = np.array(['AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL'
 count_indices = [0, 1, 3, 5, 6, 7, 10, 11, 12, 13, 16, 18]
 n = len(countries)
 
-# Read in data and set outbreaks:
-seasons = ('2010-11', '2011-12', '2012-13', '2013-14', '2014-15', '2015-16', '2016-17', '2017-18')
-iliiso = pd.read_csv('../data/by_subtype/WHO_data_A(all)_SCALED.csv')
+# Read in additional French scalings:
+scalings_fr = pd.read_csv('../data/by_subtype/scalings_frame_FR.csv')
+
+# Read in data and set seasons:
+if strain == 'A(H1)':
+    seasons = ('2010-11', '2012-13', '2013-14', '2014-15', '2015-16', '2017-18')  # H1
+    iliiso = pd.read_csv('../data/by_subtype/WHO_data_A(H1)_SCALED.csv')
+
+    scalings = pd.read_csv('../data/by_subtype/scalings_frame_A(H1).csv')
+    scalings_early = pd.read_csv('../data/by_subtype/scalings_frame_A(H1).csv')
+    scalings_early['gamma'][3] = scalings_fr['x'][0]
+
+elif strain == 'A(H3)':
+    seasons = ('2011-12', '2012-13', '2013-14', '2014-15', '2016-17')  # H3
+    iliiso = pd.read_csv('../data/by_subtype/WHO_data_A(H3)_SCALED.csv')
+
+    scalings = pd.read_csv('../data/by_subtype/scalings_frame_A(H3).csv')
+    scalings_early = pd.read_csv('../data/by_subtype/scalings_frame_A(H3).csv')
+    scalings_early['gamma'][3] = scalings_fr['x'][1]
+
+elif strain == 'B':
+    seasons = ('2010-11', '2012-13', '2014-15', '2015-16', '2016-17', '2017-18')  # B
+    iliiso = pd.read_csv('../data/by_subtype/WHO_data_B_SCALED.csv')
+
+    scalings = pd.read_csv('../data/by_subtype/scalings_frame_B.csv')
+    scalings_early = pd.read_csv('../data/by_subtype/scalings_frame_B.csv')
+    scalings_early['gamma'][3] = scalings_fr['x'][2]
+
+else:
+    print('Error: Subtype not recognized.')
+    sys.exit()
 
 # Read in humidity data:
 ah = pd.read_csv('../data/ah_Europe_07142019.csv')
@@ -61,7 +92,7 @@ season_len_dict = {'2010-11': 52, '2011-12': 52, '2012-13': 52, '2013-14': 52, '
 outputOP = pd.DataFrame()
 outputOPParams = pd.DataFrame()
 
-# Loop through outbreaks and forecast:
+# Loop through outbreaks and fit:
 for season_index in range(len(seasons)):
     season = seasons[season_index]
     print(season)
@@ -86,13 +117,21 @@ for season_index in range(len(seasons)):
     # Get OEV:
     obs_vars = calc_obsvars(obs_i, oev_base, oev_denom, n)
 
+    # print(np.where(np.isnan(obs_vars)))
+    # oev_nas = np.where(np.isnan(obs_vars))
+    #
+    # for i in range(len(oev_nas[0])):
+    #     # print(oev_nas[0][i])
+    #     # print(oev_nas[1][i])
+    #     print(obs_i.to_numpy()[oev_nas[0][i], oev_nas[1][i] + 1])
+
     # Get time start and time range:
     tm_ini = clim_start_dict[season] - 2  # b/c python indexes at 0, while R does it at 1
     tm_range1 = [i for i in range(clim_start_dict[season] - 1, clim_end_dict[season], 1)]
     tm_range = List()
     [tm_range.append(i) for i in tm_range1]
 
-    # Run forecasts!
+    # Run!
     for run in range(num_runs):
         print(run)
 
@@ -103,7 +142,7 @@ for season_index in range(len(seasons)):
         # Here we use the same as used in forecasting
 
         # Run EAKF:
-        res = EAKF_fn_fitOnly(num_ens, tmstep, param_init, obs_i, 52, nsn, obs_vars, tm_ini, tm_range, n, N, ah,
+        res = EAKF_fn_fitOnly(num_ens, tmstep, param_init, obs_i, nsn, nsn, obs_vars, tm_ini, tm_range, n, N, ah,
                               dt, a_rand, lambda_val, wk_start)  # and variables needed for SIRS
 
         outputOP_temp = res[0]
@@ -124,6 +163,6 @@ print('Done.')
 timestamp_end = datetime.datetime.now()
 print('Time Elapsed: ' + str(timestamp_end - timestamp_start))
 
-outputOP.to_csv('results/outputOP_SYNTH.csv', na_rep='NA', index=False)
-outputOPParams.to_csv('results/outputOPParams_SYNTH.csv', na_rep='NA', index=False)
+outputOP.to_csv('results/outputOP_' + strain + '_fitsOnly.csv', na_rep='NA', index=False)
+outputOPParams.to_csv('results/outputOPParams_' + strain + '_fitsOnly.csv', na_rep='NA', index=False)
 print('Finished writing to file!')

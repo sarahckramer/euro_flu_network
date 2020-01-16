@@ -101,6 +101,8 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
         # Quick fix: Don't allow xprior/obsprior to be <0:
         x[np.where(x < 0)] = 0
         obs_ens[np.where(obs_ens < 0)] = 0
+        # Fine to just set to 0 here (this is done in isolated model, too) - it's only if the inflation step adjusted
+        # things below 0
 
         # Update priors with inflated values:
         xprior[:, :, tt] = x
@@ -176,7 +178,8 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
         airScale_temp = xpost[param_indices[4], :, tt]
 
         # Loop through all ensemble members:
-        xprior[range(np.square(n) * 3), :, tt + 1] = run_ensemble(tmStrt=tcurrent+dt, tmEnd=tcurrent+tm_step, tmStep=dt,
+        xprior[range(np.square(n) * 3), :, tt + 1] = run_ensemble(tmStrt=tcurrent + dt, tmEnd=tcurrent + tm_step,
+                                                                  tmStep=dt,
                                                                   tmRange=tm_range, S0=S0_temp, I0=I0_temp, popN=N,
                                                                   D=D_temp, L=L_temp, beta=beta, airScale=airScale_temp,
                                                                   n=n, airRand=airRand, num_ens=300)
@@ -185,7 +188,8 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
         # Also calculate total newI for each country, and store in obsprior:
         for i in range(n):
             temp_range = [j + n * i for j in range(n)]
-            obsprior[i, :, tt+1] = np.sum(xprior[newI_indices, :, tt + 1][temp_range, :], 0) / np.sum(N, 1)[i] * 100000
+            obsprior[i, :, tt + 1] = np.sum(xprior[newI_indices, :, tt + 1][temp_range, :], 0) / np.sum(N, 1)[
+                i] * 100000
 
         # END OF TRAINING
 
@@ -707,3 +711,256 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
     fc_ens.columns = ['fc_start', 'country', 'metric'] + list(range(1, 301))
 
     return fc_met, out_op, params_post_df, fc_dist, fc_ens
+
+
+# EAKF code for python runs
+# noinspection PyShadowingNames
+def EAKF_fn_fitOnly(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm_range, n, N, AH,
+                    dt, airRand, lambda_val, wk_start):
+    tstep = np.arange(tm_ini + tm_step + 1, nsn * tm_step + tm_ini + 2, step=tm_step)
+    fc_start = wk_start
+
+    # Initialize arrays:
+    xprior = np.zeros([np.square(n) * 3 + 5, num_ens, ntrn + 1], dtype=np.float64)
+    xpost = np.zeros([np.square(n) * 3 + 5, num_ens, ntrn], dtype=np.float64)
+
+    obsprior = np.zeros([n, num_ens, ntrn + 1], dtype=np.float64)  # in R initialized with NAs - is "empty" okay?
+    obspost = np.zeros([n, num_ens, ntrn], dtype=np.float64)
+
+    # Where each state/param stored:
+    S_indices = range(np.square(n))
+    I_indices = [i + np.square(n) for i in S_indices]
+    newI_indices = [i + np.square(n) * 2 for i in S_indices]
+    param_indices = range(3 * np.square(n), 3 * np.square(n) + 5)
+
+    # Set initial conditions based on input parameters:
+    S0_temp = np.zeros([n, n, num_ens], dtype=np.float64)
+    #  originally had these stored as dictionaries, indexed by compartment
+    I0_temp = np.zeros([n, n, num_ens], dtype=np.float64)
+    for i in range(num_ens):
+        S0_temp[:, :, i] = np.multiply(np.reshape(init_parms[0:144, i], [n, n]), N)
+        I0_temp[:, :, i] = np.multiply(np.reshape(init_parms[144:288, i], [n, n]), N)
+    del i
+
+    init_parms = init_parms[(init_parms.shape[0] - 5):init_parms.shape[0], :]
+    # init_parms = init_parms[288:293, :] # L, D, R0mx, R0diff, airScale
+
+    # Calculate the reproductive number at time t:
+    beta_range = range(tm_range[0], max(tm_range) + 2 * tm_step)
+    AH = AH[beta_range, :]
+    # print(AH.shape)
+
+    a = -180
+    b = np.log(init_parms[3, :])
+    beta = np.zeros([AH.shape[0], AH.shape[1], num_ens], dtype=np.float64)
+    # print(beta.shape)
+    for i in range(num_ens):
+        beta[:, :, i] = (np.exp(a * AH + b[i]) + (init_parms[2, i] - init_parms[3, i])) / init_parms[1, i]
+    del i
+
+    tcurrent = tm_ini
+    # print(tcurrent) # Question: this is 1 less than tcurrent in R - I'm almost certain this is correct
+
+    # Get lists of initial parameters:
+    D_temp = init_parms[1, :]
+    L_temp = init_parms[0, :]
+    airScale_temp = init_parms[4, :]
+
+    xprior[range(np.square(n) * 3), :, 0] = run_ensemble(tmStrt=tcurrent + dt, tmEnd=tcurrent + tm_step, tmStep=dt,
+                                                         tmRange=tm_range, S0=S0_temp, I0=I0_temp, popN=N,
+                                                         D=D_temp, L=L_temp, beta=beta, airScale=airScale_temp,
+                                                         n=n, airRand=airRand, num_ens=300)
+    xprior[param_indices, :, 0] = init_parms
+
+    # Also calculate total newI for each country:
+    for i in range(n):
+        temp_range = [j + n * i for j in range(n)]
+        obsprior[i, :, 0] = np.sum(xprior[newI_indices, :, 0][temp_range, :], 0) / np.sum(N, 1)[i] * 100000
+
+    # Begin training:
+    obs_i = obs_i.iloc[:, 1:(n + 1)].to_numpy(dtype=np.float64)
+    # print(obs_i)
+
+    for tt in range(ntrn):
+        print('Time: ' + str(tt))
+
+        # Inflate all states and parameters:
+        inflat = np.diag(np.repeat(lambda_val, np.square(n) * 3 + 5))
+        inflat_obs = np.diag(np.repeat(lambda_val, n))
+        xmn = np.mean(xprior[:, :, tt], 1)
+        obs_ensmn = np.mean(obsprior[:, :, tt], 1)
+        x = np.matmul(inflat,
+                      xprior[:, :, tt] - np.matmul(xmn.reshape([xprior.shape[0], 1]), np.ones([1, num_ens]))) + (
+                np.matmul(xmn.reshape([xprior.shape[0], 1]), np.ones([1, num_ens])))
+        obs_ens = np.matmul(inflat_obs, obsprior[:, :, tt] - np.matmul(obs_ensmn.reshape([n, 1]),
+                                                                       np.ones([1, num_ens]))) + np.matmul(
+            obs_ensmn.reshape([n, 1]), np.ones([1, num_ens]))
+
+        # Quick fix: Don't allow xprior/obsprior to be <0:
+        x[np.where(x < 0)] = 0
+        obs_ens[np.where(obs_ens < 0)] = 0
+
+        # Update priors with inflated values:
+        xprior[:, :, tt] = x
+        obsprior[:, :, tt] = obs_ens
+
+        # Loop through observations:
+        for loc in range(n):
+            # print('Location: ' + countries[loc])
+
+            # Check that data point is not NA, and obs_var is not 0/NA:
+            obs_var = obs_vars[tt, loc]
+            # print(obs_var)
+
+            if not np.isnan(obs_i[tt, loc]) and not np.isnan(obs_var) and obs_var > 0:
+
+                # Calcualte prior/post means and variances:
+                prior_var = np.var(obs_ens[loc, :], ddof=1)
+                post_var = prior_var * (obs_var / (prior_var + obs_var))
+
+                if prior_var == 0:
+                    post_var = 0
+                    prior_var = 1e-3
+
+                prior_mean = np.mean(obs_ens[loc, :])
+                post_mean = post_var * (prior_mean / prior_var + obs_i[tt, loc] / obs_var)
+
+                # Compute alpha and adjust distribution to conform to posterior moments:
+                alp = np.sqrt(obs_var / (obs_var + prior_var))
+                dy = post_mean + alp * (obs_ens[loc, :] - prior_mean) - obs_ens[loc, :]
+
+                # Get covariances of the prior state space and the observations, and loop over each state variable:
+                rr = np.zeros([x.shape[0]], dtype=np.float64)
+                for j in range(x.shape[0]):
+                    C = (np.cov(x[j, :], obs_ens[loc, :]) / prior_var)[0, 1]
+                    rr[j] = C
+                del j
+                dx = np.matmul(rr.reshape([len(rr), 1]), dy.reshape([1, len(dy)]))
+
+                # Get adjusted ensemble and obs_ens:
+                x = x + dx
+                obs_ens[loc, :] = obs_ens[loc, :] + dy
+                # Question: Do we want to check for S0 values being reduced below 0, like in R code?
+
+                # Correct for values adjusted out of bounds:
+                x[np.where(x < 0)] = 0
+                x = fn_checkxnobounds(x, S_indices, I_indices, param_indices, N, n)
+                obs_ens[loc, :][np.where(obs_ens[loc, :] < 0)] = 0
+
+        del loc
+
+        # And store posteriors in proper locations:
+        xpost[:, :, tt] = x
+        obspost[:, :, tt] = obs_ens
+        # print(obs_ens[:, range(5)])
+
+        # Integrate forward one time step to get priors for time tt+1:
+        b = np.log(xpost[param_indices[3], :, tt])
+        beta = np.zeros([AH.shape[0], AH.shape[1], num_ens], dtype=np.float64)
+        for i in range(num_ens):
+            beta[:, :, i] = (np.exp(a * AH + b[i]) + (
+                    xpost[param_indices[2], i, tt] - xpost[param_indices[3], i, tt])) / xpost[
+                                param_indices[1], i, tt]
+        del i
+
+        tcurrent = tm_ini + tm_step * (tt + 1)
+
+        # Get S0/I0/params from xpost:
+        S0_temp = xpost[S_indices, :, tt].reshape([n, n, num_ens])
+        I0_temp = xpost[I_indices, :, tt].reshape([n, n, num_ens])
+
+        D_temp = xpost[param_indices[1], :, tt]
+        L_temp = xpost[param_indices[0], :, tt]
+        airScale_temp = xpost[param_indices[4], :, tt]
+
+        # Loop through all ensemble members:
+        xprior[range(np.square(n) * 3), :, tt + 1] = run_ensemble(tmStrt=tcurrent + dt, tmEnd=tcurrent + tm_step,
+                                                                  tmStep=dt,
+                                                                  tmRange=tm_range, S0=S0_temp, I0=I0_temp, popN=N,
+                                                                  D=D_temp, L=L_temp, beta=beta, airScale=airScale_temp,
+                                                                  n=n, airRand=airRand, num_ens=300)
+        xprior[param_indices, :, tt + 1] = xpost[param_indices, :, tt]
+
+        # Also calculate total newI for each country, and store in obsprior:
+        for i in range(n):
+            temp_range = [j + n * i for j in range(n)]
+            obsprior[i, :, tt + 1] = np.sum(xprior[newI_indices, :, tt + 1][temp_range, :], 0) / np.sum(N, 1)[
+                i] * 100000
+
+    # END OF TRAINING
+
+    # ### Process priors and posteriors after fitting is finished for full period ###
+    # Calculate S and I by country (prior and post):
+    s_prior = xprior[S_indices, :, :]
+    s_post = xpost[S_indices, :, :]
+    i_prior = xprior[I_indices, :, :]
+    i_post = xpost[I_indices, :, :]
+
+    s_prior_by_count = np.zeros([n, num_ens, ntrn + 1], dtype=np.float64)
+    i_prior_by_count = np.zeros([n, num_ens, ntrn + 1], dtype=np.float64)
+    s_post_by_count = np.zeros([n, num_ens, ntrn], dtype=np.float64)
+    i_post_by_count = np.zeros([n, num_ens, ntrn], dtype=np.float64)
+    for i in range(n):
+        country_vals = np.array([j + n * i for j in range(n)])
+        s_prior_by_count[i, :, :] = np.sum(s_prior[country_vals, :, :], 0) / np.sum(N, 1)[i] * 100000
+        i_prior_by_count[i, :, :] = np.sum(i_prior[country_vals, :, :], 0) / np.sum(N, 1)[i] * 100000
+        s_post_by_count[i, :, :] = np.sum(s_post[country_vals, :, :], 0) / np.sum(N, 1)[i] * 100000
+        i_post_by_count[i, :, :] = np.sum(i_post[country_vals, :, :], 0) / np.sum(N, 1)[i] * 100000
+    del i
+
+    # Calculate ensemble means and sds (prior and post; S, I, newI):
+    obsprior_mean = np.mean(obsprior, 1)
+    obspost_mean = np.mean(obspost, 1)
+    obspost_sd = np.std(obspost, 1, ddof=1)
+
+    sprior_mean = np.mean(s_prior_by_count, 1)
+    spost_mean = np.mean(s_post_by_count, 1)
+    spost_sd = np.std(s_post_by_count, 1, ddof=1)
+
+    iprior_mean = np.mean(i_prior_by_count, 1)
+    ipost_mean = np.mean(i_post_by_count, 1)
+    ipost_sd = np.std(i_post_by_count, 1, ddof=1)
+
+    # And store these in relevant data frames:
+    statesprior = np.concatenate((sprior_mean.reshape([n * (ntrn + 1), 1]),
+                                  iprior_mean.reshape([n * (ntrn + 1), 1]),
+                                  obsprior_mean.reshape([n * (ntrn + 1), 1])), 1)
+    statespost = np.concatenate((spost_mean.reshape([n * ntrn, 1]),
+                                 ipost_mean.reshape([n * ntrn, 1]),
+                                 obspost_mean.reshape([n * ntrn, 1]),
+                                 spost_sd.reshape([n * ntrn, 1]),
+                                 ipost_sd.reshape([n * ntrn, 1]),
+                                 obspost_sd.reshape([n * ntrn, 1])), 1)
+
+    states_weeks = np.array([i % (ntrn + 1) for i in range(statesprior.shape[0])]) + wk_start
+    states_countries = np.array([np.ceil((i + 1) / (ntrn + 1)) - 1 for i in range(statesprior.shape[0])]).astype(int)
+    statesprior = np.c_[states_weeks, states_countries, statesprior]
+    statesprior = pd.DataFrame(statesprior)
+    statesprior.columns = ['week', 'country', 'S', 'I', 'Est']
+
+    states_weeks = np.array([i % ntrn for i in range(statespost.shape[0])]) + wk_start
+    states_countries = np.array([np.ceil((i + 1) / ntrn) - 1 for i in range(statespost.shape[0])]).astype(int)
+    statespost = np.c_[states_weeks, states_countries, statespost]
+    statespost = pd.DataFrame(statespost)
+    statespost.columns = ['week', 'country', 'S', 'I', 'Est', 'S_sd', 'I_sd', 'Est_sd']
+
+    # Get parameter means and sds over time:
+    # params_prior_mean = np.mean(xprior[param_indices, :, :], 1)
+    params_post_mean = np.mean(xpost[param_indices, :, :], 1)
+    params_post_sd = np.std(xpost[param_indices, :, :], 1, ddof=1)
+    params_post_df = pd.DataFrame(np.transpose(np.concatenate((params_post_mean, params_post_sd), 0)))
+    params_post_df.columns = ['L', 'D', 'R0mx', 'R0diff', 'airScale',
+                              'L_sd', 'D_sd', 'R0mx_sd', 'R0diff_sd', 'airScale_sd']
+
+    # Format outputs:
+    statespost['fc_start'] = fc_start
+    statespost['result'] = 'train'
+    statespost['time'] = pd.Series(np.tile(tstep[range(0, ntrn)], n))
+    # noinspection PyTypeChecker
+    statespost = statespost[statespost.columns[[8, 10, 0, 9] + list(range(1, 8))]]
+
+    params_post_df['time'] = pd.Series(tstep[range(0, ntrn)])
+    params_post_df['week'] = pd.Series(range(ntrn)) + wk_start
+    params_post_df = params_post_df[params_post_df.columns[[10, 11] + list(range(10))]]
+
+    return statespost, params_post_df
