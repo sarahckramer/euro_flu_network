@@ -134,11 +134,12 @@ def fn_checkxnobounds(xnew, S_rows, I_rows, param_rows, popN, n_count):
                     xnew[ii, jj] = np.max(np.mean(xnew[ii, :]), 0)
                     # Sasi had it as max of mean and 1, but we don't want 1's in empty compartments!
     '''
-    # ug = np.min(xnew[param_rows[2], :])  # Correct if R0mx < 1.0
-    # if ug < 1.0:
-    #     for jj in range(n_ens):
-    #         if xnew[param_rows[2], jj] < 1.0:
-    #             xnew[param_rows[2], jj] = np.maximum(np.median(xnew[param_rows[2], :]), 1.0)
+    ug = np.min(xnew[param_rows[2], :])  # Correct if R0mx < 0.5
+    if ug < 0.5:
+        for jj in range(n_ens):
+            if xnew[param_rows[2], jj] < 0.5:
+                print('R0mx changed!')
+                xnew[param_rows[2], jj] = np.maximum(np.median(xnew[param_rows[2], :]), 0.5)
 
     ug = np.min(xnew[param_rows[3], :])  # Correct if R0diff < 0.01
     if ug < 0.01:
