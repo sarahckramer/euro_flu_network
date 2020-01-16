@@ -3,7 +3,7 @@
 
 # Read in all syndromic+ data:
 iliiso <- read.csv('data/WHO_data_05-09-19.csv')
-# iliiso.A <- read.csv('data/by_subtype/WHO_data_A(all).csv')
+iliiso.A <- read.csv('data/by_subtype/WHO_data_A(all).csv')
 iliiso.H1 <- read.csv('data/by_subtype/WHO_data_A(H1).csv')
 iliiso.H3 <- read.csv('data/by_subtype/WHO_data_A(H3).csv')
 iliiso.B <- read.csv('data/by_subtype/WHO_data_B.csv')
@@ -17,7 +17,7 @@ count.indices <- c(1:2, 4, 6:8, 11:14, 17, 19)
 
 # Restrict all to relevant countries:
 iliiso <- iliiso[, c(1, count.indices + 1)]
-# iliiso.A <- iliiso.A[, c(1, count.indices + 1)]
+iliiso.A <- iliiso.A[, c(1, count.indices + 1)]
 iliiso.H1 <- iliiso.H1[, c(1, count.indices + 1)]
 iliiso.H3 <- iliiso.H3[, c(1, count.indices + 1)]
 iliiso.B <- iliiso.B[, c(1, count.indices + 1)]
@@ -71,6 +71,22 @@ for (ix in 1:4) {
   
 }
 
+# And A(all):
+scalings.full <- scalings
+load('data/by_subtype/scalings_Aall.RData')
+for (i in 2:13) {
+  if (names(syn.dat)[i] == 'France') {
+    iliiso.A[1:286, i] <- iliiso.A[1:286, i] * scalings[13]
+    iliiso.A[287:495, i] <- iliiso.A[287:495, i] * scalings[i - 1]
+    syn.dat[1:286, i] <- syn.dat[1:286, i] * scalings[13]
+    syn.dat[287:495, i] <- syn.dat[287:495, i] * scalings[i - 1]
+  } else {
+    iliiso.A[, i] <- iliiso.A[, i] * scalings[i - 1]
+    syn.dat[, i] <- syn.dat[, i] * scalings[i - 1]
+  }
+}
+synDat.A <- syn.dat
+
 # Remove data from lists:
 iliiso <- syn.plus.dat[[1]]
 # iliiso.A <- syn.plus.dat[[2]]
@@ -103,7 +119,8 @@ write.csv(synDat.B, file = 'data/by_subtype/synDatCounts_B_SCALED.csv', row.name
 ################################################################################################################################
 
 # Get scalings_frame for all subtypes:
-# scalings$gamma <- scalings.new[[1]][1:12]
+# scalings.full$gamma <- scalings[1:12]
+# scalings <- scalings.full
 # write.csv(scalings, 'data/by_subtype/scalings_frame_A(all).csv', row.names = FALSE)
 
 scalings$gamma <- scalings.new[[1]][1:12]
