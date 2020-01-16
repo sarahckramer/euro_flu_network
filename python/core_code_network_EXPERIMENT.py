@@ -13,10 +13,10 @@ pd.options.mode.chained_assignment = None
 timestamp_start = datetime.datetime.now()
 
 # Specify subtype:
-strain = 'A(H1)'
+strain = 'A(H3)'
 
 # Specifiy experiment:
-experiment = 'lowerLambda'
+experiment = 'higherLambda'
 
 # Specify global variables
 dt = 1
@@ -27,7 +27,7 @@ wk_start = 40
 discrete = False
 oev_base = np.float64(1e5)
 oev_denom = np.float64(10.0)
-lambda_val = np.float64(1.05)
+lambda_val = np.float64(1.10)
 num_ens = 300
 num_runs = 3  # EVENTUALLY WANT 5
 
@@ -44,6 +44,7 @@ if strain == 'A(H1)':
     seasons = ('2010-11', '2012-13', '2013-14', '2014-15', '2015-16', '2017-18')  # H1
 
     iliiso = pd.read_csv('../data/by_subtype/WHO_data_A(H1)_SCALED.csv')
+    # iliiso = pd.read_csv('../data/by_subtype/WHO_data_A(H1)_SCALED_full.csv')
     test_dat = pd.read_csv('../data/testRates_010820.csv')
     syn_dat = pd.read_csv('../data/by_subtype/synDatCounts_A(H1)_SCALED.csv')
     pos_dat = pd.read_csv('../data/by_subtype/posprop_A(H1).csv')
@@ -59,6 +60,7 @@ elif strain == 'A(H3)':
     seasons = ('2011-12', '2012-13', '2013-14', '2014-15', '2016-17')  # H3
 
     iliiso = pd.read_csv('../data/by_subtype/WHO_data_A(H3)_SCALED.csv')
+    # iliiso = pd.read_csv('../data/by_subtype/WHO_data_A(H3)_SCALED_full.csv')
     test_dat = pd.read_csv('../data/testRates_010820.csv')
     syn_dat = pd.read_csv('../data/by_subtype/synDatCounts_A(H3)_SCALED.csv')
     pos_dat = pd.read_csv('../data/by_subtype/posprop_A(H3).csv')
@@ -85,6 +87,22 @@ elif strain == 'B':
     scalings_early = pd.read_csv('../data/by_subtype/scalings_frame_B.csv')
     scalings_early['gamma'][3] = scalings_fr['x'][2]
 
+elif strain == 'A(all)':
+    seasons = ('2010-11', '2011-12', '2012-13', '2013-14', '2014-15', '2015-16', '2016-17', '2017-18')  # all A
+
+    # iliiso = pd.read_csv('../data/by_subtype/WHO_data_A(all)_SCALED.csv')
+    iliiso = pd.read_csv('../data/by_subtype/WHO_data_A(all)_SCALED_full.csv')
+    test_dat = pd.read_csv('../data/testRates_010820.csv')
+    syn_dat = pd.read_csv('../data/by_subtype/synDatCounts_A(all)_SCALED.csv')
+    pos_dat = pd.read_csv('../data/by_subtype/posprop_A(all).csv')
+
+    # test_dat = test_dat[iliiso.columns]
+    pos_dat = pos_dat[iliiso.columns]
+
+    scalings = pd.read_csv('../data/by_subtype/scalings_frame_A(all).csv')
+    scalings_early = pd.read_csv('../data/by_subtype/scalings_frame_A(all).csv')
+    scalings_early['gamma'][3] = scalings_fr['x'][0]
+    
 else:
     print('Error: Subtype not recognized.')
     sys.exit()
@@ -94,7 +112,6 @@ else:
 # scalings = pd.read_csv('../data/scalings_frame_ALL_red.csv')
 # scalings_early = pd.read_csv('../data/scalings_frame_ALL_red.csv')
 # scalings_early['gamma'][3] = np.float64(1.3)
-# We would need to actually scale the data that way though, so try that tomorrow
 
 # Read in humidity data:
 ah = pd.read_csv('../data/ah_Europe_07142019.csv')
