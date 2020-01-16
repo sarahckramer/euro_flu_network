@@ -8,7 +8,7 @@ library("truncnorm"); library("tgp"); library("MASS"); library(reshape2); librar
 
 ### Set seed
 set.seed(10489436)
-set.seed(10489437)
+# set.seed(10489437)
 # set.seed(10489438)
 
 ### Read in model function
@@ -68,7 +68,7 @@ diag(N) <- unlist(lapply(1:n, function(ix) {
 # note: this now results in more home-home people than before, since there are fewer countries to commute to
 
 ### Read in humidity data
-ah <- read.csv('../GLDAS_data/ah_Europe_07142019.csv')
+ah <- read.csv('data/ah_Europe_07142019.csv')
 AH <- rbind(ah[, count.indices], ah[, count.indices])
 
 ### Set initial conditions based on input parameters
@@ -101,7 +101,7 @@ runs.noReal <- (1:num_ens)[!((1:num_ens) %in% runs.realistic)]
 # runs.noReal <- runs.onset[!(runs.onset %in% runs.realistic)] # choose realistic vs. ALL, and compare to onset vs. ALL - easier to see what ranges to select
 
 ### Optional: Look at what params yieled onsets/realistic outbreaks and which did not:
-# pdf('syntheticTests/outputs/boxplots_redMod.pdf', height = 9, width = 14)
+# pdf('syntheticTests/outputs/boxplots_redMod_011620.pdf', height = 9, width = 14)
 
 par(mfrow = c(2, 3), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 boxplot(parms[dim(parms)[1] - 4, runs.onset], parms[dim(parms)[1] - 4, runs.noOn], names = c('Incl.', 'Excl.'), ylab = 'L')
@@ -203,6 +203,42 @@ for (i in runs.realistic) {
   abline(v = c(13, 25))
 }
 
+df.real <- df.red[df.red$real, ]
+df.real <- df.real[, c(1:4, 7:14, 18:24)]
+
+par(mfrow = c(1, 1), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+for (i in sort(as.numeric(as.character(unique(df.real$run[df.real$patternSig == 'westToEast_yes']))))) {
+  i <- as.numeric(as.character(i))
+  matplot(t(res.rates[[i]]), pch = 20, type = 'b', lty = 1, col = viridis(n), main = i)
+  abline(v = c(13, 25))
+}
+
+par(mfrow = c(5, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+for (i in sort(as.numeric(as.character(unique(df.real$run[df.real$patternSig == 'westToEast_no']))))) {
+  i <- as.numeric(as.character(i))
+  matplot(t(res.rates[[i]]), pch = 20, type = 'b', lty = 1, col = viridis(n), main = i)
+  abline(v = c(13, 25))
+}
+
+par(mfrow = c(5, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+for (i in sort(as.numeric(as.character(unique(df.real$run[df.real$patternSig == 'eastToWest_no']))))) {
+  list.ot <- df.real$ot[df.real$run == i]
+  if (length(list.ot[!is.na(list.ot)]) >= 11) {
+    print(i)
+  }
+  i <- as.numeric(as.character(i))
+  matplot(t(res.rates[[i]]), pch = 20, type = 'b', lty = 1, col = viridis(n), main = i)
+  abline(v = c(13, 25))
+}
+
+pdf('syntheticTests/outputs/synthetic_outbreaks_011620.pdf', height = 8, width = 28)
+par(mfrow = c(1, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+for (i in c(592, 605, 440, 566, 591)) {
+  matplot(t(res.rates[[i]]), pch = 20, type = 'b', lty = 1, col = viridis(n), main = i)
+  abline(v = c(13, 25))
+}
+dev.off()
+
 # Look at colinearity between parameters in onset/realistic/pattern:
 p1 <- ggplot(data = df.red, aes(x = R0mx, y = R0mn)) + geom_point() + theme_classic() + facet_wrap(~ patternSig, nrow = 1)
 p2 <- ggplot(data = df.red, aes(x = R0mx, y = R0diff)) + geom_point() + theme_classic() + facet_wrap(~ patternSig, nrow = 1)
@@ -215,85 +251,40 @@ grid.arrange(p1, p2)
 plot(df.red[df.red$real, 18:23])
 
 ################################################################################################################
-# # Save relevant outbreaks so we can look at patterns:
-# synth.runs.RATES <- res.rates
-# save(synth.runs.RATES, file = 'syntheticTests/syntheticData/synth_rates_ALL_1000_redS3.RData')
-# 
-# synth.runs.RATES.onset <- synth.runs.RATES[runs.onset]
-# synth.runs.RATES.realistic <- synth.runs.RATES[runs.realistic]
-# 
-# save(synth.runs.RATES.onset, file = 'syntheticTests/syntheticData/synth_rates_ONSET_1000_redS3.RData')
-# save(synth.runs.RATES.realistic, file = 'syntheticTests/syntheticData/synth_rates_REALISTIC_1000_redS3.RData')
-# 
-# # Save parameters and S0/I0, too:
-# s0.list <- t(res[[2]])
-# i0.list <- parms[3:14, ]
-# parms <- parms[c(1:2, 15:19), ]
-# 
-# parms.list <- list(parms, parms[, runs.onset], parms[, runs.realistic])
-# i0.list <- list(i0.list, i0.list[, runs.onset], i0.list[, runs.realistic])
-# s0.list <- list(s0.list, s0.list[, runs.onset], s0.list[, runs.realistic])
-# 
-# save(parms.list, file = 'syntheticTests/syntheticData/params_1000_redS3.RData')
-# save(i0.list, file = 'syntheticTests/syntheticData/I0_1000_redS3.Rdata')
-# save(s0.list, file = 'syntheticTests/syntheticData/S0_1000_redS3.Rdata')
+# Save relevant outbreaks so we can look at patterns:
+synth.runs.RATES <- res.rates
+save(synth.runs.RATES, file = 'syntheticTests/syntheticData/synth_rates_ALL_1000_011620.RData')
+
+synth.runs.RATES.onset <- synth.runs.RATES[runs.onset]
+synth.runs.RATES.realistic <- synth.runs.RATES[runs.realistic]
+
+save(synth.runs.RATES.onset, file = 'syntheticTests/syntheticData/synth_rates_ONSET_1000_011620.RData')
+save(synth.runs.RATES.realistic, file = 'syntheticTests/syntheticData/synth_rates_REALISTIC_1000_011620.RData')
+
+# Save parameters and S0/I0, too:
+s0.list <- parms[1:12, ]
+i0.list <- parms[13:24, ]
+parms.list <- parms[25:29, ]
+
+s0.list <- list(s0.list, s0.list[, runs.onset], s0.list[, runs.realistic])
+i0.list <- list(i0.list, i0.list[, runs.onset], i0.list[, runs.realistic])
+parms.list <- list(parms.list, parms.list[, runs.onset], parms.list[, runs.realistic])
+
+save(parms.list, file = 'syntheticTests/syntheticData/params_1000_011620.RData')
+save(i0.list, file = 'syntheticTests/syntheticData/I0_1000_011620.Rdata')
+save(s0.list, file = 'syntheticTests/syntheticData/S0_1000_011620.Rdata')
+
+# And save only the 5 to be used in synthetic testing:
+to.keep <- c(592, 605, 440, 566, 591)
+synth.outbreaks <- synth.runs.RATES[to.keep]
+parms.outbreaks <- parms[, to.keep]
+
+save(synth.outbreaks, file = 'syntheticTests/syntheticData/synth_rates_toKeep_011620.RData')
+save(parms.outbreaks, file = 'syntheticTests/syntheticData/parms_toKeep_011620.RData')
 
 ################################################################################################################
 ################################################################################################################
 ################################################################################################################
 
-# Parameter boundary selection process:
-
-# D_low <- 2; L_low <- 1*365; Rmx_low <- 1.5; Rdiff_low <- 0; airScale_low <- 0.75
-# D_up <- 7; L_up <- 10*365; Rmx_up <- 3.0; Rdiff_up <- 1.5; airScale_up <- 1.25
-# S0_low <- 0.30; S0_up <- 0.90
-# sd_low <- 0.05; sd_up <- 0.20
-# I0_low <- 0; I0_up <- 0.0001 # start I0_up lower than in previous "round"
-# # and focus on "realistic" runs over geographically-"realistic"
-# 
-# D_low <- 2; L_low <- 1*365; Rmx_low <- 1.6; Rdiff_low <- 0; airScale_low <- 0.75
-# D_up <- 7; L_up <- 10*365; Rmx_up <- 2.8; Rdiff_up <- 1.25; airScale_up <- 1.25
-# S0_low <- 0.40; S0_up <- 0.90
-# sd_low <- 0.05; sd_up <- 0.20
-# I0_low <- 0; I0_up <- 0.0001
-# 
-# D_low <- 2; L_low <- 1*365; Rmx_low <- 1.6; Rdiff_low <- 0.2; airScale_low <- 0.75
-# D_up <- 7; L_up <- 10*365; Rmx_up <- 2.8; Rdiff_up <- 1.0; airScale_up <- 1.25
-# S0_low <- 0.45; S0_up <- 0.90
-# sd_low <- 0.05; sd_up <- 0.18
-# I0_low <- 0; I0_up <- 0.0001
-
-# D_low <- 2; L_low <- 1*365; Rmx_low <- 2.0; Rdiff_low <- 0.2; airScale_low <- 0.75
-# D_up <- 7; L_up <- 10*365; Rmx_up <- 2.8; Rdiff_up <- 1.0; airScale_up <- 1.25
-# S0_low <- 0.45; S0_up <- 0.85
-# sd_low <- 0.05; sd_up <- 0.18
-# I0_low <- 0; I0_up <- 0.00005
-# # 342/46, but no sig w-e/real; ~57% e-w
-# 
-# D_low <- 2; L_low <- 1*365; Rmx_low <- 2.0; Rdiff_low <- 0.2; airScale_low <- 0.75
-# D_up <- 7; L_up <- 10*365; Rmx_up <- 2.8; Rdiff_up <- 1.0; airScale_up <- 1.25
-# S0_low <- 0.55; S0_up <- 0.85
-# sd_low <- 0.05; sd_up <- 0.18
-# I0_low <- 0; I0_up <- 0.00005
-# # 409 onset, 53 (!) realistic; ~ 60% e-w, but ~36% of realistic are w-e (although none sig)
-# # option to get rid of highest L or lowest (<0.08) sd to make more w-e?
-
-#####
-
-# # higher L (349, 28, ~60% e-w; keep in mind for later stages of parameter range narrowing?):
-# D_low <- 2; L_low <- 2*365; Rmx_low <- 2.0; Rdiff_low <- 0.5; airScale_low <- 0.75
-# D_up <- 7; L_up <- 10*365; Rmx_up <- 3.0; Rdiff_up <- 1.5; airScale_up <- 1.25
-# S0_low <- 0.50; S0_up <- 0.90
-# sd_low <- 0.05; sd_up <- 0.15
-# I0_low <- 0; I0_up <- 0.001
-# 
-# # cut out lowest sd (343, 28, ~65% e-w, but 35-36% of realistic w-e; no w-e sig/realistic; keep in mind - even up to 0.10?):
-# D_low <- 2; L_low <- 1*365; Rmx_low <- 2.0; Rdiff_low <- 0.5; airScale_low <- 0.75
-# D_up <- 7; L_up <- 10*365; Rmx_up <- 3.0; Rdiff_up <- 1.5; airScale_up <- 1.25
-# S0_low <- 0.50; S0_up <- 0.90
-# sd_low <- 0.08; sd_up <- 0.15
-# I0_low <- 0; I0_up <- 0.001
-
-####
 
 
