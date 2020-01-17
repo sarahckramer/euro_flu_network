@@ -4,14 +4,13 @@ library(reshape2); library(ggplot2); library(gridExtra)
 
 # Save plots?:
 outputPlots <- FALSE
-fileSuffix <- '_A(H1)'
-pdf('results/gridSearch/network_grid_OEVnew_H1.pdf', width = 14, height = 9)
+pdf('results/gridSearch/indiv_grid_OEVold_B.pdf', width = 14, height = 9)
 
 # Restrict the forecast start weeks for which results are shown?
 restrict.fc <- FALSE
 
 # Set locations of model results:
-model.loc <- 'results/gridSearch/network_grid_OEVnew1e5_H1/'
+model.loc <- 'results/gridSearch/indiv_grid_OEVold_B/'
 
 # Stipulate that grid search:
 gridSearch <- TRUE
@@ -52,37 +51,17 @@ m$abs_err_3wk_perc[m$abs_err_3wk_perc == Inf & !is.na(m$abs_err_3wk_perc)] <- NA
 m$abs_err_4wk_perc[m$abs_err_4wk_perc == Inf & !is.na(m$abs_err_4wk_perc)] <- NA
 
 # Plot overall PT, PI, and OT by PREDICTED lead week:
-if (outputPlots) {
-  pdf(paste0('code/comparisons/plots/comp_byPred_', fileSuffix, '.pdf'), width = 14, height = 9)
-  source('code/comparisons/comp_netVsIndiv/by_pred.R')
-  print(plots.by.pred)
-  dev.off()
-} else {
-  source('code/comparisons/comp_netVsIndiv/by_pred.R')
-  print(plots.by.pred)
-}
+source('code/comparisons/comp_netVsIndiv/by_pred.R')
+print(plots.by.pred)
 rm(plots.by.pred)
 
 # Plot overall PT, PI, and OT by OBSERVED lead week:
-if (outputPlots) {
-  pdf(paste0('code/comparisons/plots/comp_byObs_', fileSuffix, '.pdf'), width = 14, height = 9)
-  source('code/comparisons/comp_netVsIndiv/by_obs.R')
-  print(plots.by.obs)
-  dev.off()
-} else {
-  source('code/comparisons/comp_netVsIndiv/by_obs.R')
-  print(plots.by.obs)
-}
+source('code/comparisons/comp_netVsIndiv/by_obs.R')
+print(plots.by.obs)
 rm(plots.by.obs)
 
 # Plot MAEs:
-if (outputPlots) {
-  pdf(paste0('code/comparisons/plots/comp_MAE_', fileSuffix,'.pdf'), width = 14, height = 9)
-  source('code/comparisons/comp_netVsIndiv/plot_MAE.R')
-  dev.off()
-} else {
-  source('code/comparisons/comp_netVsIndiv/plot_MAE.R')
-}
+source('code/comparisons/comp_netVsIndiv/plot_MAE.R')
 
 # Read in all log scores files:
 d <- read.csv(paste0(model.loc, list.files(path = model.loc, pattern = '_pt_ot')))
@@ -102,21 +81,10 @@ e$model <- factor(e$model)
 # Plot log scores for PT, PI, OT, 1-4 weeks, by PREDICTED lead week:
 # Question: Remove where obs are 0 for 1-4 weeks? Or where obs below some value?
 # Question: Remove where no onset predicted before calculating these?
-if (outputPlots) {
-  pdf(paste0('code/comparisons/plots/comp_logScores_byPred_', fileSuffix, '.pdf'), width = 14, height = 9)
-  byWeek <- 'Predicted'
-  source('code/comparisons/comp_netVsIndiv/plot_logScores.R')
-  dev.off()
-  pdf(paste0('code/comparisons/plots/comp_logScores_byObs_', fileSuffix, '.pdf'), width = 14, height = 9)
-  byWeek <- 'Observed'
-  source('code/comparisons/comp_netVsIndiv/plot_logScores.R')
-  dev.off()
-} else {
-  byWeek <- 'Predicted'
-  source('code/comparisons/comp_netVsIndiv/plot_logScores.R')
-  byWeek <- 'Observed'
-  source('code/comparisons/comp_netVsIndiv/plot_logScores.R')
-}
+byWeek <- 'Predicted'
+source('code/comparisons/comp_netVsIndiv/plot_logScores.R')
+byWeek <- 'Observed'
+source('code/comparisons/comp_netVsIndiv/plot_logScores.R')
 rm(d, e.pi, e, byWeek)
 
 # # Plot calibration for PT, PI, OT, and 1-4 weeks:

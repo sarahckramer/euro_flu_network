@@ -8,10 +8,10 @@ library(gtable); library(gridExtra); library(reshape2); library(stringr)
 #need the edited ggsave function to generate PDF files properly
 
 # Specify output folder:
-dir.save <- 'code/gridSearch/plots/'
+dir.save <- 'results/plots/'
 
 # Read in results:
-output <- read.csv('results/A(H3)/indiv_newOEV/outputOP_PROC.csv')
+output <- read.csv('results/A(H1)/indiv_oldOEV/outputOP_PROC.csv')
 
 output$year <- as.numeric(as.character(substr(output$season, start = 1, stop = 4)))
 output$year[output$week > 53] <- output$year[output$week > 53] + 1
@@ -42,7 +42,7 @@ output$time2 <- paste(output$year, output$week2, sep = '_')
 #   iliiso[, i][iliiso[, i] < 0] <- NA # replace negatives with NAs
 # }
 
-iliiso <- read.csv('data/by_subtype/WHO_data_A(H3)_SCALED.csv')
+iliiso <- read.csv('data/by_subtype/WHO_data_A(H1)_SCALED.csv')
 names(iliiso) <- c('time', 'AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
 iliiso <- melt(iliiso)
 names(iliiso)[3] <- 'observed'
@@ -90,7 +90,7 @@ for (season in seasons) {
   
   print('Graph list completed.')
   glist <- marrangeGrob(grobs = graphs, nrow = 1, ncol = 1)
-  ggsave(paste(dir.save, 'output_', season, '_H3_INDIV.pdf', sep = ''), glist, width = 25, height = 9, dpi = 600)
+  ggsave(paste(dir.save, 'output_', season, '_H1_indiv.pdf', sep = ''), glist, width = 25, height = 9, dpi = 600)
   print('Done.')
 }
 
