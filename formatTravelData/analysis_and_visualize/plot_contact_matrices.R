@@ -23,7 +23,9 @@ for (i in 1:12) {
   load(paste0('formatTravelData/formattedData/air_', i, '_05-07.RData'))
   air.by.month[[i]] <- a.temp.sym
 }; rm(a.temp.sym)
-a.mean <- apply(simplify2array(air.by.month), 1:2, mean); rm(air.by.month)
+a.mean <- apply(simplify2array(air.by.month), 1:2, mean);# rm(air.by.month)
+countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
+a.mean <- a.mean[countries, countries]
 
 countries <- colnames(a.mean)
 
@@ -31,37 +33,74 @@ a.temp <- melt(a.mean); names(a.temp) <- c('source', 'dest', 'w')
 a.temp$w[a.temp$w == 0] <- NA
 a.temp$w <- log(a.temp$w)
 
-a.temp$source <- factor(a.temp$source, levels(a.temp$source)[(c(17, 20, 9, 8, 19, 12, 15, 3, 1, 18, 5, 4, 13, 2, 14, 10, 21, 7, 6, 16, 11))])
-a.temp$dest <- factor(a.temp$dest, levels(a.temp$dest)[rev(c(17, 20, 9, 8, 19, 12, 15, 3, 1, 18, 5, 4, 13, 2, 14, 10, 21, 7, 6, 16, 11))])
+# a.temp$source <- factor(a.temp$source, levels(a.temp$source)[(c(17, 20, 9, 8, 19, 12, 15, 3, 1, 18, 5, 4, 13, 2, 14, 10, 21, 7, 6, 16, 11))])
+# a.temp$dest <- factor(a.temp$dest, levels(a.temp$dest)[rev(c(17, 20, 9, 8, 19, 12, 15, 3, 1, 18, 5, 4, 13, 2, 14, 10, 21, 7, 6, 16, 11))])
 
+a.temp$source <- factor(a.temp$source, levels(a.temp$source)[rev(c(12, 4, 9, 2, 8, 5, 1, 3, 10, 7, 6, 11))])
+a.temp$dest <- factor(a.temp$dest, levels(a.temp$dest)[c(12, 4, 9, 2, 8, 5, 1, 3, 10, 7, 6, 11)])
+
+# pdf('formatTravelData/outputs/air_by_month.pdf', width = 8, height = 7)
 leg.labs <- c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)
 p <- ggplot(a.temp, aes(x = dest, y = source)) + geom_tile(aes(fill = w), colour = 'white') +
   scale_fill_gradientn(colours = viridis(10), na.value = 'gray80', limits = c(-1.5, 10.8), breaks = log(leg.labs), labels = leg.labs) +
   theme(axis.ticks = element_blank(), text = element_text(size = 16), axis.text.x = element_text(angle = 90, hjust = 1)) +
   scale_x_discrete(expand = c(0, 0)) + scale_y_discrete(expand = c(0, 0)) +
   labs(title = 'Daily Airline Passengers', x = 'Destination', y = 'Source', fill = '') +
-  geom_abline(intercept = 21, slope = -1, linetype = 2, col = 'white')
+  geom_abline(intercept = 13, slope = -1, linetype = 2, col = 'white')
 print(p)
+
+# by month:
+countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
+for (i in 1:12) {
+  a.temp <- air.by.month[[i]]
+  a.temp <- a.temp[countries, countries]
+  a.temp <- melt(a.temp); names(a.temp) <- c('source', 'dest', 'w')
+  a.temp$w[a.temp$w == 0] <- NA
+  a.temp$w <- log(a.temp$w)
+  
+  # print(min(a.temp$w, na.rm = TRUE))
+  
+  a.temp$source <- factor(a.temp$source, levels(a.temp$source)[rev(c(12, 4, 9, 2, 8, 5, 1, 3, 10, 7, 6, 11))])
+  a.temp$dest <- factor(a.temp$dest, levels(a.temp$dest)[c(12, 4, 9, 2, 8, 5, 1, 3, 10, 7, 6, 11)])
+  
+  leg.labs <- c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)
+  p <- ggplot(a.temp, aes(x = dest, y = source)) + geom_tile(aes(fill = w), colour = 'white') +
+    scale_fill_gradientn(colours = viridis(10), na.value = 'gray80', limits = c(-3.5, 10.8), breaks = log(leg.labs), labels = leg.labs) +
+    theme(axis.ticks = element_blank(), text = element_text(size = 16), axis.text.x = element_text(angle = 90, hjust = 1)) +
+    scale_x_discrete(expand = c(0, 0)) + scale_y_discrete(expand = c(0, 0)) +
+    labs(title = paste0('Daily Airline Passengers (', c('Jan.', 'Feb.', 'Mar.', 'Apr.', 'May', 'June', 'July', 'Aug.', 'Sep.', 'Oct.', 'Nov.', 'Dec.')[i], ')'),
+         x = 'Destination', y = 'Source', fill = '') +
+    geom_abline(intercept = 13, slope = -1, linetype = 2, col = 'white')
+  print(p)
+  
+}
+dev.off()
 
 ### NETWORKS ###
 # Read in data:
-load('formatTravelData/formattedData/comm_mat_by_year_05-07.RData')
+# load('formatTravelData/formattedData/comm_mat_by_year_05-07.RData')
+# 
+# load('formatTravelData/formattedData/comm_mat_by_year_05-07_RELIABLE_ONLY.RData')
+load('formatTravelData/formattedData/comm_mat_by_season_05-07_RELIABLE_ONLY.RData')
+# comm.by.year <- comm.by.year2; rm(comm.by.year2)
 
-load('formatTravelData/formattedData/comm_mat_by_year_05-07_RELIABLE_ONLY.RData')
-comm.by.year <- comm.by.year2; rm(comm.by.year2)
-
-countries <- colnames(comm.by.year[[1]])
+# countries <- colnames(comm.by.year[[1]])
+countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
 
 # Set up latitude and longitude values:
 l <- read.csv('../travel_data_info/flight_data/raw_data/country_centroids_az8.csv')
 l <- l[, c(47, 67:68)]
-l <- l[l$iso_a2 %in% c(countries, 'GB'), ]
-l$iso_a2 <- factor(l$iso_a2); levels(l$iso_a2)[8] <- 'UK'; l$iso_a2 <- factor(l$iso_a2)
-l <- l[c(1:7, 9:18, 21:19, 8), ]
+# l <- l[l$iso_a2 %in% c(countries, 'GB'), ]
+l <- l[l$iso_a2 %in% countries, ]
+l$iso_a2 <- factor(l$iso_a2);# levels(l$iso_a2)[8] <- 'UK'; l$iso_a2 <- factor(l$iso_a2)
+# l <- l[c(1:7, 9:18, 21:19, 8), ]
 
 # move: France, Croatia, UK
-l$Longitude[c(7, 21)] <- c(2, -2)
-l$Latitude[c(7:8)] <- c(46.5, 45.7)
+# l$Longitude[c(7, 21)] <- c(2, -2)
+# l$Latitude[c(7:8)] <- c(46.5, 45.7)
+l$Longitude[6] <- 2
+l$Latitude[6] <- 46.5
+l <- l[c(1:3, 6, 4, 7:12, 5), ]
 
 l <- l[, 2:3]
 colnames(l) <- NULL
@@ -91,6 +130,7 @@ ditch_the_axes <- theme(
 )
 
 # Plot average matrix:
+comm.by.year <- comm.by.seas
 comm.mean <- apply(simplify2array(comm.by.year), 1:2, mean); rm(comm.by.year)
 df <- melt(comm.mean); names(df) <- c('source', 'dest', 'w')
 df <- df[df$source != 'IS' & df$dest != 'IS', ]
@@ -101,6 +141,7 @@ df <- df[df$w > 0, ]; df$w <- log(df$w)
 df <- df[, c(2, 1, 6:7, 4:5, 3)]
 df <- df[order(df$w), ]
 
+pdf('formatTravelData/outputs/commuting_by_season.pdf', width = 8, height = 7)
 leg.labs <- c(100, 1000, 10000, 75000, 100000)
 p <- ggplot() + geom_polygon(data = eur, aes(x=long, y = lat, group = group),
                              colour = 'black', fill = 'gray90') + coord_fixed(1.4) + 
@@ -116,20 +157,58 @@ p <- ggplot() + geom_polygon(data = eur, aes(x=long, y = lat, group = group),
   geom_point(data = l, aes(x = V1, y = V2), shape = 21, size = 4, colour = 'black',
              fill = 'white', stroke = 1.2) +
   scale_color_gradientn(colours = viridis(100), name = '# of Commuters\n',
-                        breaks = log(leg.labs), labels = leg.labs, limits = c(6.25, 11.3)) +
+                        breaks = log(leg.labs), labels = leg.labs, limits = c(6.9, 11.32)) +
   scale_size_continuous(range = c(0, 1.5), guide = FALSE) +
   labs(title = '')
 print(p)
+
+# By season:
+for (i in 1:8) {
+  comm.temp <- comm.by.seas[[i]]
+  
+  df <- melt(comm.temp); names(df) <- c('source', 'dest', 'w')
+  df <- merge(df, l, by.x = 'source', by.y = 'countries')
+  df <- merge(df, l, by.x = 'dest', by.y = 'countries')
+  names(df)[4:7] <- c('x2', 'y2', 'x1', 'y1')
+  df <- df[df$w > 0, ]; df$w <- log(df$w)
+  df <- df[, c(2, 1, 6:7, 4:5, 3)]
+  df <- df[order(df$w), ]
+  
+  # print(summary(df$w))
+  
+  leg.labs <- c(100, 1000, 10000, 100000)
+  p <- ggplot() + geom_polygon(data = eur, aes(x=long, y = lat, group = group),
+                               colour = 'black', fill = 'gray90') + coord_fixed(1.4) + 
+    theme_classic() + ditch_the_axes + theme(plot.title = element_text(size = 24),
+                                             legend.title = element_text(size = 12),
+                                             legend.text = element_text(size = 12),
+                                             legend.key.height = unit(0.75, 'cm'),
+                                             legend.key.width = unit(0.75, 'cm')) +
+    geom_curve(data = df, aes(x = x1, y = y1, xend = x2, yend = y2, color = w, size = w + 5.4),
+               curvature = 0.3,
+               arrow = arrow(angle = 15, type = 'closed', length = unit(0.15, 'inches'),
+                             ends = 'first'), inherit.aes = TRUE) +
+    geom_point(data = l, aes(x = V1, y = V2), shape = 21, size = 4, colour = 'black',
+               fill = 'white', stroke = 1.2) +
+    scale_color_gradientn(colours = viridis(100), name = '# of Commuters\n',
+                          breaks = log(leg.labs), labels = leg.labs, limits = c(6.9, 11.66)) +
+    scale_size_continuous(range = c(0, 1.5), guide = FALSE) +
+    labs(title = c('2010-11', '2011-12', '2012-13', '2013-14', '2014-15', '2015-16', '2016-17', '2017-18')[i])
+  print(p)
+}
+# dev.off()
 
 # Plot net inflow and outflow?
 in.flow <- colSums(comm.mean)
 out.flow <- rowSums(comm.mean)
 net.influx <- in.flow - out.flow
 
-names(net.influx) <- c('Austria', 'Belgium', 'Czech Republic', 'Germany', 'Denmark',
-                       'Spain', 'France', 'Croatia', 'Hungary', 'Ireland',
-                       'Iceland', 'Italy', 'Luxembourg', 'Netherlands', 'Poland',
-                       'Portugal', 'Romania', 'Sweden', 'Slovenia', 'Slovakia', 'UK')
+# names(net.influx) <- c('Austria', 'Belgium', 'Czech Republic', 'Germany', 'Denmark',
+#                        'Spain', 'France', 'Croatia', 'Hungary', 'Ireland',
+#                        'Iceland', 'Italy', 'Luxembourg', 'Netherlands', 'Poland',
+#                        'Portugal', 'Romania', 'Sweden', 'Slovenia', 'Slovakia', 'UK')
+names(net.influx) <- c('Austria', 'Belgium', 'Czech Republic', 'France', 'Germany', 'Hungary',
+                       'Italy', 'Luxembourg', 'Netherlands', 'Poland', 'Slovakia', 'Spain')
 net.influx <- as.data.frame(net.influx)
 net.influx <- cbind(rownames(net.influx), net.influx)
 names(net.influx) <- c('region', 'val')

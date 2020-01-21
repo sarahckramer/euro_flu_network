@@ -13,10 +13,10 @@ pd.options.mode.chained_assignment = None
 timestamp_start = datetime.datetime.now()
 
 # Specify subtype:
-strain = 'A(H3)'
+strain = 'A(H1)'
 
 # Specifiy experiment:
-experiment = 'higherLambda'
+experiment = 'fnCheck_check'
 
 # Specify global variables
 dt = 1
@@ -27,7 +27,7 @@ wk_start = 40
 discrete = False
 oev_base = np.float64(1e5)
 oev_denom = np.float64(10.0)
-lambda_val = np.float64(1.10)
+lambda_val = np.float64(1.05)
 num_ens = 300
 num_runs = 3  # EVENTUALLY WANT 5
 
@@ -90,8 +90,8 @@ elif strain == 'B':
 elif strain == 'A(all)':
     seasons = ('2010-11', '2011-12', '2012-13', '2013-14', '2014-15', '2015-16', '2016-17', '2017-18')  # all A
 
-    # iliiso = pd.read_csv('../data/by_subtype/WHO_data_A(all)_SCALED.csv')
-    iliiso = pd.read_csv('../data/by_subtype/WHO_data_A(all)_SCALED_full.csv')
+    iliiso = pd.read_csv('../data/by_subtype/WHO_data_A(all)_SCALED.csv')
+    # iliiso = pd.read_csv('../data/by_subtype/WHO_data_A(all)_SCALED_full.csv')
     test_dat = pd.read_csv('../data/testRates_010820.csv')
     syn_dat = pd.read_csv('../data/by_subtype/synDatCounts_A(all)_SCALED.csv')
     pos_dat = pd.read_csv('../data/by_subtype/posprop_A(all).csv')
@@ -101,7 +101,7 @@ elif strain == 'A(all)':
 
     scalings = pd.read_csv('../data/by_subtype/scalings_frame_A(all).csv')
     scalings_early = pd.read_csv('../data/by_subtype/scalings_frame_A(all).csv')
-    scalings_early['gamma'][3] = scalings_fr['x'][0]
+    scalings_early['gamma'][3] = np.float64(1.36084848)
     
 else:
     print('Error: Subtype not recognized.')
@@ -158,7 +158,7 @@ for season_index in range(len(seasons)):
     print(season)
 
     # Get season-specific population matrix:
-    N = pd.read_csv(os.path.join('compartment_sizes/', 'N' + season + '.txt'), header=None, sep='\t')
+    N = pd.read_csv(os.path.join('compartment_sizes/', 'N' + season + '_NEW.txt'), header=None, sep='\t')
     N = N.to_numpy(dtype=np.float64)
 
     # Get observations for current season:
@@ -204,7 +204,7 @@ for season_index in range(len(seasons)):
         print(run)
 
         # Get initial states/parameters for each ensemble member:
-        param_init = pd.read_csv(os.path.join('initial_parms/', 'parms' + str(run) + '.txt'), header=None,
+        param_init = pd.read_csv(os.path.join('initial_parms/', 'parms' + str(run) + '_NEW.txt'), header=None,
                                  sep='\t')
         param_init = param_init.to_numpy(dtype=np.float64)
         # print(param_init.shape)

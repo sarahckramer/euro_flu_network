@@ -26,7 +26,7 @@ oev_base = np.float64(1e5)
 oev_denom = np.float64(10.0)
 lambda_val = np.float64(1.05)
 num_ens = 300
-num_runs = 3  # EVENTUALLY WANT 5
+num_runs = 5  # EVENTUALLY WANT 5
 
 # Vector of countries used
 countries = np.array(['AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES'])
@@ -39,14 +39,7 @@ scalings_fr = pd.read_csv('../data/by_subtype/scalings_frame_FR.csv')
 # Read in data and set seasons:
 if strain == 'A(H1)':
     seasons = ('2010-11', '2012-13', '2013-14', '2014-15', '2015-16', '2017-18')  # H1
-
     iliiso = pd.read_csv('../data/by_subtype/WHO_data_A(H1)_SCALED.csv')
-    test_dat = pd.read_csv('../data/testRates_010820.csv')
-    syn_dat = pd.read_csv('../data/by_subtype/synDatCounts_A(H1)_SCALED.csv')
-    pos_dat = pd.read_csv('../data/by_subtype/posprop_A(H1).csv')
-
-    # test_dat = test_dat[iliiso.columns]
-    pos_dat = pos_dat[iliiso.columns]
 
     scalings = pd.read_csv('../data/by_subtype/scalings_frame_A(H1).csv')
     scalings_early = pd.read_csv('../data/by_subtype/scalings_frame_A(H1).csv')
@@ -54,14 +47,7 @@ if strain == 'A(H1)':
 
 elif strain == 'A(H3)':
     seasons = ('2011-12', '2012-13', '2013-14', '2014-15', '2016-17')  # H3
-
     iliiso = pd.read_csv('../data/by_subtype/WHO_data_A(H3)_SCALED.csv')
-    test_dat = pd.read_csv('../data/testRates_010820.csv')
-    syn_dat = pd.read_csv('../data/by_subtype/synDatCounts_A(H3)_SCALED.csv')
-    pos_dat = pd.read_csv('../data/by_subtype/posprop_A(H3).csv')
-
-    # test_dat = test_dat[iliiso.columns]
-    pos_dat = pos_dat[iliiso.columns]
 
     scalings = pd.read_csv('../data/by_subtype/scalings_frame_A(H3).csv')
     scalings_early = pd.read_csv('../data/by_subtype/scalings_frame_A(H3).csv')
@@ -69,14 +55,7 @@ elif strain == 'A(H3)':
 
 elif strain == 'B':
     seasons = ('2010-11', '2012-13', '2014-15', '2015-16', '2016-17', '2017-18')  # B
-
     iliiso = pd.read_csv('../data/by_subtype/WHO_data_B_SCALED.csv')
-    test_dat = pd.read_csv('../data/testRates_010820.csv')
-    syn_dat = pd.read_csv('../data/by_subtype/synDatCounts_B_SCALED.csv')
-    pos_dat = pd.read_csv('../data/by_subtype/posprop_B.csv')
-
-    # test_dat = test_dat[iliiso.columns]
-    pos_dat = pos_dat[iliiso.columns]
 
     scalings = pd.read_csv('../data/by_subtype/scalings_frame_B.csv')
     scalings_early = pd.read_csv('../data/by_subtype/scalings_frame_B.csv')
@@ -85,13 +64,6 @@ elif strain == 'B':
 else:
     print('Error: Subtype not recognized.')
     sys.exit()
-
-# print(seasons)
-# # Or, try using old ("all") scalings:
-# scalings = pd.read_csv('../data/scalings_frame_ALL_red.csv')
-# scalings_early = pd.read_csv('../data/scalings_frame_ALL_red.csv')
-# scalings_early['gamma'][3] = np.float64(1.3)
-# We would need to actually scale the data that way though, so try that tomorrow
 
 # Read in humidity data:
 ah = pd.read_csv('../data/ah_Europe_07142019.csv')
@@ -123,14 +95,14 @@ outputOPParams = pd.DataFrame()
 outputDist = pd.DataFrame()
 outputEns = pd.DataFrame()
 
-# GRID SEARCH:
+# # GRID SEARCH:
 # for oev_base in [5e4, 1e5]:  # 0.0, 0.1 or 5e4, 1e5
 #     oev_base = np.float64(oev_base)
 #     print(oev_base)
 #
-# for oev_denom in [1.0, 2.0, 10.0, 50.0]:  # 1.0, 2.0, 10.0 or 1.0, 10.0, 100.0
-#     oev_denom = np.float64(oev_denom)
-#     print(oev_denom)
+#     for oev_denom in [1.0, 10.0, 100.0]:  # 1.0, 2.0, 10.0 or 1.0, 10.0, 100.0
+#         oev_denom = np.float64(oev_denom)
+#         print(oev_denom)
 
 # Loop through seasons and forecast:
 for season_index in range(len(seasons)):
@@ -138,40 +110,26 @@ for season_index in range(len(seasons)):
     print(season)
 
     # Get season-specific population matrix:
-    N = pd.read_csv(os.path.join('compartment_sizes/', 'N' + season + '.txt'), header=None, sep='\t')
+    N = pd.read_csv(os.path.join('compartment_sizes/', 'N' + season + '_NEW.txt'), header=None, sep='\t')
     N = N.to_numpy(dtype=np.float64)
 
     # Get observations for current season:
     obs_i = iliiso.iloc[wks_dict[season]]
-    syn_i = syn_dat.iloc[wks_dict[season]]
-    pos_i = pos_dat.iloc[wks_dict[season]]
-    test_i = test_dat.iloc[wks_dict[season]]
 
     # Get season duration:
     nsn = season_len_dict[season]
 
     # Reindex data:
     obs_i = obs_i.reset_index(drop=True)
-    syn_i = syn_i.reset_index(drop=True)
-    pos_i = pos_i.reset_index(drop=True)
-    test_i = test_i.reset_index(drop=True)
 
     # Replace leading/lagging zeros:
     for count_index in range(n):
         replaceLeadLag(obs_i.iloc[:, count_index + 1])
-        replaceLeadLag(syn_i.iloc[:, count_index + 1])
-        replaceLeadLag(pos_i.iloc[:, count_index + 1])
-
-    # Replace 0s in test_i w/ NA (b/c can't divide by 0!):
-    for count_index in range(n):
-        if any(test_i.iloc[:, count_index + 1] == 0):
-            print('0s found in test data!')
 
     # Get OEV:
     # obs_vars = 1e5 + calc_obsvars_nTest(obs_i, syn_i, test_i, pos_i, oev_base, oev_denom, n)
     obs_vars = calc_obsvars(obs_i, oev_base, oev_denom, n)
     # DO WE NEED DATES?
-    # np.savetxt('results/original_checks_R/obs_vars_old.txt', obs_vars, delimiter=',')
 
     # Get time start and time range:
     tm_ini = clim_start_dict[season] - 2  # b/c python indexes at 0, while R does it at 1
@@ -184,7 +142,7 @@ for season_index in range(len(seasons)):
         print(run)
 
         # Get initial states/parameters for each ensemble member:
-        param_init = pd.read_csv(os.path.join('initial_parms/', 'parms' + str(run) + '.txt'), header=None,
+        param_init = pd.read_csv(os.path.join('initial_parms/', 'parms' + str(run) + '_NEW.txt'), header=None,
                                  sep='\t')
         param_init = param_init.to_numpy(dtype=np.float64)
         # print(param_init.shape)
@@ -245,11 +203,11 @@ print('Done.')
 timestamp_end = datetime.datetime.now()
 print('Time Elapsed: ' + str(timestamp_end - timestamp_start))
 
-outputMetrics.to_csv('results/outputMet_H3_newOEV_1e5.csv', na_rep='NA', index=False)
-outputOP.to_csv('results/outputOP_H3_newOEV_1e5.csv', na_rep='NA', index=False)
-outputOPParams.to_csv('results/outputOPParams_H3_newOEV_1e5.csv', na_rep='NA', index=False)
-outputDist.to_csv('results/outputDist_H3_newOEV_1e5.csv', na_rep='NA', index=False)
-outputEns.to_csv('results/outputEns_H3_newOEV_1e5.csv', na_rep='NA', index=False)
+outputMetrics.to_csv('results/outputMet_' + strain + '.csv', na_rep='NA', index=False)
+outputOP.to_csv('results/outputOP_' + strain + '.csv', na_rep='NA', index=False)
+outputOPParams.to_csv('results/outputOPParams_' + strain + '.csv', na_rep='NA', index=False)
+outputDist.to_csv('results/outputDist_' + strain + '.csv', na_rep='NA', index=False)
+outputEns.to_csv('results/outputEns_' + strain + '.csv', na_rep='NA', index=False)
 print('Finished writing to file!')
 
 # error with correlations? i think it's okay to ignore - just passes nan when there's nothing to correlate I assume
