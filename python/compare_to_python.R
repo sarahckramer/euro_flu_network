@@ -323,5 +323,61 @@ all.equal(outputEns[, 9:308], e[, 4:303])
 # only a few ensemble members off (10^-7-^-8 range)
 # yep, all pretty small-scale differences
 
+### Look at adjustments to x/obs_ens:
+for (i in 0:29) {
+  pre <- read.table(paste0('python/results/obsens_PRE_', i, '.txt'), sep = ',')
+  post <- read.table(paste0('python/results/obsens_POST_', i, '.txt'), sep = ',')
+  
+  # # Check 1: Empty compartments stay 0
+  # all.zero.pre <- sapply(1:437, function(ix) {
+  #   all(pre[ix, ] == 0)
+  # })
+  # all.zero.post <- sapply(1:437, function(ix) {
+  #   all(post[ix, ] == 0)
+  # })
+  # print(all(all.zero.pre == all.zero.post)) # good!
+  
+  # Check 2: How often are we adjusted below 0? Where? (Note we only have ES saved)
+  below.zero.pre <- sapply(1:12, function(ix) {
+    any(pre[ix, ] < 0)
+  })
+  # print(length(below.zero.pre[below.zero.pre]))
+  # 6 71 58 62 70 61 62 66 64 47 8 6 19 4 7 14 4 2 2 8 4 5 9 12 10 37 5 16 74 29
+  # so seems to be most common early, before outbreak gets going (although some other high spots as well)
+  print(which(below.zero.pre)) # almost exclusively I and newI; some S (17, 117, 125, 56, 84, 125, 126, 101, 123, 57, 121, 123, 136); never parameters!
+  # note that this is only for one season/subtype/country, though
+  # S tend to be commuting compartments, which have far fewer people than diagonal/main compartments
+  # for obs: early and late only, but then ES (the only country we have files for) always has something
+  
+  # # Check 3: After fxn call, all are at least 0
+  # below.zero.post <- sapply(1:437, function(ix) {
+  #   any(post[ix, ] < 0)
+  # })
+  # print(length(below.zero.post[below.zero.post])) # good!
+  
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

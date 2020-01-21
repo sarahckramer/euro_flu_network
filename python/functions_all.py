@@ -1,4 +1,5 @@
 import numpy as np
+from numba import jit
 
 
 def replaceLeadLag(vals_temp):
@@ -101,11 +102,20 @@ def calc_obsvars_nTest(obs, syndat, ntests, posprops, oev_base, oev_denom, n):
     return vars_temp
 
 
-def fn_checkxnobounds(xnew, S_rows, I_rows, param_rows, popN, n_count):
+# @jit(nopython=True, nogil=True, parallel=False, cache=True)
+@jit(nopython=True)
+def fn_checkxnobounds(xnew, popN, n_count):
     n_ens = xnew.shape[1]  # number of ensemble members
+    n_var = xnew.shape[0]  # number of variables
+
+    S_rows = [i for i in range(np.square(n_count))]
+    I_rows = [i + np.square(n_count) for i in S_rows]
+    newI_rows = [i + np.square(n_count) + np.square(n_count) for i in S_rows]
+    param_rows = [i for i in range(np.square(n_count) + np.square(n_count) + np.square(n_count),
+                                   np.square(n_count) + np.square(n_count) + np.square(n_count) + 5)]
 
     for ii in S_rows:
-        ug = np.max(xnew[ii, :])
+        ug = np.max(xnew[ii])
         if ug > popN[int(np.ceil((ii + 1) / n_count) - 1), ii % n_count]:
             ind0 = int(np.ceil((ii + 1) / n_count) - 1)
             ind1 = ii % n_count
@@ -115,62 +125,106 @@ def fn_checkxnobounds(xnew, S_rows, I_rows, param_rows, popN, n_count):
                     xnew[ii, jj] = popN[ind0, ind1]
     # print('check')
     for ii in I_rows:
-        ug = np.max(xnew[ii, :])
+        ug = np.max(xnew[ii])
         if ug > popN[int(np.ceil((ii + 1) / n_count) - n_count - 1), ii % n_count]:
             ind0 = int(np.ceil((ii + 1) / n_count) - n_count - 1)
             ind1 = ii % n_count
             for jj in range(n_ens):
                 if xnew[ii, jj] > popN[ind0, ind1]:
-                    print('We did it! (I)')
+                    # print('We did it! (I)')
                     xnew[ii, jj] = popN[ind0, ind1]
     # print('check')
 
-    ''' # Don't really need this chunk, b/c above just set to 0?
+    # Should probably add one of these for newI, too...
+    for ii in newI_rows:
+        ug = np.max(xnew[ii])
+        if ug > popN[int(np.ceil((ii + 1) / n_count) - n_count - n_count - 1), ii % n_count]:
+            ind0 = int(np.ceil((ii + 1) / n_count) - n_count - n_count - 1)
+            ind1 = ii % n_count
+            for jj in range(n_ens):
+                if xnew[ii, jj] > popN[ind0, ind1]:
+                    # print('We did it! (newI)')
+                    xnew[ii, jj] = popN[ind0, ind1]
+
+    # Don't really need this chunk, b/c above just set to 0?
+    # ADD THIS IN
+    # Where states/params are negative, set to 0 or the mean of all ensembles for that state/parameter
+    # Potential issue: Ensure that no empty compartments are set to anything other than 0!
     ug = np.min(xnew)
     if ug < 0:
+        # print('New function part used.')
         for jj in range(n_ens):
             for ii in range(n_var):
                 if xnew[ii, jj] <= 0:
-                    xnew[ii, jj] = np.max(np.mean(xnew[ii, :]), 0)
+                    xnew[ii, jj] = np.maximum(np.mean(xnew[ii]), 0)
+                    # if np.maximum(np.mean(xnew[ii]), 0) != np.max(np.mean(xnew[ii, :]), 0):
+                    #     print('!!!')
+                    #     print(np.maximum(np.mean(xnew[ii]), 0))
+                    #     print(np.max(np.mean(xnew[ii]), 0))
+                    #     print(xnew[ii])
+                    #     print()
                     # Sasi had it as max of mean and 1, but we don't want 1's in empty compartments!
-    '''
-    ug = np.min(xnew[param_rows[2], :])  # Correct if R0mx < 0.5
+
+    ug = np.min(xnew[param_rows[2]])  # Correct if R0mx < 0.5
     if ug < 0.5:
         for jj in range(n_ens):
             if xnew[param_rows[2], jj] < 0.5:
-                print('R0mx changed!')
-                xnew[param_rows[2], jj] = np.maximum(np.median(xnew[param_rows[2], :]), 0.5)
+                # print('R0mx changed!')
+                xnew[param_rows[2], jj] = np.maximum(np.median(xnew[param_rows[2]]), 0.5)
 
-    ug = np.min(xnew[param_rows[3], :])  # Correct if R0diff < 0.01
+    ug = np.min(xnew[param_rows[3]])  # Correct if R0diff < 0.01
     if ug < 0.01:
         for jj in range(n_ens):
             if xnew[param_rows[3], jj] < 0.01:
                 # print('We did it! (R0diff)')
-                xnew[param_rows[3], jj] = np.maximum(np.median(xnew[param_rows[3], :]), 0.01)
+                xnew[param_rows[3], jj] = np.maximum(np.median(xnew[param_rows[3]]), 0.01)
 
-    ug = np.min(xnew[param_rows[0], :])  # Correct if L < 200 days
-    # print(ug)
+    ug = np.min(xnew[param_rows[0]])  # Correct if L < 200 days
     if ug < 200.0:
         for jj in range(n_ens):
             if xnew[param_rows[0], jj] < 200.0:
                 # print('We did it! (L)')
-                xnew[param_rows[0], jj] = np.maximum(np.median(xnew[param_rows[0], :]), 200.0)
+                xnew[param_rows[0], jj] = np.maximum(np.median(xnew[param_rows[0]]), 200.0)
 
-    ug = np.min(xnew[param_rows[1], :])  # Correct if D < 0.5 days
-    # print(ug)
+    ug = np.min(xnew[param_rows[1]])  # Correct if D < 0.5 days
     if ug <= 1.0:
         for jj in range(n_ens):
             if xnew[param_rows[1], jj] < 0.5:
                 # print('We did it! (D)')
-                xnew[param_rows[1], jj] = np.maximum(np.median(xnew[param_rows[1], :]), 0.5)
+                xnew[param_rows[1], jj] = np.maximum(np.median(xnew[param_rows[1]]), 0.5)
 
-    ug = np.min(xnew[param_rows[2], :] - xnew[param_rows[3], :])  # Correct if R0mx < R0diff
-    # print(ug)
+    ug = np.min(xnew[param_rows[2]] - xnew[param_rows[3]])  # Correct if R0mx < R0diff
     if ug <= 0:
         for jj in range(n_ens):
             if xnew[param_rows[2], jj] < xnew[param_rows[3], jj]:
                 # print('We did it! (R0mx/R0diff)')
                 xnew[param_rows[2], jj] = xnew[param_rows[3], jj]
+
+    return xnew
+
+
+def fn_checkxnobounds_obsens(xnew, popN, n_count):
+    n_ens = xnew.shape[1]  # number of ensemble members
+    # n_var = xnew.shape[0]  # number of variables (should be n_count)
+    # print(n_var == n_count)
+
+    for ii in range(n_count):
+        ug = np.max(xnew[ii, :])
+        if ug > np.sum(popN[ii]):
+            print('Obs adjusted above N')
+            print(ii)
+            for jj in range(n_ens):
+                if xnew[ii, jj] > np.sum(popN[ii]):
+                    xnew[ii, jj] = np.sum(popN[ii])
+
+    ug = np.min(xnew)
+    if ug < 0:
+        # print('Obs adjusted below 0')
+        for jj in range(n_ens):
+            for ii in range(n_count):
+                if xnew[ii, jj] <= 0:
+                    xnew[ii, jj] = np.maximum(np.mean(xnew[ii, :]), 0)
+                    # Sasi had it as max of mean and 1, but this keeps it consistent with function for x
 
     return xnew
 

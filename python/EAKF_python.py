@@ -21,10 +21,12 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
     obspost = np.zeros([n, num_ens, ntrn], dtype=np.float64)
 
     # Where each state/param stored:
-    S_indices = range(np.square(n))
+    # S_indices = range(np.square(n))
+    S_indices = [i for i in range(np.square(n))]
     I_indices = [i + np.square(n) for i in S_indices]
     newI_indices = [i + np.square(n) * 2 for i in S_indices]
-    param_indices = range(3 * np.square(n), 3 * np.square(n) + 5)
+    param_indices = [i for i in range(3 * np.square(n), 3 * np.square(n) + 5)]
+    # param_indices = range(3 * np.square(n), 3 * np.square(n) + 5)
 
     # Store results as forecasts are generated:
     fc_met = pd.DataFrame()
@@ -147,9 +149,22 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
                 # Question: Do we want to check for S0 values being reduced below 0, like in R code?
 
                 # Correct for values adjusted out of bounds:
-                x[np.where(x < 0)] = 0
-                x = fn_checkxnobounds(x, S_indices, I_indices, param_indices, N, n)
+                # x[np.where(x < 0)] = 0
+                # np.savetxt('results/x_PRE_' + str(tt) + '.txt', x, delimiter=',')
+                # x = np.array(x, dtype=np.float64, order='C')
+                x = fn_checkxnobounds(x, N, n)
+                # np.savetxt('results/x_POST_' + str(tt) + '.txt', x, delimiter=',')
+
                 obs_ens[loc, :][np.where(obs_ens[loc, :] < 0)] = 0
+                # Although I guess we don't do anything with obs_ens itself, since for isolated only done for 1:6,
+                # not 7 (which is newI/"mapped" variable)
+                # Also b/c not actually USED in running things forward - just saved as posterior
+                # Is that true here, too? Adjusted obs_ens are used for other locations - no, obs_ens for a given
+                # country are only used once to do the adjustment, then not used in next iteration of location loop
+                # Run SA: Fncheckbounds just for x, then for x and obs_ens
+                # np.savetxt('results/obsens_PRE_' + str(tt) + '.txt', obs_ens, delimiter=',')
+                # obs_ens = fn_checkxnobounds_obsens(obs_ens, N, n)
+                # np.savetxt('results/obsens_POST_' + str(tt) + '.txt', obs_ens, delimiter=',')
 
         del loc
 
@@ -843,7 +858,7 @@ def EAKF_fn_fitOnly(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm
                 # Question: Do we want to check for S0 values being reduced below 0, like in R code?
 
                 # Correct for values adjusted out of bounds:
-                x[np.where(x < 0)] = 0
+                # x[np.where(x < 0)] = 0
                 x = fn_checkxnobounds(x, S_indices, I_indices, param_indices, N, n)
                 obs_ens[loc, :][np.where(obs_ens[loc, :] < 0)] = 0
 
