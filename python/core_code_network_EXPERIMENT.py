@@ -16,7 +16,7 @@ timestamp_start = datetime.datetime.now()
 strain = 'A(H1)'
 
 # Specifiy experiment:
-experiment = 'fnCheck_check'
+experiment = 'lowI0'
 
 # Specify global variables
 dt = 1
@@ -204,7 +204,7 @@ for season_index in range(len(seasons)):
         print(run)
 
         # Get initial states/parameters for each ensemble member:
-        param_init = pd.read_csv(os.path.join('initial_parms/', 'parms' + str(run) + '_NEW.txt'), header=None,
+        param_init = pd.read_csv(os.path.join('initial_parms/', 'parms' + str(run) + '_lowI0.txt'), header=None,
                                  sep='\t')
         param_init = param_init.to_numpy(dtype=np.float64)
         # print(param_init.shape)

@@ -13,7 +13,7 @@ pd.options.mode.chained_assignment = None
 timestamp_start = datetime.datetime.now()
 
 # Specify subtype:
-strain = 'A(H1)'
+strain = 'B'
 
 # Specify global variables
 dt = 1
