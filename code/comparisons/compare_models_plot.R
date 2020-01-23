@@ -10,14 +10,14 @@ fileSuffix <- 'A(all)_fullScalings'
 restrict.fc <- FALSE
 
 # Set model labels:
-m1.lab <- 'Network (H1)'
-m2.lab <- 'Network (all A)'
-m3.lab <- 'Network (all A/full scalings)'
+m1.lab <- 'Network (Original)'
+m2.lab <- 'Network (Adjust X)'
+m3.lab <- 'Network (Low I0)'
 
 # Set locations of model results to be compared:
 model1 <- 'results/A(H1)/network_oldOEV/'
-model2 <- 'results/A_all/network_oldOEV/'
-model3 <- 'results/A_all/network_oldOEV_fullScalings/'
+model2 <- 'results/experiments/old_SA/negativeToMean/xOnly/'
+model3 <- 'results/experiments/lowI0/'
 
 pdf(paste0('results/plots/experiments/comp_', fileSuffix, '.pdf'), width = 14, height = 9)
 
