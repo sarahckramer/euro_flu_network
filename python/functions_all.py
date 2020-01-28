@@ -102,6 +102,25 @@ def calc_obsvars_nTest(obs, syndat, ntests, posprops, oev_base, oev_denom, n):
     return vars_temp
 
 
+def calc_obsvars_ISOLATED(obs, oev_base, oev_denom):
+    obs = obs.to_numpy(dtype=np.float64)
+
+    tmp = np.zeros([obs.shape[0], 1], dtype=np.float64)
+    for j in range(2, obs.shape[0]):
+        tmp[j] = np.NaN if np.all(
+            obs[range(j - 2, j + 1)] != obs[range(j - 2, j + 1)]) else np.nanmean(
+            obs[range(j - 2, j + 1)])
+    tmp[1] = np.NaN if np.all(obs[0:2] != obs[0:2]) else np.nanmean(obs[0:2])
+    if not np.isnan(obs[0]):
+        tmp[0] = obs[0]
+    else:
+        tmp[0] = np.nan
+
+    vars_temp = oev_base + (np.square(tmp) / oev_denom)
+
+    return vars_temp.transpose()[0]
+
+
 # @jit(nopython=True, nogil=True, parallel=False, cache=True)
 @jit(nopython=True)
 def fn_checkxnobounds(xnew, popN, n_count):
@@ -122,7 +141,7 @@ def fn_checkxnobounds(xnew, popN, n_count):
             for jj in range(n_ens):
                 if xnew[ii, jj] > popN[ind0, ind1]:
                     # print('We did it! (S)')
-                    xnew[ii, jj] = popN[ind0, ind1]
+                    xnew[ii, jj] = popN[ind0, ind1] - 1
     # print('check')
     for ii in I_rows:
         ug = np.max(xnew[ii])
@@ -132,7 +151,7 @@ def fn_checkxnobounds(xnew, popN, n_count):
             for jj in range(n_ens):
                 if xnew[ii, jj] > popN[ind0, ind1]:
                     # print('We did it! (I)')
-                    xnew[ii, jj] = popN[ind0, ind1]
+                    xnew[ii, jj] = np.median(xnew[ii])  # popN[ind0, ind1]
     # print('check')
 
     # Should probably add one of these for newI, too...
@@ -144,7 +163,7 @@ def fn_checkxnobounds(xnew, popN, n_count):
             for jj in range(n_ens):
                 if xnew[ii, jj] > popN[ind0, ind1]:
                     # print('We did it! (newI)')
-                    xnew[ii, jj] = popN[ind0, ind1]
+                    xnew[ii, jj] = np.median(xnew[ii])  # popN[ind0, ind1]
 
     # Don't really need this chunk, b/c above just set to 0?
     # ADD THIS IN
@@ -225,6 +244,73 @@ def fn_checkxnobounds_obsens(xnew, popN, n_count):
                 if xnew[ii, jj] <= 0:
                     xnew[ii, jj] = np.maximum(np.mean(xnew[ii, :]), 0)
                     # Sasi had it as max of mean and 1, but this keeps it consistent with function for x
+
+    return xnew
+
+
+def fn_checkxnobounds_ISOLATED(xnew, N):
+    n_ens = xnew.shape[1]  # number of ensemble members
+    n_var = xnew.shape[0]  # number of variables
+
+    # Correct if S > N
+    ug = np.max(xnew[0])
+    if ug > N:
+        for jj in range(n_ens):
+            if xnew[0, jj] > N:
+                xnew[0, jj] = N-1
+
+    # Corrects if I > N:
+    ug = np.max(xnew[1])
+    if ug > N:
+        for jj in range(n_ens):
+            if xnew[1, jj] > N:
+                xnew[1, jj] = np.median(xnew[1])
+
+    # Corrects if any state or parameter goes negative:
+    ug = np.min(xnew)
+    if ug <= 0:
+        for jj in range(n_ens):
+            for ii in range(n_var):
+                if xnew[ii, jj] <= 0:
+                    xnew[ii, jj] = np.maximum(np.mean(xnew[ii]), 0)  # could be 1 instead of 0, if no empty compartments
+    # for network, 0 even makes more sense, b/c allows more chance of die-out
+    # but for individual model, we don't necessarily want cases to be 0, right?
+    # although filter can pull them back up later
+
+    # Corrects if R0mx < 0.5:
+    ug = np.min(xnew[4])
+    if ug < 0.5:
+        for jj in range(n_ens):
+            if xnew[4, jj] < 0.5:
+                xnew[4, jj] = np.maximum(np.median(xnew[4]), 0.5)
+
+    # Corrects if R0diff < 0.01:
+    ug = np.min(xnew[5])
+    if ug < 0.01:
+        for jj in range(n_ens):
+            if xnew[5, jj] < 0.01:
+                xnew[5, jj] = np.maximum(np.median(xnew[5]), 0.01)
+
+    # Corrects if L < 200 days:
+    ug = np.min(xnew[2])
+    if ug < 200.0:
+        for jj in range(n_ens):
+            if xnew[2, jj] < 200.0:
+                xnew[2, jj] = np.maximum(np.median(xnew[2]), 200.0)
+
+    # Corrects if D < 0.5:
+    ug = np.min(xnew[3])
+    if ug <= 1.0:
+        for jj in range(n_ens):
+            if xnew[3, jj] < 0.5:
+                xnew[3, jj] = np.maximum(np.median(xnew[3]), 0.5)
+
+    # Corrects if R0mx < R0diff:
+    ug = np.min(xnew[4] - xnew[5])
+    if ug <= 0:
+        for jj in range(n_ens):
+            if xnew[4, jj] < xnew[5, jj]:
+                xnew[4, jj] = xnew[5, jj]
 
     return xnew
 
