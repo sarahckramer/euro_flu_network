@@ -125,8 +125,8 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
                 post_var = prior_var * (obs_var / (prior_var + obs_var))
 
                 if prior_var == 0:
-                    post_var = 0
-                    prior_var = 1e-3
+                    post_var = np.float64(0)
+                    prior_var = np.float64(1e-3)
 
                 prior_mean = np.mean(obs_ens[loc, :])
                 post_mean = post_var * (prior_mean / prior_var + obs_i[tt, loc] / obs_var)
@@ -743,10 +743,10 @@ def EAKF_fn_fitOnly(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm
     obspost = np.zeros([n, num_ens, ntrn], dtype=np.float64)
 
     # Where each state/param stored:
-    S_indices = range(np.square(n))
+    S_indices = [i for i in range(np.square(n))]
     I_indices = [i + np.square(n) for i in S_indices]
     newI_indices = [i + np.square(n) * 2 for i in S_indices]
-    param_indices = range(3 * np.square(n), 3 * np.square(n) + 5)
+    param_indices = [i for i in range(3 * np.square(n), 3 * np.square(n) + 5)]
 
     # Set initial conditions based on input parameters:
     S0_temp = np.zeros([n, n, num_ens], dtype=np.float64)
@@ -834,8 +834,8 @@ def EAKF_fn_fitOnly(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm
                 post_var = prior_var * (obs_var / (prior_var + obs_var))
 
                 if prior_var == 0:
-                    post_var = 0
-                    prior_var = 1e-3
+                    post_var = np.float64(0)
+                    prior_var = np.float(1e-3)
 
                 prior_mean = np.mean(obs_ens[loc, :])
                 post_mean = post_var * (prior_mean / prior_var + obs_i[tt, loc] / obs_var)
@@ -859,7 +859,7 @@ def EAKF_fn_fitOnly(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm
 
                 # Correct for values adjusted out of bounds:
                 # x[np.where(x < 0)] = 0
-                x = fn_checkxnobounds(x, S_indices, I_indices, param_indices, N, n)
+                x = fn_checkxnobounds(x, N, n)
                 obs_ens[loc, :][np.where(obs_ens[loc, :] < 0)] = 0
 
         del loc
