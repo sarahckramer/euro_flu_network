@@ -17,3 +17,4 @@ python/__pycache__/
 *.7z
 *.zip
 *.tmp
+*.xlsx
