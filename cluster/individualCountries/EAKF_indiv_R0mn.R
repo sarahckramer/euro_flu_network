@@ -69,7 +69,6 @@ EAKF_rFC<-function(num_ens, tmstep, param.bound, obs_i=obs_i,ntrn=1,
       
       # Get the variance of the ensemble:
       obs_var <- obs_vars[tt]
-      # !!! What will happen if data is "0" but obs_vars is NA?
       prior_var <- var(xprior[H,, tt])
       post_var = prior_var * obs_var / (prior_var + obs_var)
       
@@ -165,7 +164,7 @@ EAKF_rFC<-function(num_ens, tmstep, param.bound, obs_i=obs_i,ntrn=1,
   }
   
   obs.na <- which(is.na(obs_i))[which(is.na(obs_i)) %in% 1:(dim(xpost_mean)[2])]
-  xpost_mean[, obs.na] <- NA # !!! Put NAs also where obs_vars is NA?
+  xpost_mean[, obs.na] <- NA
   
   fcast_mean = fcast_sd = matrix(0, 3, nfc)
   for (tt in 1:nfc) {

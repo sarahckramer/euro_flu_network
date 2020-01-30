@@ -125,7 +125,7 @@ diag(N) <- unlist(lapply(1:n, function(ix) {
 }))
 # population and commuting data are COUNTS, not RATES
 
-### Set important values for fitting: #!!!
+### Set important values for fitting:
 tm.ini <- 273 - 1 #270 - 1
 tm.range <- 273:600 #270:600
 
@@ -151,7 +151,7 @@ obs_vars <- calc_obsvars(obs_i, oev_base, oev_denom)
 ### Set ntrn:
 ntrn <- nsn
 
-### Fit to data: #!!!
+### Fit to data:
 for (run in 1:num_runs) {
   res <- EAKF_rFC(num_ens, tmstep, param.bound, obs_i, ntrn, obs_vars, tm.ini, tm.range,
                   do.reprobing = FALSE)

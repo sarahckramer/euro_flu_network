@@ -574,11 +574,6 @@ propagateToySIRS_multi <- function(tm_strt, tm_end, tm_step, S01, I01, S02, I02,
       # I.list[,, cnt, 3] <- I.list[,, cnt, 1] + I.list[,, cnt, 2]
       # newI.list[,, cnt, 3] <- newI.list[,, cnt, 1] + newI.list[,, cnt, 2]
       
-      # Questions:
-      # seeding okay to be poisson in home-home compartments only?; if both strains seeded do we do same seeding or select it twice?
-      # save last 9 years now, which match the years we have observed?
-      
-      
     } # else { # run continuously/deterministically
     #   
     #   ### Daytime ###

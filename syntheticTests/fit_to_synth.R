@@ -93,7 +93,7 @@ diag(N) <- unlist(lapply(1:n, function(ix) {
 }))
 # population and commuting data are COUNTS, not RATES
 
-### Set important values for fitting: #!!!
+### Set important values for fitting:
 tm.ini <- 273 - 1 #270 - 1
 tm.range <- 273:573 #270:600
 
@@ -132,7 +132,7 @@ for (outbreak in 1:length(to.keep)) {
   ### Set ntrn:
   ntrn <- nsn
   
-  ### Fit to data: #!!!
+  ### Fit to data:
   for (run in 1:num_runs) {
     par(mfrow = c(3, 2), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
     res <- EAKF_rFC(num_ens, tmstep, param.bound, obs_i, ntrn, obs_vars, tm.ini, tm.range,

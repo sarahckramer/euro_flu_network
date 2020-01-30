@@ -144,8 +144,6 @@ for (count.index in 1:n) {
   pos_i[, count.index] <- replaceLeadLag(pos_i[, count.index])
   # test_i[, count.index] <- replaceLeadLag(test_i[, count.index])
 }
-### QUESTION! It's possible leaving this step out would allow there to be a bit more ensemble noise going into the outbreak, since the model wouldn't
-###           be fitting everything down to zero.
 
 # Replace 0s in test_i w/ NA (b/c can't divide by 0!):
 test_i[test_i == 0 & !is.na(test_i)] <- NA
@@ -163,7 +161,7 @@ obs_vars <- calc_obsvars_nTest(obs = as.matrix(obs_i), syn_dat = as.matrix(syn_i
                                oev_base, oev_denom, tmp_exp = 2.0)
 # obs_vars <- calc_obsvars(obs = as.matrix(obs_i), oev_base, oev_denom)
 # matplot(obs_vars, pch = 20, col = viridis(n), type = 'b', lty = 1, cex = 0.75)
-### QUESTION: OEV is way higher for a couple of countries than most of the others - is this fair?
+# OEV is way higher for a couple of countries than most of the others - is this fair?
 # Scaled syn+ - also scale syn? Otherwise not sure the OEV would be appropriate for the rates we're fitting to
 # but not test#, b/c this should tell us something about error
 # but maybe do all of this somehow BEFORE scaling? or do we have to fit to counts, not rates?

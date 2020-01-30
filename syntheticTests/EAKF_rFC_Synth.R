@@ -1,17 +1,4 @@
 
-### QUESTIONS:
-# Should tm.ini be 3-4 weeks into the outbreak and not actually at time 1?
-# I don't think so; tm.ini is just the beginning of October - when does the beginning
-# of October happen in our simulation? tm.ini should correspond to the correct date
-# at time 1 of the simulation
-# Simulations also start at 1st of October (t 273)
-# What happens if we remove reinit/change reinit to just setting to 0? (Line 211)
-# xpost is already accounting for differences in population sizes, right?
-# Check that iterating variables (i, j, etc.) aren't being reused!
-# Maybe make a set of slides that goes through this whole process - would help with understanding
-# it, and with explaining it to others
-# Are we like one week ahead/behind or something?
-
 EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_vars,
                      tm.ini = 273, tm.range = 273:500, do.reprobing = FALSE){
   
@@ -160,7 +147,6 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     }
     
     ### FIX 1: Don't allow obsprior to be <0 - set to 0?
-    # QUESTION: Don't do this yet? Sen hadn't corrected for aphysicalities yet
     # And yes, some do dip below 0 already
     x[which(x < 0, arr.ind = T)] <- 0 # CHECK
     obs_ens[which(obs_ens < 0, arr.ind = T)] <- 0 # CHECK
@@ -192,17 +178,17 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
       
       # Get covariance of the prior state space and the observations, and loop over each state variable:
       rr <- NULL
-      for (j in 1:dim(x)[1]) { # so here, we're not doing only "to.adjust" - QUESTION
+      for (j in 1:dim(x)[1]) {
         C <- cov(x[j, ], obs_ens[loc, ]) / prior_var # this will be 0 for empty compartments
         rr <- append(rr, C)
       }
       dx <- rr %*% t(dy)
       
       # Get adjusted ensemble and obs_ens:
-      x <- x + dx # QUESTION: then using the updated x and obs_ens to update further - isn't this a little not genuine?
+      x <- x + dx
       obs_ens[loc, ] <- obs_ens[loc, ] + dy
       
-      # print(any(x < 0)) # QUESTION: Is this and the next line a problem?
+      # print(any(x < 0))
       # if (any(obs_ens < 0)) {
       #   print(countries[loc])
       # }

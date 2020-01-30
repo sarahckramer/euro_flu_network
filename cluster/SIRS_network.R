@@ -280,7 +280,7 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
       smci <- rpois(length(Einf), Einf); dim(smci) <- dim(Einf)
       smcr <- rpois(length(Erecov), Erecov); dim(smcr) <- dim(Erecov)
       
-      n.trav <- (tm_step * (1 / 3)) * sweep(sweep(N, 2, 1 / colSums(N), '*'), 2, rowSums(all.rand), '*') # !!! Use TN/or updated N instead of original N?
+      n.trav <- (tm_step * (1 / 3)) * sweep(sweep(N, 2, 1 / colSums(N), '*'), 2, rowSums(all.rand), '*')
       n.trav.rand <- rpois(length(n.trav), n.trav); dim(n.trav.rand) <- dim(n.trav)
       
       curr.trav <- allocate_travelers(n.trav.rand, Ts1, Ti1, Tr1, N, all.rand, n)
@@ -318,7 +318,7 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
       smci <- rpois(length(Einf), Einf); dim(smci) <- dim(Einf)
       smcr <- rpois(length(Erecov), Erecov); dim(smcr) <- dim(Erecov)
       
-      n.trav <- (tm_step * (1 / 3)) * sweep(sweep(N, 2, 1 / colSums(N), '*'), 2, rowSums(all.rand), '*') # !!! Use TN/or updated N instead of original N?
+      n.trav <- (tm_step * (1 / 3)) * sweep(sweep(N, 2, 1 / colSums(N), '*'), 2, rowSums(all.rand), '*')
       n.trav.rand <- rpois(length(n.trav), n.trav); dim(n.trav.rand) <- dim(n.trav)
       
       curr.trav <- allocate_travelers(n.trav.rand, Ts2, Ti2, Tr2, N, all.rand, n)
@@ -355,7 +355,7 @@ propagateToySIRS <- function(tm_strt, tm_end, tm_step, S0, I0, N, D, L, beta, ai
       smci <- rpois(length(Einf), Einf); dim(smci) <- dim(Einf)
       smcr <- rpois(length(Erecov), Erecov); dim(smcr) <- dim(Erecov)
       
-      n.trav <- (tm_step * (1 / 3)) * sweep(sweep(N, 2, 1 / colSums(N), '*'), 2, rowSums(all.rand), '*') # !!! Use TN/or updated N instead of original N?
+      n.trav <- (tm_step * (1 / 3)) * sweep(sweep(N, 2, 1 / colSums(N), '*'), 2, rowSums(all.rand), '*')
       n.trav.rand <- rpois(length(n.trav), n.trav); dim(n.trav.rand) <- dim(n.trav)
       
       curr.trav <- allocate_travelers(n.trav.rand, Ts3, Ti3, Tr3, N, all.rand, n)

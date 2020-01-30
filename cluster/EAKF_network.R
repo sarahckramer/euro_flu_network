@@ -43,7 +43,6 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
   newI.indices <- S0.indices + S0.indices[length(S0.indices)] * 2 # where newI are stored (in fcast) (only individual compartments)
   param.indices <- (max(newI.indices) + 1):(max(newI.indices) + 5) # where the epi parameters are stored
   
-  # QUESTION: Do we continue to generate S0 as a distribution even when forecasting, or do we use LHS?
   # # Dist:
   # parms <- t(lhs(num_ens, param.bound))
   # S0.temp = I0.temp = vector('list', num_ens)
@@ -91,7 +90,7 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
   #   I0.temp[[i]] <- I0.temp[[i]] * N
   # 
   # }
-  # # QUESTION: I0 could still just be LHS; seed just "main" compartments?
+  #
   # parms <- parms[(dim(parms)[1] - 4):(dim(parms)[1]), ]
   
   # LHS:
@@ -197,7 +196,6 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     x <- inflat %*% (xprior[,, tt] - (xmn %*% matrix(1, 1, num_ens))) + (xmn %*% matrix(1, 1, num_ens))
     obs_ens <- inflat.obs %*% (obsprior[,, tt] - (obs_ens.mn %*% matrix(1, 1, num_ens))) + (obs_ens.mn %*% matrix(1, 1, num_ens))
     # so we subtract the mean from the prior, inflate, then add the mean back in?
-    # QUESTION: Any xprior < 0?
     
     # CHECK: No obsprior should be <0, right??
     not.to.adjust <- (1:dim(xprior)[1])[!((1:dim(xprior)[1]) %in% to.adjust)]
@@ -305,14 +303,14 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
         
         # Get covariance of the prior state space and the observations, and loop over each state variable:
         rr <- NULL
-        for (j in 1:dim(x)[1]) { # so here, we're not doing only "to.adjust" - QUESTION
+        for (j in 1:dim(x)[1]) {
           C <- cov(x[j, ], obs_ens[loc, ]) / prior_var # this will be 0 for empty compartments
           rr <- append(rr, C)
         }
         dx <- rr %*% t(dy)
         
         # Get adjusted ensemble and obs_ens:
-        x <- x + dx # QUESTION: then using the updated x and obs_ens to update further - isn't this a little not genuine?
+        x <- x + dx
         obs_ens[loc, ] <- obs_ens[loc, ] + dy
         
         # if (any(obs_ens < 0)) {
@@ -412,7 +410,6 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
     # Store posteriors:
     xpost[,, tt] <- xnew
     obspost[,, tt] <- obs_ens
-    # QUESTION: If no data, obspost is just updated with the inflated prior, rather than just the prior - is this okay?
     
     #  Integrate forward one time step
     a <- -180
@@ -655,7 +652,6 @@ EAKF_rFC <- function(num_ens, tmstep, param.bound, obs_i = obs_i, ntrn = 1, obs_
   params.prior_mean <- t(apply(xprior[param.indices,, 1:(ntrn + 1)], c(1, 3), mean))
   params.post_mean <- t(apply(xpost[param.indices,, 1:ntrn], c(1, 3), mean))
   params.post_sd <- t(apply(xpost[param.indices,, 1:ntrn], c(1, 3), sd))
-  # QUESTION: SD continues to increase near end of outbreak - okay?
   params.post_df <- as.data.frame(cbind(params.post_mean, params.post_sd))
   names(params.post_df) <- c('L', 'D', 'R0mx', 'R0diff', 'airScale', 'L_sd', 'D_sd', 'R0mx_sd', 'R0diff_sd', 'airScale_sd')
   
