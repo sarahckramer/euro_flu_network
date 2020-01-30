@@ -4,22 +4,22 @@ library(reshape2); library(ggplot2); library(gridExtra)
 
 # Save plots?:
 outputPlots <- FALSE
-fileSuffix <- 'A(all)_fullScalings'
+fileSuffix <- 'compare_commuting'
 
 # Restrict the forecast start weeks for which results are shown?
 restrict.fc <- FALSE
 
 # Set model labels:
-m1.lab <- 'Network (Original)'
-m2.lab <- 'Network (Adjust X)'
-m3.lab <- 'Network (Low I0)'
+m1.lab <- 'Network (Reliable Only)'
+m2.lab <- 'Network (Adjacent)'
+m3.lab <- 'Network (All Routes)'
 
 # Set locations of model results to be compared:
-model1 <- 'results/A(H1)/network_oldOEV/'
-model2 <- 'results/experiments/old_SA/negativeToMean/xOnly/'
-model3 <- 'results/experiments/lowI0/'
+model1 <- 'results/network_A(H1)/'
+model2 <- 'results/network_A(H1)_adjFilled/'
+model3 <- 'results/network_A(H1)_noZeros/'
 
-pdf(paste0('results/plots/experiments/comp_', fileSuffix, '.pdf'), width = 14, height = 9)
+# pdf(paste0('results/plots/experiments/', fileSuffix, '.pdf'), width = 14, height = 9)
 
 #########################################################################################################################################################
 #########################################################################################################################################################
@@ -127,6 +127,8 @@ rm(d1, d2, d3, e.pi1, e.pi2, e.pi3, e1, e2, e3, logs1, logs2, logs3)
 byWeek <- 'Predicted'
 source('code/comparisons/comp_netVsIndiv/plot_logScores.R')
 byWeek <- 'Observed'
+source('code/comparisons/comp_netVsIndiv/plot_logScores.R')
+byWeek <- 'Observed_All'
 source('code/comparisons/comp_netVsIndiv/plot_logScores.R')
 rm(d, e.pi, e, byWeek)
 
