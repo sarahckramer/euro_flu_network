@@ -134,36 +134,53 @@ def fn_checkxnobounds(xnew, popN, n_count):
                                    np.square(n_count) + np.square(n_count) + np.square(n_count) + 5)]
 
     for ii in S_rows:
-        ug = np.max(xnew[ii])
-        if ug > popN[int(np.ceil((ii + 1) / n_count) - 1), ii % n_count]:
-            ind0 = int(np.ceil((ii + 1) / n_count) - 1)
-            ind1 = ii % n_count
-            for jj in range(n_ens):
-                if xnew[ii, jj] > popN[ind0, ind1]:
-                    # print('We did it! (S)')
-                    xnew[ii, jj] = popN[ind0, ind1] - 1
+        ind0 = int(np.ceil((ii + 1) / n_count) - 1)
+        ind1 = ii % n_count
+        for jj in range(n_ens):
+            if xnew[ii, jj] > popN[jj, ind0, ind1]:
+                xnew[ii, jj] = popN[jj, ind0, ind1] - 1
+        # This causes output to change very slightly
+        # ug = np.max(xnew[ii])
+        # if ug > popN[int(np.ceil((ii + 1) / n_count) - 1), ii % n_count]:
+        #     ind0 = int(np.ceil((ii + 1) / n_count) - 1)
+        #     ind1 = ii % n_count
+        #     for jj in range(n_ens):
+        #         if xnew[ii, jj] > popN[ind0, ind1]:
+        #             # print('We did it! (S)')
+        #             xnew[ii, jj] = popN[ind0, ind1] - 1
     # print('check')
     for ii in I_rows:
-        ug = np.max(xnew[ii])
-        if ug > popN[int(np.ceil((ii + 1) / n_count) - n_count - 1), ii % n_count]:
-            ind0 = int(np.ceil((ii + 1) / n_count) - n_count - 1)
-            ind1 = ii % n_count
-            for jj in range(n_ens):
-                if xnew[ii, jj] > popN[ind0, ind1]:
-                    # print('We did it! (I)')
-                    xnew[ii, jj] = np.median(xnew[ii])  # popN[ind0, ind1]
+        ind0 = int(np.ceil((ii + 1) / n_count) - n_count - 1)
+        ind1 = ii % n_count
+        for jj in range(n_ens):
+            if xnew[ii, jj] > popN[jj, ind0, ind1]:
+                xnew[ii, jj] = np.median(xnew[ii])
+        # This and setting newI to median below have no impact!! (At least with "original" seasonal matrices)
+        # ug = np.max(xnew[ii])
+        # if ug > popN[int(np.ceil((ii + 1) / n_count) - n_count - 1), ii % n_count]:
+        #     ind0 = int(np.ceil((ii + 1) / n_count) - n_count - 1)
+        #     ind1 = ii % n_count
+        #     for jj in range(n_ens):
+        #         if xnew[ii, jj] > popN[ind0, ind1]:
+        #             # print('We did it! (I)')
+        #             xnew[ii, jj] = np.median(xnew[ii])  # popN[ind0, ind1]
     # print('check')
 
     # Should probably add one of these for newI, too...
     for ii in newI_rows:
-        ug = np.max(xnew[ii])
-        if ug > popN[int(np.ceil((ii + 1) / n_count) - n_count - n_count - 1), ii % n_count]:
-            ind0 = int(np.ceil((ii + 1) / n_count) - n_count - n_count - 1)
-            ind1 = ii % n_count
-            for jj in range(n_ens):
-                if xnew[ii, jj] > popN[ind0, ind1]:
-                    # print('We did it! (newI)')
-                    xnew[ii, jj] = np.median(xnew[ii])  # popN[ind0, ind1]
+        ind0 = int(np.ceil((ii + 1) / n_count) - n_count - n_count - 1)
+        ind1 = ii % n_count
+        for jj in range(n_ens):
+            if xnew[ii, jj] > popN[jj, ind0, ind1]:
+                xnew[ii, jj] = np.median(xnew[ii])
+        # ug = np.max(xnew[ii])
+        # if ug > popN[int(np.ceil((ii + 1) / n_count) - n_count - n_count - 1), ii % n_count]:
+        #     ind0 = int(np.ceil((ii + 1) / n_count) - n_count - n_count - 1)
+        #     ind1 = ii % n_count
+        #     for jj in range(n_ens):
+        #         if xnew[ii, jj] > popN[ind0, ind1]:
+        #             # print('We did it! (newI)')
+        #             xnew[ii, jj] = np.median(xnew[ii])  # popN[ind0, ind1]
 
     # Don't really need this chunk, b/c above just set to 0?
     # ADD THIS IN

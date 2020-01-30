@@ -39,8 +39,8 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
     #  originally had these stored as dictionaries, indexed by compartment
     I0_temp = np.zeros([n, n, num_ens], dtype=np.float64)
     for i in range(num_ens):
-        S0_temp[:, :, i] = np.multiply(np.reshape(init_parms[0:144, i], [n, n]), N)
-        I0_temp[:, :, i] = np.multiply(np.reshape(init_parms[144:288, i], [n, n]), N)
+        S0_temp[:, :, i] = np.multiply(np.reshape(init_parms[0:144, i], [n, n]), N[i])
+        I0_temp[:, :, i] = np.multiply(np.reshape(init_parms[144:288, i], [n, n]), N[i])
     del i
 
     init_parms = init_parms[(init_parms.shape[0] - 5):init_parms.shape[0], :]
@@ -76,7 +76,8 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
     # Also calculate total newI for each country:
     for i in range(n):
         temp_range = [j + n * i for j in range(n)]
-        obsprior[i, :, 0] = np.sum(xprior[newI_indices, :, 0][temp_range, :], 0) / np.sum(N, 1)[i] * 100000
+        obsprior[i, :, 0] = np.sum(xprior[newI_indices, :, 0][temp_range, :], 0) / np.round(np.sum(N[0], 1), decimals=0)[i] * 100000
+        # sums along rows should be conserved over all 300 ensemble members
 
     # Set onset baseline:
     baseline = np.float64(500.0)
@@ -203,8 +204,7 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
         # Also calculate total newI for each country, and store in obsprior:
         for i in range(n):
             temp_range = [j + n * i for j in range(n)]
-            obsprior[i, :, tt + 1] = np.sum(xprior[newI_indices, :, tt + 1][temp_range, :], 0) / np.sum(N, 1)[
-                i] * 100000
+            obsprior[i, :, tt + 1] = np.sum(xprior[newI_indices, :, tt + 1][temp_range, :], 0) / np.round(np.sum(N[0], 1), decimals=0)[i] * 100000
 
         # END OF TRAINING
 
@@ -242,7 +242,7 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
             # print(obsfcast.shape)
             for i in range(n):
                 temp_range = [j + n * i for j in range(n)]
-                obs_temp = np.sum(fcast[np.array(newI_indices)[temp_range], :, :], 0) / np.sum(N, 1)[i] * 100000
+                obs_temp = np.sum(fcast[np.array(newI_indices)[temp_range], :, :], 0) / np.round(np.sum(N[0], 1), decimals=0)[i] * 100000
                 # print(obs_temp.shape)
                 obsfcast[i, :, :] = obs_temp
             del i
@@ -256,8 +256,8 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
             i_fcast_by_count = np.zeros([n, num_ens, nfc], dtype=np.float64)
             for i in range(n):
                 country_vals = np.array([j + n * i for j in range(n)])
-                s_fcast_by_count[i, :, :] = np.sum(s_fcast[country_vals, :, :], 0) / np.sum(N, 1)[i] * 100000
-                i_fcast_by_count[i, :, :] = np.sum(i_fcast[country_vals, :, :], 0) / np.sum(N, 1)[i] * 100000
+                s_fcast_by_count[i, :, :] = np.sum(s_fcast[country_vals, :, :], 0) / np.round(np.sum(N[0], 1), decimals=0)[i] * 100000
+                i_fcast_by_count[i, :, :] = np.sum(i_fcast[country_vals, :, :], 0) / np.round(np.sum(N[0], 1), decimals=0)[i] * 100000
             del i
 
             # Calculate ensemble means and sds:
@@ -645,10 +645,10 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
     i_post_by_count = np.zeros([n, num_ens, ntrn], dtype=np.float64)
     for i in range(n):
         country_vals = np.array([j + n * i for j in range(n)])
-        s_prior_by_count[i, :, :] = np.sum(s_prior[country_vals, :, :], 0) / np.sum(N, 1)[i] * 100000
-        i_prior_by_count[i, :, :] = np.sum(i_prior[country_vals, :, :], 0) / np.sum(N, 1)[i] * 100000
-        s_post_by_count[i, :, :] = np.sum(s_post[country_vals, :, :], 0) / np.sum(N, 1)[i] * 100000
-        i_post_by_count[i, :, :] = np.sum(i_post[country_vals, :, :], 0) / np.sum(N, 1)[i] * 100000
+        s_prior_by_count[i, :, :] = np.sum(s_prior[country_vals, :, :], 0) / np.round(np.sum(N[0], 1), decimals=0)[i] * 100000
+        i_prior_by_count[i, :, :] = np.sum(i_prior[country_vals, :, :], 0) / np.round(np.sum(N[0], 1), decimals=0)[i] * 100000
+        s_post_by_count[i, :, :] = np.sum(s_post[country_vals, :, :], 0) / np.round(np.sum(N[0], 1), decimals=0)[i] * 100000
+        i_post_by_count[i, :, :] = np.sum(i_post[country_vals, :, :], 0) / np.round(np.sum(N[0], 1), decimals=0)[i] * 100000
     del i
 
     # Calculate ensemble means and sds (prior and post; S, I, newI):
@@ -753,8 +753,8 @@ def EAKF_fn_fitOnly(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm
     #  originally had these stored as dictionaries, indexed by compartment
     I0_temp = np.zeros([n, n, num_ens], dtype=np.float64)
     for i in range(num_ens):
-        S0_temp[:, :, i] = np.multiply(np.reshape(init_parms[0:144, i], [n, n]), N)
-        I0_temp[:, :, i] = np.multiply(np.reshape(init_parms[144:288, i], [n, n]), N)
+        S0_temp[:, :, i] = np.multiply(np.reshape(init_parms[0:144, i], [n, n]), N[i])
+        I0_temp[:, :, i] = np.multiply(np.reshape(init_parms[144:288, i], [n, n]), N[i])
     del i
 
     init_parms = init_parms[(init_parms.shape[0] - 5):init_parms.shape[0], :]
@@ -790,7 +790,7 @@ def EAKF_fn_fitOnly(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm
     # Also calculate total newI for each country:
     for i in range(n):
         temp_range = [j + n * i for j in range(n)]
-        obsprior[i, :, 0] = np.sum(xprior[newI_indices, :, 0][temp_range, :], 0) / np.sum(N, 1)[i] * 100000
+        obsprior[i, :, 0] = np.sum(xprior[newI_indices, :, 0][temp_range, :], 0) / np.round(np.sum(N[0], 1), decimals=0)[i] * 100000
 
     # Begin training:
     obs_i = obs_i.iloc[:, 1:(n + 1)].to_numpy(dtype=np.float64)
@@ -899,8 +899,7 @@ def EAKF_fn_fitOnly(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm
         # Also calculate total newI for each country, and store in obsprior:
         for i in range(n):
             temp_range = [j + n * i for j in range(n)]
-            obsprior[i, :, tt + 1] = np.sum(xprior[newI_indices, :, tt + 1][temp_range, :], 0) / np.sum(N, 1)[
-                i] * 100000
+            obsprior[i, :, tt + 1] = np.sum(xprior[newI_indices, :, tt + 1][temp_range, :], 0) / np.round(np.sum(N[0], 1), decimals=0)[i] * 100000
 
     # END OF TRAINING
 
@@ -917,10 +916,10 @@ def EAKF_fn_fitOnly(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm
     i_post_by_count = np.zeros([n, num_ens, ntrn], dtype=np.float64)
     for i in range(n):
         country_vals = np.array([j + n * i for j in range(n)])
-        s_prior_by_count[i, :, :] = np.sum(s_prior[country_vals, :, :], 0) / np.sum(N, 1)[i] * 100000
-        i_prior_by_count[i, :, :] = np.sum(i_prior[country_vals, :, :], 0) / np.sum(N, 1)[i] * 100000
-        s_post_by_count[i, :, :] = np.sum(s_post[country_vals, :, :], 0) / np.sum(N, 1)[i] * 100000
-        i_post_by_count[i, :, :] = np.sum(i_post[country_vals, :, :], 0) / np.sum(N, 1)[i] * 100000
+        s_prior_by_count[i, :, :] = np.sum(s_prior[country_vals, :, :], 0) / np.round(np.sum(N[0], 1), decimals=0)[i] * 100000
+        i_prior_by_count[i, :, :] = np.sum(i_prior[country_vals, :, :], 0) / np.round(np.sum(N[0], 1), decimals=0)[i] * 100000
+        s_post_by_count[i, :, :] = np.sum(s_post[country_vals, :, :], 0) / np.round(np.sum(N[0], 1), decimals=0)[i] * 100000
+        i_post_by_count[i, :, :] = np.sum(i_post[country_vals, :, :], 0) / np.round(np.sum(N[0], 1), decimals=0)[i] * 100000
     del i
 
     # Calculate ensemble means and sds (prior and post; S, I, newI):

@@ -10,7 +10,7 @@ def run_ensemble(tmStrt, tmEnd, tmStep, tmRange, S0, I0, popN, D, L, beta, airSc
     xprior_temp = np.zeros((num_ens, np.square(n) * 3), dtype=np.float64)
 
     for i in prange(num_ens):
-        Sr_tmp = propagate_SIRS(tmStrt, tmEnd, tmStep, tmRange, S_0=S0[:, :, i], I_0=I0[:, :, i], popN=popN,
+        Sr_tmp = propagate_SIRS(tmStrt, tmEnd, tmStep, tmRange, S_0=S0[:, :, i], I_0=I0[:, :, i], popN=popN[i],
                                 D_d=D[i], L_d=L[i], beta_d=beta[:, :, i], airScale_d=airScale[i],
                                 n_count=n, airRand=airRand)
 
@@ -29,7 +29,7 @@ def run_forecast(tmStrt, tmEnd, tmStep, tmRange, S0, I0, popN, D, L, beta, airSc
     fcast_temp = np.zeros((np.square(n) * 3, num_ens, nfc), dtype=np.float64)
 
     for i in prange(num_ens):
-        Sr_tmp = propagate_SIRS(tmStrt, tmEnd, tmStep, tmRange, S_0=S0[:, :, i], I_0=I0[:, :, i], popN=popN,
+        Sr_tmp = propagate_SIRS(tmStrt, tmEnd, tmStep, tmRange, S_0=S0[:, :, i], I_0=I0[:, :, i], popN=popN[i],
                                 D_d=D[i], L_d=L[i], beta_d=beta[:, :, i], airScale_d=airScale[i],
                                 n_count=n, airRand=airRand)
 
@@ -128,7 +128,7 @@ def propagate_SIRS(tmStrt, tmEnd, tmStep, tmRange, S_0, I_0, popN, D_d, L_d, bet
             raise Exception('t_true is out of seasonal range')
 
         # Multiply airRand by airScale:
-        airRand_temp = airScale_d * airRand_temp
+        airRand_temp = airScale_d * airRand_temp * 0
 
         # Now move on to normal model code
         cnt = cnt + 1

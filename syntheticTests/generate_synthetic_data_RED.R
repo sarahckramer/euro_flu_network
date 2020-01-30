@@ -56,16 +56,52 @@ pop.size <- pop.size[pop.size$country %in% countries, ]; pop.size$country <- fac
 pop.size <- pop.size[match(countries, pop.size$country), ]
 
 ### Load commuting data
-load('formatTravelData/formattedData/comm_mat_by_year_05-07_RELIABLE_ONLY.RData')
-t.comm <- apply(simplify2array(comm.by.year), 1:2, mean); rm(comm.by.year)
-t.comm <- t.comm[countries, countries]
+# load('formatTravelData/formattedData/comm_mat_by_year_05-07_RELIABLE_ONLY.RData')
+# t.comm <- apply(simplify2array(comm.by.year), 1:2, mean); rm(comm.by.year)
+# t.comm <- t.comm[countries, countries]
+# t.comm.basic <- t.comm
+# t.comm <- vector('list', num_ens)
+# for (i in 1:num_ens) {
+#   t.comm[[i]] <- t.comm.basic
+# }
+
+# load('formatTravelData/formattedData/comm_mat_by_season_01-27.RData')
+# t.comm <- apply(simplify2array(comm.by.seas), 1:2, mean, na.rm = TRUE); rm(comm.by.seas)
+# t.comm <- t.comm[countries, countries]
+# t.comm[is.na(t.comm)] <- 0
+# t.comm.basic <- t.comm
+# t.comm <- vector('list', num_ens)
+# for (i in 1:num_ens) {
+#   t.comm[[i]] <- t.comm.basic
+# }
+
+load('formatTravelData/formattedData/comm_mat_1000.RData')
+t.comm <- lapply(comm.list1, function(ix) {
+  apply(simplify2array(ix), 1:2, mean)
+})
+for (i in 1:num_ens) {
+  rownames(t.comm[[i]]) <- countries
+  colnames(t.comm[[i]]) <- countries
+}
+
+# # No commuting:
+# for (i in 1:num_ens) {
+#   t.comm[[i]] <- matrix(0, nrow = 12, ncol = 12)
+#   rownames(t.comm[[i]]) <- countries
+#   colnames(t.comm[[i]]) <- countries
+# }
 
 ### Set country populations
 N <- t.comm; n <- length(countries) # w/ commuting
-diag(N) <- unlist(lapply(1:n, function(ix) {
-  pop.size$pop[ix] - rowSums(N)[ix]
-}))
-# note: this now results in more home-home people than before, since there are fewer countries to commute to
+for (i in 1:num_ens) {
+  diag(N[[i]]) <- unlist(lapply(1:n, function(ix) {
+    pop.size$pop[ix] - rowSums(N[[i]])[ix]
+  }))
+}
+# diag(N) <- unlist(lapply(1:n, function(ix) {
+#   pop.size$pop[ix] - rowSums(N)[ix]
+# }))
+# # note: this now results in more home-home people than before, since there are fewer countries to commute to
 
 ### Read in humidity data
 ah <- read.csv('data/ah_Europe_07142019.csv')
@@ -87,7 +123,7 @@ source('cluster/functions/Util.R')
 ### Run model!
 init.states <- allocate_S0I0(parms, num_ens, n, N, s0.method = 'lhs')
 # init.states <- allocate_S0I0(parms, num_ens, n, N, s0.method = 'lhs_full')
-res <- run_model(parms, init.states[[1]], init.states[[2]], AH, num_ens, n, N, tm.range, tmstep, tm_strt, tm_end, dt, pop.size, r0.mn = FALSE, multi = FALSE) # time: <20 min
+res <- run_model(parms, init.states[[1]], init.states[[2]], AH, num_ens, n, N, tm.range, tmstep, tm_strt, tm_end, dt, pop.size, r0.mn = FALSE, multi = FALSE)
 res.rates <- res[[1]]
 
 df.met <- check_realistic(res.rates)[[1]]

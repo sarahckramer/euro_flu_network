@@ -13,7 +13,7 @@ pd.options.mode.chained_assignment = None
 timestamp_start = datetime.datetime.now()
 
 # Specify subtype:
-strain = 'B'
+strain = 'A(H1)'
 
 # Specify global variables
 dt = 1
@@ -109,9 +109,9 @@ for season_index in range(len(seasons)):
     season = seasons[season_index]
     print(season)
 
-    # Get season-specific population matrix:
-    N = pd.read_csv(os.path.join('compartment_sizes/', 'N' + season + '_NEW.txt'), header=None, sep='\t')
-    N = N.to_numpy(dtype=np.float64)
+    # # Get season-specific population matrix:
+    # N = pd.read_csv(os.path.join('compartment_sizes/', 'N' + season + '_NEW.txt'), header=None, sep='\t')
+    # N = N.to_numpy(dtype=np.float64)
 
     # Get observations for current season:
     obs_i = iliiso.iloc[wks_dict[season]]
@@ -146,6 +146,17 @@ for season_index in range(len(seasons)):
                                  sep='\t')
         param_init = param_init.to_numpy(dtype=np.float64)
         # print(param_init.shape)
+
+        # Get season-specific population matrix:
+        N = np.zeros([num_ens, n, n], dtype=np.float64)
+        for ensmem in range(num_ens):
+            # N_temp = pd.read_csv(os.path.join('compartment_sizes/', 'N' + season + '_NEW.txt'), header=None, sep='\t')
+            N_temp = pd.read_csv(os.path.join('compartment_sizes_NEW2/', 'N' + season + '_' + str(run + 1) + '_' + str(ensmem + 1) + '.txt'), header=None, sep='\t')
+            N[ensmem] = N_temp.to_numpy(dtype=np.float64)
+        # print(N_temp)
+        del N_temp
+        # N = pd.read_csv(os.path.join('compartment_sizes/', 'N' + season + '_NEW.txt'), header=None, sep='\t')
+        # N = N.to_numpy(dtype=np.float64)
 
         # Run EAKF:
         res = EAKF_fn(num_ens, tmstep, param_init, obs_i, 30, nsn, obs_vars, tm_ini, tm_range, n, N, ah,
@@ -203,11 +214,11 @@ print('Done.')
 timestamp_end = datetime.datetime.now()
 print('Time Elapsed: ' + str(timestamp_end - timestamp_start))
 
-outputMetrics.to_csv('results/outputMet_' + strain + '.csv', na_rep='NA', index=False)
-outputOP.to_csv('results/outputOP_' + strain + '.csv', na_rep='NA', index=False)
-outputOPParams.to_csv('results/outputOPParams_' + strain + '.csv', na_rep='NA', index=False)
-outputDist.to_csv('results/outputDist_' + strain + '.csv', na_rep='NA', index=False)
-outputEns.to_csv('results/outputEns_' + strain + '.csv', na_rep='NA', index=False)
+outputMetrics.to_csv('results/outputMet_' + strain + '_noAir.csv', na_rep='NA', index=False)
+outputOP.to_csv('results/outputOP_' + strain + '_noAir.csv', na_rep='NA', index=False)
+outputOPParams.to_csv('results/outputOPParams_' + strain + '_noAir.csv', na_rep='NA', index=False)
+outputDist.to_csv('results/outputDist_' + strain + '_noAir.csv', na_rep='NA', index=False)
+outputEns.to_csv('results/outputEns_' + strain + '_noAir.csv', na_rep='NA', index=False)
 print('Finished writing to file!')
 
 # error with correlations? i think it's okay to ignore - just passes nan when there's nothing to correlate I assume

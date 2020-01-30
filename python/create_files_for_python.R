@@ -11,44 +11,71 @@ pop.size <- read.csv('data/popcounts_02-07.csv')
 pop.size <- pop.size[pop.size$country %in% countries, ]; pop.size$country <- factor(pop.size$country)
 pop.size <- pop.size[match(countries, pop.size$country), ]
 
-# Read in commuting data:
-load('formatTravelData/formattedData/comm_mat_by_year_05-07_RELIABLE_ONLY.RData')
-comm.by.year <- lapply(comm.by.year, function(ix) {
-  ix[countries, countries]
-})
-
-# Calculate commuting for SEASON, not year:
-comm.by.seas <- vector('list', 8)
-for (i in 1:7) {
-  comm.by.seas[[i]] <- (comm.by.year[[i]] + comm.by.year[[i + 1]]) / 2
-}
-comm.by.seas[[8]] <- comm.by.year[[8]]
-# save(comm.by.seas, file = 'formatTravelData/formattedData/comm_mat_by_season_05-07_RELIABLE_ONLY.RData')
-
-# Get population counts by season:
-N <- comm.by.seas
-N <- lapply(N, function(ix) {
-  diag(ix) <- unlist(lapply(1:n, function(jx) {
-    pop.size$pop[jx] - rowSums(ix)[jx]
-  }))
-  return(ix)
-})
-
-# N.check <- comm.by.seas
-# for (i in 1:length(N.check)) {
-#   diag(N.check[[i]]) <- unlist(lapply(1:n, function(ix) {
-#     pop.size$pop[ix] - rowSums(N.check[[i]])[ix]
-#   }))
-# }
+# # Read in commuting data:
+# load('formatTravelData/formattedData/comm_mat_by_year_05-07_RELIABLE_ONLY.RData')
+# comm.by.year <- lapply(comm.by.year, function(ix) {
+#   ix[countries, countries]
+# })
 # 
-# all.equal(N, N.check)
+# # Calculate commuting for SEASON, not year:
+# comm.by.seas <- vector('list', 8)
+# for (i in 1:7) {
+#   comm.by.seas[[i]] <- (comm.by.year[[i]] + comm.by.year[[i + 1]]) / 2
+# }
+# comm.by.seas[[8]] <- comm.by.year[[8]]
+# # save(comm.by.seas, file = 'formatTravelData/formattedData/comm_mat_by_season_05-07_RELIABLE_ONLY.RData')
+# 
+# # Get population counts by season:
+# N <- comm.by.seas
+# N <- lapply(N, function(ix) {
+#   diag(ix) <- unlist(lapply(1:n, function(jx) {
+#     pop.size$pop[jx] - rowSums(ix)[jx]
+#   }))
+#   return(ix)
+# })
+# 
+# # N.check <- comm.by.seas
+# # for (i in 1:length(N.check)) {
+# #   diag(N.check[[i]]) <- unlist(lapply(1:n, function(ix) {
+# #     pop.size$pop[ix] - rowSums(N.check[[i]])[ix]
+# #   }))
+# # }
+# # 
+# # all.equal(N, N.check)
+# 
+# # Write to txt files:
+# seasons = c('2010-11', '2011-12', '2012-13', '2013-14', '2014-15', '2015-16', '2016-17', '2017-18')
+# for (i in 1:length(N)) {
+#   write.table(N[[i]], file = paste0('python/compartment_sizes/N', seasons[i], '_NEW.txt'), sep = '\t', row.names = FALSE, col.names = FALSE)
+#   # write.table(mydata, "c:/mydata.txt", sep="\t") 
+# }
 
-# Write to txt files:
+# Get reliable+unreliable+... adjacent-only, or full:
+
 seasons = c('2010-11', '2011-12', '2012-13', '2013-14', '2014-15', '2015-16', '2016-17', '2017-18')
-for (i in 1:length(N)) {
-  write.table(N[[i]], file = paste0('python/compartment_sizes/N', seasons[i], '_NEW.txt'), sep = '\t', row.names = FALSE, col.names = FALSE)
-  # write.table(mydata, "c:/mydata.txt", sep="\t") 
+
+load('formatTravelData/formattedData/comm_mat1_ADJ.RData')
+load('formatTravelData/formattedData/comm_mat2_ADJ.RData')
+load('formatTravelData/formattedData/comm_mat3_ADJ.RData')
+load('formatTravelData/formattedData/comm_mat4_ADJ.RData')
+load('formatTravelData/formattedData/comm_mat5_ADJ.RData')
+N <- comm.list1
+for (i in 1:300) {
+  N[[i]] <- lapply(N[[i]], function(ix) {
+    diag(ix) <- unlist(lapply(1:n, function(jx) {
+      pop.size$pop[jx] - rowSums(ix)[jx]
+    }))
+    return(ix)
+  })
 }
+
+for (ensmem in 1:length(N)) {
+  N.temp <- N[[ensmem]]
+  for (i in 1:length(N.temp)) {
+    write.table(N.temp[[i]], file = paste0('python/compartment_sizes_NEW1/N', seasons[i], '_', 1, '_', ensmem, '.txt'), sep = '\t', row.names = FALSE, col.names = FALSE)
+  }
+}
+rm(comm.list1, comm.list2, comm.list3, comm.list4, comm.list5)
 
 # Get air travel data:
 air.dat <- list()
@@ -70,7 +97,7 @@ set.seed(1048993542)
 D_low <- 2; L_low <- 3*365; Rmx_low <- 2.0; Rdiff_low <- 0.2; airScale_low <- 0.75
 D_up <- 7; L_up <- 10*365; Rmx_up <- 2.8; Rdiff_up <- 1.0; airScale_up <- 1.25
 S0_low <- 0.4; S0_up <- 0.9
-I0_low <- 0; I0_up <- 0.000001 #0.00005
+I0_low <- 0; I0_up <- 0.00005
 
 theta_low <- c(L_low, D_low, Rmx_low, Rdiff_low, airScale_low)
 theta_up <- c(L_up, D_up, Rmx_up, Rdiff_up, airScale_up)

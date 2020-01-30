@@ -186,10 +186,10 @@ allocate_S0I0 <- function(in.parms, num.ens, n, N, s0.method = NULL) {
     }
 
     S0.temp[[i]] <- t(S0.temp[[i]])
-    S0.temp[[i]] <- S0.temp[[i]] * N
+    S0.temp[[i]] <- S0.temp[[i]] * N[[i]]
 
-    I0.temp[[i]] <- sweep(N / rowSums(N), 1, diag(I0.temp[[i]]), '*')
-    I0.temp[[i]] <- I0.temp[[i]] * N
+    I0.temp[[i]] <- sweep(N[[i]] / rowSums(N[[i]]), 1, diag(I0.temp[[i]]), '*')
+    I0.temp[[i]] <- I0.temp[[i]] * N[[i]]
   }
   
   return(list(S0.temp, I0.temp, s0.by.count))
@@ -201,8 +201,8 @@ allocate_S0I0_fullLHS <- function(in.parms, num.ens, n, N) {
   S0.temp = I0.temp = vector('list', num.ens)
   for (i in 1:num.ens) {
     # S0.temp[[i]] = I0.temp[[i]] = matrix(0, nrow = n, ncol = n)
-    S0.temp[[i]] <- matrix(in.parms[1:(n ** 2), i], nrow = n, ncol = n, byrow = T) * N
-    I0.temp[[i]] <- matrix(in.parms[1:(n ** 2) + (n ** 2), i], nrow = n, ncol = n, byrow = T) * N
+    S0.temp[[i]] <- matrix(in.parms[1:(n ** 2), i], nrow = n, ncol = n, byrow = T) * N[[i]]
+    I0.temp[[i]] <- matrix(in.parms[1:(n ** 2) + (n ** 2), i], nrow = n, ncol = n, byrow = T) * N[[i]]
   }
   
   return(list(S0.temp, I0.temp))
@@ -245,7 +245,7 @@ run_model <- function(in.parms, S0.in, I0.in, in.ah, num.ens, n, N, tm.range, tm
       propagateToySIRS_multi(tm_strt = tm.strt, tm_end = tm.end, dt,
                        S01 = S0.temp1[[ix]], I01 = I0.temp1[[ix]],
                        S02 = S0.temp2[[ix]], I02 = I0.temp2[[ix]],
-                       N, D = D.temp[ix], L = L.temp[ix], beta[[ix]],
+                       N[[ix]], D = D.temp[ix], L = L.temp[ix], beta[[ix]],
                        airScale = airScale.temp[ix], realdata = TRUE,
                        prohibAir = FALSE)
     })
@@ -257,7 +257,7 @@ run_model <- function(in.parms, S0.in, I0.in, in.ah, num.ens, n, N, tm.range, tm
   } else {
     m <- sapply(1:num.ens, function(ix) {
       propagateToySIRS(tm_strt = tm.strt, tm_end = tm.end, dt,
-                       S0 = S0.temp[[ix]], I0 = I0.temp[[ix]], N,
+                       S0 = S0.temp[[ix]], I0 = I0.temp[[ix]], N[[ix]],
                        D = D.temp[ix], L = L.temp[ix], beta[[ix]],
                        airScale = airScale.temp[ix], realdata = TRUE,
                        prohibAir = FALSE)
@@ -296,7 +296,7 @@ run_model_noAH <- function(in.parms, S0.in, I0.in, num.ens, n, N, tm.range, tmst
       propagateToySIRS_multi(tm_strt = tm.strt, tm_end = tm.end, dt,
                              S01 = S0.temp1[[ix]], I01 = I0.temp1[[ix]],
                              S02 = S0.temp2[[ix]], I02 = I0.temp2[[ix]],
-                             N, D = D.temp[ix], L = L.temp[ix], beta[[ix]],
+                             N[[ix]], D = D.temp[ix], L = L.temp[ix], beta[[ix]],
                              airScale = airScale.temp[ix], realdata = TRUE,
                              prohibAir = FALSE)
     })
@@ -308,7 +308,7 @@ run_model_noAH <- function(in.parms, S0.in, I0.in, num.ens, n, N, tm.range, tmst
   } else {
     m <- sapply(1:num.ens, function(ix) {
       propagateToySIRS(tm_strt = tm.strt, tm_end = tm.end, dt,
-                       S0 = S0.temp[[ix]], I0 = I0.temp[[ix]], N,
+                       S0 = S0.temp[[ix]], I0 = I0.temp[[ix]], N[[ix]],
                        D = D.temp[ix], L = L.temp[ix], beta[[ix]],
                        airScale = airScale.temp[ix], realdata = TRUE,
                        prohibAir = FALSE)
