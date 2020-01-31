@@ -441,3 +441,167 @@ def EAKF_fn_ISOLATED(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, t
     fc_ens.columns = ['fc_start', 'metric'] + list(range(1, 301))
 
     return fc_met, out_op, fc_dist, fc_ens
+
+
+def EAKF_fn_fitOnly_ISOLATED(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm_range,
+                             N, AH, dt, lambda_val, wk_start):
+    # num_times = np.floor(len(tm_range) / tm_step)
+    # nfc = nsn - ntrn # number of weeks for forecasting
+    tstep = np.arange(tm_ini + tm_step + 1, nsn * tm_step + tm_ini + 2, step=tm_step)
+    # Question: don't need -1 b/c already adjusted tm_ini for off-by-one-ness?
+    fc_start = wk_start
+
+    # Initialize arrays:
+    xprior = np.zeros([7, num_ens, ntrn + 1], dtype=np.float64)
+    xpost = np.zeros([7, num_ens, ntrn], dtype=np.float64)
+
+    # Set initial conditions based on input parameters:
+    So = init_parms
+    So[0] = So[0] * N
+    So[1] = So[1] * N
+
+    # Calculate the reproductive number at time t:
+    beta_range = range(tm_range[0], max(tm_range) + 2 * tm_step)
+    AH = AH[beta_range]
+
+    a = -180
+    b = np.log(So[5])
+    beta = np.zeros([len(AH), num_ens], dtype=np.float64)
+    for i in range(num_ens):
+        beta[:, i] = (np.exp(a * AH + b[i]) + (So[4, i] - So[5, i])) / So[3, i]
+    del i
+
+    tcurrent = tm_ini
+    # print(tcurrent) # Question: this is 1 less than tcurrent in R - I'm almost certain this is correct
+
+    # Integrate forward one time step:
+    Sr_tmp = propagate_SIRS_ISOLATED(tmStrt=tcurrent + dt, tmEnd=tcurrent + tm_step, tmStep=dt, tmRange=tm_range,
+                                     S_0=So[0], I_0=So[1], popN=N, D_d=So[3], L_d=So[2], beta_d=beta)
+    xprior[0, :, 0] = Sr_tmp[0][Sr_tmp[0].shape[0] - 1]
+    xprior[1, :, 0] = Sr_tmp[1][Sr_tmp[1].shape[0] - 1]
+    xprior[2:6, :, 0] = So[2:6]
+    xprior[6, :, 0] = Sr_tmp[2][Sr_tmp[2].shape[0] - 1]
+
+    # Define the mapping operator:
+    H = 6  # 7 in R, but remember python indexes differently
+
+    # Set onset baseline:
+    baseline = np.float64(500.0)
+
+    # Begin training:
+    obs_i = obs_i.to_numpy(dtype=np.float64)
+    for tt in range(ntrn):
+        # print(tt)
+
+        if not np.isnan(obs_i[tt]):  # if data aren't NA, obs_var shouldn't be either
+
+            # Inflate states/parameters:
+            inflat = np.diag(np.repeat(lambda_val, 7))
+            xmn = np.mean(xprior[:, :, tt], 1).reshape([7, 1])  # 7x7 times 1x7?
+            x = np.matmul(inflat, xprior[:, :, tt] - np.matmul(xmn, np.ones([1, num_ens]))) + (
+                np.matmul(xmn, np.ones([1, num_ens])))
+            x[np.where(x < 0)] = 0
+            xprior[:, :, tt] = x
+            del x
+
+            # Get the variance of the ensemble:
+            obs_var = obs_vars[tt]
+
+            # CHECK - is obs_var ever NA?
+            if np.isnan(obs_var):
+                print('ERROR: OEV is NA')
+
+            # Get prior and post var:
+            prior_var = np.var(xprior[H, :, tt], ddof=1)
+            post_var = prior_var * (obs_var / (prior_var + obs_var))
+
+            if prior_var == 0 or np.isnan(prior_var):
+                post_var = np.float64(0)
+                prior_var = np.float64(1e-3)
+
+            # Compute prior and post means:
+            prior_mean = np.mean(xprior[H, :, tt])
+            post_mean = post_var * (prior_mean / prior_var + obs_i[tt] / obs_var)
+
+            # Compute alpha and adjust distribution to conform to posterior moments:
+            alp = np.sqrt(obs_var / (obs_var + prior_var))
+            dy = post_mean + alp * (xprior[H, :, tt] - prior_mean) - xprior[H, :, tt]
+
+            # Get the covariance of the prior state space and observations
+            rr = np.zeros([7], dtype=np.float64)
+            for j in range(7):
+                C = (np.cov(xprior[j, :, tt], xprior[H, :, tt]) / prior_var)[0, 1]
+                rr[j] = C
+            del j
+            dx = np.matmul(rr.reshape([len(rr), 1]), dy.reshape([1, len(dy)]))
+
+            # Get the new ensemble and save prior and posterior
+            xnew = xprior[:, :, tt] + dx
+
+            # Corrections to data aphysicalities:
+            xnew[range(H)] = fn_checkxnobounds_ISOLATED(xnew[range(H)], N)
+            xnew[H][np.where(xnew[H] < 0)] = 0
+
+            # Store as posterior:
+            xpost[:, :, tt] = xnew
+
+            # Integrate forward one time step:
+            a = -180
+            b = np.log(xpost[5, :, tt])
+            beta = np.zeros([len(AH), num_ens], dtype=np.float64)
+            for i in range(num_ens):
+                beta[:, i] = (np.exp(a * AH + b[i]) + (xpost[4, i, tt] - xpost[5, i, tt])) / xpost[3, i, tt]
+            del i
+
+            tcurrent = tm_ini + tm_step * (tt + 1)
+            Sr_tmp = propagate_SIRS_ISOLATED(tmStrt=tcurrent + dt, tmEnd=tcurrent + tm_step, tmStep=dt,
+                                             tmRange=tm_range, S_0=xpost[0, :, tt], I_0=xpost[1, :, tt], popN=N,
+                                             D_d=xpost[3, :, tt], L_d=xpost[2, :, tt], beta_d=beta)
+            xprior[0, :, tt + 1] = Sr_tmp[0][Sr_tmp[0].shape[0] - 1]
+            xprior[1, :, tt + 1] = Sr_tmp[1][Sr_tmp[1].shape[0] - 1]
+            xprior[2:6, :, tt + 1] = xpost[2:6, :, tt]
+            xprior[6, :, tt + 1] = Sr_tmp[2][Sr_tmp[2].shape[0] - 1]
+
+            # END OF TRAINING
+        else:
+            # Run forward without fitting:
+            a = -180
+            b = np.log(xprior[5, :, tt])
+            beta = np.zeros([len(AH), num_ens], dtype=np.float64)
+            for i in range(num_ens):
+                beta[:, i] = (np.exp(a * AH + b[i]) + (xprior[4, i, tt] - xprior[5, i, tt])) / xprior[3, i, tt]
+            del i
+
+            tcurrent = tm_ini + tm_step * (tt + 1)
+            Sr_tmp = propagate_SIRS_ISOLATED(tmStrt=tcurrent + dt, tmEnd=tcurrent + tm_step, tmStep=dt,
+                                             tmRange=tm_range, S_0=xprior[0, :, tt], I_0=xprior[1, :, tt], popN=N,
+                                             D_d=xprior[3, :, tt], L_d=xprior[2, :, tt], beta_d=beta)
+            xprior[0, :, tt + 1] = Sr_tmp[0][Sr_tmp[0].shape[0] - 1]
+            xprior[1, :, tt + 1] = Sr_tmp[1][Sr_tmp[1].shape[0] - 1]
+            xprior[2:6, :, tt + 1] = xprior[2:6, :, tt]
+            xprior[6, :, tt + 1] = Sr_tmp[2][Sr_tmp[2].shape[0] - 1]
+
+    # ### Process priors and posteriors after fitting is finished for full period ###
+    # Calculate ensemble means and sds:
+    xprior_mean = np.mean(xprior, 1)
+    xpost_mean = np.mean(xpost, 1)
+    xpost_sd = np.std(xpost, 1, ddof=1)
+
+    states_weeks = np.array([i % (ntrn + 1) for i in range(xprior_mean.shape[1])]) + wk_start
+    statesprior = np.c_[states_weeks, xprior_mean.transpose()]
+    statesprior = pd.DataFrame(statesprior)
+    statesprior.columns = ['week', 'S', 'I', 'L', 'D', 'R0mx', 'R0diff', 'Est']
+
+    states_weeks = np.array([i % ntrn for i in range(xpost_mean.shape[1])]) + wk_start
+    statespost = np.c_[states_weeks, xpost_mean.transpose(), xpost_sd.transpose()]
+    statespost = pd.DataFrame(statespost)
+    statespost.columns = ['week', 'S', 'I', 'L', 'D', 'R0mx', 'R0diff', 'Est',
+                          'S_sd', 'I_sd', 'L_sd', 'D_sd', 'R0mx_sd', 'R0diff_sd', 'Est_sd']
+
+    # Format outputs:
+    statespost['fc_start'] = fc_start
+    statespost['result'] = 'train'
+    statespost['time'] = pd.Series(tstep[range(0, ntrn)])
+    statespost = statespost[statespost.columns[[15, 17, 0, 16] + list(range(1, 15))]]
+
+    return statespost

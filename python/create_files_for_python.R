@@ -192,8 +192,9 @@ write.table(parms, file = 'python/initial_parms/SA/parms4_verylowI0.txt', sep = 
 # write.csv(obs4, file = 'syntheticTests/syntheticData/for_python/synth_wError_4.csv', row.names = FALSE)
 # write.csv(obs5, file = 'syntheticTests/syntheticData/for_python/synth_wError_5.csv', row.names = FALSE)
 
-
-
+load('syntheticTests/syntheticData/synth_rates_ISOL_error.RData')
+# newI.keep <- t(newI.keep)
+write.csv(newI.keep, file = 'syntheticTests/syntheticData/for_python/synth_wError_ISOLATED.csv', row.names = FALSE)
 
 
 
