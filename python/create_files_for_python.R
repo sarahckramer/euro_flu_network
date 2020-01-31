@@ -80,7 +80,7 @@ rm(comm.list1, comm.list2, comm.list3, comm.list4, comm.list5)
 # Get air travel data:
 air.dat <- list()
 for (i in 1:12) {
-  load(paste0('formatTravelData/formattedData/air_', i, '_05-07.RData'))
+  load(paste0('formatTravelData/formattedData/air_', i, '_01-31.RData'))
   a.temp.sym <- a.temp.sym[countries, countries]
   air.dat[[i]] <- a.temp.sym
   rm(a.temp.sym)
