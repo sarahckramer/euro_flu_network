@@ -66,9 +66,9 @@ for season_index in range(len(seasons)):
     season = seasons[season_index]
     print(season)
 
-    # Get season-specific population matrix:
-    N = pd.read_csv(os.path.join('compartment_sizes/', 'N' + season + '.txt'), header=None, sep='\t')
-    N = N.to_numpy(dtype=np.float64)
+    # # Get season-specific population matrix:
+    # N = pd.read_csv(os.path.join('compartment_sizes/', 'N' + season + '.txt'), header=None, sep='\t')
+    # N = N.to_numpy(dtype=np.float64)
 
     # Get observations for current season:
     obs_i = iliiso.iloc[wks_dict[season]]
@@ -101,6 +101,17 @@ for season_index in range(len(seasons)):
                                  sep='\t')
         param_init = param_init.to_numpy(dtype=np.float64)
         # Here we use the same as used in forecasting
+
+        # Get season-specific population matrix:
+        N = np.zeros([num_ens, n, n], dtype=np.float64)
+        for ensmem in range(num_ens):
+            # N_temp = pd.read_csv(os.path.join('compartment_sizes/', 'N' + season + '_NEW.txt'), header=None, sep='\t')
+            N_temp = pd.read_csv(os.path.join('compartment_sizes_NEW2/',
+                                              'N' + season + '_' + str(run + 1) + '_' + str(ensmem + 1) + '.txt'),
+                                 header=None, sep='\t')
+            N[ensmem] = N_temp.to_numpy(dtype=np.float64)
+        # print(N_temp)
+        del N_temp
 
         # Run EAKF:
         res = EAKF_fn_fitOnly(num_ens, tmstep, param_init, obs_i, 52, nsn, obs_vars, tm_ini, tm_range, n, N, ah,
