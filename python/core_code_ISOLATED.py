@@ -22,9 +22,9 @@ wk_start = 40
 
 # Parameters for filters
 discrete = False
-oev_base = np.float64(1e5)
+oev_base = np.float64(1e5)  # or 5e4?
 oev_denom = np.float64(10.0)
-lambda_val = np.float64(1.05)
+lambda_val = np.float64(1.05)  # or 1.02?
 num_ens = 300
 num_runs = 5  # EVENTUALLY WANT 5
 
@@ -141,7 +141,7 @@ for count_index in range(n):
 
             # Run forecasts!
             for run in range(num_runs):
-                print(run)
+                # print(run)
 
                 # Get initial states/parameters for each ensemble member:
                 param_init = pd.read_csv(os.path.join('initial_parms/', 'parms' + str(run) + '_INDIV.txt'), header=None,
@@ -153,66 +153,51 @@ for count_index in range(n):
                 res = EAKF_fn_ISOLATED(num_ens, tmstep, param_init, obs_i, 30, nsn, obs_vars, tm_ini, tm_range, N,
                                        ah_count, dt, lambda_val, wk_start)
 
+                # Append results to main results frames:
+                outputMet_temp = res[0]
+                outputOP_temp = res[1]
+                outputDist_temp = res[2]
+                outputEns_temp = res[3]
 
+                outputMet_temp['country'] = country
+                outputMet_temp['season'] = season
+                outputMet_temp['run'] = run
+                outputMet_temp['oev_base'] = oev_base
+                outputMet_temp['oev_denom'] = oev_denom
+                outputMet_temp['lambda'] = lambda_val
+                outputMet_temp['scaling'] = gamma
 
+                # # deal with scalings:
+                # outputMet_temp['scaling'] = scalings['gamma'][count_index]
+                # if season in ('2010-11', '2011-12', '2012-13', '2013-14') and country == 'FR':
+                #     print('Used')
+                #     outputMet_temp['scaling'] = scalings_early['gamma'][count_index]
 
+                # continue appending:
+                outputOP_temp = outputOP_temp.assign(**{'country': country, 'season': season, 'run': run,
+                                                        'oev_base': oev_base, 'oev_denom': oev_denom,
+                                                        'lambda': lambda_val})
+                outputDist_temp = outputDist_temp.assign(**{'country': country, 'season': season, 'run': run,
+                                                            'oev_base': oev_base, 'oev_denom': oev_denom,
+                                                            'lambda': lambda_val})
+                outputEns_temp = outputEns_temp.assign(**{'country': country, 'season': season, 'run': run,
+                                                          'oev_base': oev_base, 'oev_denom': oev_denom,
+                                                          'lambda': lambda_val})
 
+                outputMetrics = outputMetrics.append(outputMet_temp, ignore_index=True)
+                outputOP = outputOP.append(outputOP_temp, ignore_index=True)
+                outputDist = outputDist.append(outputDist_temp, ignore_index=True)
+                outputEns = outputEns.append(outputEns_temp, ignore_index=True)
 
+    print()  # so we'll get a line break when a country is done, right?
 
+# Time benchmark end
+print('Done.')
+timestamp_end = datetime.datetime.now()
+print('Time Elapsed: ' + str(timestamp_end - timestamp_start))
 
-
-#
-#         outputMet_temp = res[0]
-#         outputOP_temp = res[1]
-#         outputOPParams_temp = res[2]
-#         outputDist_temp = res[3]
-#         outputEns_temp = res[4]
-#
-#         outputMet_temp['season'] = season
-#         outputMet_temp['run'] = run
-#         outputMet_temp['oev_base'] = oev_base
-#         outputMet_temp['oev_denom'] = oev_denom
-#         outputMet_temp['lambda'] = lambda_val
-#         if season in ('2010-11', '2011-12', '2012-13', '2013-14'):
-#             outputMet_temp['scaling'] = np.tile(scalings_early['gamma'], int(outputMet_temp.shape[0] / n))
-#         else:
-#             outputMet_temp['scaling'] = np.tile(scalings['gamma'], int(outputMet_temp.shape[0] / n))
-#
-#         if season in ('2010-11', '2011-12', '2012-13', '2013-14'):
-#             outputMet_temp = outputMet_temp.assign(**{'season': season, 'run': run, 'oev_base': oev_base,
-#                                                       'oev_denom': oev_denom, 'lambda': lambda_val,
-#                                                       'scaling': np.tile(scalings_early['gamma'],
-#                                                                          int(outputMet_temp.shape[0] / n))})
-#         else:
-#             outputMet_temp = outputMet_temp.assign(**{'season': season, 'run': run, 'oev_base': oev_base,
-#                                                       'oev_denom': oev_denom, 'lambda': lambda_val,
-#                                                       'scaling': np.tile(scalings['gamma'],
-#                                                                          int(outputMet_temp.shape[0] / n))})
-#
-#         outputOP_temp = outputOP_temp.assign(**{'season': season, 'run': run, 'oev_base': oev_base,
-#                                                 'oev_denom': oev_denom, 'lambda': lambda_val})
-#         outputDist_temp = outputDist_temp.assign(**{'season': season, 'run': run, 'oev_base': oev_base,
-#                                                     'oev_denom': oev_denom, 'lambda': lambda_val})
-#         outputEns_temp = outputEns_temp.assign(**{'season': season, 'run': run, 'oev_base': oev_base,
-#                                                   'oev_denom': oev_denom, 'lambda': lambda_val})
-#
-#         outputMetrics = outputMetrics.append(outputMet_temp, ignore_index=True)
-#         outputOP = outputOP.append(outputOP_temp, ignore_index=True)
-#         outputDist = outputDist.append(outputDist_temp, ignore_index=True)
-#         outputEns = outputEns.append(outputEns_temp, ignore_index=True)
-#
-#     print()
-#
-# # Fix scaling value for early season FR?:
-# # Think I managed to do that up earlier
-#
-# # Time benchmark end
-# print('Done.')
-# timestamp_end = datetime.datetime.now()
-# print('Time Elapsed: ' + str(timestamp_end - timestamp_start))
-#
-# outputMetrics.to_csv('results/outputMet_' + strain + '_ISOLATED.csv', na_rep='NA', index=False)
-# outputOP.to_csv('results/outputOP_' + strain + '_ISOLATED.csv', na_rep='NA', index=False)
-# outputDist.to_csv('results/outputDist_' + strain + '_ISOLATED.csv', na_rep='NA', index=False)
-# outputEns.to_csv('results/outputEns_' + strain + '_ISOLATED.csv', na_rep='NA', index=False)
-# print('Finished writing to file!')
+outputMetrics.to_csv('results/outputMet_' + strain + '_ISOLATED.csv', na_rep='NA', index=False)
+outputOP.to_csv('results/outputOP_' + strain + '_ISOLATED.csv', na_rep='NA', index=False)
+outputDist.to_csv('results/outputDist_' + strain + '_ISOLATED.csv', na_rep='NA', index=False)
+outputEns.to_csv('results/outputEns_' + strain + '_ISOLATED.csv', na_rep='NA', index=False)
+print('Finished writing to file!')

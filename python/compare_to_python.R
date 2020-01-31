@@ -357,13 +357,18 @@ for (i in 0:29) {
   
 }
 
+# Compare isolated, too:
+a <- read.csv('python/results/outputOP_A(H1)_ISOLATED.csv')
+a <- a[a$run == 0 & a$season == '2010-11' & a$fc_start == 69 & a$result == 'fcast', ]
+# ggplot(data = a, aes(x = time, y = Est, col = result, group = fc_start)) + geom_line() + facet_wrap(~country) + theme_classic()
 
+b <- read.csv('cluster/individualCountries/outputs/outputOP_1e+05_10_AH1_OEVold.csv')
+b <- b[b$run == 0 & b$season == '2010-11' & b$fc_start == 69 & b$result == 'fcast', ]
+ggplot(data = b, aes(x = time, y = Est, col = result, group = fc_start)) + geom_line() + facet_wrap(~country) + theme_classic()
 
-
-
-
-
-
+ggplot(data = a, aes(x = time, y = Est)) + geom_line(col = 'steelblue2') + facet_wrap(~country, scales = 'free_y') + theme_classic() +
+  geom_point(data = b, col = 'salmon')
+# look good now! what's the difference with the cluster code??
 
 
 
