@@ -9,7 +9,9 @@
 
 EAKF_rFC<-function(num_ens, tmstep, param.bound, obs_i=obs_i,ntrn=1, 
                     obs_vars,tm.ini=273, tm.range=273:500){
-
+  
+  set.seed(1048993542)
+  
   num_times <- floor(length(tm.range) / tmstep)
   nfc <- nsn - ntrn # number of weeks for forecasting
   tstep <- seq(tm.ini + tmstep, nsn * tmstep + tm.ini, by = tmstep)

@@ -8,19 +8,19 @@ library("MASS"); # for multivariate normal distribution
 require(plyr); # for function count
 
 ### Set directory:
-setwd('/ifs/scratch/msph/ehs/sck2165/global_forecasting/core/')
+# setwd('/ifs/scratch/msph/ehs/sck2165/global_forecasting/core/')
 
 ### Read in model functions
-source('code/individualCountries/SIRS_indiv.R')
-source('code/functions/Fn_initializations.R')
-source('code/individualCountries/Fn_checkxnobounds.R')
-source('code/functions/Util.R')
-source('code/functions/calc_obsvars.R')
-source('code/functions/replaceLeadingLaggingNAs.R')
+source('cluster/individualCountries/SIRS_indiv.R')
+source('cluster/functions/Fn_initializations.R')
+source('cluster/individualCountries/Fn_checkxnobounds.R')
+source('cluster/functions/Util.R')
+source('cluster/functions/calc_obsvars.R')
+source('cluster/functions/replaceLeadingLaggingNAs.R')
 
 ### Read in filter function
-source('code/individualCountries/EAKF_indiv.R')
-# source('code/individualCountries/EAKF_indiv_R0mn.R')
+source('cluster/individualCountries/EAKF_indiv.R')
+# source('cluster/individualCountries/EAKF_indiv_R0mn.R')
 
 ### Seasons:
 # seasons <- c('2010-11', '2011-12', '2012-13', '2013-14', '2014-15', '2015-16', '2016-17', '2017-18')
@@ -76,7 +76,8 @@ lambda <- 1.05 #lambdaList[ceiling(task.index - 1) %% 3 + 1]
 print(paste(oev_base, oev_denom, lambda, sep = '_'))
 
 num_ens <- 300 # use 300 for ensemble filters, 10000 for particle filters
-num_runs <- 3
+num_runs <- 1
+run <- 0
 
 ### Specify the country for which we are performing a forecast
 countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
@@ -129,46 +130,46 @@ for (count.index in 1:length(countries)) {
   country <- countries[count.index]
   # print(country)
   gamma <- scalings$gamma[count.index]
-
+  
   # Get country-specific humidity:
   AH.count <- AH[, count.index]
-
+  
   # # Get country-specific influenza data:
   # iliiso.count <- iliiso[, count.index + 1]
-
+  
   # Initiate output data frames:
   outputMetrics <- NULL
   outputOP <- NULL
   outputDist <- NULL
   outputEns <- NULL
-
+  
   # Loop through seasons:
   for (season in seasons) {
     print(paste(country, season, sep=' '))
-
+    
     # Get observations for current season:
     tmp <- Fn_dates(season)
     weeks <- tmp$weeks + 3
     start_date <- tmp$start_date
     end_date <- tmp$end_date
     nsn <- tmp$nsn
-
+    
     obs_i <- iliiso[weeks, count.index + 1]
     syn_i <- syn.dat[weeks, count.index + 1]
     test_i <- test.dat[weeks, count.index + 1]
     pos_i <- pos.dat[weeks, count.index + 1]
-
+    
     # Check if any data for this country/season:
     if (any(obs_i > 0 & !is.na(obs_i))) {
-
+      
       # Replace any leading or lagging NAs:
       obs_i <- replaceLeadLag(obs_i)
       syn_i <- replaceLeadLag(syn_i)
       pos_i <- replaceLeadLag(pos_i)
-
+      
       # Replace 0s in test_i w/ NA (b/c can't divide by 0!):
       test_i[test_i == 0 & !is.na(test_i)] <- NA
-
+      
       # # Plot:
       # par(mfrow = c(2, 2), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
       # plot(obs_i, pch = 20, type = 'b', lty = 1, cex = 0.75)
@@ -176,12 +177,12 @@ for (count.index in 1:length(countries)) {
       # plot(pos_i, pch = 20, type = 'b', lty = 1, cex = 0.75)
       # plot(test_i, pch = 20, type = 'b', lty = 1, cex = 0.75)
       # # par(mfrow = c(6, 5), cex = 1.0, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-
+      
       # Calculate OEV:
       # obs_vars <- 1e5 + calc_obsvars_nTest(obs = obs_i, syn_dat = syn_i, ntests = test_i, posprops = pos_i, oev_base, oev_denom, tmp_exp = 2.0)
       obs_vars <- calc_obsvars(obs = as.matrix(obs_i), oev_base, oev_denom)
       # print(obs_vars[1:3, ])
-
+      
       # Get the first and last date of the simulation
       clim_start <- as.numeric(start_date - as.Date(paste('20',
                                                           substr(season, gregexpr('-', season)[[1]][1]-2,
@@ -194,39 +195,39 @@ for (count.index in 1:length(countries)) {
                                                       '-01-01', sep=''))) + 1
       tm.ini <- clim_start - 1 # the end of the former week
       tm.range <- clim_start:clim_end
-
+      
       # Now loop through all forecast start weeks!:
       for (ntrn in 5:30) {
         if (!is.na(obs_i[ntrn]) & !is.na(obs_vars[ntrn])) { # make sure there's data at this point
-
-          for (run in 1:num_runs) {
-            res <- EAKF_rFC(num_ens = num_ens, tmstep = tmstep, param.bound = param.bound, obs_i = obs_i, ntrn = ntrn, obs_vars = obs_vars,
-                            tm.ini = tm.ini, tm.range = tm.range)
-
-            outputMetrics <- rbind(outputMetrics, cbind(country, season, run, gamma, oev_base, oev_denom, lambda, res$metrics))
-            outputOP <- rbind(outputOP, cbind(country, season, run, gamma, oev_base, oev_denom, lambda, res$op))
-            outputDist <- rbind(outputDist, cbind(country, season, run, gamma, oev_base, oev_denom, lambda, res$dist))
-            outputEns <- rbind(outputEns, cbind(country, season, run, gamma, oev_base, oev_denom, lambda, res$ensembles))
-
-            # # Plot forecast results:
-            # plot(obs_i, pch = 20, xlab = '', ylab = 'Syn+')
-            # lines((1:ntrn)[!is.na(obs_i[1:ntrn]) & !is.na(obs_vars[1:ntrn])], res$op[, 11][res$op[, 4] == 'train'], col = 'steelblue2', lwd = 2.0)
-            # lines((ntrn + 1):nsn, res$op[, 11][res$op[, 4] == 'fcast'], col = 'coral', lwd = 2.0)
-
-          }
-
+          
+          # for (run in 1:num_runs) {
+          res <- EAKF_rFC(num_ens = num_ens, tmstep = tmstep, param.bound = param.bound, obs_i = obs_i, ntrn = ntrn, obs_vars = obs_vars,
+                          tm.ini = tm.ini, tm.range = tm.range)
+          
+          outputMetrics <- rbind(outputMetrics, cbind(country, season, run, gamma, oev_base, oev_denom, lambda, res$metrics))
+          outputOP <- rbind(outputOP, cbind(country, season, run, gamma, oev_base, oev_denom, lambda, res$op))
+          outputDist <- rbind(outputDist, cbind(country, season, run, gamma, oev_base, oev_denom, lambda, res$dist))
+          outputEns <- rbind(outputEns, cbind(country, season, run, gamma, oev_base, oev_denom, lambda, res$ensembles))
+          
+          # # Plot forecast results:
+          # plot(obs_i, pch = 20, xlab = '', ylab = 'Syn+')
+          # lines((1:ntrn)[!is.na(obs_i[1:ntrn]) & !is.na(obs_vars[1:ntrn])], res$op[, 11][res$op[, 4] == 'train'], col = 'steelblue2', lwd = 2.0)
+          # lines((ntrn + 1):nsn, res$op[, 11][res$op[, 4] == 'fcast'], col = 'coral', lwd = 2.0)
+          
+          # }
+          
         }
       }
-
+      
     }
-
+    
   }
-
-  write.csv(outputMetrics, file = paste('code/individualCountries/outputs/outputMet_', country, '_', oev_base, '_', oev_denom, '_', lambda, '.csv', sep = ''), row.names = FALSE)
-  write.csv(outputOP, file = paste('code/individualCountries/outputs/outputOP_', country, '_', oev_base, '_', oev_denom, '_', lambda,'.csv', sep = ''), row.names = FALSE)
-  write.csv(outputDist, file = paste('code/individualCountries/outputs/outputDist_', country, '_', oev_base, '_', oev_denom, '_', lambda,'.csv', sep = ''), row.names = FALSE)
-  write.csv(outputEns, file = paste('code/individualCountries/outputs/outputEns_', country, '_', oev_base, '_', oev_denom, '_', lambda,'.csv', sep = ''), row.names = FALSE)
-
+  
+  write.csv(outputMetrics, file = paste('cluster/individualCountries/outputs/outputMet_', country, '_', oev_base, '_', oev_denom, '_', lambda, '.csv', sep = ''), row.names = FALSE)
+  write.csv(outputOP, file = paste('cluster/individualCountries/outputs/outputOP_', country, '_', oev_base, '_', oev_denom, '_', lambda,'.csv', sep = ''), row.names = FALSE)
+  write.csv(outputDist, file = paste('cluster/individualCountries/outputs/outputDist_', country, '_', oev_base, '_', oev_denom, '_', lambda,'.csv', sep = ''), row.names = FALSE)
+  write.csv(outputEns, file = paste('cluster/individualCountries/outputs/outputEns_', country, '_', oev_base, '_', oev_denom, '_', lambda,'.csv', sep = ''), row.names = FALSE)
+  
 }
 print('Forecasting completed.')
 
@@ -237,20 +238,20 @@ dist.all <- NULL
 ens.all <- NULL
 
 for (country in countries) {
-    a <- read.csv(file = paste0('code/individualCountries/outputs/outputMet_', country, '_', oev_base, '_', oev_denom, '_', lambda, '.csv'))
-    metrics.all <- rbind(metrics.all, a)
+  a <- read.csv(file = paste0('cluster/individualCountries/outputs/outputMet_', country, '_', oev_base, '_', oev_denom, '_', lambda, '.csv'))
+  metrics.all <- rbind(metrics.all, a)
 }
 for (country in countries) {
-    b <- read.csv(file = paste0('code/individualCountries/outputs/outputOP_', country, '_', oev_base, '_', oev_denom, '_', lambda, '.csv'))
-    output.all <- rbind(output.all, b)
+  b <- read.csv(file = paste0('cluster/individualCountries/outputs/outputOP_', country, '_', oev_base, '_', oev_denom, '_', lambda, '.csv'))
+  output.all <- rbind(output.all, b)
 }
 for (country in countries) {
-    c <- read.csv(file = paste0('code/individualCountries/outputs/outputDist_', country, '_', oev_base, '_', oev_denom, '_', lambda, '.csv'))
-    dist.all <- rbind(dist.all, c)
+  c <- read.csv(file = paste0('cluster/individualCountries/outputs/outputDist_', country, '_', oev_base, '_', oev_denom, '_', lambda, '.csv'))
+  dist.all <- rbind(dist.all, c)
 }
 for (country in countries) {
-    d <- read.csv(file = paste0('code/individualCountries/outputs/outputEns_', country, '_', oev_base, '_', oev_denom, '_', lambda, '.csv'))
-    ens.all <- rbind(ens.all, d)
+  d <- read.csv(file = paste0('cluster/individualCountries/outputs/outputEns_', country, '_', oev_base, '_', oev_denom, '_', lambda, '.csv'))
+  ens.all <- rbind(ens.all, d)
 }
 print('Results compiled.')
 
@@ -259,9 +260,9 @@ load('data/by_subtype/scalings_noCutoff_threeOverPointOne.RData')
 metrics.all[metrics.all[, 'country'] == 'FR' & metrics.all[, 'season'] %in% c('2010-11', '2011-12', '2012-13', '2013-14', '2014-15', '2015-16', '2016-17', '2017-18')[1:4], 'gamma'] <- scalings.new[[1]][13]#1.3
 
 # Save!
-write.csv(metrics.all, file = paste0('code/individualCountries/outputs/outputMet_', oev_base, '_', oev_denom, '_AH1_OEVold.csv'), row.names = FALSE)
-write.csv(output.all, file = paste0('code/individualCountries/outputs/outputOP_', oev_base, '_', oev_denom, '_AH1_OEVold.csv'), row.names = FALSE)
-write.csv(dist.all, file = paste0('code/individualCountries/outputs/outputDist_', oev_base, '_', oev_denom, '_AH1_OEVold.csv'), row.names = FALSE)
-write.csv(ens.all, file = paste0('code/individualCountries/outputs/outputEns_', oev_base, '_', oev_denom, '_AH1_OEVold.csv'), row.names = FALSE)
+write.csv(metrics.all, file = paste0('cluster/individualCountries/outputs/outputMet_', oev_base, '_', oev_denom, '_AH1_OEVold.csv'), row.names = FALSE)
+write.csv(output.all, file = paste0('cluster/individualCountries/outputs/outputOP_', oev_base, '_', oev_denom, '_AH1_OEVold.csv'), row.names = FALSE)
+write.csv(dist.all, file = paste0('cluster/individualCountries/outputs/outputDist_', oev_base, '_', oev_denom, '_AH1_OEVold.csv'), row.names = FALSE)
+write.csv(ens.all, file = paste0('cluster/individualCountries/outputs/outputEns_', oev_base, '_', oev_denom, '_AH1_OEVold.csv'), row.names = FALSE)
 
 print('Done.')
