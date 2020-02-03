@@ -8,11 +8,12 @@ north.ili <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'HU', 'IE', 'IT', 'NL', 'PL', 'PT',
 north.ari <- c('LU', 'UK', 'DE', 'SI', 'FR')
 
 # Read in results
-if (model.type == 'Network') {
-  setwd('python/results/PROCESS/')
-} else if (model.type == 'Individual') {
-  setwd('results/PROCESS/')
-}
+setwd('python/results/PROCESS/')
+# if (model.type == 'Network') {
+#   setwd('python/results/PROCESS/')
+# } else if (model.type == 'Individual') {
+#   setwd('results/PROCESS/')
+# }
 m <- read.csv(file = list.files(pattern = 'Met'))
 
 # # for now, need to fix FR scalings - but work on this!
@@ -20,19 +21,19 @@ m <- read.csv(file = list.files(pattern = 'Met'))
 # m$scaling[m$country == 'FR' & m$season %in% c('2010-11', '2011-12', '2012-13', '2013-14')] <- scalings.new[[1]][13]
 # rm(scalings.new)
 
-if (model.type == 'Individual') {
-  names(m)[4] <- 'scaling'
-  
-  # load('../../data/by_subtype/scalings_noCutoff_threeOverPointOne.RData')
-  # m$scaling[m$country == 'FR' & m$season %in% c('2010-11', '2011-12', '2012-13', '2013-14')] <- scalings.new[[1]][13]
-  
-  for (i in 37:44) {
-    m[, i] <- m[, i] + 40 - 1
-  }
-  
-  rm(i)
-  # rm(scalings.new)
-}
+# if (model.type == 'Individual') {
+#   names(m)[4] <- 'scaling'
+#   
+#   # load('../../data/by_subtype/scalings_noCutoff_threeOverPointOne.RData')
+#   # m$scaling[m$country == 'FR' & m$season %in% c('2010-11', '2011-12', '2012-13', '2013-14')] <- scalings.new[[1]][13]
+#   
+#   for (i in 37:44) {
+#     m[, i] <- m[, i] + 40 - 1
+#   }
+#   
+#   rm(i)
+#   # rm(scalings.new)
+# }
 
 # m <- read.csv('results/newScalings/outputMet_090919.csv')
 # load('data/scalings_temp_08-26-19_MEANS.RData')
@@ -143,11 +144,11 @@ m$accurate_on[m$abs_delta_onset %in% c(0,1)] <- 'yes'
 m$accurate_on[!(m$abs_delta_onset %in% c(0,1))] <- 'no'
 m$accurate_on <- factor(m$accurate_on)
 
-# Reorder columns if individual:
-if (model.type == 'Individual') {
-  m <- m[, c(2:3, 5:7, 4, 8, 1, 9:77)]
-  # print(summary(names(m) == names(m.comp)[1:77]))
-}
+# # Reorder columns if individual:
+# if (model.type == 'Individual') {
+#   m <- m[, c(2:3, 5:7, 4, 8, 1, 9:77)]
+#   # print(summary(names(m) == names(m.comp)[1:77]))
+# }
 
 # Write new metrics file
 write.csv(m, file = 'outputMet_pro.csv', row.names = F)

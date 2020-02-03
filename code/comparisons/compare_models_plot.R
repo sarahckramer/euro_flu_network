@@ -4,22 +4,22 @@ library(reshape2); library(ggplot2); library(gridExtra)
 
 # Save plots?:
 outputPlots <- FALSE
-fileSuffix <- 'compare_commuting'
+fileSuffix <- 'B'
 
 # Restrict the forecast start weeks for which results are shown?
 restrict.fc <- FALSE
 
 # Set model labels:
-m1.lab <- 'Network (Reliable Only)'
-m2.lab <- 'Network (Adjacent)'
-m3.lab <- 'Network (All Routes)'
+m1.lab <- 'Network'
+m2.lab <- 'Isolated (Base 1e5)'
+m3.lab <- 'Isolated (Base 5e4)'
 
 # Set locations of model results to be compared:
-model1 <- 'results/network_A(H1)/'
-model2 <- 'results/network_A(H1)_adjFilled/'
-model3 <- 'results/network_A(H1)_noZeros/'
+model1 <- 'results/network_B/'
+model2 <- 'results/isolated_B/'
+model3 <- 'results/isolated_B_5e4/'
 
-# pdf(paste0('results/plots/experiments/', fileSuffix, '.pdf'), width = 14, height = 9)
+pdf(paste0('results/plots/comp_', fileSuffix, '.pdf'), width = 14, height = 9)
 
 #########################################################################################################################################################
 #########################################################################################################################################################

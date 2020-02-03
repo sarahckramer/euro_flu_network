@@ -14,7 +14,11 @@ d.pt <- d.full[d.full$metric == 'pw', ]
 d.ot <- d.full[d.full$metric == 'onset5', ]
 
 # Join observed values:
-m <- unique(m.store[, c(2:3, 24, 32)]) # want: country, season, obs_pkwk, onsetObs5
+if (model.type == 'Network') {
+  m <- unique(m.store[, c(2:3, 24, 32)]) # want: country, season, obs_pkwk, onsetObs5
+} else if (model.type == 'Individual') {
+  m <- unique(m.store[, c(2, 23, 31:32)])
+}
 
 d.pt <- merge(d.pt, m, by = c('season', 'country'))
 d.ot <- merge(d.ot, m, by = c('season', 'country'))
@@ -36,7 +40,11 @@ d.ot$score <- log(d.ot$value); d.ot$score[d.ot$score == -Inf] <- -10
 
 # Determine predicted and observed lead weeks:
 m.store$leadonset5 <- m.store$fc_start - m.store$onset5
-m <- unique(m.store[, c(1:2, 6, 32:36, 38, 45, 56)]) # want: season, country, run, oev_base, oev_denom, lambda, fc_start, all 4 leads
+if (model.type == 'Network') {
+  m <- unique(m.store[, c(1:2, 6, 32:36, 38, 45, 56)]) # want: season, country, run, oev_base, oev_denom, lambda, fc_start, all 4 leads
+} else if (model.type == 'Individual') {
+  m <- unique(m.store[, c(1, 5, 31:36, 38, 45, 56)])
+}
 
 d.pt <- merge(d.pt, m, by = c('season', 'country', 'run', 'oev_base', 'oev_denom', 'lambda', 'fc_start'))
 d.ot <- merge(d.ot, m, by = c('season', 'country', 'run', 'oev_base', 'oev_denom', 'lambda', 'fc_start'))
@@ -58,7 +66,11 @@ rm(d, d.pt, d.ot, m)
 d500 <- d.full[d.full$metric == 'pi', ]
 
 # Get observed peak intensity:
-m <- unique(m.store[, c(2, 8, 24, 32, 37)])
+if (model.type == 'Network') {
+  m <- unique(m.store[, c(2, 8, 24, 32, 37)])
+} else if (model.type == 'Individual') {
+  m <- unique(m.store[, c(7, 23, 31:32, 37)])
+}
 m$obs_peak_int <- m$obs_peak_int * m$scaling
 
 # Merge:
@@ -78,7 +90,11 @@ d <- d500
 rm(d500)
 
 # Get lead weeks:
-m <- unique(m.store[, c(1:2, 6, 32:36, 38, 45, 56)]) # want: season, country, run, oev_base, oev_denom, lambda, fc_start, all 4 leads
+if (model.type == 'Network') {
+  m <- unique(m.store[, c(1:2, 6, 32:36, 38, 45, 56)]) # want: season, country, run, oev_base, oev_denom, lambda, fc_start, all 4 leads
+} else if (model.type == 'Individual') {
+  m <- unique(m.store[, c(1, 5, 31:36, 38, 45, 56)])
+}
 
 d <- merge(d, m, by = c('season', 'country', 'run', 'fc_start', 'oev_base', 'oev_denom', 'lambda'))
 d <- d[, c(1:2, 4, 3, 5:8, 11:12, 16:19, 15)]
@@ -91,10 +107,17 @@ rm(d, m)
 d500 <- d.full[d.full$metric %in% c('nextweek1', 'nextweek2', 'nextweek3', 'nextweek4'), ]
 d500$metric <- factor(d500$metric)
 
-m1 <- unique(m.store[, c(1:2, 16, 24, 32:37)]) # 7 metrics, scaling, onsetObs, observed 1-4 weeks
-m2 <- unique(m.store[, c(1:2, 17, 24, 32:37)])
-m3 <- unique(m.store[, c(1:2, 18, 24, 32:37)])
-m4 <- unique(m.store[, c(1:2, 19, 24, 32:37)])
+if (model.type == 'Network') {
+  m1 <- unique(m.store[, c(1:2, 16, 24, 32:37)]) # 7 metrics, scaling, onsetObs, observed 1-4 weeks
+  m2 <- unique(m.store[, c(1:2, 17, 24, 32:37)])
+  m3 <- unique(m.store[, c(1:2, 18, 24, 32:37)])
+  m4 <- unique(m.store[, c(1:2, 19, 24, 32:37)])
+} else if (model.type == 'Individual') {
+  m1 <- unique(m.store[, c(1, 15, 23, 31:37)])
+  m2 <- unique(m.store[, c(1, 16, 23, 31:37)])
+  m3 <- unique(m.store[, c(1, 17, 23, 31:37)])
+  m4 <- unique(m.store[, c(1, 18, 23, 31:37)])
+}
 
 # Rescale values:
 m1$obs_1week <- m1$obs_1week * m1$scaling
@@ -108,7 +131,11 @@ levels(d500$metric) <- c('1week', '2week', '3week', '4week')
 m1$metric <- '1week'; m2$metric <- '2week'; m3$metric <- '3week'; m4$metric <- '4week'
 
 # Compile m's:
-names(m1)[3] = names(m2)[3] = names(m3)[3] = names(m4)[3] = 'obs_xweek'
+if (model.type == 'Network') {
+  names(m1)[3] = names(m2)[3] = names(m3)[3] = names(m4)[3] = 'obs_xweek'
+} else if (model.type == 'Individual') {
+  names(m1)[2] = names(m2)[2] = names(m3)[2] = names(m4)[2] = 'obs_xweek'
+}
 m <- rbind(m1, m2, m3, m4)
 
 # Merge:
@@ -126,6 +153,9 @@ d500$obs_xweek_bin[d500$obs_xweek == 0 & !is.na(d500$obs_xweek)] <- 500
 # Remove where obs is NA:
 d500 <- d500[!is.na(d500$obs_xweek), ]
 
+# Check that no probs NA?:
+print(d500$value[is.na(d500$value)])
+
 # Remove where bin not equal to obs_peak_int_bin:
 d500 <- d500[d500$bin == d500$obs_xweek_bin, ]
 
@@ -137,7 +167,11 @@ d <- d500
 rm(d500)
 
 # Get lead weeks:
-m <- unique(m.store[, c(1:2, 6, 32:36, 38, 45, 56)]) # want: season, country, run, oev_base, oev_denom, lambda, fc_start, all 4 leads
+if (model.type == 'Network') {
+  m <- unique(m.store[, c(1:2, 6, 32:36, 38, 45, 56)]) # want: season, country, run, oev_base, oev_denom, lambda, fc_start, all 4 leads
+} else if (model.type == 'Individual') {
+  m <- unique(m.store[, c(1, 5, 31:36, 38, 45, 56)])
+}
 
 d <- merge(d, m, by = c('season', 'country', 'run', 'fc_start', 'oev_base', 'oev_denom', 'lambda'))
 d <- d[, c(1:2, 4, 3, 5:8, 11:12, 16:19, 15)]
