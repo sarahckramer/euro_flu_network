@@ -31,12 +31,24 @@ d.ot <- d.ot[!is.na(d.ot$onsetObs5), ]
 d.pt$bin <- d.pt$bin + 40 - 1
 d.ot$bin <- d.ot$bin + 40 - 1
 
-# Keep only results for bins THE SAME week as the observed values:
-d.pt <- d.pt[d.pt$bin == d.pt$obs_pkwk, ]; d.ot <- d.ot[d.ot$bin == d.ot$onsetObs5, ]
+### Keep only results for bins THE SAME week as the observed values:
+# First need unique set of all country/season/fc_start for which predictions exist:
+d.set <- unique(d.pt[, c(1:4, 7:12)]) # this should be same for d.pt and d.ot
+d.set.check <- unique(d.ot[, c(1:4, 7:12)])
+print(dim(d.set) == dim(d.set.check))
+# rm(d.set.check)
 
-# Calculate log scores:
+# Then choose the results where the bin equals the observed value, and calculate scores:
+d.pt <- d.pt[d.pt$bin == d.pt$obs_pkwk, ]; d.ot <- d.ot[d.ot$bin == d.ot$onsetObs5, ]
 d.pt$score <- log(d.pt$value); d.pt$score[d.pt$score == -Inf] <- -10
 d.ot$score <- log(d.ot$value); d.ot$score[d.ot$score == -Inf] <- -10
+
+# Finally, add back in those combos in d.set that are missing, with scores of -10:
+# Basically, dim of d.pt/d.ot should be same as d.set:
+d.pt <- merge(d.pt, d.set, by = names(d.pt)[c(1:4, 7:12)], all = TRUE)
+d.ot <- merge(d.ot, d.set.check, by = names(d.ot)[c(1:4, 7:12)], all = TRUE)
+d.pt$score[is.na(d.pt$score)] <- -10
+d.ot$score[is.na(d.ot$score)] <- -10
 
 # Determine predicted and observed lead weeks:
 m.store$leadonset5 <- m.store$fc_start - m.store$onset5
@@ -53,7 +65,7 @@ d.ot <- merge(d.ot, m, by = c('season', 'country', 'run', 'oev_base', 'oev_denom
 d <- rbind(d.pt, d.ot)
 
 # Reduce appropriately:
-d <- d[, c(1:2, 7, 3:6, 8, 11:12, 14:17, 13)]
+d <- d[, c(1:2, 7, 3:6, 8:10, 14:17, 13)]
 
 # Save:
 write.csv(d, file = 'logScores_pt_ot.csv', row.names = FALSE)

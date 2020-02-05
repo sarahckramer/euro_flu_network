@@ -63,6 +63,7 @@ for (season in seasons) {
 
 # Get metrics file for forecasts where no obs:
 m.temp <- merge(m, m.mini, by = c('season', 'country', 'fc_start'))
+m.temp <- m.temp[is.na(m.temp$obs), ]
 write.csv(m.temp, file = 'outputMet_obsNA.csv', row.names = FALSE)
 rm(m.temp)
 
