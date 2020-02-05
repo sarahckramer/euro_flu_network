@@ -51,7 +51,7 @@ for (i in 1:3) {
 # For each subtype, need to look at each season forecasted for that subtype, and figure out at which week "at least 4 at least 10% for 3 consecutive weeks" met
 # Need to wait for 3 consecutive, or start, when 4th and final hits 10%?
 source('cluster/functions/Util.R')
-baseline <- 0.1
+baseline <- 0.08
 
 # H1 (1, 3, 4, 5, 6, 8):
 # ('2010-11', '2012-13', '2013-14', '2014-15', '2015-16', '2017-18')
@@ -64,9 +64,9 @@ for (season in seasons) {
   for (i in 2:13) {
     onsets <- c(onsets, findOnset(pos.temp[, i], baseline)$onset + 40 - 1)
   }
-  print(sort(onsets))
-  print(sort(onsets)[4])
-  print(sort(onsets)[4] + 2)
+  # print(sort(onsets))
+  # print(sort(onsets)[4])
+  print(sort(onsets)[2] + 2)
   print('')
   
   cnt <- cnt + 1
@@ -89,9 +89,9 @@ for (season in seasons) {
   for (i in 2:13) {
     onsets <- c(onsets, findOnset(pos.temp[, i], baseline)$onset + 40 - 1)
   }
-  print(sort(onsets))
-  print(sort(onsets)[4])
-  print(sort(onsets)[4] + 2)
+  # print(sort(onsets))
+  # print(sort(onsets)[4])
+  print(sort(onsets)[2] + 2)
   print('')
   
   cnt <- cnt + 1
@@ -113,9 +113,9 @@ for (season in seasons) {
   for (i in 2:13) {
     onsets <- c(onsets, findOnset(pos.temp[, i], baseline)$onset + 40 - 1)
   }
-  print(sort(onsets))
-  print(sort(onsets)[4])
-  print(sort(onsets)[4] + 2)
+  # print(sort(onsets))
+  # print(sort(onsets)[4])
+  print(sort(onsets)[2] + 2)
   print('')
   
   cnt <- cnt + 1
