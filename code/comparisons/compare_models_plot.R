@@ -4,22 +4,22 @@ library(reshape2); library(ggplot2); library(gridExtra)
 
 # Save plots?:
 outputPlots <- FALSE
-fileSuffix <- 'B'
+fileSuffix <- 'A(H1)'
 
 # Restrict the forecast start weeks for which results are shown?
 restrict.fc <- FALSE
 
 # Set model labels:
 m1.lab <- 'Network'
-m2.lab <- 'Isolated (Base 1e5)'
-m3.lab <- 'Isolated (Base 5e4)'
+m2.lab <- 'Isolated'
+m3.lab <- 'Isolated (Update)'
 
 # Set locations of model results to be compared:
 model1 <- 'results/network_B/'
 model2 <- 'results/isolated_B/'
-model3 <- 'results/isolated_B_5e4/'
+model3 <- 'results/isolated_B_update/'
 
-pdf(paste0('results/plots/comp_', fileSuffix, '.pdf'), width = 14, height = 9)
+# pdf(paste0('results/plots/comp_', fileSuffix, '.pdf'), width = 14, height = 9)
 
 #########################################################################################################################################################
 #########################################################################################################################################################
@@ -171,7 +171,7 @@ rm(d, e.pi, e, byWeek)
 #   grid.arrange(p1, p2, p3, p4, p5, ncol = 1)
 # }
 
-dev.off()
+# dev.off()
 
 rm(list = ls())
 

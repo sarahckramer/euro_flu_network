@@ -4,7 +4,7 @@ model.type <- 'Network'
 # model.type <- 'Individual'
 
 # Set strain:
-strain <- 'B'
+strain <- 'A(H3)'
 
 # 1. Process metrics file:
 source('code/comparisons/process_raw_data/process_metrics_file.R')
