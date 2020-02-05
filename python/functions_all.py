@@ -187,12 +187,12 @@ def fn_checkxnobounds(xnew, popN, n_count):
     # Where states/params are negative, set to 0 or the mean of all ensembles for that state/parameter
     # Potential issue: Ensure that no empty compartments are set to anything other than 0!
     ug = np.min(xnew)
-    if ug < 0:
+    if ug <= 0:
         # print('New function part used.')
         for jj in range(n_ens):
             for ii in range(n_var):
                 if xnew[ii, jj] <= 0:
-                    xnew[ii, jj] = np.maximum(np.mean(xnew[ii]), 0)
+                    xnew[ii, jj] = np.maximum(np.mean(xnew[ii]), 1)
                     # if np.maximum(np.mean(xnew[ii]), 0) != np.max(np.mean(xnew[ii, :]), 0):
                     #     print('!!!')
                     #     print(np.maximum(np.mean(xnew[ii]), 0))
@@ -289,7 +289,7 @@ def fn_checkxnobounds_ISOLATED(xnew, N):
         for jj in range(n_ens):
             for ii in range(n_var):
                 if xnew[ii, jj] <= 0:
-                    xnew[ii, jj] = np.maximum(np.mean(xnew[ii]), 0)  # could be 1 instead of 0, if no empty compartments
+                    xnew[ii, jj] = np.maximum(np.mean(xnew[ii]), 1)  # could be 1 instead of 0, if no empty compartments
     # for network, 0 even makes more sense, b/c allows more chance of die-out
     # but for individual model, we don't necessarily want cases to be 0, right?
     # although filter can pull them back up later
