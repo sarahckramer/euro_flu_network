@@ -13,7 +13,7 @@ pd.options.mode.chained_assignment = None
 timestamp_start = datetime.datetime.now()
 
 # Specify subtype:
-strain = 'A(H1)'
+strain = 'B'
 
 # Specify global variables
 dt = 1
@@ -26,7 +26,7 @@ oev_base = np.float64(1e5)
 oev_denom = np.float64(10.0)
 lambda_val = np.float64(1.05)
 num_ens = 300
-num_runs = 3  # EVENTUALLY WANT 5
+num_runs = 5  # EVENTUALLY WANT 5
 
 # Vector of countries used
 countries = np.array(['AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES'])

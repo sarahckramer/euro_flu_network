@@ -13,7 +13,7 @@ pd.options.mode.chained_assignment = None
 timestamp_start = datetime.datetime.now()
 
 # Specify subtype:
-strain = 'A(H1)'
+strain = 'A(H3)'
 
 # Specify global variables
 dt = 1
@@ -196,8 +196,8 @@ print('Done.')
 timestamp_end = datetime.datetime.now()
 print('Time Elapsed: ' + str(timestamp_end - timestamp_start))
 
-outputMetrics.to_csv('results/outputMet_' + strain + '_ISOLATED.csv', na_rep='NA', index=False)
-outputOP.to_csv('results/outputOP_' + strain + '_ISOLATED.csv', na_rep='NA', index=False)
-outputDist.to_csv('results/outputDist_' + strain + '_ISOLATED.csv', na_rep='NA', index=False)
-outputEns.to_csv('results/outputEns_' + strain + '_ISOLATED.csv', na_rep='NA', index=False)
+outputMetrics.to_csv('results/outputMet_' + strain + '_ISOLATED_update.csv', na_rep='NA', index=False)
+outputOP.to_csv('results/outputOP_' + strain + '_ISOLATED_update.csv', na_rep='NA', index=False)
+outputDist.to_csv('results/outputDist_' + strain + '_ISOLATED_update.csv', na_rep='NA', index=False)
+outputEns.to_csv('results/outputEns_' + strain + '_ISOLATED_update.csv', na_rep='NA', index=False)
 print('Finished writing to file!')

@@ -13,7 +13,7 @@ pd.options.mode.chained_assignment = None
 timestamp_start = datetime.datetime.now()
 
 # Specify subtype:
-strain = 'A(H1)'
+strain = 'B'
 
 # Specify global variables
 dt = 1
@@ -214,11 +214,11 @@ print('Done.')
 timestamp_end = datetime.datetime.now()
 print('Time Elapsed: ' + str(timestamp_end - timestamp_start))
 
-outputMetrics.to_csv('results/outputMet_' + strain + '_noAir.csv', na_rep='NA', index=False)
-outputOP.to_csv('results/outputOP_' + strain + '_noAir.csv', na_rep='NA', index=False)
-outputOPParams.to_csv('results/outputOPParams_' + strain + '_noAir.csv', na_rep='NA', index=False)
-outputDist.to_csv('results/outputDist_' + strain + '_noAir.csv', na_rep='NA', index=False)
-outputEns.to_csv('results/outputEns_' + strain + '_noAir.csv', na_rep='NA', index=False)
+outputMetrics.to_csv('results/outputMet_' + strain + '_testSet1.csv', na_rep='NA', index=False)
+outputOP.to_csv('results/outputOP_' + strain + '_testSet1.csv', na_rep='NA', index=False)
+outputOPParams.to_csv('results/outputOPParams_' + strain + '_testSet1.csv', na_rep='NA', index=False)
+outputDist.to_csv('results/outputDist_' + strain + '_testSet1.csv', na_rep='NA', index=False)
+outputEns.to_csv('results/outputEns_' + strain + '_testSet1.csv', na_rep='NA', index=False)
 print('Finished writing to file!')
 
 # error with correlations? i think it's okay to ignore - just passes nan when there's nothing to correlate I assume

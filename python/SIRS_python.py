@@ -128,7 +128,7 @@ def propagate_SIRS(tmStrt, tmEnd, tmStep, tmRange, S_0, I_0, popN, D_d, L_d, bet
             raise Exception('t_true is out of seasonal range')
 
         # Multiply airRand by airScale:
-        airRand_temp = airScale_d * airRand_temp * 0
+        airRand_temp = airScale_d * airRand_temp  # * 0
 
         # Now move on to normal model code
         cnt = cnt + 1
