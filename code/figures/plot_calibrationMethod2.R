@@ -343,11 +343,11 @@ dat.fig <- dat.fig[dat.fig$lead %in% levels(dat.fig$lead)[2:4], ]
 
 p.full <- ggplot(data = dat.fig, aes(x = quantile, y = y, colour = lead)) +
   geom_abline(aes(intercept = 0, slope = 1), colour = 'gray80') +
-  geom_line() + geom_point(size = 4) + #geom_point(aes(size = len)) +
+  geom_line() + geom_point(size = 5) + #geom_point(aes(size = len)) +
   labs(x = 'Prediction Interval', y = '% of Obs within PI', colour = 'Pred. Lead:') + theme_bw() +
-  theme(aspect.ratio = 1, legend.text = element_text(size = 12), axis.text = element_text(size = 10),
-        strip.text = element_blank(), axis.title = element_text(size = 12),
-        legend.title = element_text(size = 12), strip.background = element_blank()) +
+  theme(aspect.ratio = 1, legend.text = element_text(size = 14), axis.text = element_text(size = 12),
+        strip.text = element_blank(), axis.title = element_text(size = 14),
+        legend.title = element_text(size = 14), strip.background = element_blank()) +
   # scale_color_brewer(palette = 'Set1') +
   scale_color_manual(values = c('#d73027', '#fdae61', '#fee08b')) +#, '#a6d96a', '#1a9850')) +
   scale_x_continuous(limits = c(20, 100), breaks = c(20, 30, 40, 50, 60, 70, 80, 90, 100)) +
@@ -358,7 +358,28 @@ dat.text <- data.frame(label = c('A', 'B', 'C', 'D', 'E', 'F'), model = c(rep('N
                        metric = c('Peak Timing', 'Peak Intensity', 'Onset Timing',
                                   'Peak Timing', 'Peak Intensity', 'Onset Timing'),
                        y = c(96, 96, 85, 96, 96, 96))
+
+pdf('../drafts/NetworkModel/figures/Fig4.pdf', width = 12, height = 7)
 p.full + geom_text(data = dat.text, mapping = aes(x = 23, y = y, label = label), size = 8, color = 'black')
+dev.off()
+
+
+
+p1 <- ggplot(data = d.agg, aes(x = lead_mean, y = score)) + geom_line(aes(col = model)) + geom_point(aes(col = model, size = count)) +
+  theme_classic() + theme(aspect.ratio = 1,
+                          legend.text = element_text(size = 12),
+                          axis.text = element_text(size = 10),
+                          strip.text = element_blank(),
+                          axis.title = element_text(size = 12),
+                          legend.title = element_text(size = 12),
+                          strip.background = element_blank()) +
+  facet_wrap(~ metric, scales = 'free') + scale_color_brewer(palette = 'Set1') + scale_x_continuous(breaks = -8:4) +
+  scale_y_continuous(limits = c(-5, 0), breaks = -10:0) +
+  scale_size_continuous(breaks = c(10, 100, 300, 800), labels = c(10, 100, 300, 800),
+                        limits = c(1, 900), range = c(1,6)) +
+  labs(x = 'Predicted Lead Week', y = 'Mean Log Score', col = 'Model:', size = '# of Fcasts:') +
+  guides(colour = guide_legend(order = 1), size = guide_legend(order = 2))
+
 
 # Clean up:
 rm(list = ls())

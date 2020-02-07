@@ -5,7 +5,7 @@
 strain <- 'A(H1)'
 
 # Read in fits to observations:
-op <- read.csv('results/fits/outputOP_A(H1)_fitsOnly.csv')
+op <- read.csv(paste0('results/fits/outputOP_', strain,'_fitsOnly.csv'))
 
 # Add country names:
 countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
@@ -16,7 +16,7 @@ op$country <- factor(op$country)
 op <- op[, c(3, 5, 8, 11:13)]
 
 # Read in observed data:
-iliiso <- read.csv('data/by_subtype/WHO_data_A(H1)_SCALED.csv')
+iliiso <- read.csv(paste0('data/by_subtype/WHO_data_', strain, '_SCALED.csv'))
 # note: when merging, we should automatically remove where no observed data for a given fit
 
 # Form new data frame of observed by season/week/country
@@ -52,7 +52,7 @@ op <- op[op$week <= 73, ] # 2015-16 has length 53
 op <- op[!(op$season != '2015-16' & op$week == 73), ] # but remove that week for all other seasons
 
 # Plot!
-pdf('results/plots/model_fits_A(H1).pdf', width = 13, height = 8)
+# pdf('../drafts/NetworkModel/figures/Fig2.pdf', width = 13, height = 8)
 for (season in seasons) {
   op.temp <- op[op$season == season, ]
   p1 <- ggplot(data = op.temp, aes(x = week, y = Est, group = run)) + geom_line(colour = '#377eb8', lwd = 0.71) + 
@@ -65,7 +65,7 @@ for (season in seasons) {
   print(p1 + geom_text(data = dat.text, mapping = aes(x = 42, y = max(max(op.temp$Obs), max(op.temp$Est)) + 1000, label = label), size = 5))
   # change country names; point size
 }
-dev.off()
+# dev.off()
 rm(op.temp, dat.text, season, p1)
 
 # Get RMSEs:
@@ -88,32 +88,55 @@ rmse.out$rmse <- as.numeric(as.character(rmse.out$rmse))
 
 # Also break down by whether there's an onset or not:
 m <- read.csv('results/network/outputMet_pro_PROC.csv')
-m <- m[m$subtype == 'A(H1)', ]
+m <- m[m$subtype == strain, ]
 m <- unique(m[, c(1, 8, 30)])
 
 rmse.out <- merge(rmse.out, m, by = c('season', 'country'))
 # this also removes any NAs in rmse
 
 # Save these results temporarily:
+# write.csv(rmse.out, file = paste0('results/fits/rmse_', strain, '.csv'), row.names = FALSE)
 
-
+rm(list = ls())
 
 # Read in RMSE for all subtypes and combine; delete old files:
+r1 <- read.csv('results/fits/rmse_A(H1).csv')
+r2 <- read.csv('results/fits/rmse_A(H3).csv')
+r3 <- read.csv('results/fits/rmse_B.csv')
 
+r1$subtype <- 'A(H1)'; r2$subtype <- 'A(H3)'; r3$subtype <- 'B'
 
-
-
+r <- rbind(r1, r2, r3); rm(r1, r2, r3)
+write.csv(r, file = 'results/fits/rmse_COMB.csv', row.names = FALSE)
 
 # This will allow us to ultimately get:
     # Range and mean/median for chosen season
     # Overall mean/median
     # Mean/median by subtype
 
+summary(r$rmse) # 35.36-1487.39; mean = 328.48; median = 226.86
+summary(r$rmse[!is.na(r$onsetObs5)]) # 55.21-1487.39; mean = 359.10; median = 263.32
 
+r$subtype <- factor(r$subtype)
+r.red <- r[!is.na(r$onsetObs5), ]
 
+boxplot(rmse ~ subtype, data = r.red) # looks lower for A(H1), highest for A(H3)
+boxplot(rmse ~ season, data = r.red) # lowest for 13-14, 15-16; higher for 11-12, 16-17 - somewhat associated with which are H1 seasons
+boxplot(rmse ~ country, data = r.red) # looks worse for LU; lowest for FR/NL; very wide range for SK
+boxplot(rmse ~ run, data = r.red) # no difference
+boxplot(rmse ~ onsetObs5, data = r.red) # looks lower for later onsets - but that's probably just b/c it has to fit 0 for so long
 
+# which of these associations are actually worth testing? subtype is probably the main thing, and maybe country, although there are so many it's hard to break down
 
+kruskal.test(rmse ~ subtype, data = r.red) # highly sig - p<1e-15
+kruskal.test(rmse ~ country, data = r.red) # highly sig - p<1e-15
 
+library(PMCMR)
+library(PMCMRplus)
+
+posthoc.kruskal.nemenyi.test(rmse ~ subtype, data = r.red) # H1, then B, then H3 (all p<0.0001)
+posthoc.kruskal.nemenyi.test(rmse ~ country, data = r.red) # LU sig different from all (all p<0.0001); no other combos match cutoff
+# for country: set p to 0.01/66 = 0.00015, round to 0.0001
 
 
 
