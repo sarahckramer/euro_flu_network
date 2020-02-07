@@ -11,7 +11,7 @@ library(gtable); library(gridExtra); library(reshape2); library(stringr)
 dir.save <- 'results/plots/outputs/'
 
 # Read in results:
-output <- read.csv('results/network/RED_outputOP_PROC.csv')
+output <- read.csv('results/isolated/outputOP_PROC.csv')
 output <- output[output$subtype == 'A(H1)', ]
 
 output$year <- as.numeric(as.character(substr(output$season, start = 1, stop = 4)))
@@ -91,7 +91,7 @@ for (season in seasons) {
   
   print('Graph list completed.')
   glist <- marrangeGrob(grobs = graphs, nrow = 1, ncol = 1)
-  ggsave(paste(dir.save, 'output_', season, '_H1_network.pdf', sep = ''), glist, width = 25, height = 9, dpi = 600)
+  ggsave(paste(dir.save, 'output_', season, '_H1_isolated.pdf', sep = ''), glist, width = 25, height = 9, dpi = 600)
   print('Done.')
 }
 
