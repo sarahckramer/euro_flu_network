@@ -49,6 +49,9 @@ for i in range(n):
 # Initiate results frames:
 outputOP = pd.DataFrame()
 outputOPParams = pd.DataFrame()
+outputMetrics = pd.DataFrame()
+outputDist = pd.DataFrame()
+outputEns = pd.DataFrame()
 
 # Loop through outbreaks and fit:
 for season_index in range(len(seasons)):
@@ -78,7 +81,7 @@ for season_index in range(len(seasons)):
         print(run)
 
         # Get initial states/parameters for each ensemble member:
-        param_init = pd.read_csv(os.path.join('initial_parms/', 'parms' + str(run) + '.txt'), header=None,
+        param_init = pd.read_csv(os.path.join('initial_parms/', 'parms' + str(run) + '_NEW.txt'), header=None,
                                  sep='\t')
         param_init = param_init.to_numpy(dtype=np.float64)
         # Here we use the same as used in forecasting and fitting of observed data
@@ -93,12 +96,32 @@ for season_index in range(len(seasons)):
         # print(N_temp)
         del N_temp
 
-        # Run EAKF:
-        res = EAKF_fn_fitOnly(num_ens, tmstep, param_init, obs_i, nsn, nsn, obs_vars, tm_ini, tm_range, n, N, ah,
-                              dt, a_rand, lambda_val, wk_start)  # and variables needed for SIRS
+        # # Run EAKF:
+        # res = EAKF_fn_fitOnly(num_ens, tmstep, param_init, obs_i, nsn, nsn, obs_vars, tm_ini, tm_range, n, N, ah,
+        #                       dt, a_rand, lambda_val, wk_start)  # and variables needed for SIRS
+        #
+        # outputOP_temp = res[0]
+        # outputOPParams_temp = res[1]
 
-        outputOP_temp = res[0]
-        outputOPParams_temp = res[1]
+        # OR: Forecast:
+        res = EAKF_fn(num_ens, tmstep, param_init, obs_i, 30, nsn, obs_vars, tm_ini, tm_range, n, N, ah,
+                      dt, countries, a_rand, lambda_val, wk_start)  # and variables needed for SIRS
+
+        outputMet_temp = res[0]
+        outputOP_temp = res[1]
+        outputOPParams_temp = res[2]
+        outputDist_temp = res[3]
+        outputEns_temp = res[4]
+
+        outputMet_temp = outputMet_temp.assign(**{'season': season, 'run': run, 'oev_base': oev_base,
+                                                  'oev_denom': oev_denom, 'lambda': lambda_val})
+        outputDist_temp = outputDist_temp.assign(**{'season': season, 'run': run, 'oev_base': oev_base,
+                                                    'oev_denom': oev_denom, 'lambda': lambda_val})
+        outputEns_temp = outputEns_temp.assign(**{'season': season, 'run': run, 'oev_base': oev_base,
+                                                  'oev_denom': oev_denom, 'lambda': lambda_val})
+        outputMetrics = outputMetrics.append(outputMet_temp, ignore_index=True)
+        outputDist = outputDist.append(outputDist_temp, ignore_index=True)
+        outputEns = outputEns.append(outputEns_temp, ignore_index=True)
 
         outputOP_temp = outputOP_temp.assign(**{'season': season, 'run': run, 'oev_base': oev_base,
                                                 'oev_denom': oev_denom, 'lambda': lambda_val})
@@ -115,6 +138,11 @@ print('Done.')
 timestamp_end = datetime.datetime.now()
 print('Time Elapsed: ' + str(timestamp_end - timestamp_start))
 
-outputOP.to_csv('results/outputOP_SYNTH.csv', na_rep='NA', index=False)
-outputOPParams.to_csv('results/outputOPParams_SYNTH.csv', na_rep='NA', index=False)
+outputOP.to_csv('results/outputOP_synth_fcast.csv', na_rep='NA', index=False)
+outputOPParams.to_csv('results/outputOPParams_synth_fcast.csv', na_rep='NA', index=False)
+
+outputMetrics.to_csv('results/outputMet_synth_fcast.csv', na_rep='NA', index=False)
+outputDist.to_csv('results/outputDist_synth_fcast.csv', na_rep='NA', index=False)
+outputEns.to_csv('results/outputEns_synth_fcast.csv', na_rep='NA', index=False)
+
 print('Finished writing to file!')
