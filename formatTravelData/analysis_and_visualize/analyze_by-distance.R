@@ -12,7 +12,7 @@ library(PMCMRplus)
 ### Load travel data
 a.by.month <- vector('list', 12)
 for (i in 1:12) {
-  load(paste0('formatTravelData/formattedData/air_', i, '_05-07.RData'))
+  load(paste0('formatTravelData/formattedData/air_', i, '_01-31.RData'))
   a.by.month[[i]] <- a.temp.sym
 }; rm(a.temp.sym, i)
 a.rand <- apply(simplify2array(a.by.month), 1:2, mean); rm(a.by.month)
@@ -23,9 +23,18 @@ countries <- rownames(a.rand)
 ### Load centroid data
 l <- read.csv('../travel_data_info/flight_data/raw_data/country_centroids_az8.csv')
 l <- l[, c(47, 67:68)]
-l <- l[(l$iso_a2 %in% countries | l$iso_a2 == 'GB') & !is.na(l$iso_a2), ]
-l$iso_a2 <- factor(l$iso_a2); levels(l$iso_a2)[8] <- 'UK'; l$iso_a2 <- factor(l$iso_a2)
-l <- l[c(1:7, 9:18, 21:19, 8), ]
+# l <- l[l$iso_a2 %in% c(countries, 'GB'), ]
+l <- l[l$iso_a2 %in% countries, ]
+l$iso_a2 <- factor(l$iso_a2);# levels(l$iso_a2)[8] <- 'UK'; l$iso_a2 <- factor(l$iso_a2)
+# l <- l[c(1:7, 9:18, 21:19, 8), ]
+
+# move: France, Croatia, UK
+# l$Longitude[c(7, 21)] <- c(2, -2)
+# l$Latitude[c(7:8)] <- c(46.5, 45.7)
+l$Longitude[6] <- 2
+l$Latitude[6] <- 46.5
+l <- l[c(1:3, 6, 4, 7:12, 5), ]
+
 l <- l[, 2:3]
 colnames(l) <- NULL
 l <- as.matrix(l)
@@ -95,11 +104,11 @@ grid.arrange(p1, p2, ncol = 2)
 
 cor.test(df.rand$dist, df.rand$w, method = 'pearson')
 cor.test(df.rand$dist, df.rand$w, method = 'kendall')
-# post sig pos, but weak
+# sig neg, but weak
 
 cor.test(df.rand$dist.cap, df.rand$w, method = 'pearson')
 cor.test(df.rand$dist.cap, df.rand$w, method = 'kendall')
-# same
+# not sig
 
 # Discrete distance
 df.rand$dist.disc = df.rand$dist.cap.disc = NA
@@ -131,10 +140,10 @@ p4 <- ggplot(data = df.rand) + geom_boxplot(aes(x = dist.cap.disc, y = w), fill 
 grid.arrange(p3, p4, ncol = 2)
 
 kruskal.test(w ~ dist.disc, data = df.rand) # sig
-kruskal.test(w ~ dist.cap.disc, data = df.rand) # sig
+kruskal.test(w ~ dist.cap.disc, data = df.rand) # not sig
 
-posthoc.kruskal.nemenyi.test(w ~ dist.disc, data = df.rand) # 100-150 higher than all other categories
-posthoc.kruskal.nemenyi.test(w ~ dist.cap.disc, data = df.rand) # same
+posthoc.kruskal.nemenyi.test(w ~ dist.disc, data = df.rand) # 150+ lower than all others
+# posthoc.kruskal.nemenyi.test(w ~ dist.cap.disc, data = df.rand) # not sig - don't run
 
 dev.off()
 

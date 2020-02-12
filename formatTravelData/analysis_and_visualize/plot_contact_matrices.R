@@ -20,7 +20,7 @@ pdf('syntheticTests/outputs/explore/commuting_network_w-oLowReliability.pdf', wi
 ### HEAT MAPS ###
 air.by.month <- vector('list', 12)
 for (i in 1:12) {
-  load(paste0('formatTravelData/formattedData/air_', i, '_05-07.RData'))
+  load(paste0('formatTravelData/formattedData/air_', i, '_01-31.RData'))
   air.by.month[[i]] <- a.temp.sym
 }; rm(a.temp.sym)
 a.mean <- apply(simplify2array(air.by.month), 1:2, mean);# rm(air.by.month)
@@ -81,8 +81,9 @@ dev.off()
 # load('formatTravelData/formattedData/comm_mat_by_year_05-07.RData')
 # 
 # load('formatTravelData/formattedData/comm_mat_by_year_05-07_RELIABLE_ONLY.RData')
-load('formatTravelData/formattedData/comm_mat_by_season_05-07_RELIABLE_ONLY.RData')
+# load('formatTravelData/formattedData/comm_mat_by_season_05-07_RELIABLE_ONLY.RData')
 # comm.by.year <- comm.by.year2; rm(comm.by.year2)
+load('formatTravelData/formattedData/comm_mat_by_season_01-27.RData')
 
 # countries <- colnames(comm.by.year[[1]])
 countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
@@ -106,7 +107,7 @@ l <- l[, 2:3]
 colnames(l) <- NULL
 l <- as.matrix(l)
 l <- cbind(countries, as.data.frame(l))
-l <- l[l$countries != 'IS', ]
+# l <- l[l$countries != 'IS', ]
 
 # Set up base map:
 countries.europe <- c('Austria', 'Belarus', 'Belgium', 'Bulgaria', 'Croatia', 'Czech Republic',
@@ -131,7 +132,7 @@ ditch_the_axes <- theme(
 
 # Plot average matrix:
 comm.by.year <- comm.by.seas
-comm.mean <- apply(simplify2array(comm.by.year), 1:2, mean); rm(comm.by.year)
+comm.mean <- apply(simplify2array(comm.by.year), 1:2, mean, na.rm = TRUE); rm(comm.by.year)
 df <- melt(comm.mean); names(df) <- c('source', 'dest', 'w')
 df <- df[df$source != 'IS' & df$dest != 'IS', ]
 df <- merge(df, l, by.x = 'source', by.y = 'countries')
@@ -198,9 +199,48 @@ for (i in 1:8) {
 }
 # dev.off()
 
+# Assess change over time:
+comm.df <- NULL
+for (i in 1:8) {
+  a.temp <- melt(comm.by.seas[[i]] / comm.by.seas[[1]])
+  names(a.temp)[1:2] <- c('source', 'dest')
+  a.temp$season <- i
+  comm.df <- rbind(comm.df, a.temp)
+}
+comm.df <- as.data.frame(comm.df)
+comm.df$route <- paste(comm.df$source, comm.df$dest, sep = '_')
+comm.df$route <- factor(comm.df$route)
+
+comm.df <- comm.df[!is.na(comm.df$value), ]
+
+ggplot(data = comm.df, aes(x = season, y = log(value))) + geom_line() + facet_wrap(~ route)
+
+# Assess asymmetry:
+asym.vals <- c()
+for (i in 1:12) {
+  for (j in i:12) {
+    if (i != j) {
+      
+      if (!is.na(comm.mean[i, j]) & !is.na(comm.mean[j, i])) {
+        print(row.names(comm.mean)[c(i, j)])
+        print(comm.mean[i, j] / comm.mean[j, i])
+        print('')
+        asym.vals <- c(asym.vals, comm.mean[i, j] / comm.mean[j, i])
+      }
+      
+    }
+  }
+}
+
+# which routes are bidirectional? AT-DE, BE-FR, BE-LU, BE-NL, CZ-FR, CZ-PL, CZ-SK, FR-DE, FR-IT, FR-LU, FR-NL, FR-ES, DE-LU, DE-NL, DE-PL, HU-SK, IT-ES (17 routes)
+# greatest differences: BE-LU (41.102); CZ-PL (0.1022 (9.785x)), CZ-SK (0.0593 (16.863x)), FR-LU (79.7), DE-LU (27.807), DE-PL (0.070 (14.286x))
+
+asym.vals[asym.vals < 1] <- 1 / asym.vals[asym.vals < 1]
+summary(asym.vals)
+
 # Plot net inflow and outflow?
-in.flow <- colSums(comm.mean)
-out.flow <- rowSums(comm.mean)
+in.flow <- colSums(comm.mean, na.rm = TRUE)
+out.flow <- rowSums(comm.mean, na.rm = TRUE)
 net.influx <- in.flow - out.flow
 
 # names(net.influx) <- c('Austria', 'Belgium', 'Czech Republic', 'Germany', 'Denmark',
