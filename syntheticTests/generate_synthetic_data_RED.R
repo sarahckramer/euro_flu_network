@@ -21,12 +21,12 @@ wk_start <- 40
 
 ### Set parameters
 num_ens <- 1000
-tm_strt <- 273; tm_end <- 573; tm_step <- 1#; t <- 1 # 273 is first of October
+tm_strt <- 273; tm_end <- 636; tm_step <- 1#; t <- 1 # 273 is first of October
 tm.range <- tm_strt:tm_end
 
 ### Parameter boundaries
-D_low <- 2; L_low <- 3*365; Rmx_low <- 2.2; Rdiff_low <- 0.2; airScale_low <- 0.75
-D_up <- 7; L_up <- 10*365; Rmx_up <- 2.8; Rdiff_up <- 1.2; airScale_up <- 1.25
+# D_low <- 2; L_low <- 3*365; Rmx_low <- 2.2; Rdiff_low <- 0.2; airScale_low <- 0.75
+# D_up <- 7; L_up <- 10*365; Rmx_up <- 2.8; Rdiff_up <- 1.2; airScale_up <- 1.25
 
 # D_low <- 2; L_low <- 3*365; Rmx_low <- 2.2; Rdiff_low <- 0.2; airScale_low <- 0.75
 # D_up <- 7; L_up <- 10*365; Rmx_up <- 2.8; Rdiff_up <- 1.0; airScale_up <- 1.25
@@ -251,13 +251,6 @@ for (i in sort(as.numeric(as.character(unique(df.real$run[df.real$patternSig == 
 
 par(mfrow = c(5, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 for (i in sort(as.numeric(as.character(unique(df.real$run[df.real$patternSig == 'westToEast_no']))))) {
-  i <- as.numeric(as.character(i))
-  matplot(t(res.rates[[i]]), pch = 20, type = 'b', lty = 1, col = viridis(n), main = i)
-  abline(v = c(13, 25))
-}
-
-par(mfrow = c(5, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-for (i in sort(as.numeric(as.character(unique(df.real$run[df.real$patternSig == 'eastToWest_no']))))) {
   list.ot <- df.real$ot[df.real$run == i]
   if (length(list.ot[!is.na(list.ot)]) >= 11) {
     print(i)
@@ -267,9 +260,20 @@ for (i in sort(as.numeric(as.character(unique(df.real$run[df.real$patternSig == 
   abline(v = c(13, 25))
 }
 
-pdf('syntheticTests/outputs/synthetic_outbreaks_011620.pdf', height = 8, width = 28)
+par(mfrow = c(5, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+for (i in sort(as.numeric(as.character(unique(df.real$run[df.real$patternSig == 'eastToWest_no']))))) {
+  list.ot <- df.real$ot[df.real$run == i]
+  if (length(list.ot[!is.na(list.ot)]) >= 10) {
+    print(i)
+  }
+  i <- as.numeric(as.character(i))
+  matplot(t(res.rates[[i]]), pch = 20, type = 'b', lty = 1, col = viridis(n), main = i)
+  abline(v = c(13, 25))
+}
+
+pdf('syntheticTests/outputs/synthetic_outbreaks_021020.pdf', height = 8, width = 28)
 par(mfrow = c(1, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-for (i in c(592, 605, 440, 566, 591)) {
+for (i in c(109, 3, 653, 694, 599)) {
   matplot(t(res.rates[[i]]), pch = 20, type = 'b', lty = 1, col = viridis(n), main = i)
   abline(v = c(13, 25))
 }
@@ -289,13 +293,13 @@ plot(df.red[df.red$real, 18:23])
 ################################################################################################################
 # Save relevant outbreaks so we can look at patterns:
 synth.runs.RATES <- res.rates
-save(synth.runs.RATES, file = 'syntheticTests/syntheticData/synth_rates_ALL_1000_011620.RData')
+save(synth.runs.RATES, file = 'syntheticTests/syntheticData/synth_rates_ALL_1000_021020.RData')
 
 synth.runs.RATES.onset <- synth.runs.RATES[runs.onset]
 synth.runs.RATES.realistic <- synth.runs.RATES[runs.realistic]
 
-save(synth.runs.RATES.onset, file = 'syntheticTests/syntheticData/synth_rates_ONSET_1000_011620.RData')
-save(synth.runs.RATES.realistic, file = 'syntheticTests/syntheticData/synth_rates_REALISTIC_1000_011620.RData')
+save(synth.runs.RATES.onset, file = 'syntheticTests/syntheticData/synth_rates_ONSET_1000_021020.RData')
+save(synth.runs.RATES.realistic, file = 'syntheticTests/syntheticData/synth_rates_REALISTIC_1000_021020.RData')
 
 # Save parameters and S0/I0, too:
 s0.list <- parms[1:12, ]
@@ -306,17 +310,18 @@ s0.list <- list(s0.list, s0.list[, runs.onset], s0.list[, runs.realistic])
 i0.list <- list(i0.list, i0.list[, runs.onset], i0.list[, runs.realistic])
 parms.list <- list(parms.list, parms.list[, runs.onset], parms.list[, runs.realistic])
 
-save(parms.list, file = 'syntheticTests/syntheticData/params_1000_011620.RData')
-save(i0.list, file = 'syntheticTests/syntheticData/I0_1000_011620.Rdata')
-save(s0.list, file = 'syntheticTests/syntheticData/S0_1000_011620.Rdata')
+save(parms.list, file = 'syntheticTests/syntheticData/params_1000_021020.RData')
+save(i0.list, file = 'syntheticTests/syntheticData/I0_1000_021020.Rdata')
+save(s0.list, file = 'syntheticTests/syntheticData/S0_1000_021020.Rdata')
 
 # And save only the 5 to be used in synthetic testing:
-to.keep <- c(592, 605, 440, 566, 591)
+# to.keep <- c(592, 605, 440, 566, 591)
+to.keep <- c(109, 3, 653, 694, 599)
 synth.outbreaks <- synth.runs.RATES[to.keep]
 parms.outbreaks <- parms[, to.keep]
 
-save(synth.outbreaks, file = 'syntheticTests/syntheticData/synth_rates_toKeep_011620.RData')
-save(parms.outbreaks, file = 'syntheticTests/syntheticData/parms_toKeep_011620.RData')
+save(synth.outbreaks, file = 'syntheticTests/syntheticData/synth_rates_toKeep_021020.RData')
+save(parms.outbreaks, file = 'syntheticTests/syntheticData/parms_toKeep_021020.RData')
 
 ################################################################################################################
 ################################################################################################################
