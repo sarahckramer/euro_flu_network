@@ -23,7 +23,7 @@ oev_base = np.float64(1e5)
 oev_denom = np.float64(10.0)
 lambda_val = np.float64(1.05)
 num_ens = 300
-num_runs = 3  # EVENTUALLY WANT 5
+num_runs = 5  # EVENTUALLY WANT 5
 
 # Vector of countries used
 countries = np.array(['AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES'])
@@ -31,8 +31,8 @@ count_indices = [0, 1, 3, 5, 6, 7, 10, 11, 12, 13, 16, 18]
 n = len(countries)
 
 # Read in data and set outbreaks:
-seasons = ('2010-11', '2011-12', '2012-13', '2013-14', '2014-15', '2015-16', '2016-17', '2017-18')
-iliiso = pd.read_csv('../data/by_subtype/WHO_data_A(all)_SCALED.csv')
+seasons = ('1', '2', '3', '4', '5')  # not yet sure how to handle this - have 5 "outbreaks"
+# iliiso = pd.read_csv('../data/by_subtype/WHO_data_A(all)_SCALED.csv')  # synthetic data - no scaling required
 
 # Read in humidity data:
 ah = pd.read_csv('../data/ah_Europe_07142019.csv')
@@ -45,50 +45,31 @@ a_rand = np.zeros([12, n, n], dtype=np.float64)
 for i in range(n):
     a_rand[i] = np.loadtxt('air_travel/aRand' + str(i + 1) + '.txt', unpack=True, dtype=np.float64)
 
-# Season-specific start and end dates:
-clim_start_dict = {'2010-11': 276, '2011-12': 275, '2012-13': 274, '2013-14': 272, '2014-15': 271, '2015-16': 270,
-                   '2016-17': 276, '2017-18': 274}
-clim_end_dict = {'2010-11': 639, '2011-12': 638, '2012-13': 637, '2013-14': 635, '2014-15': 634, '2015-16': 640,
-                 '2016-17': 639, '2017-18': 637}
-wks_dict = {'2010-11': range(78, 130), '2011-12': range(130, 182), '2012-13': range(182, 234),
-            '2013-14': range(234, 286), '2014-15': range(286, 338), '2015-16': range(338, 391),
-            '2016-17': range(391, 443), '2017-18': range(443, 495)}
-season_len_dict = {'2010-11': 52, '2011-12': 52, '2012-13': 52, '2013-14': 52, '2014-15': 52, '2015-16': 53,
-                   '2016-17': 52, '2017-18': 52}
-
 # ### Start main loop ###
 # Initiate results frames:
 outputOP = pd.DataFrame()
 outputOPParams = pd.DataFrame()
 
-# Loop through outbreaks and forecast:
+# Loop through outbreaks and fit:
 for season_index in range(len(seasons)):
     season = seasons[season_index]
-    print(season)
-
-    # # Get season-specific population matrix:
-    # N = pd.read_csv(os.path.join('compartment_sizes/', 'N' + season + '.txt'), header=None, sep='\t')
-    # N = N.to_numpy(dtype=np.float64)
+    print(season)  # again, this is the synthetic outbreak, not a season
 
     # Get observations for current season:
-    obs_i = iliiso.iloc[wks_dict[season]]
+    obs_i = pd.read_csv(os.path.join('../syntheticTests/syntheticData/for_python/', 'synth_wError_' + season + '.csv'))
 
     # Get season duration:
-    nsn = season_len_dict[season]
+    nsn = 52  # also can just be set at 52, or 43 or whatever
 
     # Reindex data:
     obs_i = obs_i.reset_index(drop=True)
-
-    # Replace leading/lagging zeros:
-    for count_index in range(n):
-        replaceLeadLag(obs_i.iloc[:, count_index + 1])
 
     # Get OEV:
     obs_vars = calc_obsvars(obs_i, oev_base, oev_denom, n)
 
     # Get time start and time range:
-    tm_ini = clim_start_dict[season] - 2  # b/c python indexes at 0, while R does it at 1
-    tm_range1 = [i for i in range(clim_start_dict[season] - 1, clim_end_dict[season], 1)]
+    tm_ini = 273 - 2  # b/c python indexes at 0, while R does it at 1
+    tm_range1 = [i for i in range(273 - 1, 636, 1)]
     tm_range = List()
     [tm_range.append(i) for i in tm_range1]
 
@@ -100,21 +81,20 @@ for season_index in range(len(seasons)):
         param_init = pd.read_csv(os.path.join('initial_parms/', 'parms' + str(run) + '.txt'), header=None,
                                  sep='\t')
         param_init = param_init.to_numpy(dtype=np.float64)
-        # Here we use the same as used in forecasting
+        # Here we use the same as used in forecasting and fitting of observed data
 
         # Get season-specific population matrix:
         N = np.zeros([num_ens, n, n], dtype=np.float64)
         for ensmem in range(num_ens):
-            # N_temp = pd.read_csv(os.path.join('compartment_sizes/', 'N' + season + '_NEW.txt'), header=None, sep='\t')
-            N_temp = pd.read_csv(os.path.join('compartment_sizes_NEW2/',
-                                              'N' + season + '_' + str(run + 1) + '_' + str(ensmem + 1) + '.txt'),
+            N_temp = pd.read_csv(os.path.join('compartment_sizes_SYNTH/',
+                                              'N_' + str(run + 1) + '_' + str(ensmem + 1) + '.txt'),
                                  header=None, sep='\t')
             N[ensmem] = N_temp.to_numpy(dtype=np.float64)
         # print(N_temp)
         del N_temp
 
         # Run EAKF:
-        res = EAKF_fn_fitOnly(num_ens, tmstep, param_init, obs_i, 52, nsn, obs_vars, tm_ini, tm_range, n, N, ah,
+        res = EAKF_fn_fitOnly(num_ens, tmstep, param_init, obs_i, nsn, nsn, obs_vars, tm_ini, tm_range, n, N, ah,
                               dt, a_rand, lambda_val, wk_start)  # and variables needed for SIRS
 
         outputOP_temp = res[0]
