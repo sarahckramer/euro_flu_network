@@ -6,8 +6,15 @@ format_model_results <- function(m.res, num.ens, tmstep, tm.strt, tm.end, n, pop
   newI <- lapply(1:(n ** 2), function(ix) {
     matrix(unlist(lapply(1:num.ens, function(jx) {
       m.res[3, jx]$newI[tmstep * (1:nt) + 1, ix] - m.res[3, jx]$newI[tmstep * (0:(nt - 1)) + 1, ix]
-    })), nrow = num_ens, byrow = TRUE)
+    })), nrow = num.ens, byrow = TRUE)
   }) # each ensemble member has its own row
+  
+  # Get S, too:
+  S <- lapply(1:(n ** 2), function(ix) {
+    matrix(unlist(lapply(1:num.ens, function(jx) {
+      m.res[1, jx]$S[tmstep * (1:nt) + 1, ix]
+    })), nrow = num.ens, byrow = TRUE)
+  })
   
   # Aggregate to the country level:
   newI.c <- vector('list', n)
@@ -16,26 +23,35 @@ format_model_results <- function(m.res, num.ens, tmstep, tm.strt, tm.end, n, pop
   }
   newI.c.COUNT <- newI.c
   
+  S.c <- vector('list', n)
+  for (i in 1:n) {
+    S.c[[i]] <- Reduce('+', S[(i * n - n + 1):(i * n)])
+  }
+  S.c.COUNT <- S.c
+  
   # Standardize results to per 100,000 population:
   for (i in 1:n) {
     newI.c[[i]] <- (newI.c[[i]] / pop.dat$pop[i]) * 100000
+    S.c[[i]] <- (S.c[[i]] / pop.dat$pop[i]) * 100000
   }
   
   # Create lists by ens_mem:
-  synth.runs.RATES = synth.runs.COUNTS = vector('list', num.ens)
+  synth.runs.RATES = synth.runs.COUNTS = S.RATES = vector('list', num.ens)
   for (ix in 1:length(synth.runs.RATES)) {
-    newI.ens = newI.ens.count = NULL
+    newI.ens = newI.ens.count = S.ens = NULL
     for (country in 1:n) {
       newI.ens <- rbind(newI.ens, newI.c[[country]][ix, ])
       newI.ens.count <- rbind(newI.ens.count, newI.c.COUNT[[country]][ix, ])
+      S.ens <- rbind(S.ens, S.c[[country]][ix, ])
     }
     
     synth.runs.RATES[[ix]] <- newI.ens
     synth.runs.COUNTS[[ix]] <- newI.ens.count
+    S.RATES[[ix]] <- S.ens
   }
   
   # Return results:
-  return(list(synth.runs.RATES, synth.runs.COUNTS))
+  return(list(synth.runs.RATES, synth.runs.COUNTS, S.RATES))
   
 }
 
@@ -228,7 +244,7 @@ run_model <- function(in.parms, S0.in, I0.in, in.ah, num.ens, n, N, tm.range, tm
     })
   } else { # use R0diff
     b <- log(in.parms[4, ])
-    beta <- lapply(1:num_ens, function(ix) {
+    beta <- lapply(1:num.ens, function(ix) {
       (exp(a * AHpt + b[ix]) + (in.parms[3, ix] - in.parms[4, ix])) / in.parms[2, ix]
     })
   }

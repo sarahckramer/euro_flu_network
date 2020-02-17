@@ -125,34 +125,35 @@ for (ensmem in 1:length(N)) {
 #   write.table(air.dat[[i]], file = paste0('python/air_travel/aRand', i, '.txt'), sep = '\t', row.names = FALSE, col.names = FALSE)
 # }
 
-# ### Get start states/params:
-# set.seed(1048993542)
-# 
-# D_low <- 2; L_low <- 3*365; Rmx_low <- 2.0; Rdiff_low <- 0.2; airScale_low <- 0.75
-# D_up <- 7; L_up <- 10*365; Rmx_up <- 2.8; Rdiff_up <- 1.0; airScale_up <- 1.25
-# S0_low <- 0.4; S0_up <- 0.9
-# I0_low <- 0; I0_up <- 0.00005
-# 
-# theta_low <- c(L_low, D_low, Rmx_low, Rdiff_low, airScale_low)
-# theta_up <- c(L_up, D_up, Rmx_up, Rdiff_up, airScale_up)
-# 
-# param.bound <- cbind(c(rep(S0_low, n ** 2), rep(I0_low, n ** 2), theta_low),
-#                      c(rep(S0_up, n ** 2), rep(I0_up, n ** 2), theta_up))
-# 
-# parms <- t(lhs(300, param.bound))
-# write.table(parms, file = 'python/initial_parms/parms0_lowI0.txt', sep = '\t', row.names = FALSE, col.names = FALSE)
-# 
-# parms <- t(lhs(300, param.bound))
-# write.table(parms, file = 'python/initial_parms/parms1_lowI0.txt', sep = '\t', row.names = FALSE, col.names = FALSE)
-# 
-# parms <- t(lhs(300, param.bound))
-# write.table(parms, file = 'python/initial_parms/parms2_lowI0.txt', sep = '\t', row.names = FALSE, col.names = FALSE)
-# 
-# parms <- t(lhs(300, param.bound))
-# write.table(parms, file = 'python/initial_parms/parms3_lowI0.txt', sep = '\t', row.names = FALSE, col.names = FALSE)
-# 
-# parms <- t(lhs(300, param.bound))
-# write.table(parms, file = 'python/initial_parms/parms4_lowI0.txt', sep = '\t', row.names = FALSE, col.names = FALSE)
+### Get start states/params:
+set.seed(1048993542)
+
+D_low <- 2; L_low <- 3*365; Rmx_low <- 2.0; Rdiff_low <- 0.2; airScale_low <- 0.75
+D_up <- 7; L_up <- 10*365; Rmx_up <- 2.8; Rdiff_up <- 1.0; airScale_up <- 1.25
+S0_low <- 0.4; S0_up <- 0.9
+I0_low <- 0; I0_up <- 0.00005
+n <- 12
+
+theta_low <- c(L_low, D_low, Rmx_low, Rdiff_low, airScale_low)
+theta_up <- c(L_up, D_up, Rmx_up, Rdiff_up, airScale_up)
+
+param.bound <- cbind(c(rep(S0_low, n ** 2), rep(I0_low, n ** 2), theta_low),
+                     c(rep(S0_up, n ** 2), rep(I0_up, n ** 2), theta_up))
+
+parms <- t(lhs(300, param.bound))
+write.table(parms, file = 'python/initial_parms/SA/parms0_verylowI0.txt', sep = '\t', row.names = FALSE, col.names = FALSE)
+
+parms <- t(lhs(300, param.bound))
+write.table(parms, file = 'python/initial_parms/SA/parms1_verylowI0.txt', sep = '\t', row.names = FALSE, col.names = FALSE)
+
+parms <- t(lhs(300, param.bound))
+write.table(parms, file = 'python/initial_parms/SA/parms2_verylowI0.txt', sep = '\t', row.names = FALSE, col.names = FALSE)
+
+parms <- t(lhs(300, param.bound))
+write.table(parms, file = 'python/initial_parms/SA/parms3_verylowI0.txt', sep = '\t', row.names = FALSE, col.names = FALSE)
+
+parms <- t(lhs(300, param.bound))
+write.table(parms, file = 'python/initial_parms/SA/parms4_verylowI0.txt', sep = '\t', row.names = FALSE, col.names = FALSE)
 # 
 # # for isolated:
 # theta_low <- c(L_low, D_low, Rmx_low, Rdiff_low)

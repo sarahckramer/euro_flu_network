@@ -125,6 +125,7 @@ init.states <- allocate_S0I0(parms, num_ens, n, N, s0.method = 'lhs')
 # init.states <- allocate_S0I0(parms, num_ens, n, N, s0.method = 'lhs_full')
 res <- run_model(parms, init.states[[1]], init.states[[2]], AH, num_ens, n, N, tm.range, tmstep, tm_strt, tm_end, dt, pop.size, r0.mn = FALSE, multi = FALSE)
 res.rates <- res[[1]]
+s.rates <- res[[3]]
 
 df.met <- check_realistic(res.rates)[[1]]
 is.real.check <- check_realistic(res.rates)[2:3]
@@ -318,9 +319,11 @@ save(s0.list, file = 'syntheticTests/syntheticData/S0_1000_021020.Rdata')
 # to.keep <- c(592, 605, 440, 566, 591)
 to.keep <- c(109, 3, 653, 694, 599)
 synth.outbreaks <- synth.runs.RATES[to.keep]
+synth.s <- s.rates[to.keep]
 parms.outbreaks <- parms[, to.keep]
 
 save(synth.outbreaks, file = 'syntheticTests/syntheticData/synth_rates_toKeep_021020.RData')
+save(synth.s, file = 'syntheticTests/syntheticData/synth_S_toKeep_021020.RData')
 save(parms.outbreaks, file = 'syntheticTests/syntheticData/parms_toKeep_021020.RData')
 
 ################################################################################################################

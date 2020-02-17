@@ -1,200 +1,87 @@
 
 library(reshape2)
+# Change: 4
 
 # Read in results:
-m <- read.csv('syntheticTests/outputs/cluster/072319/outputMet_loop_reduceS0_I0narrow.csv')
-o <- read.csv('syntheticTests/outputs/cluster/072319/outputOP_loop_reduceS0_I0narrow.csv')
-oStates <- read.csv('syntheticTests/outputs/cluster/072319/outputOPStates_loop_reduceS0_I0narrow.csv')
-
-# Check what combos ran:
-table(m$oev_base, m$oev_denom)
-
-# Remove combos that lead to collapse:
-m$group <- paste(m$oev_base, m$oev_denom, m$lambda, sep = '_'); m$group <- factor(m$group)
-o$group <- paste(o$oev_base, o$oev_denom, o$lambda, sep = '_'); o$group <- factor(o$group)
-oStates$group <- paste(oStates$oev_base, oStates$oev_denom, oStates$lambda, sep = '_'); oStates$group <- factor(oStates$group)
-
-# o <- o[o$group %in% levels(m$group)[c(1, 9, 13:16, 18:24)], ]; o$group <- factor(o$group)
-# oStates <- oStates[oStates$group %in% levels(m$group)[c(1, 9, 13:16, 18:24)], ]; oStates$group <- factor(oStates$group)
-# m <- m[m$group %in% levels(m$group)[c(1, 9, 13:16, 18:24)], ]; m$group <- factor(m$group)
-# o <- o[o$group %in% levels(m$group)[c(1:3, 5:6, 9:10, 13:14, 17:18, 21:22)], ]; o$group <- factor(o$group)
-# oStates <- oStates[oStates$group %in% levels(m$group)[c(1:3, 5:6, 9:10, 13:14, 17:18, 21:22)], ]; oStates$group <- factor(oStates$group)
-# m <- m[m$group %in% levels(m$group)[c(1:3, 5:6, 9:10, 13:14, 17:18, 21:22)], ]; m$group <- factor(m$group)
-# S0 range: 1e4/5/1, 1e4/10/1 (maybe), 1e5/5/all, 1e5/10/all, 1e5/20/1.01-1.05 (1e5 way less likely to fail)
-# I0 range: 1e4/5/1-1.01, 1e4/10/1-1.03, 1e4/20/1-1.01, 1e5/5/1-1.01, 1e5/10/1-1.01, 1e5/20/1-1.01
-
-################################################################################################################################################################################################
-################################################################################################################################################################################################
-
-# Calculate "group" factors:
-oStates$group <- paste(oStates$oev_base, oStates$oev_denom, sep = '_'); oStates$group <- factor(oStates$group)
-oStates$group <- factor(oStates$group, levels = levels(oStates$group)[c(3, 1:2, 6, 4:5)])
-oStates$group.plot <- paste(oStates$run, oStates$oev_base, oStates$oev_denom, oStates$lambda, sep = '_'); oStates$group.plot <- factor(oStates$group.plot)
-oStates$lambda <- factor(oStates$lambda)
-
-o$group <- paste(o$oev_base, o$oev_denom, sep = '_'); o$group <- factor(o$group)
-o$group <- factor(o$group, levels = levels(o$group)[c(3, 1:2, 6, 4:5)])
-o$group.plot <- paste(o$outbreak, o$run, o$oev_base, o$oev_denom, o$lambda, sep = '_'); o$group.plot <- factor(o$group.plot)
-o$lambda <- factor(o$lambda)
+o <- read.csv('syntheticTests/outputOPParams_SYNTH_verylowI0.csv')
+oStates <- read.csv('syntheticTests/outputOP_SYNTH_beta-R0-Re_verylowI0.csv')
 
 # Get countries:
-countries <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'FR', 'DE', 'HU', 'IE', 'IT',
-               'LU', 'NL', 'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE', 'UK')
+countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
 n <- length(countries)
 
-# Get outbreaks:
-to.keep <- c(1, 6, 9, 13)
+### Calculate parameter error ###
 
-# Calculate parameter error:
-load('syntheticTests/syntheticData/params_07-14.RData')
-select.parms <- select.parms[to.keep, ]
-select.parms$L <- select.parms$L * 365
-select.parms <- as.data.frame(cbind(rep(c(1, 6, 9, 13), 5), melt(select.parms)))
+# Get TRUE parameter values:
+load('syntheticTests/syntheticData/parms_toKeep_021020.RData')
+select.parms <- as.data.frame(t(parms.outbreaks[25:29, ]))
+names(select.parms) <- c('L', 'D', 'R0max', 'R0diff', 'airScale')
+select.parms <- as.data.frame(cbind(rep(1:5, 5), melt(select.parms)))
 names(select.parms) <- c('outbreak', 'parameter', 'value')
 
-# Read in TRUE values of beta, R0, Re at each time point:
-load('syntheticTests/outputs/cluster/071519/true_betaR0Re.RData')
-true.betas <- true.epi.params[[1]]
-true.R0 <- true.epi.params[[2]]
-true.Re <- true.epi.params[[3]]
-rm(true.epi.params)
-
-ah <- read.csv('../GLDAS_data/ah_Europe_07142019.csv')
-AH <- rbind(ah[, c(1:8, 10:21)], ah[, c(1:8, 10:21)])
-
-tm_strt <- 273; tm_end <- 573; tm_step <- 1 #; t <- 1 # 273 is first of October
-tm.range <- tm_strt:tm_end
-tmstep <- 7
-beta.range <- seq(tm.range[1] + tmstep, (tail(tm.range, 1) + tmstep), by = tmstep)
-
-AHpt <- AH[beta.range, ]; AHpt <- as.matrix(AHpt, length(AHpt), n)
-
-# Calculate SIMULATED values of beta, R0, Re at each time point:
-oStates$beta = oStates$R0 = oStates$Re = NA
-o$oev_base <- factor(o$oev_base); o$oev_denom <- factor(o$oev_denom)
-
-for (i in 1:length(to.keep)) {
-  print(i)
-
-  for (j in 1:length(unique(o$run))) {
-    print(j)
-
-    for (oev_base in levels(o$oev_base)) {
-      for (oev in levels(o$oev_denom)) {
-        for (lambda in levels(o$lambda)) {
-
-          o.temp <- o[o$outbreak == to.keep[i] & o$run == j & o$oev_base == oev_base & o$oev_denom == oev & o$lambda == lambda, ]
-          oStates.temp <- oStates[oStates$outbreak == to.keep[i] & oStates$run == j & oStates$oev_base == oev_base & oStates$oev_denom == oev & oStates$lambda == lambda, ]
-
-          b <- log(o.temp$R0max - o.temp$R0min); a <- -180
-
-          if (length(o.temp$outbreak) > 0) {
-            for (country in 1:n) {
-              # print(country)
-              oStates$R0[oStates$outbreak == to.keep[i] & oStates$run == j & oStates$oev_base == oev_base & oStates$oev_denom == oev & oStates$lambda == lambda & oStates$country == countries[country]] <- exp(a * AHpt[, country] + b) + o.temp$R0min
-              oStates$beta[oStates$outbreak == to.keep[i] & oStates$run == j & oStates$oev_base == oev_base & oStates$oev_denom == oev & oStates$lambda == lambda & oStates$country == countries[country]] <-
-                oStates$R0[oStates$outbreak == to.keep[i] & oStates$run == j & oStates$oev_base == oev_base & oStates$oev_denom == oev & oStates$lambda == lambda & oStates$country == countries[country]] / o.temp$D
-              oStates$Re[oStates$outbreak == to.keep[i] & oStates$run == j & oStates$oev_base == oev_base & oStates$oev_denom == oev & oStates$lambda == lambda & oStates$country == countries[country]] <-
-                oStates$R0[oStates$outbreak == to.keep[i] & oStates$run == j & oStates$oev_base == oev_base & oStates$oev_denom == oev & oStates$lambda == lambda & oStates$country == countries[country]] *
-                oStates$S[oStates$outbreak == to.keep[i] & oStates$run == j & oStates$oev_base == oev_base & oStates$oev_denom == oev & oStates$lambda == lambda & oStates$country == countries[country]]
-            }
-          }
-
-        }
-      }
-    }
-  }
-}
+# Read in the TRUE values of beta, R0, Re at each point:
+load('syntheticTests/syntheticData/true_betaR0Re.RData')
+true.betas <- true.list[[1]]
+true.R0 <- true.list[[2]]
+true.Re <- true.list[[3]]
+rm(true.list)
 
 # Calculate PARAMETER error at three time points:
-o.err <- o[o$week %in% c(10, 15, 20), c(1:7, 9, 11, 13, 15)]
-# o.err <- o[o$week == 20, c(1:7, 9, 11, 13, 15)]
-o.err$L.err = o.err$D.err = o.err$R0mx.err = o.err$R0mn.err = o.err$aS.err = NA
+o.err <- o[o$week %in% c(49, 54, 59), c(1:7, 13:14)] # time points 10, 15, 20
+o.err$L.err = o.err$D.err = o.err$R0mx.err = o.err$R0diff.err = o.err$aS.err = NA
 
-# First, subtract actual - fit, and divide by observed
-for (outbreak in to.keep) {
-  o.err$L.err[o.err$outbreak == outbreak] <-
-    (select.parms$value[select.parms$outbreak == outbreak & select.parms$parameter == 'L'] -
-       o.err$L[o.err$outbreak == outbreak]) * -1 /
+# First, subtract actual - fit, and divide by actual:
+for (outbreak in 1:5) {
+  o.err$L.err[o.err$season == outbreak] <- (select.parms$value[select.parms$outbreak == outbreak & select.parms$parameter == 'L'] - o.err$L[o.err$season == outbreak]) * -1 /
     select.parms$value[select.parms$outbreak == outbreak & select.parms$parameter == 'L']
-  
-  o.err$D.err[o.err$outbreak == outbreak] <-
-    (select.parms$value[select.parms$outbreak == outbreak & select.parms$parameter == 'D'] -
-       o.err$D[o.err$outbreak == outbreak]) * -1 /
+  o.err$D.err[o.err$season == outbreak] <- (select.parms$value[select.parms$outbreak == outbreak & select.parms$parameter == 'D'] - o.err$D[o.err$season == outbreak]) * -1 /
     select.parms$value[select.parms$outbreak == outbreak & select.parms$parameter == 'D']
-  
-  o.err$R0mx.err[o.err$outbreak == outbreak] <-
-    (select.parms$value[select.parms$outbreak == outbreak & select.parms$parameter == 'R0mx'] -
-       o.err$R0max[o.err$outbreak == outbreak]) * -1 /
-    select.parms$value[select.parms$outbreak == outbreak & select.parms$parameter == 'R0mx']
-  
-  o.err$R0mn.err[o.err$outbreak == outbreak] <-
-    (select.parms$value[select.parms$outbreak == outbreak & select.parms$parameter == 'R0mn'] -
-       o.err$R0min[o.err$outbreak == outbreak]) * -1 /
-    select.parms$value[select.parms$outbreak == outbreak & select.parms$parameter == 'R0mn']
-  
-  o.err$aS.err[o.err$outbreak == outbreak] <-
-    (select.parms$value[select.parms$outbreak == outbreak & select.parms$parameter == 'airScale'] -
-       o.err$airScale[o.err$outbreak == outbreak]) * -1 /
+  o.err$R0mx.err[o.err$season == outbreak] <- (select.parms$value[select.parms$outbreak == outbreak & select.parms$parameter == 'R0max'] - o.err$R0mx[o.err$season == outbreak]) * -1 /
+    select.parms$value[select.parms$outbreak == outbreak & select.parms$parameter == 'R0max']
+  o.err$R0diff.err[o.err$season == outbreak] <- (select.parms$value[select.parms$outbreak == outbreak & select.parms$parameter == 'R0diff'] - o.err$R0diff[o.err$season == outbreak]) * -1 /
+    select.parms$value[select.parms$outbreak == outbreak & select.parms$parameter == 'R0diff']
+  o.err$aS.err[o.err$season == outbreak] <- (select.parms$value[select.parms$outbreak == outbreak & select.parms$parameter == 'airScale'] - o.err$airScale[o.err$season == outbreak]) * -1 /
     select.parms$value[select.parms$outbreak == outbreak & select.parms$parameter == 'airScale']
 }
-
-o.err$oev_denom <- factor(o.err$oev_denom)
-o.err$oev_base <- factor(o.err$oev_base)
+# positive values indicate that fit value is HIGHER than truth
 
 # Calculate relative error for S, beta, R0, Re for each country at t = 10, 15, 20:
-load('syntheticTests/syntheticData/synth_07-14_S.RData')
-synth.runs.S <- synth.S.RATES[to.keep]
+load('syntheticTests/syntheticData/synth_S_toKeep_021020.RData')
+for (i in 1:5) {
+  synth.s[[i]] <- t(synth.s[[i]])
+}
 
-oStates.err <- oStates[oStates$week %in% c(10, 15, 20), c(1:8, 10:14)]
-
+oStates$run <- factor(oStates$run)
+oStates.err <- oStates[oStates$week %in% c(49, 54, 59), c(1:3, 5:8, 12:13, 17:19)]
 oStates.err$Re.err = oStates.err$R0.err = oStates.err$beta.err = oStates.err$S.err = NA
-oStates.err$S <- oStates.err$S * 100000
-oStates.err$oev_denom <- factor(oStates.err$oev_denom)
-oStates.err$oev_base <- factor(oStates.err$oev_base)
 
-for (outbreak in 1:length(to.keep)) {
+for (outbreak in 1:5) {
   print(outbreak)
-  susc_i <- synth.runs.S[[outbreak]]
+  susc_i <- synth.s[[outbreak]]
   beta.temp <- true.betas[[outbreak]]
   R0.temp <- true.R0[[outbreak]]
   Re.temp <- true.Re[[outbreak]]
   
-  for (run in 1:length(unique(oStates.err$run))) {
-    for (oev_base in levels(oStates.err$oev_base)) {
-      for (oev in levels(oStates.err$oev_denom)) {
-        for (lambda in levels(oStates.err$lambda)) {
-          
-          for (count.index in 1:n) {
-            oStates.err.temp <- oStates.err[oStates.err$outbreak == to.keep[outbreak] & oStates.err$run == run & oStates.err$oev_base == oev_base & oStates.err$oev_denom == oev & oStates.err$lambda == lambda & oStates.err$country == countries[count.index], ]
-            
-            if (length(oStates.err.temp$country) > 0) {
-              
-              oStates.err$S.err[oStates.err$outbreak == to.keep[outbreak] & oStates.err$run == run & oStates.err$oev_denom == oev & oStates.err$lambda == lambda & oStates.err$country == countries[count.index]] <-
-                (-1 * (susc_i[c(10, 15, 20), count.index] - oStates.err.temp$S)) / susc_i[c(10, 15, 20), count.index]
-              oStates.err$beta.err[oStates.err$outbreak == to.keep[outbreak] & oStates.err$run == run & oStates.err$oev_denom == oev & oStates.err$lambda == lambda & oStates.err$country == countries[count.index]] <-
-                (-1 * (beta.temp[c(10, 15, 20), count.index] - oStates.err.temp$beta)) / beta.temp[c(10, 15, 20), count.index]
-              oStates.err$R0.err[oStates.err$outbreak == to.keep[outbreak] & oStates.err$run == run & oStates.err$oev_denom == oev & oStates.err$lambda == lambda & oStates.err$country == countries[count.index]] <-
-                (-1 * (R0.temp[c(10, 15, 20), count.index] - oStates.err.temp$R0)) / R0.temp[c(10, 15, 20), count.index]
-              oStates.err$Re.err[oStates.err$outbreak == to.keep[outbreak] & oStates.err$run == run & oStates.err$oev_denom == oev & oStates.err$lambda == lambda & oStates.err$country == countries[count.index]] <-
-                (-1 * (Re.temp[c(10, 15, 20), count.index] - oStates.err.temp$Re)) / Re.temp[c(10, 15, 20), count.index]
-            }
-            
-          }
-          
-        }
-      }
+  for (run in levels(oStates.err$run)) {
+    for (country in countries) {
+      oStates.err.temp <- oStates.err[oStates.err$season == outbreak & oStates.err$run == run & oStates.err$country == country, ]
+      
+      oStates.err$S.err[oStates.err$season == outbreak & oStates.err$run == run & oStates.err$country == country] <-
+        (-1 * (susc_i[c(10, 15, 20), which(countries == country)] - oStates.err.temp$S)) / susc_i[c(10, 15, 20), which(countries == country)]
+      oStates.err$beta.err[oStates.err$season == outbreak & oStates.err$run == run & oStates.err$country == country] <-
+        (-1 * (beta.temp[c(10, 15, 20), which(countries == country)] - oStates.err.temp$beta)) / beta.temp[c(10, 15, 20), which(countries == country)]
+      oStates.err$R0.err[oStates.err$season == outbreak & oStates.err$run == run & oStates.err$country == country] <-
+        (-1 * (R0.temp[c(10, 15, 20), which(countries == country)] - oStates.err.temp$R0)) / R0.temp[c(10, 15, 20), which(countries == country)]
+      oStates.err$Re.err[oStates.err$season == outbreak & oStates.err$run == run & oStates.err$country == country] <-
+        (-1 * (Re.temp[c(10, 15, 20), which(countries == country)] - oStates.err.temp$Re)) / Re.temp[c(10, 15, 20), which(countries == country)]
     }
   }
+  
 }
-oStates.err$outbreak <- factor(oStates.err$outbreak)
 
-# Write new files as list (m, o, o.err, oStates, oStates.err)
-res <- list(m, o, o.err, oStates, oStates.err)
-save(res, file = 'syntheticTests/outputs/cluster/072319/res_loop_S0range_I0narrow.RData')
-
-# true.epi.params <- list(true.betas, true.R0, true.Re)
-# save(true.epi.params, file = 'syntheticTests/outputs/cluster/071519/true_betaR0Re.RData')
+# Write results to file:
+write.csv(o.err, file = 'syntheticTests/outputOPParams_SYNTH_errors_verylowI0.csv', row.names = FALSE)
+write.csv(oStates.err, file = 'syntheticTests/outputOP_SYNTH_errors_verylowI0.csv', row.names = FALSE)
 
 rm(list=ls())
 
