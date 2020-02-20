@@ -2,7 +2,7 @@
 ### Plot model fits to observations ###
 
 # Set strain:
-strain <- 'A(H1)'
+strain <- 'B'
 
 # Read in fits to observations:
 op <- read.csv(paste0('results/fits/outputOP_', strain,'_fitsOnly.csv'))
@@ -43,8 +43,11 @@ for (season in seasons) {
 op <- merge(op, obs_new, by = c('season', 'week', 'country'))
 rm(iliiso, obs_new)
 
-# Remove where no data:
-op <- op[!is.na(op$Obs), ]
+# Remove where no data FOR WHOLE SEASON:
+# op <- op[!is.na(op$Obs), ]
+op <- op[!(op$country == 'FR' & op$season %in% c('2010-11', '2011-12')) &
+           !(op$country == 'CZ' & op$season == '2013-14') &
+           !(op$country == 'PL' & op$season == '2011-12'), ]
 
 # Restrict to influenza season? (wks 40-20):
 op.all <- op
@@ -52,7 +55,7 @@ op <- op[op$week <= 73, ] # 2015-16 has length 53
 op <- op[!(op$season != '2015-16' & op$week == 73), ] # but remove that week for all other seasons
 
 # Plot!
-# pdf('../drafts/NetworkModel/figures/Fig2.pdf', width = 13, height = 8)
+pdf('results/plots/model_fits_B.pdf', width = 13, height = 8)
 for (season in seasons) {
   op.temp <- op[op$season == season, ]
   p1 <- ggplot(data = op.temp, aes(x = week, y = Est, group = run)) + geom_line(colour = '#377eb8', lwd = 0.71) + 
@@ -62,10 +65,10 @@ for (season in seasons) {
     scale_x_continuous(breaks = seq(40, 75, by = 5)) +
     labs(x = 'Week Number', y = 'Observed/Fitted Incidence (Scaled)')
   dat.text <- data.frame(label = countries, country = countries, run = 0)
-  print(p1 + geom_text(data = dat.text, mapping = aes(x = 42, y = max(max(op.temp$Obs), max(op.temp$Est)) + 1000, label = label), size = 5))
+  print(p1 + geom_text(data = dat.text, mapping = aes(x = 42, y = max(max(op.temp$Obs, na.rm = TRUE), max(op.temp$Est)) + 1000, label = label), size = 5))
   # change country names; point size
 }
-# dev.off()
+dev.off()
 rm(op.temp, dat.text, season, p1)
 
 # Get RMSEs:
@@ -75,7 +78,7 @@ for (season in levels(op$season)) {
     for (run in unique(op$run)) {
       op.temp <- op[op$season == season & op$country == country & op$run == run, ]
       # will be empty if no data for season, but this is okay - will just report an NA
-      rmse.calc <- sqrt(mean((op.temp$Est - op.temp$Obs) ** 2))
+      rmse.calc <- sqrt(mean((op.temp$Est - op.temp$Obs) ** 2, na.rm = TRUE))
       rmse.out <- rbind(rmse.out, c(season, country, run, rmse.calc))
     }
   }
@@ -85,6 +88,7 @@ rm(op.temp, rmse.calc, season, country, run)
 rmse.out <- as.data.frame(rmse.out)
 names(rmse.out) <- c('season', 'country', 'run', 'rmse')
 rmse.out$rmse <- as.numeric(as.character(rmse.out$rmse))
+rmse.out <- rmse.out[!is.na(rmse.out$rmse), ]
 
 # Also break down by whether there's an onset or not:
 m <- read.csv('results/network/outputMet_pro_PROC.csv')
