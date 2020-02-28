@@ -37,7 +37,7 @@ levels(d$metric) <- c('Onset Timing', 'Peak Timing', 'Peak Intensity')
 d$metric <- factor(d$metric, levels = levels(d$metric)[c(2:3, 1)])
 d$model <- factor(d$model, levels = levels(d$model)[2:1])
 
-pdf('results/plots/logScores_022120_removeNoOnsets.pdf', width = 12, height = 8)
+# pdf('results/plots/logScores_022120_removeNoOnsets.pdf', width = 12, height = 8)
 
 # First plot COMBINED by PREDICTED LEAD WEEK:
 d.temp <- d[d$lead_mean >= -6 & d$lead_mean < 5 & !is.na(d$leadonset5), ]
@@ -477,7 +477,7 @@ print(p2 + geom_text(data = dat.text, mapping = aes(x = -5.6, y = -0.25, label =
 #   d.pt.red$group <- factor(d.pt.red$group)
 #   p.vals <- c(p.vals, friedmanTest(d.pt.red$score, d.pt.red$model, d.pt.red$group, dist = 'FDist')$p.value)
 # }
-# print(median(p.vals)) # 0.04070164
+# print(median(p.vals)) # 0.04070164; 0.2610895 if no -10s
 # 
 # set.seed(1089437584)
 # p.vals <- c()
@@ -486,7 +486,7 @@ print(p2 + geom_text(data = dat.text, mapping = aes(x = -5.6, y = -0.25, label =
 #   d.pi.red$group <- factor(d.pi.red$group)
 #   p.vals <- c(p.vals, friedmanTest(d.pi.red$score, d.pi.red$model, d.pi.red$group, dist = 'FDist')$p.value)
 # }
-# print(median(p.vals)) # 0.02154314
+# print(median(p.vals)) # 0.02154314; 0.07148775 if no -10s
 # 
 # set.seed(1089437584)
 # p.vals <- c()
@@ -495,7 +495,7 @@ print(p2 + geom_text(data = dat.text, mapping = aes(x = -5.6, y = -0.25, label =
 #   d.ot.red$group <- factor(d.ot.red$group)
 #   p.vals <- c(p.vals, friedmanTest(d.ot.red$score, d.ot.red$model, d.ot.red$group, dist = 'FDist')$p.value)
 # }
-# print(median(p.vals)) # 0.1247537
+# print(median(p.vals)) # 0.1247537; 0.1636237 if no -10s
 # 
 # # Check direction of relationship (which is better?):
 # network.better = isol.better = 0
@@ -643,20 +643,20 @@ p2 <- ggplot() + geom_line(data = d.agg, aes(x = FWeek, y = score, col = model))
   guides(colour = guide_legend(order = 1), size = guide_legend(order = 2))
 print(p2)
 
-dev.off()
+# dev.off()
 
 # # calculate scores:
 # par(mfrow = c(3, 3), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 # for (metric in levels(d.temp$metric)) {
 #   for (subtype in levels(d.temp$subtype)) {
 #     print(paste(metric, subtype, sep = '_'))
-#     
+# 
 #     d.red <- d.temp[d.temp$metric == metric & d.temp$subtype == subtype, ]
 #     rownames(d.red) <- 1:dim(d.red)[1]
-#     
+# 
 #     d.red$group <- factor(d.red$group)
 #     d.red$group2 <- factor(d.red$group2)
-#     
+# 
 #     set.seed(1089437584)
 #     p.vals <- c()
 #     for (i in 1:100) {
@@ -679,6 +679,7 @@ dev.off()
 # # OT/B: 0.247
 # 
 # # sig are PT/B, PI/H3
+# # if we remove where scores==-10, only PI/H3 still sig (p = 0.03051895)
 # 
 # d.red <- d.temp[d.temp$metric == 'Peak Timing' & d.temp$subtype == 'B', ]
 # rownames(d.red) <- 1:dim(d.red)[1]
@@ -718,7 +719,7 @@ dev.off()
 #   d.red2 <- permute.by.run(d.red)
 #   d.red2$group <- factor(d.red2$group)
 #   # p.vals <- c(p.vals, friedmanTest(d.red2$score, d.red2$model, d.red2$group, dist = 'FDist')$p.value)
-#   
+# 
 #   network.better = isol.better = 0
 #   for (block in levels(d.red2$group)) {
 #     if (d.red2[d.red2$group == block & d.red2$model == 'Network', 'score'] > d.red2[d.red2$group == block & d.red2$model == 'Isolated', 'score']) {
@@ -892,7 +893,8 @@ dev.off()
 
 ########################################################################################################################################################################
 
-pdf('results/plots/logScores_022420_byCountry.pdf', width = 22, height = 4)
+# pdf('results/plots/logScores_022420_byCountry.pdf', width = 22, height = 4)
+pdf('../drafts/NetworkModel/supplemental/FigS5.pdf', width = 22, height = 4.5)
 
 # Do country plots in another file, but quick check:
 d.temp <- d[d$lead_mean >= -6 & d$lead_mean < 5 & !is.na(d$leadonset5), ]
@@ -902,49 +904,51 @@ d.agg.count <- aggregate(score ~ lead_mean + model + metric + country, data = d.
 d.agg <- merge(d.agg, d.agg.count, by = c('lead_mean', 'model', 'metric', 'country')); rm(d.agg.count)
 names(d.agg)[5:6] <- c('score', 'count')
 
+levels(d.agg$country) <- c('Austria', 'Belgium', 'Czechia', 'Germany', 'Spain', 'France', 'Hungary', 'Italy', 'Luxembourg', 'Netherlands', 'Poland', 'Slovakia')
+
 p1 <- ggplot(data = d.agg[d.agg$metric != 'Onset Timing', ], aes(x = lead_mean, y = score, col = model)) + geom_line() + geom_point(aes(size = count)) +
-  theme_bw() +
+  theme_bw() + theme(axis.title = element_text(size = 12), strip.text = element_text(size = 12)) +
   facet_grid(metric ~ country, scales = 'free') + scale_color_brewer(palette = 'Set1') + scale_x_continuous(breaks = -8:4) +
-  scale_y_continuous(limits = c(-10, 0), breaks = -10:0) +
+  scale_y_continuous(limits = c(-8.5, 0), breaks = -10:0) +
   scale_size_continuous(breaks = c(10, 100, 300), labels = c(10, 100, 300),
                         limits = c(1, 400), range = c(1,6)) +
   labs(x = 'Predicted Lead Week', y = 'Mean Log Score', col = 'Model', size = '# of Fcasts') +
   guides(colour = guide_legend(order = 1), size = guide_legend(order = 2))
 print(p1)
 
-ggplot(data = d.agg[d.agg$metric == 'Onset Timing', ], aes(x = lead_mean, y = score, col = model)) + geom_line() + geom_point(aes(size = count)) +
-  theme_bw() + facet_wrap(~ country, nrow = 2)
-
-d.temp <- d[d$FWeek >= -6 & d$FWeek < 5, ]
-
-d.temp$group <- paste(d.temp$season, d.temp$country, d.temp$FWeek, d.temp$subtype, d.temp$metric, sep = '_'); d.temp$group <- factor(d.temp$group) # 5435 levels = 54350/5/2
-levels.to.remove <- c()
-for (ix in levels(d.temp$group)) {
-  d.check <- d.temp[d.temp$group == ix, ]
-  if (all(is.na(d.check$leadonset5[d.check$model == 'Network'])) | all(is.na(d.check$leadonset5[d.check$model == 'Isolated']))) {
-    levels.to.remove <- c(levels.to.remove, ix)
-  }
-}
-d.temp <- d.temp[!(d.temp$group %in% levels.to.remove), ]
-d.temp <- d.temp[!is.na(d.temp$leadonset5), ] # also remove where no onset predicted
-
-d.agg <- aggregate(score ~ FWeek + model + metric + country, data = d.temp, FUN = mean)
-d.agg.count <- aggregate(score ~ FWeek + model + metric + country, data = d.temp, FUN = length)
-d.agg <- merge(d.agg, d.agg.count, by = c('FWeek', 'model', 'metric', 'country')); rm(d.agg.count)
-names(d.agg)[5:6] <- c('score', 'count')
-
-p2 <- ggplot(data = d.agg[d.agg$metric != 'Onset Timing', ], aes(x = FWeek, y = score, col = model)) + geom_line() + geom_point(aes(size = count)) +
-  theme_bw() +
-  facet_grid(metric ~ country, scales = 'free') + scale_color_brewer(palette = 'Set1') + scale_x_continuous(breaks = -8:4) +
-  scale_y_continuous(limits = c(-10, 0), breaks = -10:0) +
-  scale_size_continuous(breaks = c(10, 100, 300), labels = c(10, 100, 300),
-                        limits = c(1, 400), range = c(1,6)) +
-  labs(x = 'Observed Lead Week', y = 'Mean Log Score', col = 'Model', size = '# of Fcasts') +
-  guides(colour = guide_legend(order = 1), size = guide_legend(order = 2))
-print(p2)
-
-ggplot(data = d.agg[d.agg$metric == 'Onset Timing', ], aes(x = FWeek, y = score, col = model)) + geom_line() + geom_point(aes(size = count)) +
-  theme_bw() + facet_wrap(~ country, nrow = 2)
+# ggplot(data = d.agg[d.agg$metric == 'Onset Timing', ], aes(x = lead_mean, y = score, col = model)) + geom_line() + geom_point(aes(size = count)) +
+#   theme_bw() + facet_wrap(~ country, nrow = 2)
+# 
+# d.temp <- d[d$FWeek >= -6 & d$FWeek < 5, ]
+# 
+# d.temp$group <- paste(d.temp$season, d.temp$country, d.temp$FWeek, d.temp$subtype, d.temp$metric, sep = '_'); d.temp$group <- factor(d.temp$group) # 5435 levels = 54350/5/2
+# levels.to.remove <- c()
+# for (ix in levels(d.temp$group)) {
+#   d.check <- d.temp[d.temp$group == ix, ]
+#   if (all(is.na(d.check$leadonset5[d.check$model == 'Network'])) | all(is.na(d.check$leadonset5[d.check$model == 'Isolated']))) {
+#     levels.to.remove <- c(levels.to.remove, ix)
+#   }
+# }
+# d.temp <- d.temp[!(d.temp$group %in% levels.to.remove), ]
+# d.temp <- d.temp[!is.na(d.temp$leadonset5), ] # also remove where no onset predicted
+# 
+# d.agg <- aggregate(score ~ FWeek + model + metric + country, data = d.temp, FUN = mean)
+# d.agg.count <- aggregate(score ~ FWeek + model + metric + country, data = d.temp, FUN = length)
+# d.agg <- merge(d.agg, d.agg.count, by = c('FWeek', 'model', 'metric', 'country')); rm(d.agg.count)
+# names(d.agg)[5:6] <- c('score', 'count')
+# 
+# p2 <- ggplot(data = d.agg[d.agg$metric != 'Onset Timing', ], aes(x = FWeek, y = score, col = model)) + geom_line() + geom_point(aes(size = count)) +
+#   theme_bw() +
+#   facet_grid(metric ~ country, scales = 'free') + scale_color_brewer(palette = 'Set1') + scale_x_continuous(breaks = -8:4) +
+#   scale_y_continuous(limits = c(-10, 0), breaks = -10:0) +
+#   scale_size_continuous(breaks = c(10, 100, 300), labels = c(10, 100, 300),
+#                         limits = c(1, 400), range = c(1,6)) +
+#   labs(x = 'Observed Lead Week', y = 'Mean Log Score', col = 'Model', size = '# of Fcasts') +
+#   guides(colour = guide_legend(order = 1), size = guide_legend(order = 2))
+# print(p2)
+# 
+# ggplot(data = d.agg[d.agg$metric == 'Onset Timing', ], aes(x = FWeek, y = score, col = model)) + geom_line() + geom_point(aes(size = count)) +
+#   theme_bw() + facet_wrap(~ country, nrow = 2)
 
 dev.off()
 # rm(list = ls())

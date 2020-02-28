@@ -22,7 +22,7 @@ m$abs_err_onset <- abs(m$delta_onset5)
 # Reduce data frame:
 m <- m[, c(1:2, 7:8, 12, 38, 45, 50, 56:61)]
 
-pdf('results/plots/MAE_022420_removeNoOnsets.pdf', width = 12, height = 8)
+pdf('results/plots/MAE_022420_PRED-ONLY.pdf', width = 12, height = 8)
 
 # Plot COMBINED by PREDICTED lead weeks:
 m.temp <- m[m$leadpkwk_mean >= -6 & m$leadpkwk_mean < 5 & !is.na(m$leadonset5), ]
@@ -49,14 +49,27 @@ rm(m.pt.agg, m.pt.agg.c, m.pi.agg, m.pi.agg.c, m.ot.agg, m.ot.agg.c, m.temp, m.t
 m.agg$metric <- factor(m.agg$metric); m.agg$metric <- factor(m.agg$metric, levels = levels(m.agg$metric)[3:1])
 m.agg$model <- factor(m.agg$model); m.agg$model <- factor(m.agg$model, levels = levels(m.agg$model)[2:1])
 
-# p1 <- ggplot(data = m.agg, aes(x = leadweek, y = abs_err, col = model)) + geom_line() + geom_point(aes(size = count)) +
-#   theme_bw() +
-#   facet_wrap(~ metric, scales = 'free') + scale_x_continuous(breaks = -8:4) + scale_color_brewer(palette = 'Set1') +
-#   scale_size_continuous(breaks = c(10, 100, 300, 900), labels = c(10, 100, 300, 900),
-#                         limits = c(0, 900), range = c(1,6)) +
-#   labs(x = 'Predicted Lead Week', y = 'MAE/MAPE', col = 'Model', size = '# of Fcasts') +
-#   guides(colour = guide_legend(order = 1), size = guide_legend(order = 2))
-# print(p1)
+p1 <- ggplot() + geom_line(data = m.agg, aes(x = leadweek, y = abs_err, col = model)) +
+  geom_point(data = m.agg, aes(x = leadweek, y = abs_err, col = model, size = count)) +
+  theme_classic() + theme(aspect.ratio = 1,
+                          legend.text = element_text(size = 12),
+                          axis.text = element_text(size = 10),
+                          strip.text = element_blank(),
+                          axis.title = element_text(size = 12),
+                          legend.title = element_text(size = 12),
+                          strip.background = element_blank()) +
+  facet_wrap(~ metric, scales = 'free') + scale_x_continuous(breaks = -8:4) + scale_color_brewer(palette = 'Set1') +
+  scale_size_continuous(breaks = c(10, 100, 300, 900), labels = c(10, 100, 300, 900),
+                        limits = c(0, 900), range = c(1,6)) +
+  labs(x = 'Predicted Lead Week', y = 'MAE/MAPE', col = 'Model', size = '# of Fcasts') +
+  guides(colour = guide_legend(order = 1), size = guide_legend(order = 2))
+dat.text <- data.frame(label = c('A', 'B', 'C'),
+                       metric = c('Peak Timing', 'Peak Intensity', 'Onset Timing'),
+                       y = c(3.5, 56, 5.4))
+print(p1 + geom_text(data = dat.text, mapping = aes(x = 3.5, y = y, label = label), size = 8))
+
+dev.off()
+
 m.agg1 <- m.agg
 
 # # COMBINED by OBSERVED (remove where no onset):

@@ -52,9 +52,12 @@ iliiso$subtype <- factor(iliiso$subtype)
 iliiso$subtype <- factor(iliiso$subtype, levels = levels(iliiso$subtype)[c(1, 3:4, 2)])
 
 # Plot!:
-pdf('code/checks/analyzeDataRetro/outputs/plot_syndromic+_bySubtype2_wA_fullScalings.pdf', width = 15, height = 16)
+# pdf('code/checks/analyzeDataRetro/outputs/plot_syndromic+_bySubtype2_wA_fullScalings.pdf', width = 15, height = 16)
+pdf('../drafts/NetworkModel/supplemental/FigS1.pdf', width = 12, height = 13)
 p1 <- ggplot(data = iliiso, aes(x = time, y = value, col = subtype)) + geom_line(size = 0.75) + facet_wrap(~ variable, ncol = 1, scales = 'free_y') +
-  theme_classic() + labs(x = '', y = 'Syn.+', col = 'Subtype') +
+  theme_bw() + theme(axis.text = element_text(size = 12), axis.title = element_text(size = 14), legend.title = element_text(size = 14),
+                     legend.text = element_text(size = 12), strip.text = element_text(size = 12)) +
+  labs(x = '', y = 'Syndromic+', col = 'Subtype') + scale_color_brewer(palette = 'Set1') +
   scale_x_continuous(breaks = c(1, 53, 105, 157, 209, 261, 314, 366), labels = c('10-11', '11-12', '12-13', '13-14', '14-15', '15-16', '16-17', '17-18'))
 p1
 dev.off()
