@@ -2,7 +2,7 @@
 ### Plot model fits to observations ###
 
 # Set strain:
-strain <- 'A(H3)'
+strain <- 'B'
 
 # Read in fits to observations:
 op <- read.csv(paste0('results/fits/outputOP_', strain,'_fitsOnly.csv'))
@@ -54,11 +54,18 @@ op.all <- op
 op <- op[op$week <= 73, ] # 2015-16 has length 53
 op <- op[!(op$season != '2015-16' & op$week == 73), ] # but remove that week for all other seasons
 
+# Calculate 95% confidence intervals:
+op$lower.bound <- op$Est - 1.96 * (op$Est_sd)
+op$upper.bound <- op$Est + 1.96 * (op$Est_sd)
+op$lower.bound[op$lower.bound < 0] <- 0
+
 # Plot!
-pdf('results/plots/model_fits_B.pdf', width = 13, height = 8)
+pdf('results/plots/model_fits_B_NEW.pdf', width = 13, height = 8)
 for (season in seasons) {
   op.temp <- op[op$season == season, ]
-  p1 <- ggplot(data = op.temp, aes(x = week, y = Est, group = run)) + geom_line(colour = '#377eb8', lwd = 0.71) + 
+  p1 <- ggplot(data = op.temp, aes(x = week, y = Est, group = run)) + 
+    geom_ribbon(aes(x = week, ymin = lower.bound, ymax = upper.bound, group = run), fill = 'gray50', alpha = 0.1) +
+    geom_line(colour = '#377eb8', lwd = 0.71) +
     geom_point(aes(x = week, y = Obs), colour = 'black', size = 1.2) + facet_wrap(~ country, ncol = 4) + #, scales = 'free_y') +
     theme_classic() + theme(aspect.ratio = 0.75, axis.text = element_text(size = 12), axis.title = element_text(size = 14),
                             strip.background = element_blank(), strip.text = element_blank()) +
@@ -70,15 +77,17 @@ for (season in seasons) {
 }
 dev.off()
 
-pdf('../drafts/NetworkModel/supplemental/FigS2A.pdf', width = 13, height = 8)
+pdf('../drafts/NetworkModel/supplemental/FigS2B_NEW2.pdf', width = 13, height = 8)
 season <- '2012-13'
 op.temp <- op[op$season == season, ]
-p1 <- ggplot(data = op.temp, aes(x = week, y = Est, group = run)) + geom_line(colour = '#377eb8', lwd = 0.71) + 
+p1 <- ggplot(data = op.temp, aes(x = week, y = Est, group = run)) + 
+  geom_ribbon(aes(x = week, ymin = lower.bound, ymax = upper.bound, group = run), fill = 'gray50', alpha = 0.1) +
+  geom_line(colour = '#377eb8', lwd = 0.71) + 
   geom_point(aes(x = week, y = Obs), colour = 'black', size = 1.2) + facet_wrap(~ country, ncol = 4) + #, scales = 'free_y') +
   theme_classic() + theme(aspect.ratio = 0.75, axis.text = element_text(size = 12), axis.title = element_text(size = 14),
                           strip.background = element_blank(), strip.text = element_blank(), title = element_text(size = 18)) +
   scale_x_continuous(breaks = seq(40, 75, by = 5)) +
-  labs(title = 'A', x = 'Week Number', y = 'Observed/Fitted Incidence (Scaled)')
+  labs(title = 'B', x = 'Week Number', y = 'Observed/Fitted Incidence (Scaled)')
 dat.text <- data.frame(label = countries, country = countries, run = 0)
 print(p1 + geom_text(data = dat.text, mapping = aes(x = 42, y = max(max(op.temp$Obs, na.rm = TRUE), max(op.temp$Est)) + 1000, label = label), size = 5))
 dev.off()
