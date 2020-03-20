@@ -19,8 +19,8 @@ wk_start = 40
 
 # Parameters for filters
 discrete = False
-oev_base = np.float64(1e5)
-oev_denom = np.float64(10.0)
+oev_base = np.float64(5e4)
+oev_denom = np.float64(20.0)
 lambda_val = np.float64(1.05)
 num_ens = 300
 num_runs = 5  # EVENTUALLY WANT 5
@@ -66,7 +66,7 @@ for count_index in range(n):
 
         # Get "observations":
         iliiso = pd.read_csv(
-            os.path.join('../syntheticTests/syntheticData/for_python/', 'synth_wError_' + season + '.csv'))
+            os.path.join('../syntheticTests/syntheticData/for_python/', 'synth_wErrorSmall_' + season + '.csv'))
         obs_i = iliiso.iloc[:, count_index + 1]
         # print(obs_i)
 
@@ -137,8 +137,8 @@ print('Time Elapsed: ' + str(timestamp_end - timestamp_start))
 
 # outputOP.to_csv('results/outputOP_ISOLATED_SYNTH.csv', na_rep='NA', index=False)
 
-outputMetrics.to_csv('results/outputMet_synth_fcast_ISOLATED.csv', na_rep='NA', index=False)
-outputOP.to_csv('results/outputOP_synth_fcast_ISOLATED.csv', na_rep='NA', index=False)
-outputDist.to_csv('results/outputDist_synth_fcast_ISOLATED.csv', na_rep='NA', index=False)
-outputEns.to_csv('results/outputEns_synth_fcast_ISOLATED.csv', na_rep='NA', index=False)
+outputMetrics.to_csv('results/outputMet_synth_fcast_ISOLATED_smallError.csv', na_rep='NA', index=False)
+outputOP.to_csv('results/outputOP_synth_fcast_ISOLATED_smallError.csv', na_rep='NA', index=False)
+outputDist.to_csv('results/outputDist_synth_fcast_ISOLATED_smallError.csv', na_rep='NA', index=False)
+outputEns.to_csv('results/outputEns_synth_fcast_ISOLATED_smallError.csv', na_rep='NA', index=False)
 print('Finished writing to file!')

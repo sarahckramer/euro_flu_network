@@ -176,21 +176,21 @@ write.table(parms, file = 'python/initial_parms/SA/parms4_verylowI0.txt', sep = 
 # parms <- t(lhs(300, param.bound))
 # write.table(parms, file = 'python/initial_parms/parms4_INDIV.txt', sep = '\t', row.names = FALSE, col.names = FALSE)
 
-# ### Write synthetic data
-# load('syntheticTests/syntheticData/synth_rates_toKeep_021020_wError_1e5_10.RData')
-# iliiso <- read.csv('data/by_subtype/WHO_data_A(H1)_SCALED.csv')
-# 
-# obs1 <- synth.outbreaks[[1]]; obs1 <- as.data.frame(obs1); obs1 <- cbind(1:52, obs1); names(obs1) <- c('time', countries)
-# obs2 <- synth.outbreaks[[2]]; obs2 <- as.data.frame(obs2); obs2 <- cbind(1:52, obs2); names(obs2) <- c('time', countries)
-# obs3 <- synth.outbreaks[[3]]; obs3 <- as.data.frame(obs3); obs3 <- cbind(1:52, obs3); names(obs3) <- c('time', countries)
-# obs4 <- synth.outbreaks[[4]]; obs4 <- as.data.frame(obs4); obs4 <- cbind(1:52, obs4); names(obs4) <- c('time', countries)
-# obs5 <- synth.outbreaks[[5]]; obs5 <- as.data.frame(obs5); obs5 <- cbind(1:52, obs5); names(obs5) <- c('time', countries)
-# 
-# write.csv(obs1, file = 'syntheticTests/syntheticData/for_python/synth_wError_1.csv', row.names = FALSE)
-# write.csv(obs2, file = 'syntheticTests/syntheticData/for_python/synth_wError_2.csv', row.names = FALSE)
-# write.csv(obs3, file = 'syntheticTests/syntheticData/for_python/synth_wError_3.csv', row.names = FALSE)
-# write.csv(obs4, file = 'syntheticTests/syntheticData/for_python/synth_wError_4.csv', row.names = FALSE)
-# write.csv(obs5, file = 'syntheticTests/syntheticData/for_python/synth_wError_5.csv', row.names = FALSE)
+### Write synthetic data
+load('syntheticTests/syntheticData/synth_rates_toKeep_021020_wError_5e4_20.RData')
+iliiso <- read.csv('data/by_subtype/WHO_data_A(H1)_SCALED.csv')
+
+obs1 <- synth.outbreaks[[1]]; obs1 <- as.data.frame(obs1); obs1 <- cbind(1:52, obs1); names(obs1) <- c('time', countries)
+obs2 <- synth.outbreaks[[2]]; obs2 <- as.data.frame(obs2); obs2 <- cbind(1:52, obs2); names(obs2) <- c('time', countries)
+obs3 <- synth.outbreaks[[3]]; obs3 <- as.data.frame(obs3); obs3 <- cbind(1:52, obs3); names(obs3) <- c('time', countries)
+obs4 <- synth.outbreaks[[4]]; obs4 <- as.data.frame(obs4); obs4 <- cbind(1:52, obs4); names(obs4) <- c('time', countries)
+obs5 <- synth.outbreaks[[5]]; obs5 <- as.data.frame(obs5); obs5 <- cbind(1:52, obs5); names(obs5) <- c('time', countries)
+
+write.csv(obs1, file = 'syntheticTests/syntheticData/for_python/synth_wErrorSmall_1.csv', row.names = FALSE)
+write.csv(obs2, file = 'syntheticTests/syntheticData/for_python/synth_wErrorSmall_2.csv', row.names = FALSE)
+write.csv(obs3, file = 'syntheticTests/syntheticData/for_python/synth_wErrorSmall_3.csv', row.names = FALSE)
+write.csv(obs4, file = 'syntheticTests/syntheticData/for_python/synth_wErrorSmall_4.csv', row.names = FALSE)
+write.csv(obs5, file = 'syntheticTests/syntheticData/for_python/synth_wErrorSmall_5.csv', row.names = FALSE)
 
 load('syntheticTests/syntheticData/synth_rates_ISOL_error.RData')
 # newI.keep <- t(newI.keep)

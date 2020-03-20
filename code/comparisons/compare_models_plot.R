@@ -4,7 +4,7 @@ library(reshape2); library(ggplot2); library(gridExtra)
 
 # Save plots?:
 outputPlots <- FALSE
-fileSuffix <- 'A(H1)'
+fileSuffix <- 'synth_errorSmall2'
 
 # Restrict the forecast start weeks for which results are shown?
 restrict.fc <- FALSE
@@ -12,12 +12,12 @@ restrict.fc <- FALSE
 # Set model labels:
 m1.lab <- 'Network'
 m2.lab <- 'Isolated'
-m3.lab <- 'Isolated (Update)'
+m3.lab <- 'Network (Larger Error)'
 
 # Set locations of model results to be compared:
-model1 <- 'results/network_B/'
-model2 <- 'results/isolated_B/'
-model3 <- 'results/isolated_B_update/'
+model1 <- 'results/synthetic/network_smallError/'
+model2 <- 'results/synthetic/isolated_smallError/'
+model3 <- 'results/synthetic/network/'
 
 # pdf(paste0('results/plots/comp_', fileSuffix, '.pdf'), width = 14, height = 9)
 
@@ -28,9 +28,9 @@ model3 <- 'results/isolated_B_update/'
 source('code/comparisons/comp_netVsIndiv/plotting_functions.R')
 
 # Read in and format metrics files:
-m1 <- read.csv(file = paste0(model1, list.files(path = model1, pattern = 'Met_pro')))
-m2 <- read.csv(file = paste0(model2, list.files(path = model2, pattern = 'Met_pro')))
-m3 <- read.csv(file = paste0(model3, list.files(path = model3, pattern = 'Met_pro')))
+m1 <- read.csv(file = paste0(model1, list.files(path = model1, pattern = 'Met_pro_P')))
+m2 <- read.csv(file = paste0(model2, list.files(path = model2, pattern = 'Met_pro_P')))
+m3 <- read.csv(file = paste0(model3, list.files(path = model3, pattern = 'Met_pro_P')))
 
 # m1 <- m1[, c(1:9, 12:13, 15, 17:19, 25:32, 39, 43, 47, 60:63, 65, 67:69, 78)]
 # m2 <- m2[, c(1:9, 12:13, 15, 17:19, 25:32, 39, 43, 47, 60:63, 65, 67:69, 78)]
@@ -128,8 +128,8 @@ byWeek <- 'Predicted'
 source('code/comparisons/comp_netVsIndiv/plot_logScores.R')
 byWeek <- 'Observed'
 source('code/comparisons/comp_netVsIndiv/plot_logScores.R')
-byWeek <- 'Observed_All'
-source('code/comparisons/comp_netVsIndiv/plot_logScores.R')
+# byWeek <- 'Observed_All'
+# source('code/comparisons/comp_netVsIndiv/plot_logScores.R')
 rm(d, e.pi, e, byWeek)
 
 # # Plot calibration for PT, PI, OT, and 1-4 weeks:

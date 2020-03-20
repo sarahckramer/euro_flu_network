@@ -66,7 +66,7 @@ for (j in 1:5) {
 }
 
 # Save results:
-save(synth.outbreaks, file = 'syntheticTests/syntheticData/synth_rates_toKeep_021020_wError_1e5_10.RData')
+# save(synth.outbreaks, file = 'syntheticTests/syntheticData/synth_rates_toKeep_021020_wError_5e4_20.RData')
 
 
 
