@@ -43,6 +43,11 @@ I0_low <- 0; I0_up <- 0.00005
 # unless we want to change the ranges we're fitting with?
 # but here we are trying to get REALISTIC outbreaks, which means we need some w-e
 
+D_low <- 2; L_low <- 200; Rmx_low <- 1.3; Rdiff_low <- 0.01; airScale_low <- 0.75
+D_up <- 12; L_up <- 500; Rmx_up <- 4.0; Rdiff_up <- 2.0; airScale_up <- 1.25
+S0_low <- 0.30; S0_up <- 0.90
+I0_low <- 0; I0_up <- 0.00005
+
 theta_low <- c(L_low, D_low, Rmx_low, Rdiff_low, airScale_low)
 theta_up <- c(L_up, D_up, Rmx_up, Rdiff_up, airScale_up)
 
@@ -115,6 +120,8 @@ param.bound <- cbind(c(rep(S0_low, n), rep(I0_low, n), theta_low),
 # param.bound <- cbind(c(rep(S0_low, n**2), rep(I0_low, n**2), theta_low),
 #                      c(rep(S0_up, n**2), rep(I0_up, n**2), theta_up)) # try true LHS?
 parms <- t(lhs(num_ens, param.bound))
+
+parms[, 28][parms[, 28] >= parms[, 27]] <- parms[, 27][parms[, 28] >= parms[, 27]] - 0.01
 
 ### Read in functions to run model/format results:
 source('cluster/functions/synth_functions.R')
