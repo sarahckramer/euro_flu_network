@@ -386,7 +386,9 @@ p2 <- ggplot(data = d.agg, aes(x = FWeek, y = score)) + geom_line(aes(col = mode
 dat.text <- data.frame(label = c('A', 'B', 'C', 'D', 'E', 'F'),
                        metric = c('Peak Timing', 'Peak Intensity', 'Onset Timing', 'Peak Timing', 'Peak Intensity', 'Onset Timing'),
                        method = c(rep('remove', 3), rep('include', 3)))
-print(p2 + geom_text(data = dat.text, mapping = aes(x = -5.6, y = -0.25, label = label), size = 8))
+p2 <- p2 + geom_text(data = dat.text, mapping = aes(x = -5.6, y = -0.25, label = label), size = 8)
+print(p2)
+# ggsave(file = '../../Thesis/parts/Chapter3_supp/FigS3.svg', plot = p2, width = 12, height = 8)
 
 # p3 <- ggplot(data = d.agg, aes(x = FWeek, y = score)) + geom_line(aes(col = model)) + geom_point(aes(col = model, size = count)) +
 #   theme_classic() + theme(aspect.ratio = 1,
@@ -410,92 +412,101 @@ print(p2 + geom_text(data = dat.text, mapping = aes(x = -5.6, y = -0.25, label =
 ########################################################################################################################################################################
 ########################################################################################################################################################################
 
-# ### FRIEDMAN TEST ###
-# # d.temp <- d[d$FWeek >= -6 & d$FWeek < 5, ]
-# 
-# ggplot(data = d.temp, aes(x = FWeek, y = score, fill = model, group = paste(FWeek, model, '_'))) + geom_boxplot() + facet_wrap(~ metric) +
-#   theme_classic() + scale_x_continuous(breaks = -6:4) + scale_y_continuous(breaks = -10:0) + scale_fill_brewer(palette = 'Set2')
-# # obviously a lot of overlap - I think the question is, how often is one better than the other?
-# # this seems to require pairing to some extent, though - so pair by runs?
-# 
-# d.temp <- d.temp[, c(1:2, 4:5, 8:12)]
-# d.temp$group <- paste(d.temp$season, d.temp$country, d.temp$FWeek, d.temp$subtype, sep = '_'); d.temp$group <- factor(d.temp$group)
-# d.temp$group2 <- paste(d.temp$season, d.temp$country, d.temp$FWeek, d.temp$subtype, d.temp$model, sep = '_'); d.temp$group2 <- factor(d.temp$group2)
-# 
-# d.pt <- d.temp[d.temp$metric == 'Peak Timing', ]
-# d.pt$metric <- NULL
-# 
-# d.pi <- d.temp[d.temp$metric == 'Peak Intensity', ]
-# d.pi$metric <- NULL
-# 
-# d.ot <- d.temp[d.temp$metric == 'Onset Timing', ]
-# d.ot$metric <- NULL
-# 
-# # Find a way to draw a random run for each:
-# d.pt <- d.pt[order(d.pt$group, d.pt$model), ]
-# rownames(d.pt) <- 1:dim(d.pt)[1]
-# 
-# d.pi <- d.pi[order(d.pi$group, d.pi$model), ]
-# rownames(d.pi) <- 1:dim(d.pi)[1]
-# 
-# d.ot <- d.ot[order(d.ot$group, d.ot$model), ]
-# rownames(d.ot) <- 1:dim(d.ot)[1]
-# 
-# # Keep only levels relevant for each metric:
-# d.pt$group <- factor(d.pt$group); d.pt$group2 <- factor(d.pt$group2)
-# d.pi$group <- factor(d.pi$group); d.pi$group2 <- factor(d.pi$group2)
-# d.ot$group <- factor(d.ot$group); d.ot$group2 <- factor(d.ot$group2)
-# 
-# # Remove where leadonset5 is NA - don't want to consider forecasts where no onset predicted:
-# d.pt <- d.pt[!is.na(d.pt$leadonset5), ]
-# d.pi <- d.pi[!is.na(d.pi$leadonset5), ]
-# d.ot <- d.ot[!is.na(d.ot$leadonset5), ]
-# 
-# # Function to select only ONE representative from each level of group2:
-# permute.by.run <- function(dat) {
-#   dat.a <- split(dat, dat$group2)
-#   dat.b <- lapply(dat.a, function(ix) {
-#     ix[sample(dim(ix)[1], 1), ]
-#   })
-#   dat.c <- do.call(rbind, dat.b)
-#   rownames(dat.c) <- NULL
-#   return(dat.c)
-# }
-# 
-# # a <- split(d.pt, d.pt$group2)
-# # b <- lapply(a, function(ix) {
-# #   ix[sample(dim(ix)[1], 1), ]
-# # })
-# # c <- do.call(rbind, b)
-# # rownames(c) <- NULL
-# 
-# # Now perform Friedman tests:
-# set.seed(1089437584)
-# p.vals <- c()
-# for (i in 1:100) {
-#   d.pt.red <- permute.by.run(d.pt)
-#   d.pt.red$group <- factor(d.pt.red$group)
-#   p.vals <- c(p.vals, friedmanTest(d.pt.red$score, d.pt.red$model, d.pt.red$group, dist = 'FDist')$p.value)
-# }
-# print(median(p.vals)) # 0.04070164; 0.2610895 if no -10s
-# 
-# set.seed(1089437584)
-# p.vals <- c()
-# for (i in 1:100) {
-#   d.pi.red <- permute.by.run(d.pi)
-#   d.pi.red$group <- factor(d.pi.red$group)
-#   p.vals <- c(p.vals, friedmanTest(d.pi.red$score, d.pi.red$model, d.pi.red$group, dist = 'FDist')$p.value)
-# }
-# print(median(p.vals)) # 0.02154314; 0.07148775 if no -10s
-# 
-# set.seed(1089437584)
-# p.vals <- c()
-# for (i in 1:100) {
-#   d.ot.red <- permute.by.run(d.ot)
-#   d.ot.red$group <- factor(d.ot.red$group)
-#   p.vals <- c(p.vals, friedmanTest(d.ot.red$score, d.ot.red$model, d.ot.red$group, dist = 'FDist')$p.value)
-# }
-# print(median(p.vals)) # 0.1247537; 0.1636237 if no -10s
+### FRIEDMAN TEST ###
+# d.temp <- d[d$FWeek >= -6 & d$FWeek < 5, ]
+
+ggplot(data = d.temp, aes(x = FWeek, y = score, fill = model, group = paste(FWeek, model, '_'))) + geom_boxplot() + facet_wrap(~ metric) +
+  theme_classic() + scale_x_continuous(breaks = -6:4) + scale_y_continuous(breaks = -10:0) + scale_fill_brewer(palette = 'Set2')
+# obviously a lot of overlap - I think the question is, how often is one better than the other?
+# this seems to require pairing to some extent, though - so pair by runs?
+
+d.temp <- d.temp[, c(1:2, 4:5, 8:12)]
+d.temp$group <- paste(d.temp$season, d.temp$country, d.temp$FWeek, d.temp$subtype, sep = '_'); d.temp$group <- factor(d.temp$group)
+d.temp$group2 <- paste(d.temp$season, d.temp$country, d.temp$FWeek, d.temp$subtype, d.temp$model, sep = '_'); d.temp$group2 <- factor(d.temp$group2)
+
+d.pt <- d.temp[d.temp$metric == 'Peak Timing', ]
+d.pt$metric <- NULL
+
+d.pi <- d.temp[d.temp$metric == 'Peak Intensity', ]
+d.pi$metric <- NULL
+
+d.ot <- d.temp[d.temp$metric == 'Onset Timing', ]
+d.ot$metric <- NULL
+
+# Find a way to draw a random run for each:
+d.pt <- d.pt[order(d.pt$group, d.pt$model), ]
+rownames(d.pt) <- 1:dim(d.pt)[1]
+
+d.pi <- d.pi[order(d.pi$group, d.pi$model), ]
+rownames(d.pi) <- 1:dim(d.pi)[1]
+
+d.ot <- d.ot[order(d.ot$group, d.ot$model), ]
+rownames(d.ot) <- 1:dim(d.ot)[1]
+
+# Keep only levels relevant for each metric:
+d.pt$group <- factor(d.pt$group); d.pt$group2 <- factor(d.pt$group2)
+d.pi$group <- factor(d.pi$group); d.pi$group2 <- factor(d.pi$group2)
+d.ot$group <- factor(d.ot$group); d.ot$group2 <- factor(d.ot$group2)
+
+# Remove where leadonset5 is NA - don't want to consider forecasts where no onset predicted:
+d.pt <- d.pt[!is.na(d.pt$leadonset5), ]
+d.pi <- d.pi[!is.na(d.pi$leadonset5), ]
+d.ot <- d.ot[!is.na(d.ot$leadonset5), ]
+
+# Function to select only ONE representative from each level of group2:
+permute.by.run <- function(dat) {
+  dat.a <- split(dat, dat$group2)
+  dat.b <- lapply(dat.a, function(ix) {
+    ix[sample(dim(ix)[1], 1), ]
+  })
+  dat.c <- do.call(rbind, dat.b)
+  rownames(dat.c) <- NULL
+  return(dat.c)
+}
+
+# a <- split(d.pt, d.pt$group2)
+# b <- lapply(a, function(ix) {
+#   ix[sample(dim(ix)[1], 1), ]
+# })
+# c <- do.call(rbind, b)
+# rownames(c) <- NULL
+
+# Now perform Friedman tests:
+set.seed(1089437584)
+p.vals <- c()
+for (i in 1:100) {
+  if (i%%10 == 0) {
+    print(i)
+  }
+  d.pt.red <- permute.by.run(d.pt)
+  d.pt.red$group <- factor(d.pt.red$group)
+  p.vals <- c(p.vals, friedmanTest(d.pt.red$score, d.pt.red$model, d.pt.red$group, dist = 'FDist')$p.value)
+}
+print(median(p.vals)) # 0.04070164; 0.2610895 if no -10s; 0.003365633 if all included
+
+set.seed(1089437584)
+p.vals <- c()
+for (i in 1:100) {
+  if (i%%10 == 0) {
+    print(i)
+  }
+  d.pi.red <- permute.by.run(d.pi)
+  d.pi.red$group <- factor(d.pi.red$group)
+  p.vals <- c(p.vals, friedmanTest(d.pi.red$score, d.pi.red$model, d.pi.red$group, dist = 'FDist')$p.value)
+}
+print(median(p.vals)) # 0.02154314; 0.07148775 if no -10s; 5.053524e-05 if all included
+
+set.seed(1089437584)
+p.vals <- c()
+for (i in 1:100) {
+  if (i%%10 == 0) {
+    print(i)
+  }
+  d.ot.red <- permute.by.run(d.ot)
+  d.ot.red$group <- factor(d.ot.red$group)
+  p.vals <- c(p.vals, friedmanTest(d.ot.red$score, d.ot.red$model, d.ot.red$group, dist = 'FDist')$p.value)
+}
+print(median(p.vals)) # 0.1247537; 0.1636237 if no -10s; 0.1012045 if all included
 # 
 # # Check direction of relationship (which is better?):
 # network.better = isol.better = 0
@@ -551,7 +562,10 @@ p1 <- ggplot() + geom_line(data = d.agg, aes(x = lead_mean, y = score, col = mod
 dat.text <- data.frame(label = c('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'),
                        subtype = c('A(H1)', 'A(H3)', 'B', 'A(H1)', 'A(H3)', 'B', 'A(H1)', 'A(H3)', 'B'),
                        metric = c(rep('Peak Timing', 3), rep('Peak Intensity', 3), rep('Onset Timing', 3)))
-print(p1 + geom_text(data = dat.text, mapping = aes(x = -5.6, y = -0.25, label = label), size = 8))
+p1 <- p1 + geom_text(data = dat.text, mapping = aes(x = -5.6, y = -0.25, label = label), size = 8)
+print(p1)
+
+ggsave(file = '../../Thesis/parts/Chapter3_supp/FigS4.svg', plot = p1, width = 12, height = 8)
 
 # d.temp <- d[d$FWeek >= -6 & d$FWeek < 5, ]
 # d.agg <- aggregate(score ~ FWeek + model + metric + subtype, data = d.temp, FUN = mean)
@@ -915,6 +929,8 @@ p1 <- ggplot(data = d.agg[d.agg$metric != 'Onset Timing', ], aes(x = lead_mean, 
   labs(x = 'Predicted Lead Week', y = 'Mean Log Score', col = 'Model', size = '# of Fcasts') +
   guides(colour = guide_legend(order = 1), size = guide_legend(order = 2))
 print(p1)
+
+ggsave(file = '../../Thesis/parts/Chapter3_supp/FigS5.svg', plot = p1, width = 22, height = 4.5)
 
 # ggplot(data = d.agg[d.agg$metric == 'Onset Timing', ], aes(x = lead_mean, y = score, col = model)) + geom_line() + geom_point(aes(size = count)) +
 #   theme_bw() + facet_wrap(~ country, nrow = 2)
