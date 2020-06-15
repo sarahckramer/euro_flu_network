@@ -37,7 +37,30 @@ p1 <- ggplot(data = m.temp, aes(x = delta_pkwk_mean, y = ..count../sum(..count..
                           plot.title = element_text(size = 16)) +
   labs(title = 'A     (Peak Timing)', x = 'Error (Fcast - Obs)', y = 'Proportion of Fcasts', fill = 'Model', col = 'Model') +
   facet_grid(~ leadpkwk_bin) + scale_fill_brewer(palette = 'Set1') + scale_color_brewer(palette = 'Set1')
-p2 <- ggplot(data = m.temp, aes(x = delta_int, y = ..count../sum(..count..), group = model, fill = model)) +
+# p1 <- ggplot(data = m.temp, aes(x = delta_pkwk_mean, y = ..ncount.., group = model, fill = model)) +
+#   geom_histogram(binwidth = 1.0, position = 'identity', alpha = 0.5) +
+#   # geom_freqpoly(binwidth = 1.0) +
+#   theme_bw() + theme(aspect.ratio = 1,
+#                      axis.text = element_text(size = 11),
+#                      strip.text = element_text(size = 13),
+#                      axis.title = element_text(size = 13),
+#                      plot.title = element_text(size = 16)) +
+#   labs(title = 'A     (Peak Timing)', x = 'Error (Fcast - Obs)', y = 'Proportion of Fcasts', fill = 'Model', col = 'Model') +
+#   facet_grid(~ leadpkwk_bin) + scale_fill_brewer(palette = 'Set1') + scale_color_brewer(palette = 'Set1') +
+#   scale_y_continuous(labels = percent_format())
+p1 <- ggplot(data = m.temp, aes(x = delta_pkwk_mean, y = ..density.., group = model, fill = model)) +
+  geom_histogram(binwidth = 1.0, position = 'identity', alpha = 0.5) +
+  # geom_freqpoly(binwidth = 1.0) +
+  theme_bw() + theme(aspect.ratio = 1,
+                     axis.text = element_text(size = 11),
+                     strip.text = element_text(size = 13),
+                     axis.title = element_text(size = 13),
+                     plot.title = element_text(size = 16)) +
+  labs(title = 'A     (Peak Timing)', x = 'Error (Fcast - Obs)', y = 'Proportion of Fcasts', fill = 'Model', col = 'Model') +
+  facet_grid(~ leadpkwk_bin) + scale_fill_brewer(palette = 'Set1') + scale_color_brewer(palette = 'Set1')
+p1
+
+p2 <- ggplot(data = m.temp, aes(x = delta_int, y = 0.1 * ..density.., group = model, fill = model)) +
   geom_histogram(binwidth = 0.1, position = 'identity', alpha = 0.5, lwd = 0.5) +
   theme_bw() + theme(aspect.ratio = 1,
                      axis.text = element_text(size = 11),
@@ -56,7 +79,13 @@ p2 <- ggplot(data = m.temp, aes(x = delta_int, y = ..count../sum(..count..), gro
 #   labs(title = 'C     (Onset Timing)', x = 'Error (Fcast - Obs)', y = 'Proportion of Fcasts', fill = 'Model', col = 'Model') +
 #   facet_grid(~ leadonset_bin) + scale_fill_brewer(palette = 'Set1') + scale_color_brewer(palette = 'Set1')
 
-pdf('results/plots/calibration_hists.pdf', width = 14, height = 6)
+
+
+# pdf('results/plots/calibration_hists.pdf', width = 14, height = 6)
+pdf('../../Thesis/parts/Chapter3_supp/FigS8_NEW.pdf', width = 14, height = 6)
 grid.arrange(p1, p2, ncol = 1)
 dev.off()
+
+ggsave('../../Thesis/parts/Chapter3_supp/FigS8_NEW.svg', plot = arrangeGrob(p1, p2, ncol = 1), width = 14, height = 6)
+
 

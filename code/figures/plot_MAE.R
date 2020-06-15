@@ -66,7 +66,10 @@ p1 <- ggplot() + geom_line(data = m.agg, aes(x = leadweek, y = abs_err, col = mo
 dat.text <- data.frame(label = c('A', 'B', 'C'),
                        metric = c('Peak Timing', 'Peak Intensity', 'Onset Timing'),
                        y = c(3.5, 56, 5.4))
-print(p1 + geom_text(data = dat.text, mapping = aes(x = 3.5, y = y, label = label), size = 8))
+p1 <- p1 + geom_text(data = dat.text, mapping = aes(x = 3.5, y = y, label = label), size = 8)
+print(p1)
+
+ggsave(file = '../../Thesis/parts/Chapter3_supp/FigS6.svg', plot = p1, width = 12, height = 8)
 
 dev.off()
 
@@ -375,7 +378,10 @@ dat.text <- data.frame(label = c('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'),
                        subtype = c('A(H1)', 'A(H3)', 'B', 'A(H1)', 'A(H3)', 'B', 'A(H1)', 'A(H3)', 'B'),
                        metric = c(rep('Peak Timing', 3), rep('Peak Intensity', 3), rep('Onset Timing', 3)),
                        y = c(rep(5.5, 3), rep(63, 3), rep(8.3, 3)))
-print(p3 + geom_text(data = dat.text, mapping = aes(x = 3.5, y = y, label = label), size = 8))
+p3 <- p3 + geom_text(data = dat.text, mapping = aes(x = 3.5, y = y, label = label), size = 8)
+print(p3)
+
+ggsave(file = '../../Thesis/parts/Chapter3_supp/FigS7.svg', plot = p3, width = 12, height = 8)
 
 # by observed (include all):
 m.temp <- m[m$FWeek_pkwk >= -6 & m$FWeek_pkwk < 5, ]

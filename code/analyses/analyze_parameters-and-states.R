@@ -133,7 +133,7 @@ for (season in levels(oStates$season)) {
     
   }
 }
-rm(season, subtype, country, run, oStates.temp, m.temp, first.onset, s0.temp, r0.temp, re.temp, m, m.temp)
+rm(season, subtype, country, run, oStates.temp, first.onset, s0.temp, r0.temp, re.temp, m, m.temp)
 
 fits.df <- as.data.frame(fits.df)
 names(fits.df) <- c('season', 'country', 'subtype', 'run', 'S0', 'Re', 'R0.1')
@@ -200,7 +200,7 @@ boxplot(Re ~ region, data = fits.df)
 boxplot(S0 ~ subtype, data = fits.df)
 boxplot(S0 ~ region, data = fits.df)
 
-fits.df <- fits.df[order(fits.df), ]
+# fits.df <- fits.df[order(fits.df), ]
 
 permute.by.run <- function(dat, choices) {
   runs.to.use <- round(runif(choices, 1, 5)) + 5 * (seq(1:choices) - 1)
@@ -357,6 +357,8 @@ p1 <- ggplot(data = fits.df.plot, aes(x = subtype, y = value)) + geom_boxplot(fi
   labs(x = '(Sub)type', y = 'Value') +
   geom_text(data = dat.text, aes(x = 0.62, y = y, label = label), size = 8)
 print(p1)
+
+ggsave(filename = '../../Thesis/parts/Chapter3_supp/FigS11.svg', plot = p1, width = 12, height = 8)
 
 pdf('results/plots/param_fits.pdf', width = 12, height = 9)
 print(p1)

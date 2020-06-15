@@ -359,11 +359,13 @@ dat.text <- data.frame(label = c('A', 'B', 'C', 'D', 'E', 'F'), model = c(rep('N
                                   'Peak Timing', 'Peak Intensity', 'Onset Timing'),
                        y = c(96, 96, 85, 96, 96, 96))
 
-pdf('../drafts/NetworkModel/figures/Fig4.pdf', width = 12, height = 7)
-p.full + geom_text(data = dat.text, mapping = aes(x = 23, y = y, label = label), size = 8, color = 'black')
-dev.off()
+# pdf('../drafts/NetworkModel/figures/Fig4.pdf', width = 12, height = 7)
+# p.full + geom_text(data = dat.text, mapping = aes(x = 23, y = y, label = label), size = 8, color = 'black')
+# dev.off()
 
-
+p1 <- p.full + geom_text(data = dat.text, mapping = aes(x = 23, y = y, label = label), size = 11, color = 'black')
+p1
+ggsave(filename = '../../Thesis/parts/C3_Fig4.svg', plot = p1, width = 12, height = 7)
 
 p1 <- ggplot(data = d.agg, aes(x = lead_mean, y = score)) + geom_line(aes(col = model)) + geom_point(aes(col = model, size = count)) +
   theme_classic() + theme(aspect.ratio = 1,
