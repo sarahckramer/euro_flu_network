@@ -2,7 +2,7 @@
 ### Plot model fits to observations ###
 
 # Set strain:
-strain <- 'B'
+strain <- 'A(H3)'
 
 # Read in fits to observations:
 op <- read.csv(paste0('results/fits/outputOP_', strain,'_fitsOnly.csv'))
@@ -26,12 +26,19 @@ names(iliiso)[2:13] <- countries
 obs_new <- data.frame()
 seasons <- levels(op$season)
 
+source('cluster/functions/replaceLeadingLaggingNAs.R')
 for (season in seasons) {
   tmp <- Fn_dates(season)
   weeks <- tmp$weeks + 3
   nsn <- tmp$nsn
   
   obs_i <- iliiso[weeks, (1:length(countries) + 1)] # extract relevant data for all countries
+  
+  # replace leading/lagging NAs:
+  for (ix in 1:12) {
+    obs_i[, ix] <- replaceLeadLag(obs_i[, ix])
+  }; rm(ix)
+  
   obs_i$season <- season
   obs_i$week <- seq(40, length.out = nsn)
   obs_i <- melt(obs_i, id.vars = c('season', 'week'))
@@ -60,10 +67,10 @@ op$upper.bound <- op$Est + 1.96 * (op$Est_sd)
 op$lower.bound[op$lower.bound < 0] <- 0
 
 # Plot!
-pdf('results/plots/model_fits_B_NEW.pdf', width = 13, height = 8)
+pdf(paste0('results/plots/model_fits_', strain, '.pdf'), width = 13, height = 8)
 for (season in seasons) {
   op.temp <- op[op$season == season, ]
-  p1 <- ggplot(data = op.temp, aes(x = week, y = Est, group = run)) + 
+  p1 <- ggplot(data = op.temp, aes(x = week, y = Est, group = run)) +
     geom_ribbon(aes(x = week, ymin = lower.bound, ymax = upper.bound, group = run), fill = 'gray50', alpha = 0.1) +
     geom_line(colour = '#377eb8', lwd = 0.71) +
     geom_point(aes(x = week, y = Obs), colour = 'black', size = 1.2) + facet_wrap(~ country, ncol = 4) + #, scales = 'free_y') +
@@ -77,22 +84,24 @@ for (season in seasons) {
 }
 dev.off()
 
-pdf('../drafts/NetworkModel/supplemental/FigS2B_NEW2.pdf', width = 13, height = 8)
+# # pdf('../drafts/NetworkModel/supplemental/FigS2B_NEW2.pdf', width = 13, height = 8)
 season <- '2012-13'
 op.temp <- op[op$season == season, ]
-p1 <- ggplot(data = op.temp, aes(x = week, y = Est, group = run)) + 
+p1 <- ggplot(data = op.temp, aes(x = week, y = Est, group = run)) +
   geom_ribbon(aes(x = week, ymin = lower.bound, ymax = upper.bound, group = run), fill = 'gray50', alpha = 0.1) +
-  geom_line(colour = '#377eb8', lwd = 0.71) + 
+  geom_line(colour = '#377eb8', lwd = 0.71) +
   geom_point(aes(x = week, y = Obs), colour = 'black', size = 1.2) + facet_wrap(~ country, ncol = 4) + #, scales = 'free_y') +
   theme_classic() + theme(aspect.ratio = 0.75, axis.text = element_text(size = 12), axis.title = element_text(size = 14),
                           strip.background = element_blank(), strip.text = element_blank(), title = element_text(size = 18)) +
   scale_x_continuous(breaks = seq(40, 75, by = 5)) +
   labs(title = 'B', x = 'Week Number', y = 'Observed/Fitted Incidence (Scaled)')
 dat.text <- data.frame(label = countries, country = countries, run = 0)
-print(p1 + geom_text(data = dat.text, mapping = aes(x = 42, y = max(max(op.temp$Obs, na.rm = TRUE), max(op.temp$Est)) + 1000, label = label), size = 5))
-dev.off()
-
-rm(op.temp, dat.text, season, p1)
+p1 <- p1 + geom_text(data = dat.text, mapping = aes(x = 42, y = max(max(op.temp$Obs, na.rm = TRUE), max(op.temp$Est)) + 1000, label = label), size = 5)
+# print(p1 + geom_text(data = dat.text, mapping = aes(x = 42, y = max(max(op.temp$Obs, na.rm = TRUE), max(op.temp$Est)) + 1000, label = label), size = 5))
+print(p1)
+ggsave(file = 'results/plots/fig2.svg', plot = p1, width = 13, height = 8)
+# # dev.off()
+# rm(op.temp, dat.text, season, p1)
 
 # Get RMSEs:
 rmse.out <- NULL
@@ -122,7 +131,7 @@ rmse.out <- merge(rmse.out, m, by = c('season', 'country'))
 # this also removes any NAs in rmse
 
 # Save these results temporarily:
-# write.csv(rmse.out, file = paste0('results/fits/rmse_', strain, '.csv'), row.names = FALSE)
+# write.csv(rmse.out, file = paste0('results/fits/rmse_', strain, '_NEW.csv'), row.names = FALSE)
 
 rm(list = ls())
 
@@ -130,6 +139,7 @@ rm(list = ls())
 r1 <- read.csv('results/fits/rmse_A(H1).csv')
 r2 <- read.csv('results/fits/rmse_A(H3).csv')
 r3 <- read.csv('results/fits/rmse_B.csv')
+# it seems to make sense to plot with all points used for fitting, but only judge RMSE against the actual data, right?
 
 r1$subtype <- 'A(H1)'; r2$subtype <- 'A(H3)'; r3$subtype <- 'B'
 
