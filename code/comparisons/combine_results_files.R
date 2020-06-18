@@ -19,6 +19,7 @@ for (i in 1:length(file.list.h1)) {
   f <- rbind(f1, f2, f3)
   res.list[[i]] <- f
 }
+rm(f, f1, f2, f3, i)
 
 # Write all combined files as csvs:
 for (i in 1:length(res.list)) {
@@ -53,6 +54,7 @@ for (i in 1:length(file.list.h1)) {
   f <- rbind(f1, f2, f3)
   res.list[[i]] <- f
 }
+rm(f, f1, f2, f3, i)
 
 # Write all combined files as csvs:
 for (i in 1:length(res.list)) {
@@ -69,9 +71,9 @@ rm(list = ls())
 ### Dist and Ens ###
 
 # Read in and join dist/network:
-d1.h1 <- read.csv('results/by_subtype/network_A(H1)/original/outputDist_A(H1)_testSet1.csv')
-d1.h3 <- read.csv('results/by_subtype/network_A(H3)/original/outputDist_A(H3)_testSet1.csv')
-d1.b <- read.csv('results/by_subtype/network_B/original/outputDist_B_testSet1.csv')
+d1.h1 <- read.csv('results/by_subtype/network_A(H1)/extra/outputDist_A(H1).csv')
+d1.h3 <- read.csv('results/by_subtype/network_A(H3)/extra/outputDist_A(H3).csv')
+d1.b <- read.csv('results/by_subtype/network_B/extra/outputDist_B.csv')
 
 d1.h1$subtype <- 'A(H1)'; d1.h3$subtype <- 'A(H3)'; d1.b$subtype <- 'B'
 
@@ -80,9 +82,9 @@ rm(d1.h1, d1.h3, d1.b)
 d1 <- d1[d1$metric %in% c('pw', 'onset5'), ]
 
 # Read in and join dist/isolated:
-d2.h1 <- read.csv('results/by_subtype/isolated_A(H1)/original/outputDist_A(H1)_ISOLATED_update.csv')
-d2.h3 <- read.csv('results/by_subtype/isolated_A(H3)/original/outputDist_A(H3)_ISOLATED_update.csv')
-d2.b <- read.csv('results/by_subtype/isolated_B/original/outputDist_B_ISOLATED_update.csv')
+d2.h1 <- read.csv('results/by_subtype/isolated_A(H1)/extra/outputDist_A(H1)_ISOLATED.csv')
+d2.h3 <- read.csv('results/by_subtype/isolated_A(H3)/extra/outputDist_A(H3)_ISOLATED.csv')
+d2.b <- read.csv('results/by_subtype/isolated_B/extra/outputDist_B_ISOLATED.csv')
 
 d2.h1$subtype <- 'A(H1)'; d2.h3$subtype <- 'A(H3)'; d2.b$subtype <- 'B'
 
@@ -125,9 +127,9 @@ rm(d1, d2)
 # Now do all the same for Ens:
 
 # Read in and join network:
-e1.h1 <- read.csv('results/by_subtype/network_A(H1)/original/outputEns_A(H1)_testSet1.csv')
-e1.h3 <- read.csv('results/by_subtype/network_A(H3)/original/outputEns_A(H3)_testSet1.csv')
-e1.b <- read.csv('results/by_subtype/network_B/original/outputEns_B_testSet1.csv')
+e1.h1 <- read.csv('results/by_subtype/network_A(H1)/extra/outputEns_A(H1).csv')
+e1.h3 <- read.csv('results/by_subtype/network_A(H3)/extra/outputEns_A(H3).csv')
+e1.b <- read.csv('results/by_subtype/network_B/extra/outputEns_B.csv')
 
 e1.h1$subtype <- 'A(H1)'; e1.h3$subtype <- 'A(H3)'; e1.b$subtype <- 'B'
 
@@ -137,9 +139,9 @@ e1 <- e1[e1$metric == 'pi', ]
 e1$metric <- factor(e1$metric)
 
 # Read in and join isolated:
-e2.h1 <- read.csv('results/by_subtype/isolated_A(H1)/original/outputEns_A(H1)_ISOLATED_update.csv')
-e2.h3 <- read.csv('results/by_subtype/isolated_A(H3)/original/outputEns_A(H3)_ISOLATED_update.csv')
-e2.b <- read.csv('results/by_subtype/isolated_B/original/outputEns_B_ISOLATED_update.csv')
+e2.h1 <- read.csv('results/by_subtype/isolated_A(H1)/extra/outputEns_A(H1)_ISOLATED.csv')
+e2.h3 <- read.csv('results/by_subtype/isolated_A(H3)/extra/outputEns_A(H3)_ISOLATED.csv')
+e2.b <- read.csv('results/by_subtype/isolated_B/extra/outputEns_B_ISOLATED.csv')
 
 e2.h1$subtype <- 'A(H1)'; e2.h3$subtype <- 'A(H3)'; e2.b$subtype <- 'B'
 

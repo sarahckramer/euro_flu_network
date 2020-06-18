@@ -3,8 +3,8 @@
 library(reshape2); library(ggplot2); library(gridExtra)
 
 # Save plots?:
-outputPlots <- FALSE
-fileSuffix <- 'synth_errorSmall2'
+# outputPlots <- FALSE
+fileSuffix <- 'B'
 
 # Restrict the forecast start weeks for which results are shown?
 restrict.fc <- FALSE
@@ -12,14 +12,14 @@ restrict.fc <- FALSE
 # Set model labels:
 m1.lab <- 'Network'
 m2.lab <- 'Isolated'
-m3.lab <- 'Network (Larger Error)'
+m3.lab <- 'Isolated (Repeat)'
 
 # Set locations of model results to be compared:
-model1 <- 'results/synthetic/network_smallError/'
-model2 <- 'results/synthetic/isolated_smallError/'
-model3 <- 'results/synthetic/network/'
+model1 <- 'results/by_subtype/network_B/'
+model2 <- 'results/by_subtype/isolated_B/'
+model3 <- 'results/by_subtype/isolated_B/'
 
-# pdf(paste0('results/plots/comp_', fileSuffix, '.pdf'), width = 14, height = 9)
+pdf(paste0('results/plots/comp_', fileSuffix, '.pdf'), width = 14, height = 9)
 
 #########################################################################################################################################################
 #########################################################################################################################################################
@@ -171,7 +171,7 @@ rm(d, e.pi, e, byWeek)
 #   grid.arrange(p1, p2, p3, p4, p5, ncol = 1)
 # }
 
-# dev.off()
+dev.off()
 
 rm(list = ls())
 
