@@ -742,6 +742,12 @@ def EAKF_fn_fitOnly(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm
     obsprior = np.zeros([n, num_ens, ntrn + 1], dtype=np.float64)  # in R initialized with NAs - is "empty" okay?
     obspost = np.zeros([n, num_ens, ntrn], dtype=np.float64)
 
+    # Initialize arrays to store cross-ensemble covariance, prior vars, and OEVs:
+    rrmat = np.zeros([n, ntrn, np.square(n) * 3 + 5], dtype=np.float64)
+    coefmat = np.zeros([n, ntrn, np.square(n) * 3 + 5], dtype=np.float64)
+    kgmat = np.zeros([ntrn, n], dtype=np.float64)
+    ratmat = np.zeros([ntrn, n], dtype=np.float64)
+
     # Where each state/param stored:
     S_indices = [i for i in range(np.square(n))]
     I_indices = [i + np.square(n) for i in S_indices]
@@ -837,6 +843,12 @@ def EAKF_fn_fitOnly(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm
                     post_var = np.float64(0)
                     prior_var = np.float(1e-3)
 
+                # store Kalman gain/ratio of variances:
+                kgmat[tt, loc] = prior_var / (prior_var + obs_var)
+                ratmat[tt, loc] = obs_var / prior_var
+                # print(prior_var)
+
+                # Continue calculations...
                 prior_mean = np.mean(obs_ens[loc, :])
                 post_mean = post_var * (prior_mean / prior_var + obs_i[tt, loc] / obs_var)
 
@@ -846,10 +858,20 @@ def EAKF_fn_fitOnly(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm
 
                 # Get covariances of the prior state space and the observations, and loop over each state variable:
                 rr = np.zeros([x.shape[0]], dtype=np.float64)
+                cf = np.zeros([x.shape[0]], dtype=np.float64)
                 for j in range(x.shape[0]):
                     C = (np.cov(x[j, :], obs_ens[loc, :]) / prior_var)[0, 1]
                     rr[j] = C
+                    C_2 = np.corrcoef(x[j, :], obs_ens[loc, :])[0, 1]
+                    cf[j] = C_2
                 del j
+                del C
+                del C_2
+                rrmat[loc, tt, :] = rr  # store cross-ensemble covariance
+                # print(len(rr))
+                # print(rrmat.shape)
+                coefmat[loc, tt, :] = cf # store cross-ensemble Pearson correlation coefficients
+
                 dx = np.matmul(rr.reshape([len(rr), 1]), dy.reshape([1, len(dy)]))
 
                 # Get adjusted ensemble and obs_ens:
@@ -977,4 +999,33 @@ def EAKF_fn_fitOnly(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm
     params_post_df['week'] = pd.Series(range(ntrn)) + wk_start
     params_post_df = params_post_df[params_post_df.columns[[10, 11] + list(range(10))]]
 
-    return statespost, params_post_df
+    # Format results for checking correlations and divergence:
+    for ix in range(rrmat.shape[2]):
+        rrmat[:, :, ix][np.where(np.isnan(obs_i.transpose()))] = np.nan
+    rrmat = rrmat.reshape([ntrn * n, rrmat.shape[2]])
+    rrmat = np.c_[states_weeks, states_countries, rrmat]
+    rrmat = pd.DataFrame(rrmat)
+    rrmat.columns = ['week', 'country'] + [str(i) for i in range(1, 438)]
+
+    for ix in range(coefmat.shape[2]):
+        coefmat[:, :, ix][np.where(np.isnan(obs_i.transpose()))] = np.nan
+    coefmat = coefmat.reshape([ntrn * n, coefmat.shape[2]])
+    coefmat = np.c_[states_weeks, states_countries, coefmat]
+    coefmat = pd.DataFrame(coefmat)
+    coefmat.columns = ['week', 'country'] + [str(i) for i in range(1, 438)]
+
+    kgmat[np.where(np.isnan(obs_i))] = np.nan
+    kgmat = kgmat.transpose()
+    kgmat = kgmat.reshape([ntrn * n, 1])  # tt 0 rep 12 (for each country), then tt 1, etc.
+    kgmat = np.c_[states_weeks, states_countries, kgmat]
+    kgmat = pd.DataFrame(kgmat)
+    kgmat.columns = ['week', 'country', 'kg']
+
+    ratmat[np.where(np.isnan(obs_i))] = np.nan
+    ratmat = ratmat.transpose()
+    ratmat = ratmat.reshape([ntrn * n, 1])
+    ratmat = np.c_[states_weeks, states_countries, ratmat]
+    ratmat = pd.DataFrame(ratmat)
+    ratmat.columns = ['week', 'country', 'ratio']
+
+    return statespost, params_post_df, rrmat, coefmat, kgmat, ratmat

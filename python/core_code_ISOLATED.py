@@ -13,7 +13,7 @@ pd.options.mode.chained_assignment = None
 timestamp_start = datetime.datetime.now()
 
 # Specify subtype:
-strain = 'A(H3)'
+strain = 'B'
 
 # Specify global variables
 dt = 1
@@ -36,33 +36,18 @@ n = len(countries)
 # SET POPULATION SIZE
 N = np.float64(1e5)
 
-# Read in additional French scalings:
-scalings_fr = pd.read_csv('../data/by_subtype/scalings_frame_FR.csv')
-
 # Read in data and set seasons:
 if strain == 'A(H1)':
     seasons = ('2010-11', '2012-13', '2013-14', '2014-15', '2015-16', '2017-18')  # H1
     iliiso = pd.read_csv('../data/by_subtype/WHO_data_A(H1)_SCALED.csv')
 
-    scalings = pd.read_csv('../data/by_subtype/scalings_frame_A(H1).csv')
-    scalings_early = pd.read_csv('../data/by_subtype/scalings_frame_A(H1).csv')
-    scalings_early['gamma'][3] = scalings_fr['x'][0]
-
 elif strain == 'A(H3)':
     seasons = ('2011-12', '2012-13', '2013-14', '2014-15', '2016-17')  # H3
     iliiso = pd.read_csv('../data/by_subtype/WHO_data_A(H3)_SCALED.csv')
 
-    scalings = pd.read_csv('../data/by_subtype/scalings_frame_A(H3).csv')
-    scalings_early = pd.read_csv('../data/by_subtype/scalings_frame_A(H3).csv')
-    scalings_early['gamma'][3] = scalings_fr['x'][1]
-
 elif strain == 'B':
     seasons = ('2010-11', '2012-13', '2014-15', '2015-16', '2016-17', '2017-18')  # B
     iliiso = pd.read_csv('../data/by_subtype/WHO_data_B_SCALED.csv')
-
-    scalings = pd.read_csv('../data/by_subtype/scalings_frame_B.csv')
-    scalings_early = pd.read_csv('../data/by_subtype/scalings_frame_B.csv')
-    scalings_early['gamma'][3] = scalings_fr['x'][2]
 
 else:
     print('Error: Subtype not recognized.')
@@ -108,6 +93,7 @@ for count_index in range(n):
         print(season)
 
         # Get scaling:
+        scalings = pd.read_csv('../data/by_subtype/scaling_frames/scalings_frame_' + strain + '_' + season + '.csv')
         gamma = scalings['gamma'][count_index]
 
         # Get observations for current season AND COUNTRY:
@@ -133,11 +119,6 @@ for count_index in range(n):
             tm_range1 = [i for i in range(clim_start_dict[season] - 1, clim_end_dict[season], 1)]
             tm_range = List()
             [tm_range.append(i) for i in tm_range1]
-
-            # Fix scaling if early/FR:
-            if season in ('2010-11', '2011-12', '2012-13', '2013-14') and country == 'FR':
-                gamma = scalings_early['gamma'][count_index]
-            # print(gamma)
 
             # Run forecasts!
             for run in range(num_runs):
@@ -196,8 +177,8 @@ print('Done.')
 timestamp_end = datetime.datetime.now()
 print('Time Elapsed: ' + str(timestamp_end - timestamp_start))
 
-outputMetrics.to_csv('results/outputMet_' + strain + '_ISOLATED_update.csv', na_rep='NA', index=False)
-outputOP.to_csv('results/outputOP_' + strain + '_ISOLATED_update.csv', na_rep='NA', index=False)
-outputDist.to_csv('results/outputDist_' + strain + '_ISOLATED_update.csv', na_rep='NA', index=False)
-outputEns.to_csv('results/outputEns_' + strain + '_ISOLATED_update.csv', na_rep='NA', index=False)
+outputMetrics.to_csv('results/outputMet_' + strain + '_ISOLATED.csv', na_rep='NA', index=False)
+outputOP.to_csv('results/outputOP_' + strain + '_ISOLATED.csv', na_rep='NA', index=False)
+outputDist.to_csv('results/outputDist_' + strain + '_ISOLATED.csv', na_rep='NA', index=False)
+outputEns.to_csv('results/outputEns_' + strain + '_ISOLATED.csv', na_rep='NA', index=False)
 print('Finished writing to file!')

@@ -33,33 +33,18 @@ countries = np.array(['AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL'
 count_indices = [0, 1, 3, 5, 6, 7, 10, 11, 12, 13, 16, 18]
 n = len(countries)
 
-# Read in additional French scalings:
-scalings_fr = pd.read_csv('../data/by_subtype/scalings_frame_FR.csv')
-
 # Read in data and set seasons:
 if strain == 'A(H1)':
     seasons = ('2010-11', '2012-13', '2013-14', '2014-15', '2015-16', '2017-18')  # H1
     iliiso = pd.read_csv('../data/by_subtype/WHO_data_A(H1)_SCALED.csv')
 
-    scalings = pd.read_csv('../data/by_subtype/scalings_frame_A(H1).csv')
-    scalings_early = pd.read_csv('../data/by_subtype/scalings_frame_A(H1).csv')
-    scalings_early['gamma'][3] = scalings_fr['x'][0]
-
 elif strain == 'A(H3)':
     seasons = ('2011-12', '2012-13', '2013-14', '2014-15', '2016-17')  # H3
     iliiso = pd.read_csv('../data/by_subtype/WHO_data_A(H3)_SCALED.csv')
 
-    scalings = pd.read_csv('../data/by_subtype/scalings_frame_A(H3).csv')
-    scalings_early = pd.read_csv('../data/by_subtype/scalings_frame_A(H3).csv')
-    scalings_early['gamma'][3] = scalings_fr['x'][1]
-
 elif strain == 'B':
     seasons = ('2010-11', '2012-13', '2014-15', '2015-16', '2016-17', '2017-18')  # B
     iliiso = pd.read_csv('../data/by_subtype/WHO_data_B_SCALED.csv')
-
-    scalings = pd.read_csv('../data/by_subtype/scalings_frame_B.csv')
-    scalings_early = pd.read_csv('../data/by_subtype/scalings_frame_B.csv')
-    scalings_early['gamma'][3] = scalings_fr['x'][2]
 
 else:
     print('Error: Subtype not recognized.')
@@ -91,6 +76,10 @@ season_len_dict = {'2010-11': 52, '2011-12': 52, '2012-13': 52, '2013-14': 52, '
 # Initiate results frames:
 outputOP = pd.DataFrame()
 outputOPParams = pd.DataFrame()
+outputCrossEnsVar = pd.DataFrame()
+outputCorrCoefs = pd.DataFrame()
+outputKalmanGain = pd.DataFrame()
+outputVarRatio = pd.DataFrame()
 
 # Loop through outbreaks and fit:
 for season_index in range(len(seasons)):
@@ -157,14 +146,30 @@ for season_index in range(len(seasons)):
 
         outputOP_temp = res[0]
         outputOPParams_temp = res[1]
+        outputCross_temp = res[2]
+        outputCorr_temp = res[3]
+        outputKG_temp = res[4]
+        outputRat_temp = res[5]
 
         outputOP_temp = outputOP_temp.assign(**{'season': season, 'run': run, 'oev_base': oev_base,
                                                 'oev_denom': oev_denom, 'lambda': lambda_val})
         outputOPParams_temp = outputOPParams_temp.assign(**{'season': season, 'run': run, 'oev_base': oev_base,
                                                             'oev_denom': oev_denom, 'lambda': lambda_val})
+        outputCross_temp = outputCross_temp.assign(**{'season': season, 'run': run, 'oev_base': oev_base,
+                                                      'oev_denom': oev_denom, 'lambda': lambda_val})
+        outputCorr_temp = outputCorr_temp.assign(**{'season': season, 'run': run, 'oev_base': oev_base,
+                                                    'oev_denom': oev_denom, 'lambda': lambda_val})
+        outputKG_temp = outputKG_temp.assign(**{'season': season, 'run': run, 'oev_base': oev_base,
+                                                'oev_denom': oev_denom, 'lambda': lambda_val})
+        outputRat_temp = outputRat_temp.assign(**{'season': season, 'run': run, 'oev_base': oev_base,
+                                                  'oev_denom': oev_denom, 'lambda': lambda_val})
 
         outputOP = outputOP.append(outputOP_temp, ignore_index=True)
         outputOPParams = outputOPParams.append(outputOPParams_temp, ignore_index=True)
+        outputCrossEnsVar = outputCrossEnsVar.append(outputCross_temp, ignore_index=True)
+        outputCorrCoefs = outputCorrCoefs.append(outputCorr_temp, ignore_index=True)
+        outputKalmanGain = outputKalmanGain.append(outputKG_temp, ignore_index=True)
+        outputVarRatio = outputVarRatio.append(outputRat_temp, ignore_index=True)
 
     print()
 
@@ -175,4 +180,8 @@ print('Time Elapsed: ' + str(timestamp_end - timestamp_start))
 
 outputOP.to_csv('results/outputOP_' + strain + '_fitsOnly.csv', na_rep='NA', index=False)
 outputOPParams.to_csv('results/outputOPParams_' + strain + '_fitsOnly.csv', na_rep='NA', index=False)
+outputCrossEnsVar.to_csv('results/outputCrossEnsVar_' + strain + '.csv', na_rep='NA', index=False)
+outputCorrCoefs.to_csv('results/outputCorrCoefs_' + strain + '.csv', na_rep='NA', index=False)
+outputKalmanGain.to_csv('results/outputKalmanGain_' + strain + '.csv', na_rep='NA', index=False)
+outputVarRatio.to_csv('results/outputVarRatio_' + strain + '.csv', na_rep='NA', index=False)
 print('Finished writing to file!')

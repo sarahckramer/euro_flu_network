@@ -33,33 +33,18 @@ countries = np.array(['AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL'
 count_indices = [0, 1, 3, 5, 6, 7, 10, 11, 12, 13, 16, 18]
 n = len(countries)
 
-# Read in additional French scalings:
-scalings_fr = pd.read_csv('../data/by_subtype/scalings_frame_FR.csv')
-
 # Read in data and set seasons:
 if strain == 'A(H1)':
     seasons = ('2010-11', '2012-13', '2013-14', '2014-15', '2015-16', '2017-18')  # H1
     iliiso = pd.read_csv('../data/by_subtype/WHO_data_A(H1)_SCALED.csv')
 
-    scalings = pd.read_csv('../data/by_subtype/scalings_frame_A(H1).csv')
-    scalings_early = pd.read_csv('../data/by_subtype/scalings_frame_A(H1).csv')
-    scalings_early['gamma'][3] = scalings_fr['x'][0]
-
 elif strain == 'A(H3)':
     seasons = ('2011-12', '2012-13', '2013-14', '2014-15', '2016-17')  # H3
     iliiso = pd.read_csv('../data/by_subtype/WHO_data_A(H3)_SCALED.csv')
 
-    scalings = pd.read_csv('../data/by_subtype/scalings_frame_A(H3).csv')
-    scalings_early = pd.read_csv('../data/by_subtype/scalings_frame_A(H3).csv')
-    scalings_early['gamma'][3] = scalings_fr['x'][1]
-
 elif strain == 'B':
     seasons = ('2010-11', '2012-13', '2014-15', '2015-16', '2016-17', '2017-18')  # B
     iliiso = pd.read_csv('../data/by_subtype/WHO_data_B_SCALED.csv')
-
-    scalings = pd.read_csv('../data/by_subtype/scalings_frame_B.csv')
-    scalings_early = pd.read_csv('../data/by_subtype/scalings_frame_B.csv')
-    scalings_early['gamma'][3] = scalings_fr['x'][2]
 
 else:
     print('Error: Subtype not recognized.')
@@ -108,6 +93,10 @@ outputEns = pd.DataFrame()
 for season_index in range(len(seasons)):
     season = seasons[season_index]
     print(season)
+
+    # Get (sub)type- and season-specific scalings:
+    scalings = pd.read_csv('../data/by_subtype/scaling_frames/scalings_frame_' + strain + '_' + season + '.csv')
+    print(scalings)
 
     # # Get season-specific population matrix:
     # N = pd.read_csv(os.path.join('compartment_sizes/', 'N' + season + '_NEW.txt'), header=None, sep='\t')
@@ -168,27 +157,17 @@ for season_index in range(len(seasons)):
         outputDist_temp = res[3]
         outputEns_temp = res[4]
 
-        outputMet_temp['season'] = season
-        outputMet_temp['run'] = run
-        outputMet_temp['oev_base'] = oev_base
-        outputMet_temp['oev_denom'] = oev_denom
-        outputMet_temp['lambda'] = lambda_val
-        if season in ('2010-11', '2011-12', '2012-13', '2013-14'):
-            outputMet_temp['scaling'] = np.tile(scalings_early['gamma'], int(outputMet_temp.shape[0] / n))
-        else:
-            outputMet_temp['scaling'] = np.tile(scalings['gamma'], int(outputMet_temp.shape[0] / n))
+        # outputMet_temp['season'] = season
+        # outputMet_temp['run'] = run
+        # outputMet_temp['oev_base'] = oev_base
+        # outputMet_temp['oev_denom'] = oev_denom
+        # outputMet_temp['lambda'] = lambda_val
+        # outputMet_temp['scaling'] = np.tile(scalings['gamma'], int(outputMet_temp.shape[0] / n))
 
-        if season in ('2010-11', '2011-12', '2012-13', '2013-14'):
-            outputMet_temp = outputMet_temp.assign(**{'season': season, 'run': run, 'oev_base': oev_base,
-                                                      'oev_denom': oev_denom, 'lambda': lambda_val,
-                                                      'scaling': np.tile(scalings_early['gamma'],
-                                                                         int(outputMet_temp.shape[0] / n))})
-        else:
-            outputMet_temp = outputMet_temp.assign(**{'season': season, 'run': run, 'oev_base': oev_base,
-                                                      'oev_denom': oev_denom, 'lambda': lambda_val,
-                                                      'scaling': np.tile(scalings['gamma'],
-                                                                         int(outputMet_temp.shape[0] / n))})
-
+        outputMet_temp = outputMet_temp.assign(**{'season': season, 'run': run, 'oev_base': oev_base,
+                                                  'oev_denom': oev_denom, 'lambda': lambda_val,
+                                                  'scaling': np.tile(scalings['gamma'],
+                                                                     int(outputMet_temp.shape[0] / n))})
         outputOP_temp = outputOP_temp.assign(**{'season': season, 'run': run, 'oev_base': oev_base,
                                                 'oev_denom': oev_denom, 'lambda': lambda_val})
         outputOPParams_temp = outputOPParams_temp.assign(**{'season': season, 'run': run, 'oev_base': oev_base,
@@ -214,11 +193,11 @@ print('Done.')
 timestamp_end = datetime.datetime.now()
 print('Time Elapsed: ' + str(timestamp_end - timestamp_start))
 
-outputMetrics.to_csv('results/outputMet_' + strain + '_testSet1.csv', na_rep='NA', index=False)
-outputOP.to_csv('results/outputOP_' + strain + '_testSet1.csv', na_rep='NA', index=False)
-outputOPParams.to_csv('results/outputOPParams_' + strain + '_testSet1.csv', na_rep='NA', index=False)
-outputDist.to_csv('results/outputDist_' + strain + '_testSet1.csv', na_rep='NA', index=False)
-outputEns.to_csv('results/outputEns_' + strain + '_testSet1.csv', na_rep='NA', index=False)
+outputMetrics.to_csv('results/outputMet_' + strain + '.csv', na_rep='NA', index=False)
+outputOP.to_csv('results/outputOP_' + strain + '.csv', na_rep='NA', index=False)
+outputOPParams.to_csv('results/outputOPParams_' + strain + '.csv', na_rep='NA', index=False)
+outputDist.to_csv('results/outputDist_' + strain + '.csv', na_rep='NA', index=False)
+outputEns.to_csv('results/outputEns_' + strain + '.csv', na_rep='NA', index=False)
 print('Finished writing to file!')
 
 # error with correlations? i think it's okay to ignore - just passes nan when there's nothing to correlate I assume
