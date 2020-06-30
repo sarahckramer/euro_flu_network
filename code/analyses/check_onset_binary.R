@@ -1,151 +1,292 @@
 
-# Read in libraries:
-library(reshape2); library(ggplot2); library(gridExtra)
+### Assess sensitivity/specificity of binary onset predictions once European outbreak has started (by calendar week) ###
 
-# Set model labels:
-m1.lab <- 'Indiv. (Narrow)'
-m2.lab <- 'Indiv. (Mid)'
-m3.lab <- 'Indiv. (Wide)'
+# Read in metrics files:
+m <- read.csv('results/network/outputMet_pro_PROC.csv')
+m.isol <- read.csv('results/isolated/outputMet_pro_PROC.csv')
 
-# Set locations of model results to be compared:
-model1 <- 'results/A(H1)/indiv_narrow/'
-model2 <- 'results/A(H1)/indiv_mid/'
-model3 <- 'results/A(H1)/indiv_wide/'
+# Reduce to required columns:
+m <- m[, c(1:2, 7:8, 30:31, 45, 57)]
+m.isol <- m.isol[, c(1:2, 7:8, 30:31, 45, 57)]
 
-#########################################################################################################################################################
-#########################################################################################################################################################
-
-# Read in and format metrics files:
-m1 <- read.csv(file = paste0(model1, list.files(path = model1, pattern = 'Met_pro')))
-m2 <- read.csv(file = paste0(model2, list.files(path = model2, pattern = 'Met_pro')))
-m3 <- read.csv(file = paste0(model3, list.files(path = model3, pattern = 'Met_pro')))
-
-m1 <- m1[, c(1:9, 12:13, 15, 17:19, 25:32, 39, 43, 47, 60:63, 65, 67:69, 78)]
-m2 <- m2[, c(1:9, 12:13, 15, 17:19, 25:32, 39, 43, 47, 60:63, 65, 67:69, 78)]
-m3 <- m3[, c(1:9, 12:13, 15, 17:19, 25:32, 39, 43, 47, 60:63, 65, 67:69, 78)]
-
-m1$model <- m1.lab; m2$model <- m2.lab; m3$model <- m3.lab
-
-m <- rbind(m1, m2, m3)
-m$model <- factor(m$model, levels = c(m1.lab, m2.lab, m3.lab))
-rm(m1, m2, m3)
-
-#########################################################################################################################################################
-#########################################################################################################################################################
-
-# Look at "mean" results:
-m$onsetBi <- NA
-m$onsetBi[(is.na(m$onset5) & is.na(m$onsetObs5)) | (!is.na(m$onset5) & !is.na(m$onsetObs5))] <- '1'
-m$onsetBi[(is.na(m$onset5) & !is.na(m$onsetObs5)) | (!is.na(m$onset5) & is.na(m$onsetObs5))] <- '0'
-m$onsetBi <- factor(m$onsetBi)
-
-# m.temp <- m[m$FWeek_onwk >= -6 & m$FWeek_onwk < 5, ]
-
-table(m$onsetBi, m$model) / colSums(table(m$onsetBi, m$model)) # narrow does best here
-
-# What if we classify four ways? True pos, false pos, etc.:
-m$classify <- NA
-m$classify[is.na(m$onset5) & is.na(m$onsetObs5)] <- 'True Neg.'
-m$classify[is.na(m$onset5) & !is.na(m$onsetObs5)] <- 'False Neg.'
-m$classify[!is.na(m$onset5) & is.na(m$onsetObs5)] <- 'False Pos.'
-m$classify[!is.na(m$onset5) & !is.na(m$onsetObs5)] <- 'True Pos.'
-m$classify <- factor(m$classify)
-print(length(m$classify[is.na(m$classify)]))
-
-# Then can calculate sensitivity, specificity, PPV, NPV.
-# Although how valuable are these? Most of the time we know that there WILL be an onset
-
-# Most important might just be: How often are observed NAs correctly predicted?
-table(m$classify, m$model) / colSums(table(m$classify, m$model))
-# Narrow less likely to have false negatives, about as likely (only a little less) to get true negatives
-# In general true negatives are pretty rare I guess
-
-# m.temp <- m[m$FWeek_onwk >= -6 & m$FWeek_onwk < 5, ]
-# table(m.temp$classify, m.temp$model) / colSums(table(m.temp$classify, m.temp$model))
-# no, because of course then we get rid of any w/o onsets
-
-# Calculate NPV and sensitivity:
-npvs = spec = c()
-for (i in 1:length(levels(m$model))) {
-  print(levels(m$model)[i])
-  m.temp <- m[m$model == levels(m$model)[i], ]
+# For each season/subtype, determine first observed onset, and remove all fcasts before it:
+m.new = m.isol.new = NULL
+for (season in levels(m$season)) {
+  print(season)
   
-  npvs <- c(npvs, length(m.temp$country[m.temp$classify == 'True Neg.']) / length(m.temp$country[m.temp$classify %in% c('True Neg.', 'False Neg.')]))
-  spec <- c(spec, length(m.temp$country[m.temp$classify == 'True Neg.']) / length(m.temp$country[m.temp$classify %in% c('True Neg.', 'False Pos.')]))
+  for (strain in levels(m$subtype)) {
+    m.temp <- m[m$season == season & m$subtype == strain, ]
+    # m1.temp <- m.isol[m.isol$season == season & m.isol$subtype == strain, ]
+    
+    if (dim(m.temp)[1] > 0) {
+      print(strain)
+      
+      first.on <- min(m.temp$onsetObs5, na.rm = TRUE)
+      print(first.on)
+      
+      m.temp <- m.temp[m.temp$fc_start >= first.on, ]
+      m1.temp <- m.isol[m.isol$season == season & m.isol$subtype == strain & m.isol$fc_start >= first.on, ]
+      
+      m.new <- rbind(m.new, m.temp)
+      m.isol.new <- rbind(m.isol.new, m1.temp)
+      print('')
+    }
+    
+  }
 }
+rm(m.temp, m1.temp, season, strain, first.on)
 
-# NPV: Of those that are predicted to be negative, how many really are?
-# Specificity: Of those that are truly negative in reality, how many are also predicted to be negative?
+m <- as.data.frame(m.new)
+m.isol <- as.data.frame(m.isol.new)
+rm(m.new, m.isol.new)
 
-# So narrow has higher NPV, but others have higher specificity
+# Combine data frames
+m$model <- 'Network'; m.isol$model <- 'Isolated'
+m <- rbind(m, m.isol)
+m$model <- factor(m$model)
+rm(m.isol)
+
+# Designate true pos, false pos, true neg, false neg:
+m$result <- NA
+
+m$result[!is.na(m$onsetObs5) & !is.na(m$onset5)] <- 'True Pos'
+m$result[is.na(m$onsetObs5) & !is.na(m$onset5)] <- 'False Pos'
+m$result[!is.na(m$onsetObs5) & is.na(m$onset5)] <- 'False Neg'
+m$result[is.na(m$onsetObs5) & is.na(m$onset5)] <- 'True Neg'
+m$result <- factor(m$result)
+
+# Calculate sens and spec by fc_start (week):
+res.dat <- NULL
+for (model in levels(m$model)) {
+  for (fc in unique(m$fc_start)) {
+    m.temp <- m[m$model == model & m$fc_start == fc, ]
+    
+    true_pos <- length(m.temp$result[m.temp$result == 'True Pos'])
+    true_neg <- length(m.temp$result[m.temp$result == 'True Neg'])
+    false_pos <- length(m.temp$result[m.temp$result == 'False Pos'])
+    false_neg <- length(m.temp$result[m.temp$result == 'False Neg'])
+    
+    # print(table(m.temp$result))
+    
+    sens <- true_pos / (true_pos + false_neg)
+    spec <- true_neg / (true_neg + false_pos)
+    
+    num_pos <- true_pos + false_neg
+    num_neg <- true_neg + false_pos
+    
+    res.dat <- rbind(res.dat, c(model, fc, sens, spec, num_pos, num_neg))
+  }
+}
+rm(true_pos, true_neg, false_pos, false_neg, sens, spec, model, fc, num_pos, num_neg)
+
+res.dat <- as.data.frame(res.dat)
+names(res.dat) <- c('model', 'fc_start', 'sens', 'spec', 'n_pos', 'n_neg')
+
+# Also do the calculations by country, just to check:
+res.country <- NULL
+for (model in levels(m$model)) {
+  for (fc in unique(m$fc_start)) {
+    for (country in levels(m$country)) {
+      m.temp <- m[m$model == model & m$fc_start == fc & m$country == country, ]
+      true_pos <- length(m.temp$result[m.temp$result == 'True Pos'])
+      true_neg <- length(m.temp$result[m.temp$result == 'True Neg'])
+      false_pos <- length(m.temp$result[m.temp$result == 'False Pos'])
+      false_neg <- length(m.temp$result[m.temp$result == 'False Neg'])
+      
+      sens <- true_pos / (true_pos + false_neg)
+      spec <- true_neg / (true_neg + false_pos)
+      
+      res.country <- rbind(res.country, c(model, fc, country, sens, spec))
+    }
+  }
+}
+rm(true_pos, true_neg, false_pos, false_neg, sens, spec, model, fc, country)
+
+res.country <- as.data.frame(res.country)
+names(res.country) <- c('model', 'fc_start', 'country', 'sens', 'spec')
+
+# Convert to numeric:
+res.dat$sens <- as.numeric(as.character(res.dat$sens))
+res.dat$spec <- as.numeric(as.character(res.dat$spec))
+res.country$sens <- as.numeric(as.character(res.country$sens))
+res.country$spec <- as.numeric(as.character(res.country$spec))
+
+res.dat$n_pos <- as.numeric(as.character(res.dat$n_pos))
+res.dat$n_neg <- as.numeric(as.character(res.dat$n_neg))
+
+# Update levels:
+res.dat$model <- factor(res.dat$model, levels = levels(res.dat$model)[2:1])
+res.country$model <- factor(res.country$model, levels = levels(res.country$model)[2:1])
+
+# Plot up sens/spec by model/country:
+p1 <- ggplot(data = res.dat, aes(x = fc_start, y = sens, group = model, col = model)) + geom_line() + geom_point(aes(size = n_pos)) + theme_classic() +
+  labs(x = 'Calendar Week', y = 'Sensitivity', col = 'Model:', size = 'Total w/ Onset:') + scale_color_brewer(palette = 'Set1')
+p2 <- ggplot(data = res.dat, aes(x = fc_start, y = spec, group = model, col = model)) + geom_line() + geom_point(aes(size = n_neg)) + theme_classic() +
+  labs(x = 'Calendar Week', y = 'Specificity', col = 'Model:', size = 'Total w/o Onset') + scale_color_brewer(palette = 'Set1') +
+  scale_size_continuous(limits = c(0, 150), breaks = c(10, 50, 100, 150))
+grid.arrange(p1, p2)
+# false positives are incredibly rare
+
+p1 <- ggplot(data = res.dat, aes(x = fc_start, y = sens, group = model, col = model)) + geom_line() + geom_point(size = 2) + theme_classic() +
+  labs(x = 'Calendar Week', y = 'Sensitivity', col = 'Model:') + scale_color_brewer(palette = 'Set1') + scale_y_continuous(limits = c(0, 1))
+p2 <- ggplot(data = res.dat, aes(x = fc_start, y = spec, group = model, col = model)) + geom_line() + geom_point(size = 2) + theme_classic() +
+  labs(x = 'Calendar Week', y = 'Specificity', col = 'Model:') + scale_color_brewer(palette = 'Set1') + scale_y_continuous(limits = c(0, 1))
+grid.arrange(p1, p2)
+# so sensitivity tends to be higher at later calendar weeks, suggesting that, later in an outbreak, model becomes better at correctly labeling outbreaks with an onset
+    # although this is of course partly because model can tell when a country is currently experiencing an outbreak
+    # but early on, those countries that will in truth experience an outbreak are only identified less than half, even around 1/4 of the time
+    # although this isn't surprising, given our main text results that most forecasts don't predict an onset prior to the onset occurring
+# specificity, on the other hand, is uniformly high; this means that, of those countries that will not experience an outbreak, few are forecasted to have an upcoming onset
+    # again, not surprising - if activity is low, model is likely to predict that activity will continue to be low
+    # but good to confirm that model is rarely predicting onsets when there are none
+# so if model predicts an onset, unlikely to be a false positive; but if model predicts no onset, doens't mean much
+    # in other words, when there will not be an outbreak, model will predict that, but when there will be an outbreak, difficult to say
+# also note that there is, as in the main text results, no discernible difference between network and isolated
+
+# p1 <- ggplot(data = res.country, aes(x = fc_start, y = sens, group = model, col = model)) + geom_line() + geom_point(size = 2) + theme_classic() +
+#   labs(x = 'Calendar Week', y = 'Sensitivity', col = 'Model:') + scale_color_brewer(palette = 'Set1') + scale_y_continuous(limits = c(0, 1)) +
+#   facet_wrap(~ country)
+# p2 <- ggplot(data = res.country, aes(x = fc_start, y = spec, group = model, col = model)) + geom_line() + geom_point(size = 2) + theme_classic() +
+#   labs(x = 'Calendar Week', y = 'Specificity', col = 'Model:') + scale_color_brewer(palette = 'Set1') + scale_y_continuous(limits = c(0, 1)) +
+#   facet_wrap(~ country)
+# # not really a clear pattern by country; also probably not enough forecasts (esp. for spec.) to really tell
+
+###############################################################################################################################################################################
+###############################################################################################################################################################################
+###############################################################################################################################################################################
+
+# Or should we have removed anything once the actual onset does occur, b/c at that point the prediction's no longer relevant?:
+m <- m[m$onsetObs5 >= m$fc_start | is.na(m$onsetObs5), ]
+
+# Calculate sens and spec by fc_start (week):
+res.dat <- NULL
+for (model in levels(m$model)) {
+  for (fc in unique(m$fc_start)) {
+    m.temp <- m[m$model == model & m$fc_start == fc, ]
+    
+    true_pos <- length(m.temp$result[m.temp$result == 'True Pos'])
+    true_neg <- length(m.temp$result[m.temp$result == 'True Neg'])
+    false_pos <- length(m.temp$result[m.temp$result == 'False Pos'])
+    false_neg <- length(m.temp$result[m.temp$result == 'False Neg'])
+    
+    # print(table(m.temp$result))
+    
+    sens <- true_pos / (true_pos + false_neg)
+    spec <- true_neg / (true_neg + false_pos)
+    
+    num_pos <- true_pos + false_neg
+    num_neg <- true_neg + false_pos
+    
+    res.dat <- rbind(res.dat, c(model, fc, sens, spec, num_pos, num_neg))
+  }
+}
+rm(true_pos, true_neg, false_pos, false_neg, sens, spec, model, fc, num_pos, num_neg)
+
+res.dat <- as.data.frame(res.dat)
+names(res.dat) <- c('model', 'fc_start', 'sens', 'spec', 'n_pos', 'n_neg')
+
+# Convert to numeric:
+res.dat$sens <- as.numeric(as.character(res.dat$sens))
+res.dat$spec <- as.numeric(as.character(res.dat$spec))
+res.dat$n_pos <- as.numeric(as.character(res.dat$n_pos))
+res.dat$n_neg <- as.numeric(as.character(res.dat$n_neg))
+res.dat$fc_start <- as.numeric(as.character(res.dat$fc_start))
+
+# Update levels:
+res.dat$model <- factor(res.dat$model, levels = levels(res.dat$model)[2:1])
+
+# Plot up sens/spec by model/country:
+p1 <- ggplot(data = res.dat, aes(x = fc_start, y = sens, group = model, col = model)) + geom_line() + geom_point(aes(size = n_pos)) + theme_classic() +
+  labs(x = 'Calendar Week', y = 'Sensitivity', col = 'Model:', size = 'Total w/ Onset:') + scale_color_brewer(palette = 'Set1')
+p2 <- ggplot(data = res.dat, aes(x = fc_start, y = spec, group = model, col = model)) + geom_line() + geom_point(aes(size = n_neg)) + theme_classic() +
+  labs(x = 'Calendar Week', y = 'Specificity', col = 'Model:', size = 'Total w/o Onset') + scale_color_brewer(palette = 'Set1') +
+  scale_size_continuous(limits = c(0, 150), breaks = c(10, 50, 100, 150))
+grid.arrange(p1, p2)
+# false positives are incredibly rare
+
+p1 <- ggplot(data = res.dat, aes(x = fc_start, y = sens, group = model, col = model)) + geom_line() + geom_point(size = 2) + theme_classic() +
+  labs(x = 'Calendar Week', y = 'Sensitivity', col = 'Model:') + scale_color_brewer(palette = 'Set1') + scale_y_continuous(limits = c(0, 1))
+p2 <- ggplot(data = res.dat, aes(x = fc_start, y = spec, group = model, col = model)) + geom_line() + geom_point(size = 2) + theme_classic() +
+  labs(x = 'Calendar Week', y = 'Specificity', col = 'Model:') + scale_color_brewer(palette = 'Set1') + scale_y_continuous(limits = c(0, 1))
+grid.arrange(p1, p2)
+# note: this doesn't change specificity
+# sensitivity gets much lower, which makes sense; also stops at week 63, since that is the latest observed onset
+
+res.temp <- res.dat[res.dat$fc_start < 64, ]
+summary(res.temp$sens[res.temp$model == 'Isolated']) # 0 to 0.29412 (mean = 0.123) # include 63: max 0.80, mean = 0.16258, median = 0.1125
+summary(res.temp$sens[res.temp$model == 'Network']) # 0 to 0.2617 (mean = 0.151) # include 63: max 0.60, mean = 0.1775, median = 0.1356
+summary(res.temp$sens) # 0 to 0.2941; mean = 0.1369, median = 0.1209
+# maybe mention these numbers as a qualification, but use other plot
 
 #########################################################################################################################################################
 #########################################################################################################################################################
 
-# Thought about calculating log score for those w/o onset - log(prob NA)
-# But can't plot this out by observed lead week or anything... plot out just by time?
+# Old, but interesting idea:
 
-d1 <- read.csv('results/A(H1)/indiv_narrow/outputDist_10000_10_1.02_H1_narrow.csv'); d1 <- d1[d1$metric == 'onset5', ]
-d2 <- read.csv('results/A(H1)/indiv_mid/outputDist_10000_10_1.02_H1_mid.csv'); d2 <- d2[d2$metric == 'onset5', ]
-d3 <- read.csv('results/A(H1)/indiv_wide/outputDist_10000_10_1.02_H1_wide.csv'); d3 <- d3[d3$metric == 'onset5', ]
-
-m1 <- read.csv(file = paste0(model1, list.files(path = model1, pattern = 'Met_pro')))
-m2 <- read.csv(file = paste0(model2, list.files(path = model2, pattern = 'Met_pro')))
-m3 <- read.csv(file = paste0(model3, list.files(path = model3, pattern = 'Met_pro')))
-
-m1 <- m1[, c(1:9, 12:13, 15, 17:19, 25:32, 39, 43, 47, 60:63, 65, 67:69, 78)]
-m2 <- m2[, c(1:9, 12:13, 15, 17:19, 25:32, 39, 43, 47, 60:63, 65, 67:69, 78)]
-m3 <- m3[, c(1:9, 12:13, 15, 17:19, 25:32, 39, 43, 47, 60:63, 65, 67:69, 78)]
-
-m1$model <- m1.lab; m2$model <- m2.lab; m3$model <- m3.lab
-
-m1 <- unique(m1[, c(1, 7:8, 24, 36)])
-m2 <- unique(m2[, c(1, 7:8, 24, 36)])
-m3 <- unique(m3[, c(1, 7:8, 24, 36)])
-
-# Join observed values:
-d1 <- merge(d1, m1, by = c('country', 'season', 'fc_start'))
-d2 <- merge(d2, m2, by = c('country', 'season', 'fc_start'))
-d3 <- merge(d3, m3, by = c('country', 'season', 'fc_start'))
-
-# Correct bins:
-d1$week <- d1$week + 40 - 1
-d2$week <- d2$week + 40 - 1
-d3$week <- d3$week + 40 - 1
-
-# NA bins:
-d1$week[d1$week == 38] <- NA
-d2$week[d2$week == 38] <- NA
-d3$week[d3$week == 38] <- NA
-
-# Keep only when bin == obs:
-d1 <- d1[(d1$week == d1$onsetObs5 & !is.na(d1$week) & !is.na(d1$onsetObs5)) | (is.na(d1$week) & is.na(d1$onsetObs5)), ]
-d2 <- d2[(d2$week == d2$onsetObs5 & !is.na(d2$week) & !is.na(d2$onsetObs5)) | (is.na(d2$week) & is.na(d2$onsetObs5)), ]
-d3 <- d3[(d3$week == d3$onsetObs5 & !is.na(d3$week) & !is.na(d3$onsetObs5)) | (is.na(d3$week) & is.na(d3$onsetObs5)), ]
-
-# Calculate scores with and without no observed onsets:
-d1$score <- log(d1$prob); d1$score[d1$score == -Inf] <- -10
-d2$score <- log(d2$prob); d2$score[d2$score == -Inf] <- -10
-d3$score <- log(d3$prob); d3$score[d3$score == -Inf] <- -10
-
-d1.red <- d1[!is.na(d1$onsetObs5), ]
-d2.red <- d2[!is.na(d2$onsetObs5), ]
-d3.red <- d3[!is.na(d3$onsetObs5), ]
-
-# Plot out scores over time both with and without NAs:
-d <- rbind(d1, d2, d3)
-d.red <- rbind(d1.red, d2.red, d3.red)
-d.noOn <- d[is.na(d$onsetObs5), ]
-
-d.agg <- aggregate(score ~ fc_start + model, data = d, FUN = median)
-d.agg.red <- aggregate(score ~ fc_start + model, data = d.red, FUN = median)
-d.agg.noOn <- aggregate(score ~ fc_start + model, data = d.noOn, FUN = median)
-
-p1 <- ggplot(data = d.agg, aes(x = fc_start, y = score, col = model)) + geom_point() + geom_line() + theme_bw() + labs(x = 'Week', y = 'Score', title = 'All')
-p2 <- ggplot(data = d.agg.red, aes(x = fc_start, y = score, col = model)) + geom_point() + geom_line() + theme_bw() + labs(x = 'Week', y = 'Score', title = 'Onset Only')
-p3 <- ggplot(data = d.agg.noOn, aes(x = fc_start, y = score, col = model)) + geom_point() + geom_line() + theme_bw() + labs(x = 'Week', y = 'Score', title = 'No Onset')
-grid.arrange(p1, p2, p3, ncol = 1)
-# looking at only those countries with no onset, narrow obviously does much worse, even late in the outbreak; but that's the only real difference
+# # Thought about calculating log score for those w/o onset - log(prob NA)
+# # But can't plot this out by observed lead week or anything... plot out just by time?
+# 
+# d1 <- read.csv('results/A(H1)/indiv_narrow/outputDist_10000_10_1.02_H1_narrow.csv'); d1 <- d1[d1$metric == 'onset5', ]
+# d2 <- read.csv('results/A(H1)/indiv_mid/outputDist_10000_10_1.02_H1_mid.csv'); d2 <- d2[d2$metric == 'onset5', ]
+# d3 <- read.csv('results/A(H1)/indiv_wide/outputDist_10000_10_1.02_H1_wide.csv'); d3 <- d3[d3$metric == 'onset5', ]
+# 
+# m1 <- read.csv(file = paste0(model1, list.files(path = model1, pattern = 'Met_pro')))
+# m2 <- read.csv(file = paste0(model2, list.files(path = model2, pattern = 'Met_pro')))
+# m3 <- read.csv(file = paste0(model3, list.files(path = model3, pattern = 'Met_pro')))
+# 
+# m1 <- m1[, c(1:9, 12:13, 15, 17:19, 25:32, 39, 43, 47, 60:63, 65, 67:69, 78)]
+# m2 <- m2[, c(1:9, 12:13, 15, 17:19, 25:32, 39, 43, 47, 60:63, 65, 67:69, 78)]
+# m3 <- m3[, c(1:9, 12:13, 15, 17:19, 25:32, 39, 43, 47, 60:63, 65, 67:69, 78)]
+# 
+# m1$model <- m1.lab; m2$model <- m2.lab; m3$model <- m3.lab
+# 
+# m1 <- unique(m1[, c(1, 7:8, 24, 36)])
+# m2 <- unique(m2[, c(1, 7:8, 24, 36)])
+# m3 <- unique(m3[, c(1, 7:8, 24, 36)])
+# 
+# # Join observed values:
+# d1 <- merge(d1, m1, by = c('country', 'season', 'fc_start'))
+# d2 <- merge(d2, m2, by = c('country', 'season', 'fc_start'))
+# d3 <- merge(d3, m3, by = c('country', 'season', 'fc_start'))
+# 
+# # Correct bins:
+# d1$week <- d1$week + 40 - 1
+# d2$week <- d2$week + 40 - 1
+# d3$week <- d3$week + 40 - 1
+# 
+# # NA bins:
+# d1$week[d1$week == 38] <- NA
+# d2$week[d2$week == 38] <- NA
+# d3$week[d3$week == 38] <- NA
+# 
+# # Keep only when bin == obs:
+# d1 <- d1[(d1$week == d1$onsetObs5 & !is.na(d1$week) & !is.na(d1$onsetObs5)) | (is.na(d1$week) & is.na(d1$onsetObs5)), ]
+# d2 <- d2[(d2$week == d2$onsetObs5 & !is.na(d2$week) & !is.na(d2$onsetObs5)) | (is.na(d2$week) & is.na(d2$onsetObs5)), ]
+# d3 <- d3[(d3$week == d3$onsetObs5 & !is.na(d3$week) & !is.na(d3$onsetObs5)) | (is.na(d3$week) & is.na(d3$onsetObs5)), ]
+# 
+# # Calculate scores with and without no observed onsets:
+# d1$score <- log(d1$prob); d1$score[d1$score == -Inf] <- -10
+# d2$score <- log(d2$prob); d2$score[d2$score == -Inf] <- -10
+# d3$score <- log(d3$prob); d3$score[d3$score == -Inf] <- -10
+# 
+# d1.red <- d1[!is.na(d1$onsetObs5), ]
+# d2.red <- d2[!is.na(d2$onsetObs5), ]
+# d3.red <- d3[!is.na(d3$onsetObs5), ]
+# 
+# # Plot out scores over time both with and without NAs:
+# d <- rbind(d1, d2, d3)
+# d.red <- rbind(d1.red, d2.red, d3.red)
+# d.noOn <- d[is.na(d$onsetObs5), ]
+# 
+# d.agg <- aggregate(score ~ fc_start + model, data = d, FUN = median)
+# d.agg.red <- aggregate(score ~ fc_start + model, data = d.red, FUN = median)
+# d.agg.noOn <- aggregate(score ~ fc_start + model, data = d.noOn, FUN = median)
+# 
+# p1 <- ggplot(data = d.agg, aes(x = fc_start, y = score, col = model)) + geom_point() + geom_line() + theme_bw() + labs(x = 'Week', y = 'Score', title = 'All')
+# p2 <- ggplot(data = d.agg.red, aes(x = fc_start, y = score, col = model)) + geom_point() + geom_line() + theme_bw() + labs(x = 'Week', y = 'Score', title = 'Onset Only')
+# p3 <- ggplot(data = d.agg.noOn, aes(x = fc_start, y = score, col = model)) + geom_point() + geom_line() + theme_bw() + labs(x = 'Week', y = 'Score', title = 'No Onset')
+# grid.arrange(p1, p2, p3, ncol = 1)
+# # looking at only those countries with no onset, narrow obviously does much worse, even late in the outbreak; but that's the only real difference
 
 
 
