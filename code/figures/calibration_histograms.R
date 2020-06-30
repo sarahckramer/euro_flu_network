@@ -27,27 +27,6 @@ m.temp2$leadonset_bin <- cut(m.temp2$leadonset5, c(-7, -5, -3, -1, 2, 4))
 m.temp$delta_int <- m.temp$intensity_err / m.temp$obs_peak_int
 
 # Plot!
-p1 <- ggplot(data = m.temp, aes(x = delta_pkwk_mean, y = ..count../sum(..count..), group = model, fill = model)) +
-  geom_histogram(binwidth = 1.0, position = 'identity', alpha = 0.5) +
-  # geom_freqpoly(binwidth = 1.0) +
-  theme_bw() + theme(aspect.ratio = 1,
-                          axis.text = element_text(size = 11),
-                          strip.text = element_text(size = 13),
-                          axis.title = element_text(size = 13),
-                          plot.title = element_text(size = 16)) +
-  labs(title = 'A     (Peak Timing)', x = 'Error (Fcast - Obs)', y = 'Proportion of Fcasts', fill = 'Model', col = 'Model') +
-  facet_grid(~ leadpkwk_bin) + scale_fill_brewer(palette = 'Set1') + scale_color_brewer(palette = 'Set1')
-# p1 <- ggplot(data = m.temp, aes(x = delta_pkwk_mean, y = ..ncount.., group = model, fill = model)) +
-#   geom_histogram(binwidth = 1.0, position = 'identity', alpha = 0.5) +
-#   # geom_freqpoly(binwidth = 1.0) +
-#   theme_bw() + theme(aspect.ratio = 1,
-#                      axis.text = element_text(size = 11),
-#                      strip.text = element_text(size = 13),
-#                      axis.title = element_text(size = 13),
-#                      plot.title = element_text(size = 16)) +
-#   labs(title = 'A     (Peak Timing)', x = 'Error (Fcast - Obs)', y = 'Proportion of Fcasts', fill = 'Model', col = 'Model') +
-#   facet_grid(~ leadpkwk_bin) + scale_fill_brewer(palette = 'Set1') + scale_color_brewer(palette = 'Set1') +
-#   scale_y_continuous(labels = percent_format())
 p1 <- ggplot(data = m.temp, aes(x = delta_pkwk_mean, y = ..density.., group = model, fill = model)) +
   geom_histogram(binwidth = 1.0, position = 'identity', alpha = 0.5) +
   # geom_freqpoly(binwidth = 1.0) +
@@ -58,7 +37,6 @@ p1 <- ggplot(data = m.temp, aes(x = delta_pkwk_mean, y = ..density.., group = mo
                      plot.title = element_text(size = 16)) +
   labs(title = 'A     (Peak Timing)', x = 'Error (Fcast - Obs)', y = 'Proportion of Fcasts', fill = 'Model', col = 'Model') +
   facet_grid(~ leadpkwk_bin) + scale_fill_brewer(palette = 'Set1') + scale_color_brewer(palette = 'Set1')
-p1
 
 p2 <- ggplot(data = m.temp, aes(x = delta_int, y = 0.1 * ..density.., group = model, fill = model)) +
   geom_histogram(binwidth = 0.1, position = 'identity', alpha = 0.5, lwd = 0.5) +
@@ -69,7 +47,10 @@ p2 <- ggplot(data = m.temp, aes(x = delta_int, y = 0.1 * ..density.., group = mo
                      plot.title = element_text(size = 16)) +
   labs(title = 'B     (Peak Intensity)', x = 'Error ((Fcast - Obs) / Obs)', y = 'Proportion of Fcasts', fill = 'Model', col = 'Model') +
   facet_grid(~ leadpkwk_bin) + scale_fill_brewer(palette = 'Set1') + scale_color_brewer(palette = 'Set1')
-# p3 <- ggplot(data = m.temp2, aes(x = delta_onset5, y = ..count../sum(..count..), group = model, fill = model, col = model)) +
+
+grid.arrange(p1, p2)
+
+# p3 <- ggplot(data = m.temp2, aes(x = delta_onset5, y = ..density.., group = model, fill = model, col = model)) +
 #   geom_histogram(binwidth = 1.0, position = 'identity', alpha = 0.5) +
 #   theme_bw() + theme(aspect.ratio = 1,
 #                      axis.text = element_text(size = 11),
@@ -79,13 +60,10 @@ p2 <- ggplot(data = m.temp, aes(x = delta_int, y = 0.1 * ..density.., group = mo
 #   labs(title = 'C     (Onset Timing)', x = 'Error (Fcast - Obs)', y = 'Proportion of Fcasts', fill = 'Model', col = 'Model') +
 #   facet_grid(~ leadonset_bin) + scale_fill_brewer(palette = 'Set1') + scale_color_brewer(palette = 'Set1')
 
-
-
-# pdf('results/plots/calibration_hists.pdf', width = 14, height = 6)
-pdf('../../Thesis/parts/Chapter3_supp/FigS8_NEW.pdf', width = 14, height = 6)
-grid.arrange(p1, p2, ncol = 1)
+pdf('results/plots/FigS8.pdf', width = 14, height = 6)
+grid.arrange(p1, p2)
 dev.off()
 
-ggsave('../../Thesis/parts/Chapter3_supp/FigS8_NEW.svg', plot = arrangeGrob(p1, p2, ncol = 1), width = 14, height = 6)
-
+# ggsave('results/plots/FigS8.svg', plot = arrangeGrob(p1, p2, ncol = 1), width = 14, height = 6)
+# for some reason svg seems to squish the plot - use pdf and convert
 

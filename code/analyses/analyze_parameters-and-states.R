@@ -184,7 +184,7 @@ fits.df <- merge(fits.df, m, by = c('season', 'country', 'subtype')) # this also
 ### Compare S0/Re/(R0?) by subtype, country, region:
 # Can retain even where onsetObs is NA, b/c we'll want to know that S0 can be fit low enough here
 # But do see if results differ when no onsets are removed
-cor.test(fits.df$R0.1, fits.df$R0.2, method = 'kendall') # highly sig, tau = 0.579
+cor.test(fits.df$R0.1, fits.df$R0.2, method = 'kendall') # highly sig, tau = 0.606 (old: 0.579)
 # use 1 - looks to be point where better fit for synthetic, too
 
 par(mfrow = c(3, 1), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
@@ -229,13 +229,13 @@ rm(fits.df.red)
 summary(p.vals.r0count) # none < 0.05
 
 # Look at Re/S0 by each factor:
-summary(p.vals.resub) # all < 0.05
+summary(p.vals.resub) # 99% < 0.05
 summary(p.vals.reregion) # none < 0.05
 summary(p.vals.recount) # none < 0.05
 
 summary(p.vals.s0sub) # none < 0.05
-summary(p.vals.s0region) # 6% < 0.05
-summary(p.vals.s0count) # 99% < 0.05
+summary(p.vals.s0region) # 3% < 0.05
+summary(p.vals.s0count) # 94% < 0.05
 
 # differences in Re by subtype, S0 by country - how to do posthoc?
 set.seed(1089437584)
@@ -250,9 +250,10 @@ rm(fits.df.red)
 # none of the fits of S0 by country are significant when Bonferroni correction applied
 # for subtypes/Re:
 a <- sapply(p.list.resub, function(ix) {
-  dim(ix)[1] > 1
+  dim(ix)[1] > 0
 })
-# always higher than H1; only 36% have it greater than B
+# 49% have H3 higher than H1; never greater than B
+# old: always higher than H1; only 36% have it greater than B
 
 ### Get latitude and longitude:
 library(maps)
@@ -282,8 +283,8 @@ for (i in 1:100) {
 }
 summary(p.long)
 summary(p.lat)
-length(p.long[p.long < 0.05]) # 71%
-length(p.lat[p.lat < 0.05]) # 59%
+length(p.long[p.long < 0.05]) # 61% (old: 71%)
+length(p.lat[p.lat < 0.05]) # 58% (old: 59%)
 summary(val.long)
 summary(val.lat)
 # since we don't really talk about the geographical patterns of spread in the manuscript or supplement, this probably isn't needed, but it is interesting to know
@@ -325,8 +326,8 @@ for (i in 1:100) {
   p.r0diff <- c(p.r0diff, kruskal.test(R0diff ~ subtype, data = fits.df.red)$p.value)
 }
 summary(p.r0) # none < 0.05
-summary(p.D) # 4%
-summary(p.L) # 4%
+summary(p.D) # none < 0.05
+summary(p.L) # 5%
 summary(p.aS) # 3%
 # R0mx and R0diff are never different
 
@@ -358,9 +359,5 @@ p1 <- ggplot(data = fits.df.plot, aes(x = subtype, y = value)) + geom_boxplot(fi
   geom_text(data = dat.text, aes(x = 0.62, y = y, label = label), size = 8)
 print(p1)
 
-ggsave(filename = '../../Thesis/parts/Chapter3_supp/FigS11.svg', plot = p1, width = 12, height = 8)
-
-pdf('results/plots/param_fits.pdf', width = 12, height = 9)
-print(p1)
-dev.off()
+ggsave(filename = 'results/plots/FigS11.svg', plot = p1, width = 12, height = 8)
 

@@ -199,7 +199,7 @@ res.dat$diff.PI.pre <- res.dat$score.PI.pre - res.dat$score.PI.pre.isol
 boxplot(diff.PT.pre ~ country, data = res.dat)
 
 kruskal.test(diff.PT ~ country, data = res.dat) # not sig
-kruskal.test(diff.PT.pre ~ country, data = res.dat) # p = 0.0346
+kruskal.test(diff.PT.pre ~ country, data = res.dat) # not sig
 kruskal.test(diff.PI ~ country, data = res.dat) # not sig
 kruskal.test(diff.PI.pre ~ country, data = res.dat) # not sig
 
@@ -226,8 +226,8 @@ cor.test(res.dat$prop.NA, res.dat$score.PI.pre.isol, data = res.dat, method = 'k
 # none are sig
 
 cor.test(res.dat$smoothness, res.dat$rmse, data = res.dat, method = 'kendall')
-cor.test(res.dat$smoothness, res.dat$score.PT, data = res.dat, method = 'kendall') # p = 0.03198
-cor.test(res.dat$smoothness, res.dat$score.PT.pre, data = res.dat, method = 'kendall') # p = 0.01647
+cor.test(res.dat$smoothness, res.dat$score.PT, data = res.dat, method = 'kendall') # p = 0.09636
+cor.test(res.dat$smoothness, res.dat$score.PT.pre, data = res.dat, method = 'kendall') # p = 0.07128
 cor.test(res.dat$smoothness, res.dat$score.PI, data = res.dat, method = 'kendall')
 cor.test(res.dat$smoothness, res.dat$score.PI.pre, data = res.dat, method = 'kendall')
 cor.test(res.dat$smoothness, res.dat$diff.PT, data = res.dat, method = 'kendall')
@@ -235,7 +235,7 @@ cor.test(res.dat$smoothness, res.dat$diff.PT.pre, data = res.dat, method = 'kend
 cor.test(res.dat$smoothness, res.dat$diff.PI, data = res.dat, method = 'kendall')
 cor.test(res.dat$smoothness, res.dat$diff.PI.pre, data = res.dat, method = 'kendall')
 cor.test(res.dat$smoothness, res.dat$score.PT.isol, data = res.dat, method = 'kendall')
-cor.test(res.dat$smoothness, res.dat$score.PT.pre.isol, data = res.dat, method = 'kendall')
+cor.test(res.dat$smoothness, res.dat$score.PT.pre.isol, data = res.dat, method = 'kendall') # p = 0.01867; tau = 0.1241385
 cor.test(res.dat$smoothness, res.dat$score.PI.isol, data = res.dat, method = 'kendall')
 cor.test(res.dat$smoothness, res.dat$score.PI.pre.isol, data = res.dat, method = 'kendall')
 

@@ -129,9 +129,6 @@ p <- c(0.005, 0.025, 0.05, 0.1, 0.15, 0.20, 0.25, 0.375, 0.625, 0.75, 0.8, 0.85,
 d1 <- read.csv('results/network/PROC_outputDist_pt_ot.csv')
 d2 <- read.csv('results/isolated/outputDist_pt_ot.csv')
 
-# d1 <- a.dist[a.dist$metric == 'pw', ]
-# d2 <- b.dist[b.dist$metric == 'pw', ]
-
 # Reformat bins:
 d <- rbind(d1, d2); rm(d1, d2)
 d$bin <- d$bin + 40 - 1
@@ -223,31 +220,6 @@ rm(d.temp, d.temp2, dat.temp)
 dat.pt.temp <- format_calib_output(dat.pt.temp, 'Peak Timing')
 dat.ot.temp <- format_calib_output(dat.ot.temp, 'Onset Timing')
 
-# Plot PT and OT:
-p1 <- ggplot(data = dat.pt.temp, aes(x = quantile, y = y, color = model, group = model)) +
-  geom_abline(aes(intercept = 0, slope = 1), colour = 'gray50', size = 1.0) +
-  geom_line() + geom_point(aes(size = len)) + theme_bw() +
-  labs(x = 'Prediction Interval', y = '% of Obs Within Interval', colour = '', len = '# Fcasts', title = 'Peak Timing') +
-  theme(aspect.ratio = 1, legend.text = element_text(size = 12), axis.text = element_text(size = 10),
-        strip.text = element_text(size = 10), axis.title = element_text(size = 12),
-        legend.title = element_text(size = 12)) +
-  scale_color_brewer(palette = 'Set1') +
-  scale_x_continuous(limits = c(20, 100), breaks = c(20, 30, 40, 50, 60, 70, 80, 90, 100)) +
-  scale_y_continuous(limits = c(0, 100), breaks = c(0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100)) +
-  facet_wrap(~ lead)
-p3 <- ggplot(data = dat.ot.temp, aes(x = quantile, y = y, color = model, group = model)) +
-  geom_abline(aes(intercept = 0, slope = 1), colour = 'gray50', size = 1.0) +
-  geom_line() + geom_point(aes(size = len)) + theme_bw() +
-  labs(x = 'Prediction Interval', y = '% of Obs Within Interval', colour = '', len = '# Fcasts', title = 'Onset Timing') +
-  theme(aspect.ratio = 1, legend.text = element_text(size = 12), axis.text = element_text(size = 10),
-        strip.text = element_text(size = 10), axis.title = element_text(size = 12),
-        legend.title = element_text(size = 12)) +
-  scale_color_brewer(palette = 'Set1') +
-  scale_x_continuous(limits = c(20, 100), breaks = c(20, 30, 40, 50, 60, 70, 80, 90, 100)) +
-  scale_y_continuous(limits = c(0, 100), breaks = c(0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100)) +
-  facet_wrap(~ lead)
-# but probably will plot them more like how I did in Aim 1, since only two "groups" (models)
-
 # Clean up:
 rm(d, d.ot, d.pt, m.red, denom, lead, model.type)
 
@@ -317,20 +289,6 @@ rm(d.temp1, d.temp2, d.new, dat.temp)
 # Format results:
 dat.pi.temp <- format_calib_output(dat.pi.temp, 'Peak Intensity')
 
-# Plot:
-p2 <- ggplot(data = dat.pi.temp, aes(x = quantile, y = y, color = model, group = model)) +
-  geom_abline(aes(intercept = 0, slope = 1), colour = 'gray50', size = 1.0) +
-  geom_line() + geom_point(aes(size = len)) + theme_bw() +
-  labs(x = 'Prediction Interval', y = '% of Obs Within Interval', colour = '', len = '# Fcasts', title = 'Peak Intensity') +
-  theme(aspect.ratio = 1, legend.text = element_text(size = 12), axis.text = element_text(size = 10),
-        strip.text = element_text(size = 10), axis.title = element_text(size = 12),
-        legend.title = element_text(size = 12)) +
-  scale_color_brewer(palette = 'Set1') +
-  # scale_color_manual(values = c('#d73027', '#fdae61')) +#, '#fee08b')) +#, '#a6d96a', '#1a9850')) +
-  scale_x_continuous(limits = c(20, 100), breaks = c(20, 30, 40, 50, 60, 70, 80, 90, 100)) +
-  scale_y_continuous(limits = c(0, 100), breaks = c(0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100)) +
-  facet_wrap(~ lead)
-
 # Clean up!:
 rm(d, d.red, m.red, denom, lead, len, model.type, p)
 
@@ -342,9 +300,9 @@ dat.fig$metric <- factor(dat.fig$metric, levels = levels(dat.fig$metric)[3:1])
 dat.fig <- dat.fig[dat.fig$lead %in% levels(dat.fig$lead)[2:4], ]
 
 p.full <- ggplot(data = dat.fig, aes(x = quantile, y = y, colour = lead)) +
-  geom_abline(aes(intercept = 0, slope = 1), colour = 'gray80') +
+  geom_abline(aes(intercept = 0, slope = 1), colour = 'gray50', size = 0.6) +
   geom_line() + geom_point(size = 5) + #geom_point(aes(size = len)) +
-  labs(x = 'Prediction Interval', y = '% of Obs within PI', colour = 'Pred. Lead:') + theme_bw() +
+  labs(x = 'Prediction Interval (%)', y = '% of Obs within Pred. Interval', colour = 'Predicted\nLead Week:') + theme_bw() +
   theme(aspect.ratio = 1, legend.text = element_text(size = 14), axis.text = element_text(size = 12),
         strip.text = element_blank(), axis.title = element_text(size = 14),
         legend.title = element_text(size = 14), strip.background = element_blank()) +
@@ -353,39 +311,18 @@ p.full <- ggplot(data = dat.fig, aes(x = quantile, y = y, colour = lead)) +
   scale_x_continuous(limits = c(20, 100), breaks = c(20, 30, 40, 50, 60, 70, 80, 90, 100)) +
   scale_y_continuous(limits = c(0, 100), breaks = c(0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100)) +
   facet_grid(model ~ metric)
-p.full
+# p.full
 dat.text <- data.frame(label = c('A', 'B', 'C', 'D', 'E', 'F'), model = c(rep('Network', 3), rep('Isolated', 3)),
                        metric = c('Peak Timing', 'Peak Intensity', 'Onset Timing',
                                   'Peak Timing', 'Peak Intensity', 'Onset Timing'),
-                       y = c(96, 96, 85, 96, 96, 96))
-
-# pdf('../drafts/NetworkModel/figures/Fig4.pdf', width = 12, height = 7)
-# p.full + geom_text(data = dat.text, mapping = aes(x = 23, y = y, label = label), size = 8, color = 'black')
-# dev.off()
-
-p1 <- p.full + geom_text(data = dat.text, mapping = aes(x = 23, y = y, label = label), size = 11, color = 'black')
+                       y = c(96, 96, 81.5, 96, 96, 96))
+p1 <- p.full + geom_text(data = dat.text, mapping = aes(x = 22.25, y = y, label = label), size = 11, color = 'black')
 p1
-ggsave(filename = '../../Thesis/parts/C3_Fig4.svg', plot = p1, width = 12, height = 7)
-
-p1 <- ggplot(data = d.agg, aes(x = lead_mean, y = score)) + geom_line(aes(col = model)) + geom_point(aes(col = model, size = count)) +
-  theme_classic() + theme(aspect.ratio = 1,
-                          legend.text = element_text(size = 12),
-                          axis.text = element_text(size = 10),
-                          strip.text = element_blank(),
-                          axis.title = element_text(size = 12),
-                          legend.title = element_text(size = 12),
-                          strip.background = element_blank()) +
-  facet_wrap(~ metric, scales = 'free') + scale_color_brewer(palette = 'Set1') + scale_x_continuous(breaks = -8:4) +
-  scale_y_continuous(limits = c(-5, 0), breaks = -10:0) +
-  scale_size_continuous(breaks = c(10, 100, 300, 800), labels = c(10, 100, 300, 800),
-                        limits = c(1, 900), range = c(1,6)) +
-  labs(x = 'Predicted Lead Week', y = 'Mean Log Score', col = 'Model:', size = '# of Fcasts:') +
-  guides(colour = guide_legend(order = 1), size = guide_legend(order = 2))
-
+ggsave(filename = 'results/plots/Fig4.svg', plot = p1, width = 12, height = 7)
 
 # Clean up:
 rm(list = ls())
-
+dev.off()
 
 
 

@@ -37,7 +37,7 @@ levels(d$metric) <- c('Onset Timing', 'Peak Timing', 'Peak Intensity')
 d$metric <- factor(d$metric, levels = levels(d$metric)[c(2:3, 1)])
 d$model <- factor(d$model, levels = levels(d$model)[2:1])
 
-# pdf('results/plots/logScores_022120_removeNoOnsets.pdf', width = 12, height = 8)
+# pdf('results/plots/logScores_062420_removeNoOnsets.pdf', width = 12, height = 8)
 
 # First plot COMBINED by PREDICTED LEAD WEEK:
 d.temp <- d[d$lead_mean >= -6 & d$lead_mean < 5 & !is.na(d$leadonset5), ]
@@ -45,8 +45,26 @@ d.agg <- aggregate(score ~ lead_mean + model + metric, data = d.temp, FUN = mean
 d.agg.count <- aggregate(score ~ lead_mean + model + metric, data = d.temp, FUN = length)
 d.agg <- merge(d.agg, d.agg.count, by = c('lead_mean', 'model', 'metric')); rm(d.agg.count)
 names(d.agg)[4:5] <- c('score', 'count')
+# names(d.agg.count)[4] <- 'count'
 
-p1 <- ggplot(data = d.agg, aes(x = lead_mean, y = score)) + geom_line(aes(col = model)) + geom_point(aes(col = model, size = count)) +
+# d.agg <- melt(d.agg, id.vars = c('lead_mean', 'model', 'metric'))
+# 
+# p1 <- ggplot(data = d.agg, aes(x = lead_mean, y = value)) + geom_line(aes(col = model)) + geom_point(aes(col = model), size = 2.5) +
+#   theme_classic() + theme(aspect.ratio = 1,
+#                           legend.text = element_text(size = 12),
+#                           axis.text = element_text(size = 10),
+#                           strip.text = element_blank(),
+#                           axis.title = element_text(size = 12),
+#                           legend.title = element_text(size = 12),
+#                           strip.background = element_blank()) +
+#   facet_grid(variable ~ metric, scales = 'free') + scale_color_brewer(palette = 'Set1') + scale_x_continuous(breaks = -8:4) +
+#   # scale_y_continuous(limits = c(-5, 0), breaks = -10:0) +
+#   labs(x = 'Predicted Lead Week', y = 'Mean Log Score', col = 'Model:')
+# print(p1)
+# dat.text <- data.frame(label = c('A', 'B', 'C'), metric = c('Peak Timing', 'Peak Intensity', 'Onset Timing'))
+# p1 <- p1 + geom_text(data = dat.text, mapping = aes(x = -5.6, y = -0.25, label = label), size = 8)
+
+p1 <- ggplot(data = d.agg, aes(x = lead_mean, y = score)) + geom_line(aes(col = model)) + geom_point(aes(col = model), size = 3) +
   theme_classic() + theme(aspect.ratio = 1,
                           legend.text = element_text(size = 12),
                           axis.text = element_text(size = 10),
@@ -56,280 +74,53 @@ p1 <- ggplot(data = d.agg, aes(x = lead_mean, y = score)) + geom_line(aes(col = 
                           strip.background = element_blank()) +
   facet_wrap(~ metric, scales = 'free') + scale_color_brewer(palette = 'Set1') + scale_x_continuous(breaks = -8:4) +
   scale_y_continuous(limits = c(-5, 0), breaks = -10:0) +
-  scale_size_continuous(breaks = c(10, 100, 300, 800), labels = c(10, 100, 300, 800),
-                        limits = c(1, 900), range = c(1,6)) +
-  labs(x = 'Predicted Lead Week', y = 'Mean Log Score', col = 'Model:', size = '# of Fcasts:') +
-  guides(colour = guide_legend(order = 1), size = guide_legend(order = 2))
+  # scale_size_continuous(breaks = c(10, 100, 300, 800), labels = c(10, 100, 300, 800),
+  #                       limits = c(1, 900), range = c(1,6)) +
+  labs(x = 'Predicted Lead Week', y = 'Mean Log Score', col = 'Model:')
+  # guides(colour = guide_legend(order = 1), size = guide_legend(order = 2))
 # print(p1)
 dat.text <- data.frame(label = c('A', 'B', 'C'), metric = c('Peak Timing', 'Peak Intensity', 'Onset Timing'))
-print(p1 + geom_text(data = dat.text, mapping = aes(x = -5.6, y = -0.25, label = label), size = 8))
+p1 <- p1 + geom_text(data = dat.text, mapping = aes(x = -5.6, y = -0.25, label = label), size = 8)
+print(p1)
+
+# d.agg.count <- d.agg.count[d.agg.count$metric != 'Peak Intensity', ]
+# d.agg.count$metric <- factor(d.agg.count$metric)
+# p2 <- ggplot(data = d.agg.count, aes(x = lead_mean, y = count)) + geom_line(aes(col = model)) + geom_point(aes(col = model), size = 2.5) +
+#   theme_classic() + theme(aspect.ratio = 1,
+#                           legend.text = element_text(size = 12),
+#                           axis.text = element_text(size = 10),
+#                           strip.text = element_blank(),
+#                           axis.title = element_text(size = 12),
+#                           legend.title = element_text(size = 12),
+#                           strip.background = element_blank()) +
+#   facet_wrap(~ metric, scales = 'free') + scale_color_brewer(palette = 'Set1') + scale_x_continuous(breaks = -8:4) +
+#   scale_y_continuous(limits = c(0, 900), breaks = seq(0, 900, by = 100)) + labs(x = 'Predicted Lead Week', y = 'Mean Log Score', col = 'Model:')
+# dat.text2 <- data.frame(label = c('D', 'E'), metric = c('Peak Timing', 'Onset Timing'))
+# p2 <- p2 + geom_text(data = dat.text2, mapping = aes(x = -5.6, y = 875, label = label), size = 8)
+#
+# grid.arrange(p1, p2, ncol = 1)
+
+# ggsave('results/plots/Fig3.svg', plot = p1, width = 11, height = 7.5)
+
+# Info for Table 1:
+d.agg[d.agg$model == 'Network' & d.agg$metric == 'Peak Timing', ]
+d.agg[d.agg$model == 'Network' & d.agg$metric == 'Onset Timing', ]
+d.agg[d.agg$model == 'Isolated' & d.agg$metric == 'Peak Timing', 'count']
+d.agg[d.agg$model == 'Isolated' & d.agg$metric == 'Onset Timing', 'count']
 
 ########################################################################################################################################################################
 ########################################################################################################################################################################
 ########################################################################################################################################################################
 
-# # Explore why PT worse for network:
-# boxplot(score ~ model + lead_mean, data = d.temp[d.temp$metric == 'Peak Timing', ])
-# # note that only the mean, not the median, is lower - suggests that there are an abundance of "failures"
-# # and gets worse with increasing lead week
-# 
-# d.temp <- d.temp[d.temp$metric == 'Peak Timing', ]
-# 
-# d.temp[d.temp$score == -10 & d.temp$season == '2012-13', ] # actually pretty few, but mostly network
-# # so is it not necessarily that there are a lot of -10s, just that there are a lot of really low values in general for the network?
-# # for network, mostly HU and LU - could be missing observed peaks b/c of noisiness?
-# 
-# # remove LU and look again:
-# d.noLU <- d.temp[d.temp$country != 'LU', ]
-# 
-# d.agg <- aggregate(score ~ lead_mean + model, data = d.noLU, FUN = mean)
-# d.agg.count <- aggregate(score ~ lead_mean + model, data = d.noLU, FUN = length)
-# d.agg <- merge(d.agg, d.agg.count, by = c('lead_mean', 'model')); rm(d.agg.count)
-# names(d.agg)[3:4] <- c('score', 'count')
-# 
-# p1 <- ggplot(data = d.agg, aes(x = lead_mean, y = score)) + geom_line(aes(col = model)) + geom_point(aes(col = model, size = count)) +
-#   theme_classic() +
-#   scale_color_brewer(palette = 'Set1') + scale_x_continuous(breaks = -8:4) +
-#   scale_y_continuous(limits = c(-5, 0), breaks = -10:0) +
-#   scale_size_continuous(breaks = c(10, 100, 300, 800), labels = c(10, 100, 300, 800),
-#                         limits = c(1, 900), range = c(1,6)) +
-#   labs(x = 'Predicted Lead Week', y = 'Mean Log Score', col = 'Model:', size = '# of Fcasts:') +
-#   guides(colour = guide_legend(order = 1), size = guide_legend(order = 2))
-# print(p1)
-# # difference is still there; pretty similar to before
-# 
-# d.noLU <- d.temp[d.temp$country != 'HU' & d.temp$country != 'IT' & d.temp$country != 'ES' & d.temp$country != 'PL', ]
-# 
-# d.agg <- aggregate(score ~ lead_mean + model, data = d.noLU, FUN = mean)
-# d.agg.count <- aggregate(score ~ lead_mean + model, data = d.noLU, FUN = length)
-# d.agg <- merge(d.agg, d.agg.count, by = c('lead_mean', 'model')); rm(d.agg.count)
-# names(d.agg)[3:4] <- c('score', 'count')
-# 
-# p1 <- ggplot(data = d.agg, aes(x = lead_mean, y = score)) + geom_line(aes(col = model)) + geom_point(aes(col = model, size = count)) +
-#   theme_classic() +
-#   scale_color_brewer(palette = 'Set1') + scale_x_continuous(breaks = -8:4) +
-#   scale_y_continuous(limits = c(-5, 0), breaks = -10:0) +
-#   scale_size_continuous(breaks = c(10, 100, 300, 800), labels = c(10, 100, 300, 800),
-#                         limits = c(1, 900), range = c(1,6)) +
-#   labs(x = 'Predicted Lead Week', y = 'Mean Log Score', col = 'Model:', size = '# of Fcasts:') +
-#   guides(colour = guide_legend(order = 1), size = guide_legend(order = 2))
-# print(p1)
-# # again, still there - so it's not consistently enough just these countries
-# rm(d.noLU)
-# # see above - now very little difference before predicted peak
-# 
-# # check by season:
-# d.agg <- aggregate(score ~ lead_mean + model + season, data = d.temp, FUN = mean)
-# d.agg.count <- aggregate(score ~ lead_mean + model + season, data = d.temp, FUN = length)
-# d.agg <- merge(d.agg, d.agg.count, by = c('lead_mean', 'model', 'season')); rm(d.agg.count)
-# names(d.agg)[4:5] <- c('score', 'count')
-# 
-# p1 <- ggplot(data = d.agg, aes(x = lead_mean, y = score)) + geom_line(aes(col = model)) + geom_point(aes(col = model, size = count)) +
-#   theme_classic() +
-#   facet_wrap(~ season, scales = 'free') + scale_color_brewer(palette = 'Set1') + scale_x_continuous(breaks = -8:4) +
-#   scale_y_continuous(limits = c(-5, 0), breaks = -10:0) +
-#   scale_size_continuous(breaks = c(10, 100, 300, 800), labels = c(10, 100, 300, 800),
-#                         limits = c(1, 900), range = c(1,6)) +
-#   labs(x = 'Predicted Lead Week', y = 'Mean Log Score', col = 'Model:', size = '# of Fcasts:') +
-#   guides(colour = guide_legend(order = 1), size = guide_legend(order = 2))
-# print(p1)
-# 
-# # the difference after the predicted peak is pretty consistent - suggests an issue with fits almost?
-# # biggest consistent difference for 2013-14, 2016-17, 2017-18
-# 
-# # check by subtype:
-# d.agg <- aggregate(score ~ lead_mean + model + subtype, data = d.temp, FUN = mean)
-# d.agg.count <- aggregate(score ~ lead_mean + model + subtype, data = d.temp, FUN = length)
-# d.agg <- merge(d.agg, d.agg.count, by = c('lead_mean', 'model', 'subtype')); rm(d.agg.count)
-# names(d.agg)[4:5] <- c('score', 'count')
-# 
-# p1 <- ggplot(data = d.agg, aes(x = lead_mean, y = score)) + geom_line(aes(col = model)) + geom_point(aes(col = model, size = count)) +
-#   theme_classic() +
-#   facet_wrap(~ subtype, scales = 'free') + scale_color_brewer(palette = 'Set1') + scale_x_continuous(breaks = -8:4) +
-#   scale_y_continuous(limits = c(-5, 0), breaks = -10:0) +
-#   scale_size_continuous(breaks = c(10, 100, 300, 800), labels = c(10, 100, 300, 800),
-#                         limits = c(1, 900), range = c(1,6)) +
-#   labs(x = 'Predicted Lead Week', y = 'Mean Log Score', col = 'Model:', size = '# of Fcasts:') +
-#   guides(colour = guide_legend(order = 1), size = guide_legend(order = 2))
-# print(p1)
-# # different after peak for all, but only before peak for H3
-# 
-# # where -10?:
-# d.low <- d.temp[d.temp$score == -10, ] # 832 / 14,202
-# 
-# table(d.low$model) # 597 network, 235 isolated
-# table(d.low$model, d.low$season)
-# table(d.low$model, d.low$lead_mean) # always more in network, but amount more doesn't always increase over time
-# table(d.low$subtype, d.low$lead_mean, d.low$model) # H3 worst, but all but early B have more -10 in network
-# table(d.low$country, d.low$model) # not consistently one country - generally more issues with network than isolated
-# # but LU has a lot, as do DE, BE, and HU
-# table(d.low$country, d.low$lead_mean, d.low$model) # there's just more everywhere, I don't think we can attribute this to a single country
-# # so we can attribute the differences to this small amount of failures, but not a consistent spot where they happen?
-# table(d.low$model, d.low$fc_start)
-# 
-# # check by country:
-# d.agg <- aggregate(score ~ lead_mean + model + country, data = d.temp, FUN = mean)
-# d.agg.count <- aggregate(score ~ lead_mean + model + country, data = d.temp, FUN = length)
-# d.agg <- merge(d.agg, d.agg.count, by = c('lead_mean', 'model', 'country')); rm(d.agg.count)
-# names(d.agg)[4:5] <- c('score', 'count')
-# 
-# p1 <- ggplot(data = d.agg, aes(x = lead_mean, y = score)) + geom_line(aes(col = model)) + geom_point(aes(col = model, size = count)) +
-#   theme_classic() +
-#   facet_wrap(~ country, scales = 'free') + scale_color_brewer(palette = 'Set1') + scale_x_continuous(breaks = -8:4) +
-#   scale_y_continuous(limits = c(-5, 0), breaks = -10:0) +
-#   scale_size_continuous(breaks = c(10, 100, 300, 800), labels = c(10, 100, 300, 800),
-#                         limits = c(1, 900), range = c(1,6)) +
-#   labs(x = 'Predicted Lead Week', y = 'Mean Log Score', col = 'Model:', size = '# of Fcasts:') +
-#   guides(colour = guide_legend(order = 1), size = guide_legend(order = 2))
-# print(p1)
-# # really bad over all times for ES, HU, IT, (LU from -2 on), PL (SK?)
-# # actually better or no real difference for AT, CZ, NL
-# 
-# # try after removing -10:
-# d.notlow <- d.temp[d.temp$score > -10, ]
-# 
-# d.agg <- aggregate(score ~ lead_mean + model, data = d.notlow, FUN = mean)
-# d.agg.count <- aggregate(score ~ lead_mean + model, data = d.notlow, FUN = length)
-# d.agg <- merge(d.agg, d.agg.count, by = c('lead_mean', 'model')); rm(d.agg.count)
-# names(d.agg)[3:4] <- c('score', 'count')
-# 
-# p1 <- ggplot(data = d.agg, aes(x = lead_mean, y = score)) + geom_line(aes(col = model)) + geom_point(aes(col = model, size = count)) +
-#   theme_classic() +
-#   scale_color_brewer(palette = 'Set1') + scale_x_continuous(breaks = -8:4) +
-#   scale_y_continuous(limits = c(-5, 0), breaks = -10:0) +
-#   scale_size_continuous(breaks = c(10, 100, 300, 800), labels = c(10, 100, 300, 800),
-#                         limits = c(1, 900), range = c(1,6)) +
-#   labs(x = 'Predicted Lead Week', y = 'Mean Log Score', col = 'Model:', size = '# of Fcasts:') +
-#   guides(colour = guide_legend(order = 1), size = guide_legend(order = 2))
-# print(p1)
-# # almost no difference
-# # so it seems to be these -10s - note that without them, the median score is -1.6261 - so -10 will really bring the mean down
-# 
-# par(mfrow = c(2, 1))
-# hist(d.notlow$score[d.notlow$model == 'Network'])
-# hist(d.notlow$score[d.notlow$model == 'Isolated'])
-# 
-# summary(d.notlow$score[d.notlow$model == 'Network'])
-# summary(d.notlow$score[d.notlow$model == 'Isolated'])
-# # so distributions are pretty similar (isolated has less variance, but same mean/median) when -10s are removed
-# 
-# ### So we can attribute the difference in means to a tendency to more "failure" with the network model than the isolated ###
-# 
-# # Do the forecasts with failure have equivalent isolated forecasts, or is the difference b/c of tendency to predict earlier onset forecasts?
-# d.low$group <- paste(d.low$season, d.low$country, d.low$fc_start, d.low$subtype, d.low$lead_mean, sep = '_')
-# d.low$group <- factor(d.low$group)
-# 
-# d.temp$group <- paste(d.temp$season, d.temp$country, d.temp$fc_start, d.temp$subtype, d.temp$lead_mean, sep = '_')
-# d.temp$group <- factor(d.temp$group)
-# 
-# for (i in levels(d.low2$group)) {
-#   print(i)
-#   print(as.vector(unique(d.temp$model[d.temp$group == i])))
-# }
-# # mostly these ARE forecasts that exist for both the network and isolated models, so it's not just a tendency to produce earlier forecasts
-# # wait, but not at the same lead! -- many actually do have both, though
-# 
-# # can find a single/or a couple spots where this failure is happening, and investigate those to get some idea of what is happening overall
-# d.low2 <- d.low[d.low$subtype == 'A(H3)' & d.low$lead_mean %in% c(-3, 3), ]
-# d.low2$group <- factor(d.low2$group)
-# levels(d.low2$group) # a couple have both - DE/55, HU/55, HU/60, HU/64
-# # choose one before and one after maybe
-# # HU/55/16-17 and HU/64/2012-13 (both have isolated forecasts at same predicted lead and everything)
-# # first: predicted lead -3, observed lead -1; second: predicted lead 3, observed lead 4
-# d.full1 <- read.csv('results/by_subtype/network_A(H3)/original/outputDist_A(H3)_testSet1.csv')
-# d.full2 <- read.csv('results/by_subtype/isolated_A(H3)/original/outputDist_A(H3)_ISOLATED_update.csv')
-# 
-# d.full1 <- d.full1[d.full1$country == 'HU' & d.full1$season == '2016-17' & d.full1$fc_start == 55 & d.full1$metric == 'pw', ]
-# d.full1 <- d.full1[d.full1$value > 0, ]
-# d.full2 <- d.full2[d.full2$country == 'HU' & d.full2$season == '2016-17' & d.full2$fc_start == 55 & d.full2$metric == 'pw', ]
-# d.full2 <- d.full2[d.full2$value > 0, ]
-# # obs pkwk 56
-# d.full1$bin <- d.full1$bin + 40 - 1
-# d.full2$bin <- d.full2$bin + 40 - 1
-# # by this point 6/12 countries have already peaked - would expect the model to bring things down, but seems to want to forecast peak 2 weeks later
-# # HU has the highest scaled peak this season
-# 
-# # main point might just be that - yes, this would be less accurate even if we widened the window, b/c isolated tend to be 1 rather than 2 weeks late; but it's assigning
-# # the value of -10 to forecasts where 0 vs 1 (score = -5.7) ensemble members are in the right 1-week window
-#     # isolated tend to assign ~14 to correct bin
-# # but these forecasts have the same mean prediction
-# 
-# # By season and subtype - is the effect only seen for some combinations?:
-# # check by season:
-# d.agg <- aggregate(score ~ lead_mean + model + season + subtype, data = d.temp, FUN = mean)
-# d.agg.count <- aggregate(score ~ lead_mean + model + season + subtype, data = d.temp, FUN = length)
-# d.agg <- merge(d.agg, d.agg.count, by = c('lead_mean', 'model', 'season', 'subtype')); rm(d.agg.count)
-# names(d.agg)[4:5 + 1] <- c('score', 'count')
-# 
-# p1 <- ggplot(data = d.agg, aes(x = lead_mean, y = score)) + geom_line(aes(col = model)) + geom_point(aes(col = model, size = count)) +
-#   theme_classic() +
-#   facet_grid(subtype ~ season, scales = 'free') + scale_color_brewer(palette = 'Set1') + scale_x_continuous(breaks = -8:4) +
-#   scale_y_continuous(limits = c(-10, 0), breaks = -10:0) +
-#   scale_size_continuous(breaks = c(10, 100, 300, 800), labels = c(10, 100, 300, 800),
-#                         limits = c(1, 900), range = c(1,6)) +
-#   labs(x = 'Predicted Lead Week', y = 'Mean Log Score', col = 'Model:', size = '# of Fcasts:') +
-#   guides(colour = guide_legend(order = 1), size = guide_legend(order = 2))
-# print(p1)
+# Get number of forecasts by observed lead week, and how many "removed:"
+# forecasts with no OBSERVED onset have already been removed by this point
+m <- read.csv('results/network/outputMet_pro_PROC.csv')
+# m <- unique(m[, c(1, 8, 30, 38, 45, 57)])
+m <- unique(m[, c(1, 8, 30, 57)])
 
-########################################################################################################################################################################
-########################################################################################################################################################################
-########################################################################################################################################################################
-
-# ### Look at where onset accuracy improved ###
-# d.temp <- d[d$lead_mean >= -6 & d$lead_mean < 0 & !is.na(d$leadonset5) & d$metric == 'Onset Timing', ] # 444 observations
-# 
-# table(d.temp$country[d.temp$lead_mean == -6], d.temp$model[d.temp$lead_mean == -6]) # 2 networks are LU and PL, single run - not robust
-# table(d.temp$country[d.temp$lead_mean == -5], d.temp$model[d.temp$lead_mean == -5]) # 1 AT and 2 HU not predicted in isolated; 8 vs. 5 LU; 6 vs. 25 CZ
-# # LU: one is early prediction of onset for 2016-17/H3; others are same forecasts for 2011-12/fcstart54/H3(all 5 runs): network scores are better!
-# # CZ: all network are 12-13, but for different strains/runs (all start 44); same spot has forecasts for isolated for all runs, and network score only better for H1
-# table(d.temp$country[d.temp$lead_mean == -4], d.temp$model[d.temp$lead_mean == -4]) # AT similar for network/isolated; LU only network has anything (6, 5 for same spot as above)
-# table(d.temp$country[d.temp$lead_mean == -3], d.temp$model[d.temp$lead_mean == -3]) # LU: different season, similar performance of both models
-# # AT: similar; DE: 2010-11, fc50 - network better for H1 but worse for B?; HU: similar; NL: same season, network appears a bit better (2012-13/H1)
-# table(d.temp$country[d.temp$lead_mean == -2], d.temp$model[d.temp$lead_mean == -2]) # DE: same season, similar results;
-# # HU 2013-14/H1 (above) or 2016-17/H3? or 2012-13/B (above) - little difference though - little improvement for H1, more forecasts of H3?; PL 2016-17(H3) seems better?
-# # NL 2012-13 - H3 seems improved, no isolated forecasts of H1; IT: 2010-11/B/fc55 for network but not isolated;
-# # LU: same as above, but add 2016-17(H3), and 2012-13(H3)(network only)
-# table(d.temp$country[d.temp$lead_mean == -1], d.temp$model[d.temp$lead_mean == -1]) # way more network than isolated for AT, DE, ES, SK; LU high for both; more isolated for CZ
-# # PL 17-18/B and 15-16/B - network only, but different season/strain than above; NL different seasons/strains than above;
-# # LU also looking different than above - 17-18/H1, H3 all different by network/isolated; B not much interesting
-# 
-# # 2011-12 season (H3) for LU - seems that network performed better very early?; 2016-17/H3 and 2012-13/H3 too?; 2017-18/H1?
-# # DE 2010-11 for H1, but not B; more forecasts at -1, and better than isolated, but still not good
-# # NL 2012-13/H1 and H3?
-# # AT has way more (and better) predictions at lead -1
-# # also looks like lead one has a lot more predictions especially for later seasons (2015-16, 2016-17, 2017-18)s
-# 
-# # What would this plot look like if we limited to where forecasts at same season/country/subtype/fc_start available?:
-# d.temp$group <- paste(d.temp$season, d.temp$country, d.temp$fc_start, d.temp$subtype, sep = '_'); d.temp$group <- factor(d.temp$group)
-# to.keep <- c()
-# for (i in levels(d.temp$group)) {
-#   d.temp2 <- d.temp[d.temp$group == i, ]
-#   if (length(unique(d.temp2$model)) == 2) {
-#     to.keep <- c(to.keep, i)
-#   }
-# }
-# # 26 levels to keep
-# rm(d.temp2)
-# d.temp2 <- d.temp[d.temp$group %in% to.keep, ]
-# 
-# d.agg <- aggregate(score ~ lead_mean + model, data = d.temp2, FUN = mean)
-# d.agg.count <- aggregate(score ~ lead_mean + model, data = d.temp2, FUN = length)
-# d.agg <- merge(d.agg, d.agg.count, by = c('lead_mean', 'model')); rm(d.agg.count)
-# names(d.agg)[3:4] <- c('score', 'count')
-# 
-# p1 <- ggplot(data = d.agg, aes(x = lead_mean, y = score)) + geom_line(aes(col = model)) + geom_point(aes(col = model, size = count)) +
-#   theme_classic() + scale_color_brewer(palette = 'Set1') + scale_x_continuous(breaks = -8:4) +
-#   scale_y_continuous(limits = c(-5, 0), breaks = -10:0) +
-#   scale_size_continuous(breaks = c(10, 20, 30, 40), labels = c(10, 20, 30, 40),
-#                         limits = c(1, 50), range = c(1,6)) +
-#   labs(x = 'Predicted Lead Week', y = 'Mean Log Score', col = 'Model:', size = '# of Fcasts:') +
-#   guides(colour = guide_legend(order = 1), size = guide_legend(order = 2))
-# print(p1)
-# # slight advantage at -6, -5, and -1; all others similar; and isolated produces more forecasts at -6 and -5
-
-########################################################################################################################################################################
-########################################################################################################################################################################
-########################################################################################################################################################################
+# So we can't count those left out for not having an observed onset by lead week, but we can look at season-country-subtype combos, and say how many total removed?
+# out of 198 season-country-subtype combinations in our data (some countries missing data entirely for a season), 29 combos had no observed onset (14.65%)
+rm(m)
 
 # COMBINED by OBSERVED (still removing no onsets):
 d.temp <- d[d$FWeek >= -6 & d$FWeek < 5 & !is.na(d$leadonset5), ]
@@ -339,15 +130,49 @@ d.agg <- merge(d.agg, d.agg.count, by = c('FWeek', 'model', 'metric')); rm(d.agg
 names(d.agg)[4:5] <- c('score', 'count')
 
 # COMBINED by OBSERVED (include ALL forecasts):
-# d.temp <- d[d$FWeek >= -6 & d$FWeek < 5, ]
-# d.agg2 <- aggregate(score ~ FWeek + model + metric, data = d.temp, FUN = mean)
-# d.agg.count <- aggregate(score ~ FWeek + model + metric, data = d.temp, FUN = length)
-# d.agg2 <- merge(d.agg2, d.agg.count, by = c('FWeek', 'model', 'metric')); rm(d.agg.count)
-# names(d.agg2)[4:5] <- c('score', 'count')
+d.temp <- d[d$FWeek >= -6 & d$FWeek < 5, ]
+d.agg3 <- aggregate(score ~ FWeek + model + metric, data = d.temp, FUN = mean)
+d.agg.count <- aggregate(score ~ FWeek + model + metric, data = d.temp, FUN = length)
+d.agg3 <- merge(d.agg3, d.agg.count, by = c('FWeek', 'model', 'metric')); rm(d.agg.count)
+names(d.agg3)[4:5] <- c('score', 'count')
 
 # but remove where no runs of a group predict an onset for EITHER network or isolated:
 d.temp <- d[d$FWeek >= -6 & d$FWeek < 5, ]
-d.temp$group <- paste(d.temp$season, d.temp$country, d.temp$FWeek, d.temp$subtype, d.temp$metric, sep = '_'); d.temp$group <- factor(d.temp$group) # 5435 levels = 54350/5/2
+# d.temp <- d.temp[d.temp$score > -10, ] # FOR COMPARISON
+d.temp$group <- paste(d.temp$season, d.temp$country, d.temp$FWeek, d.temp$subtype, d.temp$metric, sep = '_'); d.temp$group <- factor(d.temp$group) # 5434 levels = 54340/5/2
+
+######################################################
+d.unique <- unique(d.temp[, c(1:2, 5, 8, 11:13)])
+d.unique$group <- factor(d.unique$group) # still 5434
+
+table(d.unique$FWeek, d.unique$metric, d.unique$model)
+
+# see below: 2021 levels to remove; not sure which are which metrics, though
+
+d.unique1 <- d.unique[!(d.unique$group %in% levels.to.remove), ]
+d.unique1$group <- factor(d.unique1$group)
+
+d.unique2 <- unique(d.temp[, c(1:2, 5, 8, 11:13)])
+d.unique2$group <- factor(d.unique2$group)
+
+summary(levels(d.unique1$group) == levels(d.unique2$group)) # all true
+rm(d.unique2)
+
+table(d.unique1$FWeek, d.unique1$metric, d.unique1$model)
+
+pk.start <- c(164, 164, 166, 167, 167, 163, 169, 167, 164, 167, 167)
+pk.end <- c(39, 58, 83, 106, 124, 138, 162, 160, 157, 158, 158)
+
+on.start <- c(148, 156, 162, 159, 165, 152, 169, 169, 169, 166, 169)
+on.end <- c(1, 5, 2, 14, 15, 4, 70, 144, 158, 156, 158)
+
+print(pk.start - pk.end)
+print(pk.end / pk.start * 100)
+
+print(on.start - on.end)
+print(on.end / on.start * 100)
+######################################################
+
 levels.to.remove <- c()
 for (ix in levels(d.temp$group)) {
   d.check <- d.temp[d.temp$group == ix, ]
@@ -363,19 +188,20 @@ d.agg2 <- merge(d.agg2, d.agg.count, by = c('FWeek', 'model', 'metric')); rm(d.a
 names(d.agg2)[4:5] <- c('score', 'count')
 
 # Plot (combined):
-d.agg$method <- 'remove'
-d.agg2$method <- 'include'
-d.agg <- rbind(d.agg, d.agg2); rm(d.agg2)
+d.agg$method <- 'standard'
+d.agg2$method <- 'exclude'
+d.agg3$method <- 'include'
+d.agg <- rbind(d.agg, d.agg2, d.agg3); rm(d.agg2); rm(d.agg3)
 d.agg$method <- factor(d.agg$method)
-d.agg$method <- factor(d.agg$method, levels = levels(d.agg$method)[2:1])
+d.agg$method <- factor(d.agg$method, levels = levels(d.agg$method)[c(3, 1, 2)])
 
 p2 <- ggplot(data = d.agg, aes(x = FWeek, y = score)) + geom_line(aes(col = model)) + geom_point(aes(col = model, size = count)) +
   theme_classic() + theme(aspect.ratio = 1,
-                          legend.text = element_text(size = 12),
+                          legend.text = element_text(size = 14),
                           axis.text = element_text(size = 10),
                           strip.text = element_blank(),
-                          axis.title = element_text(size = 12),
-                          legend.title = element_text(size = 12),
+                          axis.title = element_text(size = 14),
+                          legend.title = element_text(size = 14),
                           strip.background = element_blank()) +
   facet_grid(method ~ metric, scales = 'free') + scale_color_brewer(palette = 'Set1') + scale_x_continuous(breaks = -8:4) +
   scale_y_continuous(limits = c(-10, 0), breaks = -10:0) +
@@ -383,12 +209,12 @@ p2 <- ggplot(data = d.agg, aes(x = FWeek, y = score)) + geom_line(aes(col = mode
                         limits = c(1, 900), range = c(1,6)) +
   labs(x = 'Observed Lead Week', y = 'Mean Log Score', col = 'Model:', size = '# of Fcasts:') +
   guides(colour = guide_legend(order = 1), size = guide_legend(order = 2))
-dat.text <- data.frame(label = c('A', 'B', 'C', 'D', 'E', 'F'),
-                       metric = c('Peak Timing', 'Peak Intensity', 'Onset Timing', 'Peak Timing', 'Peak Intensity', 'Onset Timing'),
-                       method = c(rep('remove', 3), rep('include', 3)))
+dat.text <- data.frame(label = c('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'),
+                       metric = c('Peak Timing', 'Peak Intensity', 'Onset Timing', 'Peak Timing', 'Peak Intensity', 'Onset Timing', 'Peak Timing', 'Peak Intensity', 'Onset Timing'),
+                       method = c(rep('standard', 3), rep('exclude', 3), rep('include', 3)))
 p2 <- p2 + geom_text(data = dat.text, mapping = aes(x = -5.6, y = -0.25, label = label), size = 8)
 print(p2)
-# ggsave(file = '../../Thesis/parts/Chapter3_supp/FigS3.svg', plot = p2, width = 12, height = 8)
+# ggsave(file = 'results/plots/FigS3.svg', plot = p2, width = 12, height = 10)
 
 # p3 <- ggplot(data = d.agg, aes(x = FWeek, y = score)) + geom_line(aes(col = model)) + geom_point(aes(col = model, size = count)) +
 #   theme_classic() + theme(aspect.ratio = 1,
@@ -412,101 +238,93 @@ print(p2)
 ########################################################################################################################################################################
 ########################################################################################################################################################################
 
-### FRIEDMAN TEST ###
-# d.temp <- d[d$FWeek >= -6 & d$FWeek < 5, ]
-
-ggplot(data = d.temp, aes(x = FWeek, y = score, fill = model, group = paste(FWeek, model, '_'))) + geom_boxplot() + facet_wrap(~ metric) +
-  theme_classic() + scale_x_continuous(breaks = -6:4) + scale_y_continuous(breaks = -10:0) + scale_fill_brewer(palette = 'Set2')
-# obviously a lot of overlap - I think the question is, how often is one better than the other?
-# this seems to require pairing to some extent, though - so pair by runs?
-
-d.temp <- d.temp[, c(1:2, 4:5, 8:12)]
-d.temp$group <- paste(d.temp$season, d.temp$country, d.temp$FWeek, d.temp$subtype, sep = '_'); d.temp$group <- factor(d.temp$group)
-d.temp$group2 <- paste(d.temp$season, d.temp$country, d.temp$FWeek, d.temp$subtype, d.temp$model, sep = '_'); d.temp$group2 <- factor(d.temp$group2)
-
-d.pt <- d.temp[d.temp$metric == 'Peak Timing', ]
-d.pt$metric <- NULL
-
-d.pi <- d.temp[d.temp$metric == 'Peak Intensity', ]
-d.pi$metric <- NULL
-
-d.ot <- d.temp[d.temp$metric == 'Onset Timing', ]
-d.ot$metric <- NULL
-
-# Find a way to draw a random run for each:
-d.pt <- d.pt[order(d.pt$group, d.pt$model), ]
-rownames(d.pt) <- 1:dim(d.pt)[1]
-
-d.pi <- d.pi[order(d.pi$group, d.pi$model), ]
-rownames(d.pi) <- 1:dim(d.pi)[1]
-
-d.ot <- d.ot[order(d.ot$group, d.ot$model), ]
-rownames(d.ot) <- 1:dim(d.ot)[1]
-
-# Keep only levels relevant for each metric:
-d.pt$group <- factor(d.pt$group); d.pt$group2 <- factor(d.pt$group2)
-d.pi$group <- factor(d.pi$group); d.pi$group2 <- factor(d.pi$group2)
-d.ot$group <- factor(d.ot$group); d.ot$group2 <- factor(d.ot$group2)
-
-# Remove where leadonset5 is NA - don't want to consider forecasts where no onset predicted:
-d.pt <- d.pt[!is.na(d.pt$leadonset5), ]
-d.pi <- d.pi[!is.na(d.pi$leadonset5), ]
-d.ot <- d.ot[!is.na(d.ot$leadonset5), ]
-
-# Function to select only ONE representative from each level of group2:
-permute.by.run <- function(dat) {
-  dat.a <- split(dat, dat$group2)
-  dat.b <- lapply(dat.a, function(ix) {
-    ix[sample(dim(ix)[1], 1), ]
-  })
-  dat.c <- do.call(rbind, dat.b)
-  rownames(dat.c) <- NULL
-  return(dat.c)
-}
-
-# a <- split(d.pt, d.pt$group2)
-# b <- lapply(a, function(ix) {
-#   ix[sample(dim(ix)[1], 1), ]
-# })
-# c <- do.call(rbind, b)
-# rownames(c) <- NULL
-
-# Now perform Friedman tests:
-set.seed(1089437584)
-p.vals <- c()
-for (i in 1:100) {
-  if (i%%10 == 0) {
-    print(i)
-  }
-  d.pt.red <- permute.by.run(d.pt)
-  d.pt.red$group <- factor(d.pt.red$group)
-  p.vals <- c(p.vals, friedmanTest(d.pt.red$score, d.pt.red$model, d.pt.red$group, dist = 'FDist')$p.value)
-}
-print(median(p.vals)) # 0.04070164; 0.2610895 if no -10s; 0.003365633 if all included
-
-set.seed(1089437584)
-p.vals <- c()
-for (i in 1:100) {
-  if (i%%10 == 0) {
-    print(i)
-  }
-  d.pi.red <- permute.by.run(d.pi)
-  d.pi.red$group <- factor(d.pi.red$group)
-  p.vals <- c(p.vals, friedmanTest(d.pi.red$score, d.pi.red$model, d.pi.red$group, dist = 'FDist')$p.value)
-}
-print(median(p.vals)) # 0.02154314; 0.07148775 if no -10s; 5.053524e-05 if all included
-
-set.seed(1089437584)
-p.vals <- c()
-for (i in 1:100) {
-  if (i%%10 == 0) {
-    print(i)
-  }
-  d.ot.red <- permute.by.run(d.ot)
-  d.ot.red$group <- factor(d.ot.red$group)
-  p.vals <- c(p.vals, friedmanTest(d.ot.red$score, d.ot.red$model, d.ot.red$group, dist = 'FDist')$p.value)
-}
-print(median(p.vals)) # 0.1247537; 0.1636237 if no -10s; 0.1012045 if all included
+# ### FRIEDMAN TEST ###
+# # d.temp <- d[d$FWeek >= -6 & d$FWeek < 5, ]
+# 
+# # ggplot(data = d.temp, aes(x = FWeek, y = score, fill = model, group = paste(FWeek, model, '_'))) + geom_boxplot() + facet_wrap(~ metric) +
+# #   theme_classic() + scale_x_continuous(breaks = -6:4) + scale_y_continuous(breaks = -10:0) + scale_fill_brewer(palette = 'Set2')
+# # # obviously a lot of overlap - I think the question is, how often is one better than the other?
+# # # this seems to require pairing to some extent, though - so pair by runs?
+# 
+# d.temp <- d.temp[, c(1:2, 4:5, 8:12)]
+# d.temp$group <- paste(d.temp$season, d.temp$country, d.temp$FWeek, d.temp$subtype, sep = '_'); d.temp$group <- factor(d.temp$group)
+# d.temp$group2 <- paste(d.temp$season, d.temp$country, d.temp$FWeek, d.temp$subtype, d.temp$model, sep = '_'); d.temp$group2 <- factor(d.temp$group2)
+# 
+# d.pt <- d.temp[d.temp$metric == 'Peak Timing', ]
+# d.pt$metric <- NULL
+# 
+# d.pi <- d.temp[d.temp$metric == 'Peak Intensity', ]
+# d.pi$metric <- NULL
+# 
+# d.ot <- d.temp[d.temp$metric == 'Onset Timing', ]
+# d.ot$metric <- NULL
+# 
+# # Find a way to draw a random run for each:
+# d.pt <- d.pt[order(d.pt$group, d.pt$model), ]
+# rownames(d.pt) <- 1:dim(d.pt)[1]
+# 
+# d.pi <- d.pi[order(d.pi$group, d.pi$model), ]
+# rownames(d.pi) <- 1:dim(d.pi)[1]
+# 
+# d.ot <- d.ot[order(d.ot$group, d.ot$model), ]
+# rownames(d.ot) <- 1:dim(d.ot)[1]
+# 
+# # Keep only levels relevant for each metric:
+# d.pt$group <- factor(d.pt$group); d.pt$group2 <- factor(d.pt$group2)
+# d.pi$group <- factor(d.pi$group); d.pi$group2 <- factor(d.pi$group2)
+# d.ot$group <- factor(d.ot$group); d.ot$group2 <- factor(d.ot$group2)
+# 
+# # Function to select only ONE representative from each level of group2:
+# permute.by.run <- function(dat) {
+#   dat.a <- split(dat, dat$group2)
+#   dat.b <- lapply(dat.a, function(ix) {
+#     ix[sample(dim(ix)[1], 1), ]
+#   })
+#   dat.c <- do.call(rbind, dat.b)
+#   rownames(dat.c) <- NULL
+#   return(dat.c)
+# }
+# 
+# # Now perform Friedman tests:
+# set.seed(1089437584)
+# p.vals <- c()
+# for (i in 1:100) {
+#   if (i%%10 == 0) {
+#     print(i)
+#   }
+#   d.pt.red <- permute.by.run(d.pt)
+#   d.pt.red$group <- factor(d.pt.red$group)
+#   p.vals <- c(p.vals, friedmanTest(d.pt.red$score, d.pt.red$model, d.pt.red$group, dist = 'FDist')$p.value)
+# }
+# print(median(p.vals)) # 0.0482865; 0.247285 if no -10s; 0.007969452 if all included
+# # Old: 0.04070164; 0.2610895 if no -10s; 0.003365633 if all included
+# 
+# set.seed(1089437584)
+# p.vals <- c()
+# for (i in 1:100) {
+#   if (i%%10 == 0) {
+#     print(i)
+#   }
+#   d.pi.red <- permute.by.run(d.pi)
+#   d.pi.red$group <- factor(d.pi.red$group)
+#   p.vals <- c(p.vals, friedmanTest(d.pi.red$score, d.pi.red$model, d.pi.red$group, dist = 'FDist')$p.value)
+# }
+# print(median(p.vals)) # 0.2954887; 0.2779738 if no -10s; 0.00337134 if all included
+# # Old: 0.02154314; 0.07148775 if no -10s; 5.053524e-05 if all included
+# 
+# set.seed(1089437584)
+# p.vals <- c()
+# for (i in 1:100) {
+#   if (i%%10 == 0) {
+#     print(i)
+#   }
+#   d.ot.red <- permute.by.run(d.ot)
+#   d.ot.red$group <- factor(d.ot.red$group)
+#   p.vals <- c(p.vals, friedmanTest(d.ot.red$score, d.ot.red$model, d.ot.red$group, dist = 'FDist')$p.value)
+# }
+# print(median(p.vals)) # 0.1608506; 0.2674348 if no -10s; 0.1631202 if all included
+# # Old: 0.1247537; 0.1636237 if no -10s; 0.1012045 if all included
+# 
 # 
 # # Check direction of relationship (which is better?):
 # network.better = isol.better = 0
@@ -517,7 +335,7 @@ print(median(p.vals)) # 0.1247537; 0.1636237 if no -10s; 0.1012045 if all includ
 #     isol.better <- isol.better + 1
 #   }
 # }
-# # network 616, isolated 721
+# # network 609, isolated 721
 # 
 # network.better = isol.better = 0
 # for (block in levels(d.pi$group)) {
@@ -527,7 +345,7 @@ print(median(p.vals)) # 0.1247537; 0.1636237 if no -10s; 0.1012045 if all includ
 #     isol.better <- isol.better + 1
 #   }
 # }
-# # network 634, isolated 691
+# # network 632, isolated 670
 # # so isolated better for both
 
 ########################################################################################################################################################################
@@ -565,7 +383,7 @@ dat.text <- data.frame(label = c('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'),
 p1 <- p1 + geom_text(data = dat.text, mapping = aes(x = -5.6, y = -0.25, label = label), size = 8)
 print(p1)
 
-ggsave(file = '../../Thesis/parts/Chapter3_supp/FigS4.svg', plot = p1, width = 12, height = 8)
+# ggsave(file = 'results/plots/FigS4.svg', plot = p1, width = 12, height = 8)
 
 # d.temp <- d[d$FWeek >= -6 & d$FWeek < 5, ]
 # d.agg <- aggregate(score ~ FWeek + model + metric + subtype, data = d.temp, FUN = mean)
@@ -596,6 +414,7 @@ ggsave(file = '../../Thesis/parts/Chapter3_supp/FigS4.svg', plot = p1, width = 1
 # wait - for initial tests, just use 0.05 - I don't think it matters a ton
 
 d.temp <- d[d$FWeek >= -6 & d$FWeek < 5, ]
+# d.temp <- d.temp[d.temp$score > -10, ] # FOR COMPARISON
 d.temp$group <- paste(d.temp$season, d.temp$country, d.temp$FWeek, d.temp$subtype, d.temp$metric, sep = '_'); d.temp$group <- factor(d.temp$group) # 5435 levels = 54350/5/2
 levels.to.remove <- c()
 for (ix in levels(d.temp$group)) {
@@ -607,35 +426,12 @@ for (ix in levels(d.temp$group)) {
 d.temp <- d.temp[!(d.temp$group %in% levels.to.remove), ]
 d.temp$group <- factor(d.temp$group)
 
-# d.agg <- aggregate(score ~ FWeek + model + metric + subtype, data = d.temp, FUN = mean)
-# d.agg.count <- aggregate(score ~ FWeek + model + metric + subtype, data = d.temp, FUN = length)
-# d.agg <- merge(d.agg, d.agg.count, by = c('FWeek', 'model', 'metric', 'subtype')); rm(d.agg.count)
-# names(d.agg)[5:6] <- c('score', 'count')
-# 
-# p2 <- ggplot() + geom_line(data = d.agg, aes(x = FWeek, y = score, col = model)) +
-#   geom_point(data = d.agg, aes(x = FWeek, y = score, col = model, size = count)) +
-#   theme_classic() + theme(legend.text = element_text(size = 12),
-#                           axis.text = element_text(size = 10),
-#                           strip.text = element_text(size = 12),
-#                           axis.title = element_text(size = 12),
-#                           legend.title = element_text(size = 12)) +
-#   facet_grid(metric ~ subtype, scales = 'free') + scale_color_brewer(palette = 'Set1') + scale_x_continuous(breaks = -8:4) +
-#   scale_y_continuous(limits = c(-10, 0), breaks = -10:0) +
-#   scale_size_continuous(breaks = c(10, 100, 300), labels = c(10, 100, 300),
-#                         limits = c(1, 400), range = c(1,6)) +
-#   labs(x = 'Observed Lead Week', y = 'Mean Log Score', col = 'Model', size = '# of Fcasts') +
-#   guides(colour = guide_legend(order = 1), size = guide_legend(order = 2))
-# print(p2)
-
 d.temp <- d.temp[, c(1:2, 4:5, 8:12)]
 d.temp$group <- paste(d.temp$season, d.temp$country, d.temp$FWeek, d.temp$subtype, sep = '_'); d.temp$group <- factor(d.temp$group)
 d.temp$group2 <- paste(d.temp$season, d.temp$country, d.temp$FWeek, d.temp$subtype, d.temp$model, sep = '_'); d.temp$group2 <- factor(d.temp$group2)
 
 d.temp <- d.temp[order(d.temp$metric, d.temp$subtype, d.temp$group, d.temp$model), ]
 d.temp <- d.temp[!is.na(d.temp$leadonset5), ] # remove where no onset predicted
-
-ggplot(data = d.temp, aes(x = FWeek, y = score, fill = model, group = paste(FWeek, model, '_'))) + geom_boxplot() + facet_grid(subtype ~ metric) +
-  theme_classic() + scale_x_continuous(breaks = -6:4) + scale_y_continuous(breaks = -10:0) + scale_fill_brewer(palette = 'Set2')
 
 d.agg <- aggregate(score ~ FWeek + model + metric + subtype, data = d.temp, FUN = mean)
 d.agg.count <- aggregate(score ~ FWeek + model + metric + subtype, data = d.temp, FUN = length)
@@ -659,69 +455,54 @@ print(p2)
 
 # dev.off()
 
-# # calculate scores:
-# par(mfrow = c(3, 3), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-# for (metric in levels(d.temp$metric)) {
-#   for (subtype in levels(d.temp$subtype)) {
-#     print(paste(metric, subtype, sep = '_'))
-# 
-#     d.red <- d.temp[d.temp$metric == metric & d.temp$subtype == subtype, ]
-#     rownames(d.red) <- 1:dim(d.red)[1]
-# 
-#     d.red$group <- factor(d.red$group)
-#     d.red$group2 <- factor(d.red$group2)
-# 
-#     set.seed(1089437584)
-#     p.vals <- c()
-#     for (i in 1:100) {
-#       d.red2 <- permute.by.run(d.red)
-#       d.red2$group <- factor(d.red2$group)
-#       p.vals <- c(p.vals, friedmanTest(d.red2$score, d.red2$model, d.red2$group, dist = 'FDist')$p.value)
-#     }
-#     hist(p.vals)
-#     print(median(p.vals))
-#   }
-# }
-# # PT/H1: 0.749
-# # PT/H3: 0.174
-# # PT/B: 0.025
-# # PI/H1: 0.125
-# # PI/H3: 0.011
-# # PI/B: 0.596
-# # OT/H1: 0.588
-# # OT/H3: 0.351
-# # OT/B: 0.247
-# 
-# # sig are PT/B, PI/H3
-# # if we remove where scores==-10, only PI/H3 still sig (p = 0.03051895)
+# Function to select only ONE representative from each level of group2:
+permute.by.run <- function(dat) {
+  dat.a <- split(dat, dat$group2)
+  dat.b <- lapply(dat.a, function(ix) {
+    ix[sample(dim(ix)[1], 1), ]
+  })
+  dat.c <- do.call(rbind, dat.b)
+  rownames(dat.c) <- NULL
+  return(dat.c)
+}
+
+# calculate scores:
+par(mfrow = c(3, 3), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+for (metric in levels(d.temp$metric)) {
+  for (subtype in levels(d.temp$subtype)) {
+    print(paste(metric, subtype, sep = '_'))
+
+    d.red <- d.temp[d.temp$metric == metric & d.temp$subtype == subtype, ]
+    rownames(d.red) <- 1:dim(d.red)[1]
+
+    d.red$group <- factor(d.red$group)
+    d.red$group2 <- factor(d.red$group2)
+
+    set.seed(1089437584)
+    p.vals <- c()
+    for (i in 1:100) {
+      d.red2 <- permute.by.run(d.red)
+      d.red2$group <- factor(d.red2$group)
+      p.vals <- c(p.vals, friedmanTest(d.red2$score, d.red2$model, d.red2$group, dist = 'FDist')$p.value)
+    }
+    hist(p.vals)
+    print(median(p.vals))
+  }
+}
+# PT/H1: 0.523
+# PT/H3: 0.443
+# PT/B: 0.036
+# PI/H1: 0.074
+# PI/H3: 0.612
+# PI/B: 0.625
+# OT/H1: 0.551
+# OT/H3: 0.109
+# OT/B: 0.733
+
+# sig: PT/B
+# if we remove where scores==-10, not longer sig (p>0.1)
 # 
 # d.red <- d.temp[d.temp$metric == 'Peak Timing' & d.temp$subtype == 'B', ]
-# rownames(d.red) <- 1:dim(d.red)[1]
-# 
-# d.red$group <- factor(d.red$group)
-# d.red$group2 <- factor(d.red$group2)
-# 
-# set.seed(1089437584)
-# net.to.isol.rat <- c()
-# for (i in 1:100) {
-#   d.red2 <- permute.by.run(d.red)
-#   d.red2$group <- factor(d.red2$group)
-#   # p.vals <- c(p.vals, friedmanTest(d.red2$score, d.red2$model, d.red2$group, dist = 'FDist')$p.value)
-#   
-#   network.better = isol.better = 0
-#   for (block in levels(d.red2$group)) {
-#     if (d.red2[d.red2$group == block & d.red2$model == 'Network', 'score'] > d.red2[d.red2$group == block & d.red2$model == 'Isolated', 'score']) {
-#       network.better <- network.better + 1
-#     } else if (d.red2[d.red2$group == block & d.red2$model == 'Network', 'score'] < d.red2[d.red2$group == block & d.red2$model == 'Isolated', 'score']) {
-#       isol.better <- isol.better + 1
-#     }
-#   }
-#   net.to.isol.rat <- c(net.to.isol.rat, network.better / isol.better)
-# }
-# print(summary(net.to.isol.rat))
-# # network WORSE - always lower
-# 
-# d.red <- d.temp[d.temp$metric == 'Peak Intensity' & d.temp$subtype == 'A(H3)', ]
 # rownames(d.red) <- 1:dim(d.red)[1]
 # 
 # d.red$group <- factor(d.red$group)
@@ -790,8 +571,7 @@ print(p2)
 #   labs(x = 'Observed Lead Week', y = 'Mean Log Score', col = 'Model', size = '# of Fcasts') +
 #   guides(colour = guide_legend(order = 1), size = guide_legend(order = 2))
 # print(p2)
-# # no dramatic differences by obs.; some stuff there by predicted lead, but probably country-specific - only 2.3 countries have ARI, and one is LU
-
+#
 # # Breakdown by SEASON:
 # d.temp <- d[d$lead_mean >= -6 & d$lead_mean < 5 & !is.na(d$leadonset5), ]
 # d.agg <- aggregate(score ~ lead_mean + model + metric + season, data = d.temp, FUN = mean)
@@ -824,7 +604,7 @@ print(p2)
 # #   labs(x = 'Observed Lead Week', y = 'Mean Log Score', col = 'Model', size = '# of Fcasts') +
 # #   guides(colour = guide_legend(order = 1), size = guide_legend(order = 2))
 # # print(p2)
-
+#
 # # By region?
 # m <- read.csv('results/network/outputMet_pro_PROC.csv')
 # m <- unique(m[, c(1, 8, 48:49, 57)])
@@ -861,8 +641,7 @@ print(p2)
 # #   labs(x = 'Observed Lead Week', y = 'Mean Log Score', col = 'Model', size = '# of Fcasts') +
 # #   guides(colour = guide_legend(order = 1), size = guide_legend(order = 2))
 # # print(p2)
-# # # southwest a bit better than eastern, but not notable really
-
+#
 # # And by scaling range?:
 # d.temp <- d[d$lead_mean >= -6 & d$lead_mean < 5 & !is.na(d$leadonset5), ]
 # d.agg <- aggregate(score ~ lead_mean + model + metric + scaling.range, data = d.temp, FUN = mean)
@@ -903,14 +682,10 @@ print(p2)
 # d$scaling.range[d$scaling.range %in% c('(2,10]', '(10,20]')] <- '(2,20]'
 # d$scaling.range[d$scaling.range %in% c('(20,50]', '(50,100]')] <- '(20,100]'
 # d$scaling.range <- factor(d$scaling.range)
-# # no clear patterns; fewer fcasts of OT for smallest scalings (DE, FR, SK)
 
 ########################################################################################################################################################################
 
-# pdf('results/plots/logScores_022420_byCountry.pdf', width = 22, height = 4)
-pdf('../drafts/NetworkModel/supplemental/FigS5.pdf', width = 22, height = 4.5)
-
-# Do country plots in another file, but quick check:
+# By country:
 d.temp <- d[d$lead_mean >= -6 & d$lead_mean < 5 & !is.na(d$leadonset5), ]
 # d.temp <- d[d$lead_mean >= -6 & d$lead_mean < 5 & !is.na(d$leadonset5) & d$score > -10, ]
 d.agg <- aggregate(score ~ lead_mean + model + metric + country, data = d.temp, FUN = mean)
@@ -930,7 +705,7 @@ p1 <- ggplot(data = d.agg[d.agg$metric != 'Onset Timing', ], aes(x = lead_mean, 
   guides(colour = guide_legend(order = 1), size = guide_legend(order = 2))
 print(p1)
 
-ggsave(file = '../../Thesis/parts/Chapter3_supp/FigS5.svg', plot = p1, width = 22, height = 4.5)
+ggsave(file = 'results/plots/FigS5.svg', plot = p1, width = 22, height = 4.5)
 
 # ggplot(data = d.agg[d.agg$metric == 'Onset Timing', ], aes(x = lead_mean, y = score, col = model)) + geom_line() + geom_point(aes(size = count)) +
 #   theme_bw() + facet_wrap(~ country, nrow = 2)
@@ -967,7 +742,7 @@ ggsave(file = '../../Thesis/parts/Chapter3_supp/FigS5.svg', plot = p1, width = 2
 #   theme_bw() + facet_wrap(~ country, nrow = 2)
 
 dev.off()
-# rm(list = ls())
+rm(list = ls())
 
 
 
