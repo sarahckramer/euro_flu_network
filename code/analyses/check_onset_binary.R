@@ -149,7 +149,36 @@ grid.arrange(p1, p2)
 # p2 <- ggplot(data = res.country, aes(x = fc_start, y = spec, group = model, col = model)) + geom_line() + geom_point(size = 2) + theme_classic() +
 #   labs(x = 'Calendar Week', y = 'Specificity', col = 'Model:') + scale_color_brewer(palette = 'Set1') + scale_y_continuous(limits = c(0, 1)) +
 #   facet_wrap(~ country)
+# grid.arrange(p1, p2)
 # # not really a clear pattern by country; also probably not enough forecasts (esp. for spec.) to really tell
+
+
+
+
+
+
+# sample code:
+p1 <- ggplot(data = d.agg, aes(x = lead_mean, y = score)) + geom_line(aes(col = model)) + geom_point(aes(col = model), size = 3) +
+  theme_classic() + theme(aspect.ratio = 1,
+                          legend.text = element_text(size = 12),
+                          axis.text = element_text(size = 10),
+                          strip.text = element_blank(),
+                          axis.title = element_text(size = 12),
+                          legend.title = element_text(size = 12),
+                          strip.background = element_blank()) +
+  facet_wrap(~ metric, scales = 'free') + scale_color_brewer(palette = 'Set1') + scale_x_continuous(breaks = -8:4) +
+  scale_y_continuous(limits = c(-5, 0), breaks = -10:0) +
+  # scale_size_continuous(breaks = c(10, 100, 300, 800), labels = c(10, 100, 300, 800),
+  #                       limits = c(1, 900), range = c(1,6)) +
+  labs(x = 'Predicted Lead Week', y = 'Mean Log Score', col = 'Model:')
+# guides(colour = guide_legend(order = 1), size = guide_legend(order = 2))
+# print(p1)
+dat.text <- data.frame(label = c('A', 'B', 'C'), metric = c('Peak Timing', 'Peak Intensity', 'Onset Timing'))
+p1 <- p1 + geom_text(data = dat.text, mapping = aes(x = -5.6, y = -0.25, label = label), size = 8)
+print(p1)
+
+
+
 
 ###############################################################################################################################################################################
 ###############################################################################################################################################################################
