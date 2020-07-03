@@ -81,104 +81,43 @@ rm(true_pos, true_neg, false_pos, false_neg, sens, spec, model, fc, num_pos, num
 
 res.dat <- as.data.frame(res.dat)
 names(res.dat) <- c('model', 'fc_start', 'sens', 'spec', 'n_pos', 'n_neg')
-
-# Also do the calculations by country, just to check:
-res.country <- NULL
-for (model in levels(m$model)) {
-  for (fc in unique(m$fc_start)) {
-    for (country in levels(m$country)) {
-      m.temp <- m[m$model == model & m$fc_start == fc & m$country == country, ]
-      true_pos <- length(m.temp$result[m.temp$result == 'True Pos'])
-      true_neg <- length(m.temp$result[m.temp$result == 'True Neg'])
-      false_pos <- length(m.temp$result[m.temp$result == 'False Pos'])
-      false_neg <- length(m.temp$result[m.temp$result == 'False Neg'])
-      
-      sens <- true_pos / (true_pos + false_neg)
-      spec <- true_neg / (true_neg + false_pos)
-      
-      res.country <- rbind(res.country, c(model, fc, country, sens, spec))
-    }
-  }
-}
-rm(true_pos, true_neg, false_pos, false_neg, sens, spec, model, fc, country)
-
-res.country <- as.data.frame(res.country)
-names(res.country) <- c('model', 'fc_start', 'country', 'sens', 'spec')
+# note: not really a clear pattern by country; also probably not enough forecasts (esp. for spec.) to really tell
 
 # Convert to numeric:
 res.dat$sens <- as.numeric(as.character(res.dat$sens))
 res.dat$spec <- as.numeric(as.character(res.dat$spec))
-res.country$sens <- as.numeric(as.character(res.country$sens))
-res.country$spec <- as.numeric(as.character(res.country$spec))
-
 res.dat$n_pos <- as.numeric(as.character(res.dat$n_pos))
 res.dat$n_neg <- as.numeric(as.character(res.dat$n_neg))
 
+# Convert to percentages:
+res.dat$sens <- res.dat$sens * 100
+res.dat$spec <- res.dat$spec * 100
+
 # Update levels:
 res.dat$model <- factor(res.dat$model, levels = levels(res.dat$model)[2:1])
-res.country$model <- factor(res.country$model, levels = levels(res.country$model)[2:1])
 
-# Plot up sens/spec by model/country:
-p1 <- ggplot(data = res.dat, aes(x = fc_start, y = sens, group = model, col = model)) + geom_line() + geom_point(aes(size = n_pos)) + theme_classic() +
-  labs(x = 'Calendar Week', y = 'Sensitivity', col = 'Model:', size = 'Total w/ Onset:') + scale_color_brewer(palette = 'Set1')
-p2 <- ggplot(data = res.dat, aes(x = fc_start, y = spec, group = model, col = model)) + geom_line() + geom_point(aes(size = n_neg)) + theme_classic() +
-  labs(x = 'Calendar Week', y = 'Specificity', col = 'Model:', size = 'Total w/o Onset') + scale_color_brewer(palette = 'Set1') +
-  scale_size_continuous(limits = c(0, 150), breaks = c(10, 50, 100, 150))
-grid.arrange(p1, p2)
-# false positives are incredibly rare
-
-p1 <- ggplot(data = res.dat, aes(x = fc_start, y = sens, group = model, col = model)) + geom_line() + geom_point(size = 2) + theme_classic() +
-  labs(x = 'Calendar Week', y = 'Sensitivity', col = 'Model:') + scale_color_brewer(palette = 'Set1') + scale_y_continuous(limits = c(0, 1))
-p2 <- ggplot(data = res.dat, aes(x = fc_start, y = spec, group = model, col = model)) + geom_line() + geom_point(size = 2) + theme_classic() +
-  labs(x = 'Calendar Week', y = 'Specificity', col = 'Model:') + scale_color_brewer(palette = 'Set1') + scale_y_continuous(limits = c(0, 1))
-grid.arrange(p1, p2)
-# so sensitivity tends to be higher at later calendar weeks, suggesting that, later in an outbreak, model becomes better at correctly labeling outbreaks with an onset
-    # although this is of course partly because model can tell when a country is currently experiencing an outbreak
-    # but early on, those countries that will in truth experience an outbreak are only identified less than half, even around 1/4 of the time
-    # although this isn't surprising, given our main text results that most forecasts don't predict an onset prior to the onset occurring
-# specificity, on the other hand, is uniformly high; this means that, of those countries that will not experience an outbreak, few are forecasted to have an upcoming onset
-    # again, not surprising - if activity is low, model is likely to predict that activity will continue to be low
-    # but good to confirm that model is rarely predicting onsets when there are none
-# so if model predicts an onset, unlikely to be a false positive; but if model predicts no onset, doens't mean much
-    # in other words, when there will not be an outbreak, model will predict that, but when there will be an outbreak, difficult to say
-# also note that there is, as in the main text results, no discernible difference between network and isolated
-
-# p1 <- ggplot(data = res.country, aes(x = fc_start, y = sens, group = model, col = model)) + geom_line() + geom_point(size = 2) + theme_classic() +
-#   labs(x = 'Calendar Week', y = 'Sensitivity', col = 'Model:') + scale_color_brewer(palette = 'Set1') + scale_y_continuous(limits = c(0, 1)) +
-#   facet_wrap(~ country)
-# p2 <- ggplot(data = res.country, aes(x = fc_start, y = spec, group = model, col = model)) + geom_line() + geom_point(size = 2) + theme_classic() +
-#   labs(x = 'Calendar Week', y = 'Specificity', col = 'Model:') + scale_color_brewer(palette = 'Set1') + scale_y_continuous(limits = c(0, 1)) +
-#   facet_wrap(~ country)
+# Plot up sens/spec by model:
+# p1 <- ggplot(data = res.dat, aes(x = fc_start, y = sens, group = model, col = model)) + geom_line() + geom_point(aes(size = n_pos)) + theme_classic() +
+#   labs(x = 'Calendar Week', y = 'Sensitivity', col = 'Model:', size = 'Total w/ Onset:') + scale_color_brewer(palette = 'Set1')
+# p2 <- ggplot(data = res.dat, aes(x = fc_start, y = spec, group = model, col = model)) + geom_line() + geom_point(aes(size = n_neg)) + theme_classic() +
+#   labs(x = 'Calendar Week', y = 'Specificity', col = 'Model:', size = 'Total w/o Onset') + scale_color_brewer(palette = 'Set1') +
+#   scale_size_continuous(limits = c(0, 150), breaks = c(10, 50, 100, 150))
 # grid.arrange(p1, p2)
-# # not really a clear pattern by country; also probably not enough forecasts (esp. for spec.) to really tell
+# # false positives are incredibly rare
 
+p1 <- ggplot(data = res.dat, aes(x = fc_start, y = sens, group = model, col = model)) + geom_line() + geom_point(size = 3) + theme_classic() +
+  theme(legend.title = element_text(size = 14), legend.text = element_text(size = 14), axis.title = element_text(size = 16),
+        axis.text = element_text(size = 12), legend.position = 'bottom') +
+  labs(x = 'Calendar Week', y = 'Sensitivity', col = 'Model:') + scale_color_brewer(palette = 'Set1') + scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 10)) +
+  geom_text(mapping = aes(x = 1.5, y = 97, label = 'A'), col = 'black', size = 11)
+p2 <- ggplot(data = res.dat, aes(x = fc_start, y = spec, group = model, col = model)) + geom_line() + geom_point(size = 3) + theme_classic() +
+  theme(legend.title = element_text(size = 14), legend.text = element_text(size = 14), axis.title = element_text(size = 16),
+        axis.text = element_text(size = 12), legend.position = 'bottom') +
+  labs(x = 'Calendar Week', y = 'Specificity', col = 'Model:') + scale_color_brewer(palette = 'Set1') + scale_y_continuous(limits = c(0, 100), breaks = seq(0, 100, by = 10)) +
+  geom_text(mapping = aes(x = 1.5, y = 90, label = 'B'), col = 'black', size = 11)
+grid.arrange(p1, p2, ncol = 2)
 
-
-
-
-
-# sample code:
-p1 <- ggplot(data = d.agg, aes(x = lead_mean, y = score)) + geom_line(aes(col = model)) + geom_point(aes(col = model), size = 3) +
-  theme_classic() + theme(aspect.ratio = 1,
-                          legend.text = element_text(size = 12),
-                          axis.text = element_text(size = 10),
-                          strip.text = element_blank(),
-                          axis.title = element_text(size = 12),
-                          legend.title = element_text(size = 12),
-                          strip.background = element_blank()) +
-  facet_wrap(~ metric, scales = 'free') + scale_color_brewer(palette = 'Set1') + scale_x_continuous(breaks = -8:4) +
-  scale_y_continuous(limits = c(-5, 0), breaks = -10:0) +
-  # scale_size_continuous(breaks = c(10, 100, 300, 800), labels = c(10, 100, 300, 800),
-  #                       limits = c(1, 900), range = c(1,6)) +
-  labs(x = 'Predicted Lead Week', y = 'Mean Log Score', col = 'Model:')
-# guides(colour = guide_legend(order = 1), size = guide_legend(order = 2))
-# print(p1)
-dat.text <- data.frame(label = c('A', 'B', 'C'), metric = c('Peak Timing', 'Peak Intensity', 'Onset Timing'))
-p1 <- p1 + geom_text(data = dat.text, mapping = aes(x = -5.6, y = -0.25, label = label), size = 8)
-print(p1)
-
-
-
+ggsave(filename = 'results/plots/S13_Fig.svg', plot = arrangeGrob(p1, p2, ncol = 2), width = 13.25, height = 5)
 
 ###############################################################################################################################################################################
 ###############################################################################################################################################################################
@@ -244,7 +183,7 @@ grid.arrange(p1, p2)
 res.temp <- res.dat[res.dat$fc_start < 64, ]
 summary(res.temp$sens[res.temp$model == 'Isolated']) # 0 to 0.29412 (mean = 0.123) # include 63: max 0.80, mean = 0.16258, median = 0.1125
 summary(res.temp$sens[res.temp$model == 'Network']) # 0 to 0.2617 (mean = 0.151) # include 63: max 0.60, mean = 0.1775, median = 0.1356
-summary(res.temp$sens) # 0 to 0.2941; mean = 0.1369, median = 0.1209
+summary(res.temp$sens) # 0 to 0.2941; mean = 0.1369, median = 0.1209 # include 63: 0 to 0.8; mean = 0.1700, median = 0.1273
 # maybe mention these numbers as a qualification, but use other plot
 
 #########################################################################################################################################################
