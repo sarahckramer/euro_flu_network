@@ -2,7 +2,7 @@
 ### Plot model fits to observations ###
 
 # Set strain:
-strain <- 'B'
+strain <- 'A(H1)'
 
 # Read in fits to observations:
 op <- read.csv(paste0('results/fits/outputOP_', strain,'_fitsOnly.csv'))
@@ -66,23 +66,23 @@ op$lower.bound <- op$Est - 1.96 * (op$Est_sd)
 op$upper.bound <- op$Est + 1.96 * (op$Est_sd)
 op$lower.bound[op$lower.bound < 0] <- 0
 
-# Plot!
-pdf(paste0('results/plots/model_fits_', strain, '.pdf'), width = 13, height = 8)
-for (season in seasons) {
-  op.temp <- op[op$season == season, ]
-  p1 <- ggplot(data = op.temp, aes(x = week, y = Est, group = run)) +
-    geom_ribbon(aes(x = week, ymin = lower.bound, ymax = upper.bound, group = run), fill = 'gray50', alpha = 0.1) +
-    geom_line(colour = '#377eb8', lwd = 0.71) +
-    geom_point(aes(x = week, y = Obs), colour = 'black', size = 1.2) + facet_wrap(~ country, ncol = 4) + #, scales = 'free_y') +
-    theme_classic() + theme(aspect.ratio = 0.75, axis.text = element_text(size = 12), axis.title = element_text(size = 14),
-                            strip.background = element_blank(), strip.text = element_blank()) +
-    scale_x_continuous(breaks = seq(40, 75, by = 5)) +
-    labs(x = 'Week Number', y = 'Observed/Fitted Incidence (Scaled)')
-  dat.text <- data.frame(label = countries, country = countries, run = 0)
-  print(p1 + geom_text(data = dat.text, mapping = aes(x = 42, y = max(max(op.temp$Obs, na.rm = TRUE), max(op.temp$Est)) + 1000, label = label), size = 5))
-  # change country names; point size
-}
-dev.off()
+# # Plot!
+# pdf(paste0('results/plots/model_fits_', strain, '.pdf'), width = 13, height = 8)
+# for (season in seasons) {
+#   op.temp <- op[op$season == season, ]
+#   p1 <- ggplot(data = op.temp, aes(x = week, y = Est, group = run)) +
+#     geom_ribbon(aes(x = week, ymin = lower.bound, ymax = upper.bound, group = run), fill = 'gray50', alpha = 0.1) +
+#     geom_line(colour = '#377eb8', lwd = 0.71) +
+#     geom_point(aes(x = week, y = Obs), colour = 'black', size = 1.2) + facet_wrap(~ country, ncol = 4) + #, scales = 'free_y') +
+#     theme_classic() + theme(aspect.ratio = 0.75, axis.text = element_text(size = 12), axis.title = element_text(size = 14),
+#                             strip.background = element_blank(), strip.text = element_blank()) +
+#     scale_x_continuous(breaks = seq(40, 75, by = 5)) +
+#     labs(x = 'Week Number', y = 'Observed/Fitted Incidence (Scaled)')
+#   dat.text <- data.frame(label = countries, country = countries, run = 0)
+#   print(p1 + geom_text(data = dat.text, mapping = aes(x = 42, y = max(max(op.temp$Obs, na.rm = TRUE), max(op.temp$Est)) + 1000, label = label), size = 5))
+#   # change country names; point size
+# }
+# dev.off()
 
 # # pdf('../drafts/NetworkModel/supplemental/FigS2B_NEW2.pdf', width = 13, height = 8)
 season <- '2012-13'
@@ -94,14 +94,16 @@ p1 <- ggplot(data = op.temp, aes(x = week, y = Est, group = run)) +
   theme_classic() + theme(aspect.ratio = 0.75, axis.text = element_text(size = 12), axis.title = element_text(size = 14),
                           strip.background = element_blank(), strip.text = element_blank(), title = element_text(size = 18)) +
   scale_x_continuous(breaks = seq(40, 75, by = 5)) +
-  labs(title = 'B', x = 'Week Number', y = 'Observed/Fitted Incidence (Scaled)')
+  labs(title = '', x = 'Week Number', y = 'Observed/Fitted Incidence (Scaled)')
 dat.text <- data.frame(label = countries, country = countries, run = 0)
 p1 <- p1 + geom_text(data = dat.text, mapping = aes(x = 42, y = max(max(op.temp$Obs, na.rm = TRUE), max(op.temp$Est)) + 1000, label = label), size = 5)
 # print(p1 + geom_text(data = dat.text, mapping = aes(x = 42, y = max(max(op.temp$Obs, na.rm = TRUE), max(op.temp$Est)) + 1000, label = label), size = 5))
 print(p1)
-ggsave(file = 'results/plots/figS2B.svg', plot = p1, width = 13, height = 8)
+ggsave(file = 'results/plots/fig2.svg', plot = p1, width = 13, height = 8)
 # # dev.off()
 # rm(op.temp, dat.text, season, p1)
+
+rm(list = ls())
 
 ############################################################################################################################################################
 ############################################################################################################################################################
