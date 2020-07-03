@@ -3,7 +3,7 @@
 set.seed(108946052)
 
 # Read in "realistic" synthetic runs:
-load('syntheticTests/syntheticData/synth_rates_toKeep_021020.RData')
+load('syntheticTests/syntheticData/synth_rates_toKeep_070220.RData')
 # use rates since these are what we'll input into the model anyway
 
 # Country names:
@@ -66,7 +66,7 @@ for (j in 1:5) {
 }
 
 # Save results:
-# save(synth.outbreaks, file = 'syntheticTests/syntheticData/synth_rates_toKeep_021020_wError_5e4_20.RData')
+# save(synth.outbreaks, file = 'syntheticTests/syntheticData/synth_rates_toKeep_070220_wError_1e5_10.RData')
 
 
 

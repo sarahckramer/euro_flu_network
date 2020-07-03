@@ -1,21 +1,20 @@
 
 library(ggplot2); library(gridExtra); library(viridis)
-# Change: 4 + 5 = 9
 
 # Read in results:
-o <- read.csv('syntheticTests/outputOPParams_SYNTH_verylowI0.csv')
-oStates <- read.csv('syntheticTests/outputOP_SYNTH_beta-R0-Re_verylowI0.csv')
+o <- read.csv('syntheticTests/outputOPParams_synth_070220.csv')
+oStates <- read.csv('syntheticTests/outputOP_SYNTH_beta-R0-Re_070220.csv')
 
 # Plot observed data vs. fit obs:
 countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
 n <- length(countries)
 
-load('syntheticTests/syntheticData/synth_rates_toKeep_021020.RData')
+load('syntheticTests/syntheticData/for_synthetic_testing/synth_rates_toKeep_070220.RData')
 for (i in 1:length(synth.outbreaks)) {
   synth.outbreaks[[i]] <- t(synth.outbreaks[[i]])
 }
 
-# pdf('syntheticTests/outputs/synthFit_incidence_021420_verylowI0.pdf', width = 16, height = 12)
+# pdf('syntheticTests/outputs/synthFit_incidence_070220.pdf', width = 16, height = 12)
 for (outbreak in 1:5) {
   obs_i <- synth.outbreaks[[outbreak]]
   obs_i <- melt(obs_i)
@@ -36,14 +35,12 @@ for (outbreak in 1:5) {
 }
 # dev.off()
 
-# probably also want to calculate RMSE or something
-
 ################################################################################################################################################################################################
 ################################################################################################################################################################################################
 
 # Plot fit of S over time, vs. true S (and S0):
-load('syntheticTests/syntheticData/synth_S_toKeep_021020.RData')
-load('syntheticTests/syntheticData/parms_toKeep_021020.RData')
+load('syntheticTests/syntheticData/for_synthetic_testing/synth_S_toKeep_070220.RData')
+load('syntheticTests/syntheticData/for_synthetic_testing/parms_toKeep_070220.RData')
 
 init.S <- parms.outbreaks[1:12, ] * 100000
 rownames(init.S) <- countries
@@ -54,7 +51,7 @@ for (i in 1:5) {
   synth.s[[i]] <- t(synth.s[[i]])
 }
 
-# pdf('syntheticTests/outputs/synthFit_S_021420_verylowI0.pdf', width = 16, height = 12)
+# pdf('syntheticTests/outputs/synthFit_S_070220.pdf', width = 16, height = 12)
 for (outbreak in 1:5) {
   susc_i <- synth.s[[outbreak]]
   susc_i <- melt(susc_i)
@@ -109,9 +106,9 @@ p5 <- ggplot(data = o.plot, aes(x = week, y = airScale, group = run)) + geom_poi
   theme_classic() + labs(x = 'Week', y = 'airScale') + facet_wrap(~ outbreak, ncol = 5, scales = 'free_y') +
   scale_y_continuous(limits = c(0.75, 1.25))
 
-pdf('syntheticTests/outputs/synthFit_params_021420_verylowI0.pdf', width = 16, height = 12)
+# pdf('syntheticTests/outputs/synthFit_params_070220.pdf', width = 16, height = 12)
 grid.arrange(p1, p2, p3, p4, p5, ncol = 1)
-dev.off()
+# dev.off()
 
 # Plot parameter sd over time:
 p1 <- ggplot(data = o.plot, aes(x = week, y = L_sd, group = run)) + geom_point(size = 0.9, col = 'steelblue2') + geom_line(lwd = 0.5, col = 'steelblue2') +
@@ -125,17 +122,17 @@ p4 <- ggplot(data = o.plot, aes(x = week, y = R0diff_sd, group = run)) + geom_po
 p5 <- ggplot(data = o.plot, aes(x = week, y = airScale_sd, group = run)) + geom_point(size = 0.9, col = 'steelblue2') + geom_line(lwd = 0.5, col = 'steelblue2') +
   theme_classic() + labs(x = 'Week', y = 'airScale (st. dev.)') + facet_wrap(~ outbreak, ncol = 5, scales = 'free_y')
 grid.arrange(p1, p2, p3, p4, p5, ncol = 1)
-# for all but D, just seem to increase over time - is lambda too high?
+# for all but D, just seem to increase over time - is lambda too high? Might just be another indicator that parameters other than D aren't fit strongly
 
 # Read in TRUE values of beta, R0, Re at each time point:
-load('syntheticTests/syntheticData/true_betaR0Re.RData')
+load('syntheticTests/syntheticData/for_synthetic_testing/true_betaR0Re_070220.RData')
 true.betas <- true.list[[1]]
 true.R0 <- true.list[[2]]
 true.Re <- true.list[[3]]
 rm(true.list)
 
 # Plot fit accuracy for beta, R0, Re:
-pdf('syntheticTests/outputs/synthFit_beta-R0-Re_021420_verylowI0.pdf', width = 16, height = 12)
+# pdf('syntheticTests/outputs/synthFit_beta-R0-Re_070220.pdf', width = 16, height = 12)
 for (outbreak in 1:5) {
   beta.temp <- true.betas[[outbreak]]; R0.temp <- true.R0[[outbreak]]; Re.temp <- true.Re[[outbreak]]
   rownames(beta.temp) = rownames(R0.temp) = rownames(Re.temp) = 1:(dim(beta.temp)[1])
@@ -178,13 +175,13 @@ for (outbreak in 1:5) {
     scale_y_continuous(limits = c(0.5, 1.7))
   print(p3)
 }
-dev.off()
+# dev.off()
 
 # Plot distribution of relative param error at t=15 and t=20:
-# pdf('syntheticTests/outputs/synthFit_errorHist_021420_verylowI0.pdf', width = 16, height = 12)
+# pdf('syntheticTests/outputs/synthFit_errorHist_070220.pdf', width = 16, height = 12)
 
-o.err <- read.csv('syntheticTests/outputOPParams_SYNTH_errors_verylowI0.csv')
-oStates.err <- read.csv('syntheticTests/outputOP_SYNTH_errors_verylowI0.csv')
+o.err <- read.csv('syntheticTests/outputOPParams_SYNTH_errors_070220.csv')
+oStates.err <- read.csv('syntheticTests/outputOP_SYNTH_errors_070220.csv')
 
 o.err15 <- o.err[o.err$week == 54, ]
 o.err20 <- o.err[o.err$week == 59, ]

@@ -19,8 +19,8 @@ wk_start = 40
 
 # Parameters for filters
 discrete = False
-oev_base = np.float64(5e4)
-oev_denom = np.float64(20.0)
+oev_base = np.float64(1e5)
+oev_denom = np.float64(10.0)
 lambda_val = np.float64(1.05)
 num_ens = 300
 num_runs = 5  # EVENTUALLY WANT 5
@@ -59,7 +59,7 @@ for season_index in range(len(seasons)):
     print(season)  # again, this is the synthetic outbreak, not a season
 
     # Get observations for current season:
-    obs_i = pd.read_csv(os.path.join('../syntheticTests/syntheticData/for_python/', 'synth_wErrorSmall_' + season + '.csv'))
+    obs_i = pd.read_csv(os.path.join('../syntheticTests/syntheticData/for_python/', 'synth_wError_' + season + '.csv'))
 
     # Get season duration:
     nsn = 52  # also can just be set at 52, or 43 or whatever
@@ -96,32 +96,32 @@ for season_index in range(len(seasons)):
         # print(N_temp)
         del N_temp
 
-        # # Run EAKF:
-        # res = EAKF_fn_fitOnly(num_ens, tmstep, param_init, obs_i, nsn, nsn, obs_vars, tm_ini, tm_range, n, N, ah,
-        #                       dt, a_rand, lambda_val, wk_start)  # and variables needed for SIRS
+        # Run EAKF:
+        res = EAKF_fn_fitOnly(num_ens, tmstep, param_init, obs_i, nsn, nsn, obs_vars, tm_ini, tm_range, n, N, ah,
+                              dt, a_rand, lambda_val, wk_start)  # and variables needed for SIRS
+
+        outputOP_temp = res[0]
+        outputOPParams_temp = res[1]
+
+        # # OR: Forecast:
+        # res = EAKF_fn(num_ens, tmstep, param_init, obs_i, 30, nsn, obs_vars, tm_ini, tm_range, n, N, ah,
+        #               dt, countries, a_rand, lambda_val, wk_start)  # and variables needed for SIRS
         #
-        # outputOP_temp = res[0]
-        # outputOPParams_temp = res[1]
-
-        # OR: Forecast:
-        res = EAKF_fn(num_ens, tmstep, param_init, obs_i, 30, nsn, obs_vars, tm_ini, tm_range, n, N, ah,
-                      dt, countries, a_rand, lambda_val, wk_start)  # and variables needed for SIRS
-
-        outputMet_temp = res[0]
-        outputOP_temp = res[1]
-        outputOPParams_temp = res[2]
-        outputDist_temp = res[3]
-        outputEns_temp = res[4]
-
-        outputMet_temp = outputMet_temp.assign(**{'season': season, 'run': run, 'oev_base': oev_base,
-                                                  'oev_denom': oev_denom, 'lambda': lambda_val})
-        outputDist_temp = outputDist_temp.assign(**{'season': season, 'run': run, 'oev_base': oev_base,
-                                                    'oev_denom': oev_denom, 'lambda': lambda_val})
-        outputEns_temp = outputEns_temp.assign(**{'season': season, 'run': run, 'oev_base': oev_base,
-                                                  'oev_denom': oev_denom, 'lambda': lambda_val})
-        outputMetrics = outputMetrics.append(outputMet_temp, ignore_index=True)
-        outputDist = outputDist.append(outputDist_temp, ignore_index=True)
-        outputEns = outputEns.append(outputEns_temp, ignore_index=True)
+        # outputMet_temp = res[0]
+        # outputOP_temp = res[1]
+        # outputOPParams_temp = res[2]
+        # outputDist_temp = res[3]
+        # outputEns_temp = res[4]
+        #
+        # outputMet_temp = outputMet_temp.assign(**{'season': season, 'run': run, 'oev_base': oev_base,
+        #                                           'oev_denom': oev_denom, 'lambda': lambda_val})
+        # outputDist_temp = outputDist_temp.assign(**{'season': season, 'run': run, 'oev_base': oev_base,
+        #                                             'oev_denom': oev_denom, 'lambda': lambda_val})
+        # outputEns_temp = outputEns_temp.assign(**{'season': season, 'run': run, 'oev_base': oev_base,
+        #                                           'oev_denom': oev_denom, 'lambda': lambda_val})
+        # outputMetrics = outputMetrics.append(outputMet_temp, ignore_index=True)
+        # outputDist = outputDist.append(outputDist_temp, ignore_index=True)
+        # outputEns = outputEns.append(outputEns_temp, ignore_index=True)
 
         outputOP_temp = outputOP_temp.assign(**{'season': season, 'run': run, 'oev_base': oev_base,
                                                 'oev_denom': oev_denom, 'lambda': lambda_val})
@@ -138,11 +138,11 @@ print('Done.')
 timestamp_end = datetime.datetime.now()
 print('Time Elapsed: ' + str(timestamp_end - timestamp_start))
 
-outputOP.to_csv('results/outputOP_synth_fcast_smallError.csv', na_rep='NA', index=False)
-outputOPParams.to_csv('results/outputOPParams_synth_fcast_smallError.csv', na_rep='NA', index=False)
+outputOP.to_csv('results/outputOP_synth_070220.csv', na_rep='NA', index=False)
+outputOPParams.to_csv('results/outputOPParams_synth_070220.csv', na_rep='NA', index=False)
 
-outputMetrics.to_csv('results/outputMet_synth_fcast_smallError.csv', na_rep='NA', index=False)
-outputDist.to_csv('results/outputDist_synth_fcast_smallError.csv', na_rep='NA', index=False)
-outputEns.to_csv('results/outputEns_synth_fcast_smallError.csv', na_rep='NA', index=False)
+# outputMetrics.to_csv('results/outputMet_synth_fcast.csv', na_rep='NA', index=False)
+# outputDist.to_csv('results/outputDist_synth_fcast.csv', na_rep='NA', index=False)
+# outputEns.to_csv('results/outputEns_synth_fcast.csv', na_rep='NA', index=False)
 
 print('Finished writing to file!')

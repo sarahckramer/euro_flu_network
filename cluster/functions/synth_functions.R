@@ -203,9 +203,10 @@ allocate_S0I0 <- function(in.parms, num.ens, n, N, s0.method = NULL) {
 
     S0.temp[[i]] <- t(S0.temp[[i]])
     S0.temp[[i]] <- S0.temp[[i]] * N[[i]]
-
-    I0.temp[[i]] <- sweep(N[[i]] / rowSums(N[[i]]), 1, diag(I0.temp[[i]]), '*')
-    I0.temp[[i]] <- I0.temp[[i]] * N[[i]]
+    
+    I0.temp[[i]] <- sweep(N[[i]] / rowSums(N[[i]]), 1, rowSums(N[[i]]) * diag(I0.temp[[i]]), '*') # changed to distribute CASES, not RATES, proportionally
+    # I0.temp[[i]] <- sweep(N[[i]], 1, diag(I0.temp[[i]]), '*') # should be equivalent - just apply same rate to all home compartments
+    # I0.temp[[i]] <- I0.temp[[i]] * N[[i]]
   }
   
   return(list(S0.temp, I0.temp, s0.by.count))

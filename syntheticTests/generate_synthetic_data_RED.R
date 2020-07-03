@@ -43,10 +43,10 @@ I0_low <- 0; I0_up <- 0.00005
 # unless we want to change the ranges we're fitting with?
 # but here we are trying to get REALISTIC outbreaks, which means we need some w-e
 
-D_low <- 2; L_low <- 200; Rmx_low <- 1.3; Rdiff_low <- 0.01; airScale_low <- 0.75
-D_up <- 12; L_up <- 500; Rmx_up <- 4.0; Rdiff_up <- 2.0; airScale_up <- 1.25
-S0_low <- 0.30; S0_up <- 0.90
-I0_low <- 0; I0_up <- 0.00005
+# D_low <- 2; L_low <- 200; Rmx_low <- 1.3; Rdiff_low <- 0.01; airScale_low <- 0.75
+# D_up <- 12; L_up <- 500; Rmx_up <- 4.0; Rdiff_up <- 2.0; airScale_up <- 1.25
+# S0_low <- 0.30; S0_up <- 0.90
+# I0_low <- 0; I0_up <- 0.00005
 
 theta_low <- c(L_low, D_low, Rmx_low, Rdiff_low, airScale_low)
 theta_up <- c(L_up, D_up, Rmx_up, Rdiff_up, airScale_up)
@@ -279,7 +279,7 @@ for (i in sort(as.numeric(as.character(unique(df.real$run[df.real$patternSig == 
   abline(v = c(13, 25))
 }
 
-pdf('syntheticTests/outputs/synthetic_outbreaks_021020.pdf', height = 8, width = 28)
+pdf('syntheticTests/outputs/synthetic_outbreaks_070220.pdf', height = 8, width = 28)
 par(mfrow = c(1, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 for (i in c(109, 3, 653, 694, 599)) {
   matplot(t(res.rates[[i]]), pch = 20, type = 'b', lty = 1, col = viridis(n), main = i)
@@ -301,13 +301,13 @@ plot(df.red[df.red$real, 18:23])
 ################################################################################################################
 # Save relevant outbreaks so we can look at patterns:
 synth.runs.RATES <- res.rates
-save(synth.runs.RATES, file = 'syntheticTests/syntheticData/synth_rates_ALL_1000_021020.RData')
+save(synth.runs.RATES, file = 'syntheticTests/syntheticData/synth_rates_ALL_1000_070220.RData')
 
 synth.runs.RATES.onset <- synth.runs.RATES[runs.onset]
 synth.runs.RATES.realistic <- synth.runs.RATES[runs.realistic]
 
-save(synth.runs.RATES.onset, file = 'syntheticTests/syntheticData/synth_rates_ONSET_1000_021020.RData')
-save(synth.runs.RATES.realistic, file = 'syntheticTests/syntheticData/synth_rates_REALISTIC_1000_021020.RData')
+save(synth.runs.RATES.onset, file = 'syntheticTests/syntheticData/synth_rates_ONSET_1000_070220.RData')
+save(synth.runs.RATES.realistic, file = 'syntheticTests/syntheticData/synth_rates_REALISTIC_1000_070220.RData')
 
 # Save parameters and S0/I0, too:
 s0.list <- parms[1:12, ]
@@ -318,9 +318,9 @@ s0.list <- list(s0.list, s0.list[, runs.onset], s0.list[, runs.realistic])
 i0.list <- list(i0.list, i0.list[, runs.onset], i0.list[, runs.realistic])
 parms.list <- list(parms.list, parms.list[, runs.onset], parms.list[, runs.realistic])
 
-save(parms.list, file = 'syntheticTests/syntheticData/params_1000_021020.RData')
-save(i0.list, file = 'syntheticTests/syntheticData/I0_1000_021020.Rdata')
-save(s0.list, file = 'syntheticTests/syntheticData/S0_1000_021020.Rdata')
+save(parms.list, file = 'syntheticTests/syntheticData/params_1000_070220.RData')
+save(i0.list, file = 'syntheticTests/syntheticData/I0_1000_070220.Rdata')
+save(s0.list, file = 'syntheticTests/syntheticData/S0_1000_070220.Rdata')
 
 # And save only the 5 to be used in synthetic testing:
 # to.keep <- c(592, 605, 440, 566, 591)
@@ -329,9 +329,9 @@ synth.outbreaks <- synth.runs.RATES[to.keep]
 synth.s <- s.rates[to.keep]
 parms.outbreaks <- parms[, to.keep]
 
-save(synth.outbreaks, file = 'syntheticTests/syntheticData/synth_rates_toKeep_021020.RData')
-save(synth.s, file = 'syntheticTests/syntheticData/synth_S_toKeep_021020.RData')
-save(parms.outbreaks, file = 'syntheticTests/syntheticData/parms_toKeep_021020.RData')
+save(synth.outbreaks, file = 'syntheticTests/syntheticData/synth_rates_toKeep_070220.RData')
+save(synth.s, file = 'syntheticTests/syntheticData/synth_S_toKeep_070220.RData')
+save(parms.outbreaks, file = 'syntheticTests/syntheticData/parms_toKeep_070220.RData')
 
 ################################################################################################################
 ################################################################################################################

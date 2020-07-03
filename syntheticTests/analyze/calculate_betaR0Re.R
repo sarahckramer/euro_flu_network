@@ -22,8 +22,8 @@ beta.range <- beta.range[2:53] # since S is taken first at day 8, after one week
 AHpt <- AH[beta.range, ]; AHpt <- as.matrix(AHpt, length(AHpt), n)
 
 # Read in true parameters and S:
-load('syntheticTests/syntheticData/parms_toKeep_021020.RData')
-load('syntheticTests/syntheticData/synth_S_toKeep_021020.RData')
+load('syntheticTests/syntheticData/parms_toKeep_070220.RData')
+load('syntheticTests/syntheticData/synth_S_toKeep_070220.RData')
 
 # Transpose S:
 for (i in 1:length(synth.s)) {
@@ -81,8 +81,8 @@ beta.range <- beta.range[2:53] # since S is taken first at day 8, after one week
 AHpt <- AH[beta.range, ]; AHpt <- as.matrix(AHpt, length(AHpt), n)
 
 # Read in results:
-o <- read.csv('syntheticTests/outputOPParams_SYNTH_verylowI0.csv')
-oStates <- read.csv('syntheticTests/outputOP_SYNTH_verylowI0.csv')
+o <- read.csv('syntheticTests/outputOPParams_synth_070220.csv')
+oStates <- read.csv('syntheticTests/outputOP_synth_070220.csv')
 
 oStates$country <- countries[oStates$country + 1]
 oStates$country <- factor(oStates$country)
@@ -90,7 +90,7 @@ oStates$country <- factor(oStates$country)
 oStates$beta = oStates$R0 = oStates$Re = NA
 oStates$run <- factor(oStates$run)
 
-load('syntheticTests/syntheticData/synth_rates_toKeep_021020.RData')
+load('syntheticTests/syntheticData/for_synthetic_testing/synth_rates_toKeep_070220.RData')
 for (i in 1:length(synth.outbreaks)) {
   print(i)
   
@@ -108,7 +108,7 @@ for (i in 1:length(synth.outbreaks)) {
 }
 
 # Store these results:
-write.csv(oStates, file = 'syntheticTests/outputOP_SYNTH_beta-R0-Re_verylowI0.csv', row.names = FALSE)
+write.csv(oStates, file = 'syntheticTests/outputOP_SYNTH_beta-R0-Re_070220.csv', row.names = FALSE)
 
 rm(list = ls())
 

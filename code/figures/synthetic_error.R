@@ -4,15 +4,15 @@ library(ggplot2); library(gridExtra); library(viridis)
 ### Parameter error:
 
 # Read in results:
-o <- read.csv('syntheticTests/outputOPParams_SYNTH_new.csv')
-oStates <- read.csv('syntheticTests/outputOP_SYNTH_new_beta-R0-Re.csv')
+o <- read.csv('syntheticTests/outputOPParams_synth_070220.csv')
+oStates <- read.csv('syntheticTests/outputOP_SYNTH_beta-R0-Re_070220.csv')
 
 # Plot observed data vs. fit obs:
 countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
 n <- length(countries)
 
 # Plot parameter fit over time vs. true params:
-load('syntheticTests/syntheticData/parms_toKeep_021020.RData')
+load('syntheticTests/syntheticData/for_synthetic_testing/parms_toKeep_070220.RData')
 select.parms <- as.data.frame(t(parms.outbreaks[25:29, ]))
 names(select.parms) <- c('L', 'D', 'R0max', 'R0diff', 'airScale')
 select.parms <- as.data.frame(cbind(rep(1:5, 5), melt(select.parms)))
@@ -57,13 +57,13 @@ p3 <- ggplot(data = o.plot, aes(x = week, y = R0diff, group = run)) + geom_line(
                           axis.title = element_text(size = 13),
                           strip.background = element_blank()) +
   labs(x = 'Week', y = 'R0diff') + facet_wrap(~ outbreak, nrow = 1) + #scale_y_continuous(breaks = 2:7) +
-  geom_text(data = data.frame(label = 'C', outbreak = 1, run = 0), aes(label = label, x = 42, y = 1.45), size = 8)
+  geom_text(data = data.frame(label = 'C', outbreak = 1, run = 0), aes(label = label, x = 42, y = 1.429), size = 8)
 # print(p3)
 
 grid.arrange(p1, p2, p3, ncol = 1)
 
 g1 <- arrangeGrob(p1, p2, p3, ncol = 1)
-ggsave(filename = '../../Thesis/parts/Chapter3_supp/FigS9.svg', g1, width = 10, height = 7)
+ggsave(filename = '../../Thesis/parts/Chapter3_supp/FigS9_NEW.svg', g1, width = 10, height = 7)
 
 # # pdf('syntheticTests/outputs/FigS_paramErrors.pdf', width = 12, height = 7)
 # pdf('../../Thesis/parts/Chapter3_supp/FigS9.pdf', width = 12, height = 7)
@@ -75,22 +75,22 @@ rm(list = ls())
 ### Hists of beta/R0/Re error:
 
 # Read in results:
-o <- read.csv('syntheticTests/outputOPParams_SYNTH_new.csv')
-oStates <- read.csv('syntheticTests/outputOP_SYNTH_new_beta-R0-Re.csv')
+o <- read.csv('syntheticTests/outputOPParams_synth_070220.csv')
+oStates <- read.csv('syntheticTests/outputOP_SYNTH_beta-R0-Re_070220.csv')
 
 # Plot observed data vs. fit obs:
 countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
 n <- length(countries)
 
 # Read in TRUE values of beta, R0, Re at each time point:
-load('syntheticTests/syntheticData/true_betaR0Re.RData')
+load('syntheticTests/syntheticData/for_synthetic_testing/true_betaR0Re_070220.RData')
 true.betas <- true.list[[1]]
 true.R0 <- true.list[[2]]
 true.Re <- true.list[[3]]
 rm(true.list)
 
 # Read in true S:
-load('syntheticTests/syntheticData/synth_S_toKeep_021020.RData')
+load('syntheticTests/syntheticData/for_synthetic_testing/synth_S_toKeep_070220.RData')
 for (i in 1:5) {
   synth.s[[i]] <- t(synth.s[[i]])
 }
@@ -169,8 +169,9 @@ print(p1)
 # print(p1)
 # dev.off()
 
-ggsave('../../Thesis/parts/Chapter3_supp/FigS10.svg', plot = p1, width = 10, height = 7)
+# ggsave('../../Thesis/parts/Chapter3_supp/FigS10_NEW.svg', plot = p1, width = 10, height = 7)
 
+rm(list = ls())
 
 
 

@@ -3,8 +3,8 @@ library(reshape2)
 # Change: 4
 
 # Read in results:
-o <- read.csv('syntheticTests/outputOPParams_SYNTH_verylowI0.csv')
-oStates <- read.csv('syntheticTests/outputOP_SYNTH_beta-R0-Re_verylowI0.csv')
+o <- read.csv('syntheticTests/outputOPParams_synth_070220.csv')
+oStates <- read.csv('syntheticTests/outputOP_SYNTH_beta-R0-Re_070220.csv')
 
 # Get countries:
 countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
@@ -13,14 +13,14 @@ n <- length(countries)
 ### Calculate parameter error ###
 
 # Get TRUE parameter values:
-load('syntheticTests/syntheticData/parms_toKeep_021020.RData')
+load('syntheticTests/syntheticData/for_synthetic_testing/parms_toKeep_070220.RData')
 select.parms <- as.data.frame(t(parms.outbreaks[25:29, ]))
 names(select.parms) <- c('L', 'D', 'R0max', 'R0diff', 'airScale')
 select.parms <- as.data.frame(cbind(rep(1:5, 5), melt(select.parms)))
 names(select.parms) <- c('outbreak', 'parameter', 'value')
 
 # Read in the TRUE values of beta, R0, Re at each point:
-load('syntheticTests/syntheticData/true_betaR0Re.RData')
+load('syntheticTests/syntheticData/for_synthetic_testing/true_betaR0Re_070220.RData')
 true.betas <- true.list[[1]]
 true.R0 <- true.list[[2]]
 true.Re <- true.list[[3]]
@@ -46,7 +46,7 @@ for (outbreak in 1:5) {
 # positive values indicate that fit value is HIGHER than truth
 
 # Calculate relative error for S, beta, R0, Re for each country at t = 10, 15, 20:
-load('syntheticTests/syntheticData/synth_S_toKeep_021020.RData')
+load('syntheticTests/syntheticData/for_synthetic_testing/synth_S_toKeep_070220.RData')
 for (i in 1:5) {
   synth.s[[i]] <- t(synth.s[[i]])
 }
@@ -80,8 +80,8 @@ for (outbreak in 1:5) {
 }
 
 # Write results to file:
-write.csv(o.err, file = 'syntheticTests/outputOPParams_SYNTH_errors_verylowI0.csv', row.names = FALSE)
-write.csv(oStates.err, file = 'syntheticTests/outputOP_SYNTH_errors_verylowI0.csv', row.names = FALSE)
+write.csv(o.err, file = 'syntheticTests/outputOPParams_SYNTH_errors.csv', row.names = FALSE)
+write.csv(oStates.err, file = 'syntheticTests/outputOP_SYNTH_errors.csv', row.names = FALSE)
 
 rm(list=ls())
 
