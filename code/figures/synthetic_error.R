@@ -1,3 +1,4 @@
+### Plot results of synthetic testing ###
 
 library(ggplot2); library(gridExtra); library(viridis)
 
@@ -20,14 +21,7 @@ names(select.parms) <- c('outbreak', 'parameter', 'value')
 
 names(o)[13] <- 'outbreak'
 o.plot <- o[o$week <= 69, ]
-
 o.plot <- o.plot[, c(2, 4:6, 13:14)]
-# o.plot <- melt(o.plot, id.vars = c('week', 'outbreak', 'run'))
-# names(o.plot)[4] <- 'parameter'
-# 
-# p1 <- ggplot(data = o.plot, aes(x = week, y = value, group = run)) + geom_point(size = 0.8, col = 'gray50') + geom_line(lwd = 0.5, col = 'gray50') +
-#   theme_classic() + labs(x = 'Week', y = 'Param. Value') + facet_grid(parameter ~ outbreak, scales = 'free_y')
-# print(p1)
 
 p1 <- ggplot(data = o.plot, aes(x = week, y = D, group = run)) + geom_line(col = 'gray70') + geom_point(size = 0.75, col = 'gray70') +
   geom_hline(data = select.parms[select.parms$parameter == 'D', ], aes(yintercept = value), lwd = 1.0) +
@@ -38,7 +32,6 @@ p1 <- ggplot(data = o.plot, aes(x = week, y = D, group = run)) + geom_line(col =
                           strip.background = element_blank()) +
   labs(x = '', y = 'D (Days)') + facet_wrap(~ outbreak, nrow = 1) + scale_y_continuous(breaks = 2:7) +
   geom_text(data = data.frame(label = 'A', outbreak = 1, run = 0), aes(label = label, x = 42, y = 6.9), size = 8)
-# print(p1)
 p2 <- ggplot(data = o.plot, aes(x = week, y = R0mx, group = run)) + geom_line(col = 'gray70') + geom_point(size = 0.75, col = 'gray70') +
   geom_hline(data = select.parms[select.parms$parameter == 'R0max', ], aes(yintercept = value), lwd = 1.0) +
   theme_classic() + theme(aspect.ratio = 1,
@@ -48,7 +41,6 @@ p2 <- ggplot(data = o.plot, aes(x = week, y = R0mx, group = run)) + geom_line(co
                           strip.background = element_blank()) +
   labs(x = '', y = 'R0max') + facet_wrap(~ outbreak, nrow = 1) + #scale_y_continuous(breaks = 2:7) +
   geom_text(data = data.frame(label = 'B', outbreak = 1, run = 0), aes(label = label, x = 42, y = 2.75), size = 8)
-# print(p2)
 p3 <- ggplot(data = o.plot, aes(x = week, y = R0diff, group = run)) + geom_line(col = 'gray70') + geom_point(size = 0.75, col = 'gray70') +
   geom_hline(data = select.parms[select.parms$parameter == 'R0diff', ], aes(yintercept = value), lwd = 1.0) +
   theme_classic() + theme(aspect.ratio = 1,
@@ -58,17 +50,11 @@ p3 <- ggplot(data = o.plot, aes(x = week, y = R0diff, group = run)) + geom_line(
                           strip.background = element_blank()) +
   labs(x = 'Week', y = 'R0diff') + facet_wrap(~ outbreak, nrow = 1) + #scale_y_continuous(breaks = 2:7) +
   geom_text(data = data.frame(label = 'C', outbreak = 1, run = 0), aes(label = label, x = 42, y = 1.429), size = 8)
-# print(p3)
 
-grid.arrange(p1, p2, p3, ncol = 1)
+# grid.arrange(p1, p2, p3, ncol = 1)
 
 g1 <- arrangeGrob(p1, p2, p3, ncol = 1)
-ggsave(filename = '../../Thesis/parts/Chapter3_supp/FigS9_NEW.svg', g1, width = 10, height = 7)
-
-# # pdf('syntheticTests/outputs/FigS_paramErrors.pdf', width = 12, height = 7)
-# pdf('../../Thesis/parts/Chapter3_supp/FigS9.pdf', width = 12, height = 7)
-# grid.arrange(p1, p2, p3, ncol = 1)
-# dev.off()
+# ggsave(filename = 'results/plots/FigS9.svg', g1, width = 10, height = 7)
 
 rm(list = ls())
 
@@ -137,19 +123,6 @@ names(oStates.err)[5:6] <- c('parameter', 'error')
 levels(oStates.err$week) <- c('t = 5 Weeks', 't = 10 Weeks', 't = 15 Weeks', 't = 20 Weeks')
 levels(oStates.err$parameter) <- c('', ' ', '  ')
 
-# p1 <- ggplot(data = oStates.err) + geom_histogram(aes(x = error, y = ..count../sum(..count..)), binwidth = 0.05, fill = 'gray60') +
-#   geom_vline(xintercept = 0, lty = 2) +
-#   theme_classic() + theme(aspect.ratio = 0.9,
-#                           axis.text = element_text(size = 11),
-#                           strip.text = element_text(size = 14),
-#                           axis.title = element_text(size = 14),
-#                           strip.background = element_blank(),
-#                           axis.text.x = element_text(angle = 35, vjust = 0.75)) +#,
-#                           # axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0))) +
-#   facet_grid(parameter ~ week) + labs(x = 'Relative Error', y = 'Proportion of Fits') +
-#   geom_text(data = data.frame(label = c('A', 'B', 'C'), week = rep('t = 5 Weeks', 3), parameter = c('', ' ', '  ')),
-#             aes(label = label, x = -0.42, y = 0.033), size = 8) +
-#   scale_x_continuous(breaks = c(-0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.7))
 p1 <- ggplot(data = oStates.err) + geom_histogram(aes(x = error, y = 0.05 * ..density..), binwidth = 0.05, fill = 'gray60') +
   geom_vline(xintercept = 0, lty = 2) +
   theme_classic() + theme(aspect.ratio = 0.9,
@@ -165,11 +138,7 @@ p1 <- ggplot(data = oStates.err) + geom_histogram(aes(x = error, y = 0.05 * ..de
   scale_x_continuous(breaks = c(-0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.7))
 print(p1)
 
-# pdf('syntheticTests/outputs/FigS_compositeErrors.pdf', width = 15, height = 7)
-# print(p1)
-# dev.off()
-
-# ggsave('../../Thesis/parts/Chapter3_supp/FigS10_NEW.svg', plot = p1, width = 10, height = 7)
+# ggsave('results/plots/FigS10.svg', plot = p1, width = 10, height = 7)
 
 rm(list = ls())
 
