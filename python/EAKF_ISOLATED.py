@@ -1,9 +1,11 @@
+# EAKF code for forecasting and fitting isolated models to observations #
+
 import pandas as pd
 from SIRS_ISOLATED import *
 from functions_all import *
 
 
-# EAKF code for python runs
+# EAKF code for isolated models (forecasting)
 # noinspection PyShadowingNames,PyTypeChecker
 def EAKF_fn_ISOLATED(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm_range,
                      N, AH, dt, lambda_val, wk_start):
@@ -443,6 +445,7 @@ def EAKF_fn_ISOLATED(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, t
     return fc_met, out_op, fc_dist, fc_ens
 
 
+# EAKF code for isolated models (fitting only)
 def EAKF_fn_fitOnly_ISOLATED(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm_range,
                              N, AH, dt, lambda_val, wk_start):
     # num_times = np.floor(len(tm_range) / tm_step)
@@ -455,10 +458,8 @@ def EAKF_fn_fitOnly_ISOLATED(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs
     xprior = np.zeros([7, num_ens, ntrn + 1], dtype=np.float64)
     xpost = np.zeros([7, num_ens, ntrn], dtype=np.float64)
 
-    # Initialize arrays to store cross-ensemble covariance, prior vars, and OEVs:
-    rrmat = np.zeros([ntrn, 7], dtype=np.float64)
+    # Initialize arrays to store cross-ensemble correlations and OEV:prior var. ratios:
     coefmat = np.zeros([ntrn, 7], dtype=np.float64)
-    kgmat = np.zeros([ntrn], dtype=np.float64)
     ratmat = np.zeros([ntrn], dtype=np.float64)
 
     # Set initial conditions based on input parameters:
@@ -525,8 +526,7 @@ def EAKF_fn_fitOnly_ISOLATED(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs
                 post_var = np.float64(0)
                 prior_var = np.float64(1e-3)
 
-            # store Kalman gain/ratio of variances:
-            kgmat[tt] = prior_var / (prior_var + obs_var)
+            # store ratio of variances:
             ratmat[tt] = obs_var / prior_var
 
             # Compute prior and post means:
@@ -548,7 +548,6 @@ def EAKF_fn_fitOnly_ISOLATED(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs
             del j
             del C
             del C_2
-            rrmat[tt, :] = rr  # store cross-ensemble covariance
             coefmat[tt, :] = cf  # store cross-ensemble Pearson correlation coefficients
 
             dx = np.matmul(rr.reshape([len(rr), 1]), dy.reshape([1, len(dy)]))
@@ -623,24 +622,14 @@ def EAKF_fn_fitOnly_ISOLATED(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs
     statespost = statespost[statespost.columns[[15, 17, 0, 16] + list(range(1, 15))]]
 
     # Format results for checking correlations and divergence:
-    rrmat[np.where(np.isnan(obs_i))] = np.nan
-    rrmat = np.c_[states_weeks, rrmat]
-    rrmat = pd.DataFrame(rrmat)
-    rrmat.columns = ['week', 'S', 'I', 'L', 'D', 'R0mx', 'R0diff', 'newI']
-
     coefmat[np.where(np.isnan(obs_i))] = np.nan
     coefmat = np.c_[states_weeks, coefmat]
     coefmat = pd.DataFrame(coefmat)
     coefmat.columns = ['week', 'S', 'I', 'L', 'D', 'R0mx', 'R0diff', 'newI']
-
-    kgmat[np.where(np.isnan(obs_i))] = np.nan
-    kgmat = np.c_[states_weeks, kgmat]
-    kgmat = pd.DataFrame(kgmat)
-    kgmat.columns = ['week', 'kg']
 
     ratmat[np.where(np.isnan(obs_i))] = np.nan
     ratmat = np.c_[states_weeks, ratmat]
     ratmat = pd.DataFrame(ratmat)
     ratmat.columns = ['week', 'ratio']
 
-    return statespost, rrmat, coefmat, kgmat, ratmat
+    return statespost, coefmat, ratmat

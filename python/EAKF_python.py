@@ -1,9 +1,11 @@
+# EAKF code for forecasting and fitting network model to observations #
+
 import pandas as pd
 from SIRS_python import *
 from functions_all import *
 
 
-# EAKF code for python runs
+# EAKF code for network model (forecasting)
 # noinspection PyShadowingNames
 def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm_range, n, N, AH,
             dt, countries, airRand, lambda_val, wk_start):
@@ -76,7 +78,8 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
     # Also calculate total newI for each country:
     for i in range(n):
         temp_range = [j + n * i for j in range(n)]
-        obsprior[i, :, 0] = np.sum(xprior[newI_indices, :, 0][temp_range, :], 0) / np.round(np.sum(N[0], 1), decimals=0)[i] * 100000
+        obsprior[i, :, 0] = np.sum(xprior[newI_indices, :, 0][temp_range, :], 0) / \
+                            np.round(np.sum(N[0], 1), decimals=0)[i] * 100000
         # sums along rows should be conserved over all 300 ensemble members
 
     # Set onset baseline:
@@ -204,7 +207,8 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
         # Also calculate total newI for each country, and store in obsprior:
         for i in range(n):
             temp_range = [j + n * i for j in range(n)]
-            obsprior[i, :, tt + 1] = np.sum(xprior[newI_indices, :, tt + 1][temp_range, :], 0) / np.round(np.sum(N[0], 1), decimals=0)[i] * 100000
+            obsprior[i, :, tt + 1] = np.sum(xprior[newI_indices, :, tt + 1][temp_range, :], 0) / \
+                                     np.round(np.sum(N[0], 1), decimals=0)[i] * 100000
 
         # END OF TRAINING
 
@@ -242,7 +246,8 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
             # print(obsfcast.shape)
             for i in range(n):
                 temp_range = [j + n * i for j in range(n)]
-                obs_temp = np.sum(fcast[np.array(newI_indices)[temp_range], :, :], 0) / np.round(np.sum(N[0], 1), decimals=0)[i] * 100000
+                obs_temp = np.sum(fcast[np.array(newI_indices)[temp_range], :, :], 0) / \
+                           np.round(np.sum(N[0], 1), decimals=0)[i] * 100000
                 # print(obs_temp.shape)
                 obsfcast[i, :, :] = obs_temp
             del i
@@ -256,8 +261,10 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
             i_fcast_by_count = np.zeros([n, num_ens, nfc], dtype=np.float64)
             for i in range(n):
                 country_vals = np.array([j + n * i for j in range(n)])
-                s_fcast_by_count[i, :, :] = np.sum(s_fcast[country_vals, :, :], 0) / np.round(np.sum(N[0], 1), decimals=0)[i] * 100000
-                i_fcast_by_count[i, :, :] = np.sum(i_fcast[country_vals, :, :], 0) / np.round(np.sum(N[0], 1), decimals=0)[i] * 100000
+                s_fcast_by_count[i, :, :] = np.sum(s_fcast[country_vals, :, :], 0) / \
+                                            np.round(np.sum(N[0], 1), decimals=0)[i] * 100000
+                i_fcast_by_count[i, :, :] = np.sum(i_fcast[country_vals, :, :], 0) / \
+                                            np.round(np.sum(N[0], 1), decimals=0)[i] * 100000
             del i
 
             # Calculate ensemble means and sds:
@@ -645,10 +652,14 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
     i_post_by_count = np.zeros([n, num_ens, ntrn], dtype=np.float64)
     for i in range(n):
         country_vals = np.array([j + n * i for j in range(n)])
-        s_prior_by_count[i, :, :] = np.sum(s_prior[country_vals, :, :], 0) / np.round(np.sum(N[0], 1), decimals=0)[i] * 100000
-        i_prior_by_count[i, :, :] = np.sum(i_prior[country_vals, :, :], 0) / np.round(np.sum(N[0], 1), decimals=0)[i] * 100000
-        s_post_by_count[i, :, :] = np.sum(s_post[country_vals, :, :], 0) / np.round(np.sum(N[0], 1), decimals=0)[i] * 100000
-        i_post_by_count[i, :, :] = np.sum(i_post[country_vals, :, :], 0) / np.round(np.sum(N[0], 1), decimals=0)[i] * 100000
+        s_prior_by_count[i, :, :] = np.sum(s_prior[country_vals, :, :], 0) / np.round(np.sum(N[0], 1), decimals=0)[
+            i] * 100000
+        i_prior_by_count[i, :, :] = np.sum(i_prior[country_vals, :, :], 0) / np.round(np.sum(N[0], 1), decimals=0)[
+            i] * 100000
+        s_post_by_count[i, :, :] = np.sum(s_post[country_vals, :, :], 0) / np.round(np.sum(N[0], 1), decimals=0)[
+            i] * 100000
+        i_post_by_count[i, :, :] = np.sum(i_post[country_vals, :, :], 0) / np.round(np.sum(N[0], 1), decimals=0)[
+            i] * 100000
     del i
 
     # Calculate ensemble means and sds (prior and post; S, I, newI):
@@ -728,7 +739,7 @@ def EAKF_fn(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm
     return fc_met, out_op, params_post_df, fc_dist, fc_ens
 
 
-# EAKF code for python runs
+# EAKF code for network model (fitting only)
 # noinspection PyShadowingNames
 def EAKF_fn_fitOnly(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm_ini, tm_range, n, N, AH,
                     dt, airRand, lambda_val, wk_start):
@@ -742,10 +753,8 @@ def EAKF_fn_fitOnly(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm
     obsprior = np.zeros([n, num_ens, ntrn + 1], dtype=np.float64)  # in R initialized with NAs - is "empty" okay?
     obspost = np.zeros([n, num_ens, ntrn], dtype=np.float64)
 
-    # Initialize arrays to store cross-ensemble covariance, prior vars, and OEVs:
-    rrmat = np.zeros([n, ntrn, np.square(n) * 3 + 5], dtype=np.float64)
+    # Initialize arrays to store cross-ensemble correlations and OEV:prior var. ratios:
     coefmat = np.zeros([n, ntrn, np.square(n) * 3 + 5], dtype=np.float64)
-    kgmat = np.zeros([ntrn, n], dtype=np.float64)
     ratmat = np.zeros([ntrn, n], dtype=np.float64)
 
     # Where each state/param stored:
@@ -796,7 +805,8 @@ def EAKF_fn_fitOnly(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm
     # Also calculate total newI for each country:
     for i in range(n):
         temp_range = [j + n * i for j in range(n)]
-        obsprior[i, :, 0] = np.sum(xprior[newI_indices, :, 0][temp_range, :], 0) / np.round(np.sum(N[0], 1), decimals=0)[i] * 100000
+        obsprior[i, :, 0] = np.sum(xprior[newI_indices, :, 0][temp_range, :], 0) / \
+                            np.round(np.sum(N[0], 1), decimals=0)[i] * 100000
 
     # Begin training:
     obs_i = obs_i.iloc[:, 1:(n + 1)].to_numpy(dtype=np.float64)
@@ -843,8 +853,7 @@ def EAKF_fn_fitOnly(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm
                     post_var = np.float64(0)
                     prior_var = np.float(1e-3)
 
-                # store Kalman gain/ratio of variances:
-                kgmat[tt, loc] = prior_var / (prior_var + obs_var)
+                # store ratio of variances:
                 ratmat[tt, loc] = obs_var / prior_var
                 # print(prior_var)
 
@@ -867,10 +876,9 @@ def EAKF_fn_fitOnly(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm
                 del j
                 del C
                 del C_2
-                rrmat[loc, tt, :] = rr  # store cross-ensemble covariance
                 # print(len(rr))
                 # print(rrmat.shape)
-                coefmat[loc, tt, :] = cf # store cross-ensemble Pearson correlation coefficients
+                coefmat[loc, tt, :] = cf  # store cross-ensemble Pearson correlation coefficients
 
                 dx = np.matmul(rr.reshape([len(rr), 1]), dy.reshape([1, len(dy)]))
 
@@ -921,7 +929,8 @@ def EAKF_fn_fitOnly(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm
         # Also calculate total newI for each country, and store in obsprior:
         for i in range(n):
             temp_range = [j + n * i for j in range(n)]
-            obsprior[i, :, tt + 1] = np.sum(xprior[newI_indices, :, tt + 1][temp_range, :], 0) / np.round(np.sum(N[0], 1), decimals=0)[i] * 100000
+            obsprior[i, :, tt + 1] = np.sum(xprior[newI_indices, :, tt + 1][temp_range, :], 0) / \
+                                     np.round(np.sum(N[0], 1), decimals=0)[i] * 100000
 
     # END OF TRAINING
 
@@ -938,10 +947,14 @@ def EAKF_fn_fitOnly(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm
     i_post_by_count = np.zeros([n, num_ens, ntrn], dtype=np.float64)
     for i in range(n):
         country_vals = np.array([j + n * i for j in range(n)])
-        s_prior_by_count[i, :, :] = np.sum(s_prior[country_vals, :, :], 0) / np.round(np.sum(N[0], 1), decimals=0)[i] * 100000
-        i_prior_by_count[i, :, :] = np.sum(i_prior[country_vals, :, :], 0) / np.round(np.sum(N[0], 1), decimals=0)[i] * 100000
-        s_post_by_count[i, :, :] = np.sum(s_post[country_vals, :, :], 0) / np.round(np.sum(N[0], 1), decimals=0)[i] * 100000
-        i_post_by_count[i, :, :] = np.sum(i_post[country_vals, :, :], 0) / np.round(np.sum(N[0], 1), decimals=0)[i] * 100000
+        s_prior_by_count[i, :, :] = np.sum(s_prior[country_vals, :, :], 0) / np.round(np.sum(N[0], 1), decimals=0)[
+            i] * 100000
+        i_prior_by_count[i, :, :] = np.sum(i_prior[country_vals, :, :], 0) / np.round(np.sum(N[0], 1), decimals=0)[
+            i] * 100000
+        s_post_by_count[i, :, :] = np.sum(s_post[country_vals, :, :], 0) / np.round(np.sum(N[0], 1), decimals=0)[
+            i] * 100000
+        i_post_by_count[i, :, :] = np.sum(i_post[country_vals, :, :], 0) / np.round(np.sum(N[0], 1), decimals=0)[
+            i] * 100000
     del i
 
     # Calculate ensemble means and sds (prior and post; S, I, newI):
@@ -1000,26 +1013,12 @@ def EAKF_fn_fitOnly(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm
     params_post_df = params_post_df[params_post_df.columns[[10, 11] + list(range(10))]]
 
     # Format results for checking correlations and divergence:
-    for ix in range(rrmat.shape[2]):
-        rrmat[:, :, ix][np.where(np.isnan(obs_i.transpose()))] = np.nan
-    rrmat = rrmat.reshape([ntrn * n, rrmat.shape[2]])
-    rrmat = np.c_[states_weeks, states_countries, rrmat]
-    rrmat = pd.DataFrame(rrmat)
-    rrmat.columns = ['week', 'country'] + [str(i) for i in range(1, 438)]
-
     for ix in range(coefmat.shape[2]):
         coefmat[:, :, ix][np.where(np.isnan(obs_i.transpose()))] = np.nan
     coefmat = coefmat.reshape([ntrn * n, coefmat.shape[2]])
     coefmat = np.c_[states_weeks, states_countries, coefmat]
     coefmat = pd.DataFrame(coefmat)
     coefmat.columns = ['week', 'country'] + [str(i) for i in range(1, 438)]
-
-    kgmat[np.where(np.isnan(obs_i))] = np.nan
-    kgmat = kgmat.transpose()
-    kgmat = kgmat.reshape([ntrn * n, 1])  # tt 0 rep 12 (for each country), then tt 1, etc.
-    kgmat = np.c_[states_weeks, states_countries, kgmat]
-    kgmat = pd.DataFrame(kgmat)
-    kgmat.columns = ['week', 'country', 'kg']
 
     ratmat[np.where(np.isnan(obs_i))] = np.nan
     ratmat = ratmat.transpose()
@@ -1028,4 +1027,4 @@ def EAKF_fn_fitOnly(num_ens, tm_step, init_parms, obs_i, ntrn, nsn, obs_vars, tm
     ratmat = pd.DataFrame(ratmat)
     ratmat.columns = ['week', 'country', 'ratio']
 
-    return statespost, params_post_df, rrmat, coefmat, kgmat, ratmat
+    return statespost, params_post_df, coefmat, ratmat
