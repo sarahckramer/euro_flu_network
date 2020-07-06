@@ -1,3 +1,5 @@
+# Run SIRS model for isolated countries #
+
 import sys
 import numpy as np
 from numba import jit, prange

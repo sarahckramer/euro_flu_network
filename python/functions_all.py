@@ -1,7 +1,10 @@
+# Contains all functions needed to run forecasting/fitting code #
+
 import numpy as np
 from numba import jit
 
 
+# Function to replace any NAs in the observations that occur before first/after last non-zero data point
 def replaceLeadLag(vals_temp):
     if any(np.isnan(vals_temp)) and not np.isnan(vals_temp).all():
         start_index = 0
@@ -23,6 +26,7 @@ def replaceLeadLag(vals_temp):
     return vals_temp
 
 
+# Function to calculate OEV
 def calc_obsvars(obs, oev_base, oev_denom, n):
     obs = obs.iloc[:, 1:(n + 1)].to_numpy(dtype=np.float64)
 
@@ -45,6 +49,10 @@ def calc_obsvars(obs, oev_base, oev_denom, n):
     return vars_temp
 
 
+# Function to calculate OEV, taking into account the number of tests conducted in each country,
+# the number of syndromic cases (scaled), and percent positive for influenza
+# Tested but not ultimately used; this is a more complex way of assigning error by country,
+# but did not perform well here
 def calc_obsvars_nTest(obs, syndat, ntests, posprops, oev_base, oev_denom, n):
     # noinspection PyUnusedLocal
     obs = obs.iloc[:, 1:(n + 1)].to_numpy(dtype=np.float64)
@@ -102,6 +110,7 @@ def calc_obsvars_nTest(obs, syndat, ntests, posprops, oev_base, oev_denom, n):
     return vars_temp
 
 
+# Function to calculate OEV for an individual country
 def calc_obsvars_ISOLATED(obs, oev_base, oev_denom):
     obs = obs.to_numpy(dtype=np.float64)
 
@@ -121,6 +130,7 @@ def calc_obsvars_ISOLATED(obs, oev_base, oev_denom):
     return vars_temp.transpose()[0]
 
 
+# Function to ensure states and parameters remain within reasonable bounds (network)
 # @jit(nopython=True, nogil=True, parallel=False, cache=True)
 @jit(nopython=True)
 def fn_checkxnobounds(xnew, popN, n_count):
@@ -239,6 +249,7 @@ def fn_checkxnobounds(xnew, popN, n_count):
     return xnew
 
 
+# Function to ensure observed states remain within reasonable bounds (network)
 def fn_checkxnobounds_obsens(xnew, popN, n_count):
     n_ens = xnew.shape[1]  # number of ensemble members
     # n_var = xnew.shape[0]  # number of variables (should be n_count)
@@ -265,6 +276,7 @@ def fn_checkxnobounds_obsens(xnew, popN, n_count):
     return xnew
 
 
+# Function to ensure states and parameters remain within reasonable bounds (isolated)
 def fn_checkxnobounds_ISOLATED(xnew, N):
     n_ens = xnew.shape[1]  # number of ensemble members
     n_var = xnew.shape[0]  # number of variables
@@ -332,6 +344,7 @@ def fn_checkxnobounds_ISOLATED(xnew, N):
     return xnew
 
 
+# Function to identify the observed onset week
 def findOnset(vals, baseline):
     onset = np.nan
     end = np.nan

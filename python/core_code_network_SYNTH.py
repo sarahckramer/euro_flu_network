@@ -1,3 +1,5 @@
+# Code to fit/forecast using synthetic "observations" for 12 countries #
+
 import os
 import sys
 from numba.typed import List

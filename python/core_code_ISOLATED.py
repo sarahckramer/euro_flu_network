@@ -1,3 +1,5 @@
+# Code to run through all countries, seasons, and (sub)types and forecast using isolated models #
+
 import os
 import sys
 from numba.typed import List
