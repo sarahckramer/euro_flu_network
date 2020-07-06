@@ -54,7 +54,7 @@ p3 <- ggplot(data = o.plot, aes(x = week, y = R0diff, group = run)) + geom_line(
 # grid.arrange(p1, p2, p3, ncol = 1)
 
 g1 <- arrangeGrob(p1, p2, p3, ncol = 1)
-# ggsave(filename = 'results/plots/FigS9.svg', g1, width = 10, height = 7)
+# ggsave(filename = 'results/plots/FigS11.svg', g1, width = 10, height = 7)
 
 rm(list = ls())
 
@@ -138,7 +138,7 @@ p1 <- ggplot(data = oStates.err) + geom_histogram(aes(x = error, y = 0.05 * ..de
   scale_x_continuous(breaks = c(-0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.7))
 print(p1)
 
-# ggsave('results/plots/FigS10.svg', plot = p1, width = 10, height = 7)
+# ggsave('results/plots/FigS12.svg', plot = p1, width = 10, height = 7)
 
 rm(list = ls())
 

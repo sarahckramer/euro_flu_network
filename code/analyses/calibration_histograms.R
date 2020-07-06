@@ -1,3 +1,4 @@
+### Alternative calibration assessment ###
 
 # Read in results:
 m1 <- read.csv('results/network/outputMet_pro_PROC.csv')
@@ -48,7 +49,7 @@ p2 <- ggplot(data = m.temp, aes(x = delta_int, y = 0.1 * ..density.., group = mo
   labs(title = 'B     (Peak Intensity)', x = 'Error ((Fcast - Obs) / Obs)', y = 'Proportion of Fcasts', fill = 'Model', col = 'Model') +
   facet_grid(~ leadpkwk_bin) + scale_fill_brewer(palette = 'Set1') + scale_color_brewer(palette = 'Set1')
 
-grid.arrange(p1, p2)
+# grid.arrange(p1, p2)
 
 # p3 <- ggplot(data = m.temp2, aes(x = delta_onset5, y = ..density.., group = model, fill = model, col = model)) +
 #   geom_histogram(binwidth = 1.0, position = 'identity', alpha = 0.5) +

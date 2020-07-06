@@ -1,12 +1,13 @@
 
 ### Look through a range of oev_base and oev_denom to see which produce "best-looking" OEVs for all subtypes ###
+# Want ratio of sqrt(OEV) (i.e., standard deviation) to scaled observations to be ~0.1-0.5 during outbreak period
 
 # Load packages:
 library(ggplot2)
 
 # Set ranges to explore:
-oev_bases <- c(0.0, 0.01, 0.1, 0.25) #c(0.0, 0.05, 0.1, 0.3)#, 0.5, 0.6)
-oev_denoms <- c(1, 2, 10, 100) #c(1, 10, 100, 400) #c(3, 10, 25, 100)
+oev_bases <- c(1e4, 5e4, 1e5)
+oev_denoms <- c(1, 10, 100)
 
 # Set countries:
 countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
@@ -17,11 +18,6 @@ strain <- 'B'
 
 # Read in data:
 iliiso <- read.csv(paste0('data/by_subtype/WHO_data_', strain, '_SCALED.csv'))
-syn.dat <- read.csv(paste0('data/by_subtype/synDatCounts_', strain, '_SCALED.csv'))
-pos.dat <- read.csv(paste0('data/by_subtype/posprop_', strain, '.csv'))
-test.dat <- read.csv('data/testRates_010820.csv')
-
-pos.dat <- pos.dat[, c(1, count.indices + 1)]
 
 # Get relevant seasons:
 if (strain == 'A(H1)') {
@@ -31,7 +27,7 @@ if (strain == 'A(H1)') {
 } else if (strain == 'B') {
   seasons <- c('2010-11', '2012-13', '2014-15', '2015-16', '2016-17', '2017-18') # B
 } else {
-  print('AAAAGGGGGHHHHHH')
+  print('(Sub)type not recognized.')
 }
 
 # Read in necessary functions:
@@ -40,7 +36,7 @@ source('cluster/functions/calc_obsvars.R')
 source('cluster/functions/replaceLeadingLaggingNAs.R')
 
 # Save to pdf:
-pdf(paste0('results/explore_oev/OEV_rat_', strain, '_gridSearch.pdf'), width = 12, height = 7)
+# pdf(paste0('results/explore_oev/OEV_rat_', strain, '_gridSearch.pdf'), width = 12, height = 7)
 
 # Plot out data:
 obs.list <- vector('list', length(seasons))
@@ -98,25 +94,14 @@ for (o1 in oev_bases) {
       
       # Reduce data to current season:
       obs_i <- iliiso[weeks, (1:length(countries) + 1)] # extract relevant data for all countries
-      syn_i <- syn.dat[weeks, (1:length(countries) + 1)]
-      test_i <- test.dat[weeks, (1:length(countries) + 1)]
-      pos_i <- pos.dat[weeks, (1:length(countries) + 1)]
       
       # Replace leading/lagging NAs:
       for (count.index in 1:length(countries)) {
         obs_i[, count.index] <- replaceLeadLag(obs_i[, count.index])
-        syn_i[, count.index] <- replaceLeadLag(syn_i[, count.index])
-        pos_i[, count.index] <- replaceLeadLag(pos_i[, count.index])
       }
       
-      # Replace 0s in test_i w/ NA (b/c can't divide by 0!):
-      test_i[test_i == 0 & !is.na(test_i)] <- NA
-      
       # Calculate OEVs used in network model:
-      obs_vars <- 1e5 + calc_obsvars_nTest(obs = obs_i, syn_dat = syn_i, ntests = test_i, posprops = pos_i, oev_base = o1, oev_denom = o2, tmp_exp = 2.0)
-      # obs_vars_old <- calc_obsvars(obs = obs_i, 1e4, 10)
-      # obs_vars[obs_vars == 0 & !is.na(obs_vars)] <- NA # allow zeros to be set to min - preserve more points, and this is what would be done with a baseline anyway
-      # obs_vars[obs_vars < 1e4 & !is.na(obs_vars)] <- 1e4
+      obs_vars <- calc_obsvars(obs = obs_i, o1, o2)
       
       # Store results in lists:
       oev.list[[season.index]] <- obs_vars
@@ -153,14 +138,14 @@ for (o1 in oev_bases) {
     p4 <- ggplot(data = rat.df) + labs(x = 'Weeks Since Season Start', y = 'Sqrt(OEV)/Syn+') + geom_line(aes(x = time, y = value, group = season, colour = season)) +
       facet_wrap(~ country, scales = 'free_y') + theme_bw() + geom_abline(intercept = c(0.1, 0.5), slope = 0) + scale_y_continuous(limits = c(0, 1))
     
-    print(p2)
-    print(p3)
+    # print(p2)
+    # print(p3)
     print(p4)
     
   }
 }
 
-dev.off()
+# dev.off()
 
-rm(list = ls())
+# rm(list = ls())
 

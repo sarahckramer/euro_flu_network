@@ -51,7 +51,6 @@ op <- merge(op, obs_new, by = c('season', 'week', 'country'))
 rm(iliiso, obs_new)
 
 # Remove where no data FOR WHOLE SEASON:
-# op <- op[!is.na(op$Obs), ]
 op <- op[!(op$country == 'FR' & op$season %in% c('2010-11', '2011-12')) &
            !(op$country == 'CZ' & op$season == '2013-14') &
            !(op$country == 'PL' & op$season == '2011-12'), ]
@@ -66,7 +65,7 @@ op$lower.bound <- op$Est - 1.96 * (op$Est_sd)
 op$upper.bound <- op$Est + 1.96 * (op$Est_sd)
 op$lower.bound[op$lower.bound < 0] <- 0
 
-# # Plot!
+# # Plot all seasons:
 # pdf(paste0('results/plots/model_fits_', strain, '.pdf'), width = 13, height = 8)
 # for (season in seasons) {
 #   op.temp <- op[op$season == season, ]
@@ -84,7 +83,6 @@ op$lower.bound[op$lower.bound < 0] <- 0
 # }
 # dev.off()
 
-# # pdf('../drafts/NetworkModel/supplemental/FigS2B_NEW2.pdf', width = 13, height = 8)
 season <- '2012-13'
 op.temp <- op[op$season == season, ]
 p1 <- ggplot(data = op.temp, aes(x = week, y = Est, group = run)) +
@@ -222,54 +220,54 @@ rm(list = ls())
 # corr <- rbind(c1, c2, c3); rm(c1, c2, c3)
 # write.csv(corr, file = 'results/fits/corr_COMB.csv', row.names = FALSE)
 
-# This will allow us to ultimately get:
-    # Range and mean/median for chosen season
-    # Overall mean/median
-    # Mean/median by subtype
-r <- read.csv('results/fits/rmse_COMB.csv')
-corr <- read.csv('results/fits/corr_COMB.csv')
-
-# Combine:
-r <- merge(r, corr, by = c('season', 'country', 'run', 'subtype', 'onsetObs5'))
-rm(corr)
-
-summary(r$rmse) # 34.23-1825.89; mean = 370.25; median = 222.62
-summary(r$rmse[!is.na(r$onsetObs5)]) # 55.21-1825.89; mean = 408.88; median = 257.19
-summary(r$corr) # -0.268-0.997; mean = 0.913; median = 0.958
-summary(r$corr[!is.na(r$onsetObs5)]) # 0.608-0.997; mean = 0.949; median = 0.965
-
-r$subtype <- factor(r$subtype)
-r.red <- r[!is.na(r$onsetObs5), ]
-
-boxplot(rmse ~ subtype, data = r.red) # looks lower for A(H1), highest for A(H3)
-boxplot(rmse ~ season, data = r.red) # lowest for 13-14, 15-16; higher for 11-12, 16-17, 17-18 - somewhat associated with which are H1 seasons
-boxplot(rmse ~ country, data = r.red) # looks worse for LU; lowest for FR/NL; very wide range for SK/PL
-boxplot(rmse ~ run, data = r.red) # no difference
-boxplot(rmse ~ onsetObs5, data = r.red) # looks lower for later onsets - but that's probably just b/c it has to fit 0 for so long
-
-boxplot(corr ~ subtype, data = r.red) # look similar, but all so high
-boxplot(corr ~ season, data = r.red) # lower for 11-12, high for 15-16
-boxplot(corr ~ country, data = r.red) # lower for LU, HU, PL, SK (but esp. LU); best for FR and IT (these tend to have smooth outbreaks right?)
-boxplot(corr ~ run, data = r.red) # same
-boxplot(corr ~ onsetObs5, data = r.red) # lower with later onsets - correlation w/ zero could really go either way?
-
-# which of these associations are actually worth testing? subtype is probably the main thing, and maybe country, although there are so many it's hard to break down
-
-kruskal.test(rmse ~ subtype, data = r.red) # highly sig - p=8.833e-16
-kruskal.test(rmse ~ country, data = r.red) # highly sig - p<2.2e-16
-
-kruskal.test(corr ~ subtype, data = r.red) # sig - p=0.0001874
-kruskal.test(corr ~ country, data = r.red) # highly sig - p<2.2e-16
-
-library(PMCMR)
-library(PMCMRplus)
-
-posthoc.kruskal.nemenyi.test(rmse ~ subtype, data = r.red) # H1, then B, then H3 (all p<0.0001, except h3vb < 0.03)
-posthoc.kruskal.nemenyi.test(rmse ~ country, data = r.red) # LU sig different from all except PL (all p<0.0001); PL sig higher than NL
-# for country: set p to 0.01/66 = 0.00015, round to 0.0001
-
-posthoc.kruskal.nemenyi.test(corr ~ subtype, data = r.red) # H1 sig different than B and H3 (p < 0.01), but no difference between h3 and b
-posthoc.kruskal.nemenyi.test(corr ~ country, data = r.red)
+# # This will allow us to ultimately get:
+#     # Range and mean/median for chosen season
+#     # Overall mean/median
+#     # Mean/median by subtype
+# r <- read.csv('results/fits/rmse_COMB.csv')
+# corr <- read.csv('results/fits/corr_COMB.csv')
+# 
+# # Combine:
+# r <- merge(r, corr, by = c('season', 'country', 'run', 'subtype', 'onsetObs5'))
+# rm(corr)
+# 
+# summary(r$rmse) # 34.23-1825.89; mean = 370.25; median = 222.62
+# summary(r$rmse[!is.na(r$onsetObs5)]) # 55.21-1825.89; mean = 408.88; median = 257.19
+# summary(r$corr) # -0.268-0.997; mean = 0.913; median = 0.958
+# summary(r$corr[!is.na(r$onsetObs5)]) # 0.608-0.997; mean = 0.949; median = 0.965
+# 
+# r$subtype <- factor(r$subtype)
+# r.red <- r[!is.na(r$onsetObs5), ]
+# 
+# boxplot(rmse ~ subtype, data = r.red) # looks lower for A(H1), highest for A(H3)
+# boxplot(rmse ~ season, data = r.red) # lowest for 13-14, 15-16; higher for 11-12, 16-17, 17-18 - somewhat associated with which are H1 seasons
+# boxplot(rmse ~ country, data = r.red) # looks worse for LU; lowest for FR/NL; very wide range for SK/PL
+# boxplot(rmse ~ run, data = r.red) # no difference
+# boxplot(rmse ~ onsetObs5, data = r.red) # looks lower for later onsets - but that's probably just b/c it has to fit 0 for so long
+# 
+# boxplot(corr ~ subtype, data = r.red) # look similar, but all so high
+# boxplot(corr ~ season, data = r.red) # lower for 11-12, high for 15-16
+# boxplot(corr ~ country, data = r.red) # lower for LU, HU, PL, SK (but esp. LU); best for FR and IT (these tend to have smooth outbreaks right?)
+# boxplot(corr ~ run, data = r.red) # same
+# boxplot(corr ~ onsetObs5, data = r.red) # lower with later onsets - correlation w/ zero could really go either way?
+# 
+# # which of these associations are actually worth testing? subtype is probably the main thing, and maybe country, although there are so many it's hard to break down
+# 
+# kruskal.test(rmse ~ subtype, data = r.red) # highly sig - p=8.833e-16
+# kruskal.test(rmse ~ country, data = r.red) # highly sig - p<2.2e-16
+# 
+# kruskal.test(corr ~ subtype, data = r.red) # sig - p=0.0001874
+# kruskal.test(corr ~ country, data = r.red) # highly sig - p<2.2e-16
+# 
+# library(PMCMR)
+# library(PMCMRplus)
+# 
+# posthoc.kruskal.nemenyi.test(rmse ~ subtype, data = r.red) # H1, then B, then H3 (all p<0.0001, except h3vb < 0.03)
+# posthoc.kruskal.nemenyi.test(rmse ~ country, data = r.red) # LU sig different from all except PL (all p<0.0001); PL sig higher than NL
+# # for country: set p to 0.01/66 = 0.00015, round to 0.0001
+# 
+# posthoc.kruskal.nemenyi.test(corr ~ subtype, data = r.red) # H1 sig different than B and H3 (p < 0.01), but no difference between h3 and b
+# posthoc.kruskal.nemenyi.test(corr ~ country, data = r.red)
 
 
 

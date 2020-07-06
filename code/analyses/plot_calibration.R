@@ -1,5 +1,12 @@
+### Generate calibration plots ###
 
-# Functions:
+############################################################################################################################################
+############################################################################################################################################
+############################################################################################################################################
+
+# Functions needed:
+
+# weighted quantiles for peak timing/peak intensity
 wtd.quantile.new <- function(x) {
   if (round(sum(x[, 2])) != 1) {
     print('ERROR 1')
@@ -13,6 +20,7 @@ wtd.quantile.new <- function(x) {
   return(y)
 }
 
+# weighted quantiles for onset timing
 wtd.quantile.onset <- function(x) {
   # if (round(sum(x[, 2])) != 1) {
   #   print('ERROR 1')
@@ -28,6 +36,7 @@ wtd.quantile.onset <- function(x) {
   return(y)
 }
 
+# get credible intervals from model results for a given metric and range of lead weeks
 processLead <- function(lead.bin, d, metric) {
   if (metric == 'pt') {
     d.temp <- d[d$leadpkwk_bin == lead.bin, ]
@@ -64,6 +73,7 @@ processLead <- function(lead.bin, d, metric) {
   return(d.new)
 }
 
+# check how often observed falls within credible intervals (PT and OT)
 get_calibration_Dist <- function(d, met, denom, lead, model) {
   
   p25 <- sum(d[, met] >= d$`37.5%` & d[, met] <= d$`62.5%`)
@@ -82,6 +92,7 @@ get_calibration_Dist <- function(d, met, denom, lead, model) {
   return(dat.temp)
 }
 
+# format calibration results for plotting
 format_calib_output <- function(d, met.name) {
   d[, 1] <- as.numeric(as.character(d[, 1]))
   d[, 2] <- as.numeric(as.character(d[, 2]))
@@ -96,6 +107,7 @@ format_calib_output <- function(d, met.name) {
   return(d)
 }
 
+# check how often observed falls within credible intervals (PI)
 get_calibration_Dist_int <- function(d, met, denom, lead,  model) {
   
   p25 <- sum(d[, met] >= d$`37.5%` & d[, met] <= d$`62.5%`)
@@ -168,8 +180,6 @@ d.ot <- d.ot[d.ot$leadonset5 >= -6 & d.ot$leadonset5 < 4 & !is.na(d.ot$leadonset
 
 d.pt$leadpkwk_bin <- cut(d.pt$leadpkwk_mean, c(-9, -7, -5, -3, -1, 1, 3))
 d.ot$leadonwk_bin <- cut(d.ot$leadonset5, c(-7, -5, -3, -1, 1, 3))
-
-# Make oev_base, oev_denom, and lambda factors?
 
 # Get list of countries:
 countries <- levels(d$country) # note: different order than that in which forecasts run!
@@ -322,28 +332,4 @@ ggsave(filename = 'results/plots/Fig4.svg', plot = p1, width = 12, height = 7)
 
 # Clean up:
 rm(list = ls())
-dev.off()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
