@@ -1,4 +1,3 @@
-
 ### Run model to generate synthetic data for model testing ###
 
 ### Read in libraries
@@ -25,28 +24,12 @@ tm_strt <- 273; tm_end <- 636; tm_step <- 1#; t <- 1 # 273 is first of October
 tm.range <- tm_strt:tm_end
 
 ### Parameter boundaries
-# D_low <- 2; L_low <- 3*365; Rmx_low <- 2.2; Rdiff_low <- 0.2; airScale_low <- 0.75
-# D_up <- 7; L_up <- 10*365; Rmx_up <- 2.8; Rdiff_up <- 1.2; airScale_up <- 1.25
-
-# D_low <- 2; L_low <- 3*365; Rmx_low <- 2.2; Rdiff_low <- 0.2; airScale_low <- 0.75
-# D_up <- 7; L_up <- 10*365; Rmx_up <- 2.8; Rdiff_up <- 1.0; airScale_up <- 1.25
-
 D_low <- 2; L_low <- 3*365; Rmx_low <- 2.0; Rdiff_low <- 0.2; airScale_low <- 0.75
 D_up <- 7; L_up <- 10*365; Rmx_up <- 2.8; Rdiff_up <- 1.0; airScale_up <- 1.25
 
-# D_low <- 2; L_low <- 3*365; Rmx_low <- 2.2; Rdiff_low <- 0.2; airScale_low <- 0.75
-# D_up <- 6; L_up <- 10*365; Rmx_up <- 2.8; Rdiff_up <- 1.2; airScale_up <- 1.25
-
-S0_low <- 0.40; S0_up <- 0.90 # then again, we want scalings that will work when we use the ranges we're using for fitting, right?
+S0_low <- 0.40; S0_up <- 0.90
 I0_low <- 0; I0_up <- 0.00005
 # I0_low <- 0; I0_up <- 0.000001
-# unless we want to change the ranges we're fitting with?
-# but here we are trying to get REALISTIC outbreaks, which means we need some w-e
-
-# D_low <- 2; L_low <- 200; Rmx_low <- 1.3; Rdiff_low <- 0.01; airScale_low <- 0.75
-# D_up <- 12; L_up <- 500; Rmx_up <- 4.0; Rdiff_up <- 2.0; airScale_up <- 1.25
-# S0_low <- 0.30; S0_up <- 0.90
-# I0_low <- 0; I0_up <- 0.00005
 
 theta_low <- c(L_low, D_low, Rmx_low, Rdiff_low, airScale_low)
 theta_up <- c(L_up, D_up, Rmx_up, Rdiff_up, airScale_up)
@@ -61,25 +44,6 @@ pop.size <- pop.size[pop.size$country %in% countries, ]; pop.size$country <- fac
 pop.size <- pop.size[match(countries, pop.size$country), ]
 
 ### Load commuting data
-# load('formatTravelData/formattedData/comm_mat_by_year_05-07_RELIABLE_ONLY.RData')
-# t.comm <- apply(simplify2array(comm.by.year), 1:2, mean); rm(comm.by.year)
-# t.comm <- t.comm[countries, countries]
-# t.comm.basic <- t.comm
-# t.comm <- vector('list', num_ens)
-# for (i in 1:num_ens) {
-#   t.comm[[i]] <- t.comm.basic
-# }
-
-# load('formatTravelData/formattedData/comm_mat_by_season_01-27.RData')
-# t.comm <- apply(simplify2array(comm.by.seas), 1:2, mean, na.rm = TRUE); rm(comm.by.seas)
-# t.comm <- t.comm[countries, countries]
-# t.comm[is.na(t.comm)] <- 0
-# t.comm.basic <- t.comm
-# t.comm <- vector('list', num_ens)
-# for (i in 1:num_ens) {
-#   t.comm[[i]] <- t.comm.basic
-# }
-
 load('formatTravelData/formattedData/comm_mat_1000.RData')
 t.comm <- lapply(comm.list1, function(ix) {
   apply(simplify2array(ix), 1:2, mean)
@@ -103,10 +67,6 @@ for (i in 1:num_ens) {
     pop.size$pop[ix] - rowSums(N[[i]])[ix]
   }))
 }
-# diag(N) <- unlist(lapply(1:n, function(ix) {
-#   pop.size$pop[ix] - rowSums(N)[ix]
-# }))
-# # note: this now results in more home-home people than before, since there are fewer countries to commute to
 
 ### Read in humidity data
 ah <- read.csv('data/ah_Europe_07142019.csv')
@@ -114,11 +74,11 @@ AH <- rbind(ah[, count.indices], ah[, count.indices])
 
 ### Set initial conditions based on input parameters
 # param.bound <- cbind(c(S0_low, sd_low, rep(I0_low, n), theta_low),
-#                      c(S0_up, sd_up, rep(I0_up, n), theta_up))
+#                      c(S0_up, sd_up, rep(I0_up, n), theta_up)) # if initiating all countries' S0 as normal dist around a single value
 param.bound <- cbind(c(rep(S0_low, n), rep(I0_low, n), theta_low),
                      c(rep(S0_up, n), rep(I0_up, n), theta_up))
 # param.bound <- cbind(c(rep(S0_low, n**2), rep(I0_low, n**2), theta_low),
-#                      c(rep(S0_up, n**2), rep(I0_up, n**2), theta_up)) # try true LHS?
+#                      c(rep(S0_up, n**2), rep(I0_up, n**2), theta_up)) # for LHS over all compartments
 parms <- t(lhs(num_ens, param.bound))
 
 parms[, 28][parms[, 28] >= parms[, 27]] <- parms[, 27][parms[, 28] >= parms[, 27]] - 0.01
@@ -323,7 +283,6 @@ save(i0.list, file = 'syntheticTests/syntheticData/I0_1000_070220.Rdata')
 save(s0.list, file = 'syntheticTests/syntheticData/S0_1000_070220.Rdata')
 
 # And save only the 5 to be used in synthetic testing:
-# to.keep <- c(592, 605, 440, 566, 591)
 to.keep <- c(109, 3, 653, 694, 599)
 synth.outbreaks <- synth.runs.RATES[to.keep]
 synth.s <- s.rates[to.keep]

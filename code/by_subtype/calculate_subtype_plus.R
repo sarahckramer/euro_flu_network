@@ -1,3 +1,4 @@
+### Format raw virologic and syndromic data, and calculate (sub)type-specific syndromic+ data ###
 
 ########################################################################################################################################################################
 # Read in syndromic data:
@@ -309,20 +310,20 @@ flip.vir.dat.B <- flip.vir.dat.B[79:495, ]
 flip.list <- list(flip.dat, flip.vir.dat.A, flip.vir.dat.AH1, flip.vir.dat.AH3, flip.vir.dat.B)
 plot.names <- c('All', 'A (All)', 'A (H1N1)', 'A (H3N2)', 'B')
 
-pdf('code/checks/analyzeDataRetro/outputs/plot_syndromic+_bySubtype_NEW.pdf', width = 15, height = 16)
-for (i in 1:length(flip.list)) {
-  
-  par(mfrow = c(12, 1), cex = 0.8, mar = c(2.5, 2.5, 2, 1), mgp = c(1.5, 0.5, 0))
-  # par(mfrow = c(6, 2), cex = 0.8, mar = c(1.5, 1.5, 1.5, 1), mgp = c(1.5, 0.5, 0))
-  for (j in 2:13) {
-    plot(flip.list[[i]][, j], pch = 20, cex = 0.7, type = 'b', main = names(flip.list[[i]])[j], xlab = 'Time', xaxt = 'n', ylab = plot.names[i])
-    abline(v = c(1, 53, 105, 157, 209, 261, 314, 366, 418))
-    # axis(side = 1, at = c(14, 66, 118, 170, 222, 275, 327, 379), labels = 2011:2018)
-    axis(side = 1, at = c(1, 53, 105, 157, 209, 261, 314, 366), labels = c('10-11', '11-12', '12-13', '13-14', '14-15', '15-16', '16-17', '17-18'))
-  }
-  
-}
-dev.off()
+# pdf('code/checks/analyzeDataRetro/outputs/plot_syndromic+_bySubtype_NEW.pdf', width = 15, height = 16)
+# for (i in 1:length(flip.list)) {
+#   
+#   par(mfrow = c(12, 1), cex = 0.8, mar = c(2.5, 2.5, 2, 1), mgp = c(1.5, 0.5, 0))
+#   # par(mfrow = c(6, 2), cex = 0.8, mar = c(1.5, 1.5, 1.5, 1), mgp = c(1.5, 0.5, 0))
+#   for (j in 2:13) {
+#     plot(flip.list[[i]][, j], pch = 20, cex = 0.7, type = 'b', main = names(flip.list[[i]])[j], xlab = 'Time', xaxt = 'n', ylab = plot.names[i])
+#     abline(v = c(1, 53, 105, 157, 209, 261, 314, 366, 418))
+#     # axis(side = 1, at = c(14, 66, 118, 170, 222, 275, 327, 379), labels = 2011:2018)
+#     axis(side = 1, at = c(1, 53, 105, 157, 209, 261, 314, 366), labels = c('10-11', '11-12', '12-13', '13-14', '14-15', '15-16', '16-17', '17-18'))
+#   }
+#   
+# }
+# dev.off()
 
 
 

@@ -1,3 +1,4 @@
+### Plot several assessments of synthetic fit ###
 
 library(ggplot2); library(gridExtra); library(viridis)
 

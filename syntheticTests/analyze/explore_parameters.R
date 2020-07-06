@@ -1,3 +1,4 @@
+### Explore patterns in parameters that generated "realistic" synthetic outbreaks ###
 
 # Read in parameter ranges and initial S/I:
 load('syntheticTests/syntheticData/params_1000_021020.RData')
@@ -83,11 +84,6 @@ for (ix in 1:4) {
 # D/R0mx (pos); R0mx/R0diff (pos)
 
 # Plot out 2- and 3-dimensional heatplots to explore covariability:
-# For 2d: all combos of D/R0mx/R0diff; also S0sd with R0mx/R0diff; for all groups; color is frequency
-# For 3d:
-# Maybe limit this to a few combination of interest - first, how to all params vary with S0mean/R0mx (only consistent and strong bivariate relationship)
-# Explore how D, R0mx, and R0diff change given the relationship between any 2 of them (just 3 plots?)
-
 parms.df <- dcast(parms.df, index ~ param)
 
 calc_z_for_heatmap <- function(df, p1, p2, p3 = NA) {

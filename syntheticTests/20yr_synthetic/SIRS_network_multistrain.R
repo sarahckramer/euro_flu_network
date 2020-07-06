@@ -1,3 +1,4 @@
+### Code to stochastically or deterministically propagate multistrain SIRS model over several years ###
 
 # # Generate Vtype matrix:
 # Vtype <- matrix(0, nrow = 365 * 20, ncol = 2) # first column is strain 1/H1N1, second column is strain 2/H3N2

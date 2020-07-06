@@ -1,3 +1,4 @@
+### Get scaling factors for each country, (sub)type, and season ###
 
 # Read in subtype-specific syndromic+:
 dat.H1 <- read.csv('data/by_subtype/WHO_data_A(H1).csv')
@@ -398,12 +399,13 @@ write.csv(scale.b.1718, file = 'data/by_subtype/scaling_frames/scalings_frame_B_
 rm(list = ls())
 
 
-
-
-
-
-
-
-
-
+# Two quick notes:
+# 1: I didn't fix particularly small (> 1/1.5x next smallest) outbreaks (one outbreak each for DE/H3 and LU/B), but the issue with the larger outbreaks was that they
+#    usually went over 100,000/100,000 cases, which makes no real sense; small outbreaks don't have this issue
+# 2: Why was the maximum outbreak size always 75,000 after fixing?? Using 1.5x the next largest scaling shouldn't have resulted in uniform outbreak sizes
+#    I guess it's b/c the remaining outbreaks all have overlap between 15% and 50% ranges, so chosen scaling is the one that makes the largest outbreak 50% (and all the others less)
+#    So when we multiply this by 1.5, we get an AR of 75%
+#    But this means that, when outbreaks are "too large," we're simply setting them equal to 75% AR - shouldn't it be more nuanced than this?
+#    We could try to make it so that the amount higher than the next highest is taken into account, but this ranges so much I don't think we could find a rule where all outbreaks < 100%
+#    So essentially, the rule is that if scaling >1.5x next highest, set to 1.5x, but essentially that when we see "too large" scalings, reduce AR to 75%
 

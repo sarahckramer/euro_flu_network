@@ -1,4 +1,3 @@
-
 ### Run synthetic code for 20 years ###
 
 ### Read in libraries

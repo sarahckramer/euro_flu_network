@@ -1,10 +1,10 @@
 
-### Run to process files from python/downloaded from cluster ###
+### Run to process files from python ###
+
+# Specify model.type and (sub)type
 model.type <- 'Network'
 # model.type <- 'Individual'
-
-# Set strain:
-strain <- 'B'
+strain <- 'B' # 'A(H1)', 'A(H3)', or 'B'
 
 # 1. Process metrics file:
 source('code/comparisons/process_raw_data/process_metrics_file.R')

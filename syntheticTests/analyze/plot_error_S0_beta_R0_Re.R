@@ -1,4 +1,3 @@
-
 ### Plot error in S/beta/R0/Re over ALL timepoints ###
 
 # Read in results with most everything calculated:

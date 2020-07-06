@@ -1,7 +1,4 @@
-
-# # Country names
-# europe <- c('Austria', 'Belgium', 'Croatia', 'Czechia', 'Denmark', 'France', 'Germany', 'Hungary', 'Ireland', 'Italy', 'Luxembourg',
-#             'Netherlands', 'Poland', 'Portugal', 'Romania', 'Slovakia', 'Slovenia', 'Spain', 'Sweden', 'United Kingdom')
+### Format metrics files and calculate all relevant measures ###
 
 # Countries by data type
 north.ili <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'HU', 'IE', 'IT', 'NL', 'PL', 'PT', 'RO', 'SK', 'ES', 'SE')
@@ -9,48 +6,7 @@ north.ari <- c('LU', 'UK', 'DE', 'SI', 'FR')
 
 # Read in results
 setwd('python/results/PROCESS/')
-# if (model.type == 'Network') {
-#   setwd('python/results/PROCESS/')
-# } else if (model.type == 'Individual') {
-#   setwd('results/PROCESS/')
-# }
 m <- read.csv(file = list.files(pattern = 'Met'))
-
-# # for now, need to fix FR scalings - but work on this!
-# load('../../../data/by_subtype/scalings_noCutoff_threeOverPointOne.RData')
-# m$scaling[m$country == 'FR' & m$season %in% c('2010-11', '2011-12', '2012-13', '2013-14')] <- scalings.new[[1]][13]
-# rm(scalings.new)
-
-# if (model.type == 'Individual') {
-#   names(m)[4] <- 'scaling'
-#   
-#   # load('../../data/by_subtype/scalings_noCutoff_threeOverPointOne.RData')
-#   # m$scaling[m$country == 'FR' & m$season %in% c('2010-11', '2011-12', '2012-13', '2013-14')] <- scalings.new[[1]][13]
-#   
-#   for (i in 37:44) {
-#     m[, i] <- m[, i] + 40 - 1
-#   }
-#   
-#   rm(i)
-#   # rm(scalings.new)
-# }
-
-# m <- read.csv('results/newScalings/outputMet_090919.csv')
-# load('data/scalings_temp_08-26-19_MEANS.RData')
-# for (country in levels(m$country)) {
-#   gamma <- new.scalings.mean[[which(names(new.scalings.mean) == country)]]
-#   
-#   if (country != 'FR') {
-#     m$scaling[m$country == country] <- gamma
-#   } else {
-#     m$scaling[m$country == country & m$season %in% levels(m$season)[1:4]] <- gamma[1]
-#     m$scaling[m$country == country & m$season %in% levels(m$season)[5:8]] <- gamma[2]
-#   }
-#   
-# }
-
-# # Are peak intensities still the same for all base/denom/lambda at this point?:
-# m.check <- unique(m[, c(1, 8:9, 17)]) # yep!
 
 # Re-code any magnitudes by scaling
 m$obs_peak_int <- round(m$obs_peak_int/m$scaling, digits=4)
@@ -61,16 +17,12 @@ m$totAttackObs <- m$totAttackObs/m$scaling
 m$delta_AR <- m$delta_AR/m$scaling
 m$obs_1week <- m$obs_1week/m$scaling
 m$fcast_1week <- m$fcast_1week/m$scaling
-# m$delta_1w <- m$delta_1w/m$scaling # these are already relative differences
 m$obs_2week <- m$obs_2week/m$scaling
 m$fcast_2week <- m$fcast_2week/m$scaling
-# m$delta_2w <- m$delta_2w/m$scaling
 m$obs_3week <- m$obs_3week/m$scaling
 m$fcast_3week <- m$fcast_3week/m$scaling
-# m$delta_3w <- m$delta_3w/m$scaling
 m$obs_4week <- m$obs_4week/m$scaling
 m$fcast_4week <- m$fcast_4week/m$scaling
-# m$delta_4w <- m$delta_4w/m$scaling
 
 # Calculate relevant metrics
 m$FWeek_pkwk <- m$fc_start - m$obs_pkwk
@@ -78,10 +30,6 @@ m$FWeek_pkwk_bin <- cut(m$FWeek_pkwk, c(-Inf, -10, -7, -4, -1, 2, 5, 8, Inf))
 m$abs_delta_pkwk_mean <- abs(m$delta_pkwk_mean)
 m$abs_delta_peak_int <- abs(m$intensity_err) + m$obs_peak_int
 m$abs_delta_AR <- abs(m$delta_AR) + m$totAttackObs
-# m$abs_delta_1w <- abs(m$delta_1w) + m$obs_1week
-# m$abs_delta_2w <- abs(m$delta_2w) + m$obs_2week
-# m$abs_delta_3w <- abs(m$delta_3w) + m$obs_3week
-# m$abs_delta_4w <- abs(m$delta_4w) + m$obs_4week
 
 # Bin peak intensity by accuracy
 # Binnings are going to leave out instances where:
@@ -91,7 +39,6 @@ m$abs_delta_AR <- abs(m$delta_AR) + m$totAttackObs
 for(country in levels(m$country)) {
   peak.vals <- unique(m$obs_peak_int[m$country == country])
   peak.vals <- peak.vals[!is.na(peak.vals)]
-  #print(peak.vals)
   for(peak.val in peak.vals){
     m$abs_delta_peak_int_bin[m$country == country & m$obs_peak_int==peak.val & !is.na(m$obs_peak_int)] <- cut(m$abs_delta_peak_int[m$country == country & m$obs_peak_int==peak.val & !is.na(m$obs_peak_int)], c("1" = unique(m$obs_peak_int[m$country == country & m$obs_peak_int==peak.val & !is.na(m$obs_peak_int)]), "2" = (1.125*unique(m$obs_peak_int[m$country == country & m$obs_peak_int==peak.val & !is.na(m$obs_peak_int)])), "3" = (1.25*unique(m$obs_peak_int[m$country == country & m$obs_peak_int==peak.val & !is.na(m$obs_peak_int)])), "4" = (1.375*unique(m$obs_peak_int[m$country == country & m$obs_peak_int==peak.val & !is.na(m$obs_peak_int)])), "5" = (1.5*unique(m$obs_peak_int[m$country == country & m$obs_peak_int==peak.val & !is.na(m$obs_peak_int)])), "6" = (2*unique(m$obs_peak_int[m$country == country & m$obs_peak_int==peak.val & !is.na(m$obs_peak_int)])), "7" = (10*unique(m$obs_peak_int[m$country == country & m$obs_peak_int==peak.val & !is.na(m$obs_peak_int)]))))
   }
@@ -116,7 +63,7 @@ m$abs_delta_onset <- abs(m$delta_onset)
 # Weeks from predicted lead signs are reversed from FWeek_pkwk - change:
 m$leadpkwk_mean <- (m$leadpkwk_mean) * (-1)
 
-# # Add additional metrics
+# Add additional metrics
 m$region[m$country %in% c('AT', 'BE', 'HR', 'FR', 'DE', 'IT', 'LU', 'NL', 'PT', 'SI', 'ES')] <- 'Southwest Europe'
 m$region[m$country %in% c('CZ', 'HU', 'PL', 'RO', 'SK')] <- 'Eastern Europe'
 m$region[m$country %in% c('DK', 'IE', 'SE', 'UK')] <- 'Northern Europe'
@@ -144,18 +91,8 @@ m$accurate_on[m$abs_delta_onset %in% c(0,1)] <- 'yes'
 m$accurate_on[!(m$abs_delta_onset %in% c(0,1))] <- 'no'
 m$accurate_on <- factor(m$accurate_on)
 
-# # Reorder columns if individual:
-# if (model.type == 'Individual') {
-#   m <- m[, c(2:3, 5:7, 4, 8, 1, 9:77)]
-#   # print(summary(names(m) == names(m.comp)[1:77]))
-# }
-
 # Write new metrics file
 write.csv(m, file = 'outputMet_pro.csv', row.names = F)
-# write.csv(m, file = 'code/individualCountries/outputs/outputMet_082819_pro.csv', row.names = F)
-# write.csv(m, file = 'results/newScalings/outputMet_090919_pro.csv', row.names = F)
-# write.csv(m, file = 'results/propRandTravel/outputMet_090919_pro.csv', row.names = F)
-# write.csv(m, file = 'results/highOEVBase/outputMet_090919_pro.csv', row.names = F)
 
 # Clear environment
 # rm(list=ls())

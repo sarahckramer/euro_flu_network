@@ -1,3 +1,4 @@
+### Format air data (downloaded from Eurostat) ###
 
 library(reshape2)
 
@@ -7,6 +8,7 @@ a2 <- read.table('formatTravelData/rawData/avia_paocc.tsv', sep = '\t', header =
 a3 <- read.table('formatTravelData/rawData/avia_paocc_1.tsv', sep = '\t', header = T)
 # Air passenger transport between reporting countries (avia_paocc)
 # Second (a3) downloaded on Jan 30, 2020
+# Source: https://ec.europa.eu/eurostat/web/products-datasets/-/avia_paocc
 
 # First column: unit, train, source, destination
 a2[, 1] <- as.character(a2[, 1])

@@ -1,5 +1,5 @@
 
-# Produce "output plots" similar to in Aim1 to see what is happening at each stage of the forecast
+### Produce plots to show fit/forecasts over time ###
 
 library(ggplot2); library(data.table); library(magrittr); library(plyr); library(plot3D); library(gmodels);
 library(gtable); library(gridExtra); library(reshape2); library(stringr)

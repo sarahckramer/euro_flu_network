@@ -1,5 +1,5 @@
+### Some assessment of how well forecasts based purely on historical expectance perform ###
 
-### Some assessment of how well forecasts based purely on historical expectance perform
 # Look at historical PT/PI/OT and simply assign probabilities that way (by country and subtype); then calculate log scores
 library(PMCMR)
 
@@ -22,7 +22,6 @@ dat <- NULL
 for (country in levels(m$country)) {
   for (strain in levels(m$subtype)) {
     m.base <- m[m$country == country & m$subtype == strain, ]
-    # print(m.base$obs_peak_int)
     
     for (season in unique(m.base$season)) {
       obs.pt <- m.base$obs_pkwk[m.base$season == season]
@@ -30,7 +29,6 @@ for (country in levels(m$country)) {
       obs.ot <- m.base$onsetObs5[m.base$season == season]
       
       m.temp <- m.base[m.base$season != season, ]
-      # print(dim(m.temp)[1] + 1 == dim(m.base)[1])
       
       prob.pt <- length(m.temp$obs_pkwk[m.temp$obs_pkwk == obs.pt]) / length(m.temp$obs_pkwk)
       prob.ot <- length(m.temp$onsetObs5[m.temp$onsetObs5 == obs.ot]) / length(m.temp$onsetObs5)
@@ -38,10 +36,6 @@ for (country in levels(m$country)) {
       obs.pi.binned <- cut(obs.pi, c(seq(0, 14000, by = 500), 100000))
       pred.pi.binned <- cut(m.temp$obs_peak_int, c(seq(0, 14000, by = 500), 100000))
       prob.pi <- length(pred.pi.binned[obs.pi.binned == pred.pi.binned]) / length(pred.pi.binned)
-      
-      # print(obs.pi.binned)
-      # print(pred.pi.binned)
-      # print(prob.pi)
       
       dat <- rbind(dat, cbind(country, strain, season, rbind(c('pt', log(prob.pt)), c('pi', log(prob.pi)), c('ot', log(prob.ot)))))
     }

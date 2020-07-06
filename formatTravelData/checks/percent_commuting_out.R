@@ -1,5 +1,5 @@
+### Calculate the % of each country's population commuting to another country ###
 
-# Calculate the % of each country's population commuting to another country,
 # based on additional data source from Eurostat
 c <- read.csv('formatTravelData/rawData/lfst_r_lfe2ecomm.tsv', sep = '\t', header = T)
 # Employment and commuting by NUTS 2 regions (1 000) [lfst_r_lfe2ecomm]

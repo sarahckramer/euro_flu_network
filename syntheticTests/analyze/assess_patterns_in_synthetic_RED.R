@@ -1,8 +1,7 @@
 
-### Assess patterns in synthetic "data" and compare to observed data
-library(reshape2); library(ggplot2); library(gridExtra); library(viridis)
+### Assess patterns in synthetic "data" and compare to observed data ###
 
-# Note: Results overwhelmingly similar for wide and original criteria 2
+library(reshape2); library(ggplot2); library(gridExtra); library(viridis)
 
 ### Save all plots:
 pdf('syntheticTests/outputs/explore/patterns_synth_realisticOnly.pdf', width = 16, height = 10)
@@ -75,10 +74,6 @@ m.noOnset <- m[is.na(m$ot), ]; m.noOnset$country <- factor(m.noOnset$country)
 print(length(unique(m.noOnset$run)))
 rev(sort(table(m.noOnset$country))) # HU and FR most likely, but even then rarely; similar for wider, but more SK
 # obs: NL and SK in 13-14
-# HU FR SK IT CZ PL NL ES AT DE BE 
-# 6  6  4  4  4  3  3  3  3  2  2 
-# Before parameter change: Overwhelmingly PT missing onsets
-# With less strict meaning of "realistic" for subtype-specific forecasts:
 # IT PL ES SK HU NL FR CZ DE BE AT 
 # 30 28 26 25 25 24 24 24 21 21 16
 # either way, never LU?

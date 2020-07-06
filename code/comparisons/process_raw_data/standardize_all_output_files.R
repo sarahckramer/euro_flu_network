@@ -1,3 +1,4 @@
+### Ensure network and isolated results formatted in the same way ###
 
 # Reorder metrics and output:
 if (model.type == 'Network') {

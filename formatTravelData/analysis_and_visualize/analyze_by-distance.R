@@ -1,3 +1,4 @@
+### Assess how travel magnitude trends with distance ###
 
 pdf('formatTravelData/outputs/by_dist_5-28.pdf', width = 10, height = 5)
 

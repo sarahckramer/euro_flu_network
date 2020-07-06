@@ -1,6 +1,7 @@
 
 ### Look at syndromic+ data quality by various metrices ###
 # And compare with accuracy by country/subtype
+library(PMCMR)
 
 # Read in unscaled data:
 iliiso.h1 <- read.csv('data/by_subtype/WHO_data_A(H1).csv')
@@ -152,7 +153,29 @@ cor.test(met.dat$prop.NA, met.dat$smoothness, method = 'kendall') # not sig (p =
 
 # Read in and format RMSE/log score results:
 rmses <- read.csv('results/fits/rmse_COMB.csv')
-# and get "d" from "plot_logScores.R"
+
+# Read in and format d:
+d1 <- read.csv('results/network/PROC_logScores_pt_ot.csv')
+d2 <- read.csv('results/network/PROC_logScores_pi_bin.csv')
+d1.isol <- read.csv('results/isolated/logScores_pt_ot.csv')
+d2.isol <- read.csv('results/isolated/logScores_pi_bin.csv')
+d1$model <- 'Network'; d2$model <- 'Network'; d1.isol$model <- 'Isolated'; d2.isol$model <- 'Isolated'
+d1 <- rbind(d1, d1.isol); d2 <- rbind(d2, d2.isol); rm(d1.isol, d2.isol)
+d1 <- d1[, c(1:4, 8, 10:17)]
+d2 <- d2[, c(1:4, 8, 10:17)]
+d <- rbind(d1, d2); rm(d1, d2)
+d.ot <- d[d$metric == 'onset5', ]
+d <- d[d$metric != 'onset5', ]
+d <- d[, c(1:8, 10:13)]
+d.ot <- d.ot[, c(1:7, 9:13)]
+d.ot$leadpkwk_mean <- d.ot$leadonset5
+names(d)[7:8] = names(d.ot)[7:8] = c('lead_mean', 'FWeek')
+d <- rbind(d, d.ot); rm(d.ot)
+d$metric <- factor(d$metric); d$model <- factor(d$model)
+levels(d$metric) <- c('Onset Timing', 'Peak Timing', 'Peak Intensity')
+d$metric <- factor(d$metric, levels = levels(d$metric)[c(2:3, 1)])
+d$model <- factor(d$model, levels = levels(d$model)[2:1])
+
 d.temp <- d[d$lead_mean >= -6 & d$lead_mean < 5 & !is.na(d$leadonset5), ]
 d.net <- d.temp[d.temp$model == 'Network', ]
 d.isol <- d.temp[d.temp$model == 'Isolated', ]
@@ -182,13 +205,6 @@ res.dat <- merge(res.dat, log.PT.mean.pre.ISOL, by = c('country', 'season', 'sub
 res.dat <- merge(res.dat, log.PI.mean.pre.ISOL, by = c('country', 'season', 'subtype'), all = TRUE)
 names(res.dat)[14:15] <- c('score.PT.pre.isol', 'score.PI.pre.isol')
 rm(log.PT.mean, log.PI.mean, log.PT.mean.pre, log.PI.mean.pre, log.PT.mean.ISOL, log.PI.mean.ISOL, log.PT.mean.pre.ISOL, log.PI.mean.pre.ISOL, rmse.mean)
-
-# Does this to some extent let us compare forecast accuracy by country, at least overall? Maybe
-    # Likewise, could we look at DIFFERENCES between network and isolated means, and compare these by country/subtype?
-    # Could be an alternative to the Friedman stuff... (at least in part)
-# I guess the most solid utility of this is perhaps to inform why certain subtypes perform better or worse
-# Can also check for associations with network and isolated results, and see if there is a differences in the relationships
-# Or do we really only want to show that, yes, our data are noisy?
 
 # Calculate difference between net and isol mean scores:
 res.dat$diff.PT <- res.dat$score.PT - res.dat$score.PT.isol
@@ -238,10 +254,4 @@ cor.test(res.dat$smoothness, res.dat$score.PT.isol, data = res.dat, method = 'ke
 cor.test(res.dat$smoothness, res.dat$score.PT.pre.isol, data = res.dat, method = 'kendall') # p = 0.01867; tau = 0.1241385
 cor.test(res.dat$smoothness, res.dat$score.PI.isol, data = res.dat, method = 'kendall')
 cor.test(res.dat$smoothness, res.dat$score.PI.pre.isol, data = res.dat, method = 'kendall')
-
-# From here possible to aggregate further and look at how mean scores vary by various country-level variables
-# res.dat <- aggregate(res.dat, by = list(res.dat$country), FUN = mean, na.rm = TRUE)
-# But there are now only 12 observations, making it unlikely that we'll find anything significant
-    # Also, since there really aren't differences in differences by country, it doesn't even seem super important to explore this
-    # There also aren't really notable score differences for the network model between countries
 

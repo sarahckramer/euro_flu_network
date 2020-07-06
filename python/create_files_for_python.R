@@ -1,5 +1,5 @@
 
-# Want to save commuting/population; air data as txt files for python
+## Want to save commuting/population; air; synthetic "outbreak" data as txt files for python ###
 
 # Countries:
 countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')

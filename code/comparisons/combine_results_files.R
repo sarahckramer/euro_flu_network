@@ -1,3 +1,4 @@
+### Takes (sub)type-specific results files and compiles them ###
 
 ### NETWORK ###
 # Read in all (7) files for each of 3 subtypes and combine:

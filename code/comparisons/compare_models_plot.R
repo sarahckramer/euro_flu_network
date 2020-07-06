@@ -1,3 +1,4 @@
+### Allows quick, plotted comparisons of up to three model runs (network, isolated, different oev_denom/lambda, etc.) ###
 
 # Read in libraries:
 library(reshape2); library(ggplot2); library(gridExtra)
@@ -6,7 +7,7 @@ library(reshape2); library(ggplot2); library(gridExtra)
 # outputPlots <- FALSE
 fileSuffix <- 'B'
 
-# Restrict the forecast start weeks for which results are shown?
+# Restrict the forecast start weeks for which results are shown to weeks AFTER conditions for season inclusion met?
 restrict.fc <- FALSE
 
 # Set model labels:

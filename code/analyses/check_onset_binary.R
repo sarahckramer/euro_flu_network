@@ -1,4 +1,3 @@
-
 ### Assess sensitivity/specificity of binary onset predictions once European outbreak has started (by calendar week) ###
 
 # Read in metrics files:
@@ -123,68 +122,68 @@ ggsave(filename = 'results/plots/S13_Fig.svg', plot = arrangeGrob(p1, p2, ncol =
 ###############################################################################################################################################################################
 ###############################################################################################################################################################################
 
-# Or should we have removed anything once the actual onset does occur, b/c at that point the prediction's no longer relevant?:
-m <- m[m$onsetObs5 >= m$fc_start | is.na(m$onsetObs5), ]
-
-# Calculate sens and spec by fc_start (week):
-res.dat <- NULL
-for (model in levels(m$model)) {
-  for (fc in unique(m$fc_start)) {
-    m.temp <- m[m$model == model & m$fc_start == fc, ]
-    
-    true_pos <- length(m.temp$result[m.temp$result == 'True Pos'])
-    true_neg <- length(m.temp$result[m.temp$result == 'True Neg'])
-    false_pos <- length(m.temp$result[m.temp$result == 'False Pos'])
-    false_neg <- length(m.temp$result[m.temp$result == 'False Neg'])
-    
-    # print(table(m.temp$result))
-    
-    sens <- true_pos / (true_pos + false_neg)
-    spec <- true_neg / (true_neg + false_pos)
-    
-    num_pos <- true_pos + false_neg
-    num_neg <- true_neg + false_pos
-    
-    res.dat <- rbind(res.dat, c(model, fc, sens, spec, num_pos, num_neg))
-  }
-}
-rm(true_pos, true_neg, false_pos, false_neg, sens, spec, model, fc, num_pos, num_neg)
-
-res.dat <- as.data.frame(res.dat)
-names(res.dat) <- c('model', 'fc_start', 'sens', 'spec', 'n_pos', 'n_neg')
-
-# Convert to numeric:
-res.dat$sens <- as.numeric(as.character(res.dat$sens))
-res.dat$spec <- as.numeric(as.character(res.dat$spec))
-res.dat$n_pos <- as.numeric(as.character(res.dat$n_pos))
-res.dat$n_neg <- as.numeric(as.character(res.dat$n_neg))
-res.dat$fc_start <- as.numeric(as.character(res.dat$fc_start))
-
-# Update levels:
-res.dat$model <- factor(res.dat$model, levels = levels(res.dat$model)[2:1])
-
-# Plot up sens/spec by model/country:
-p1 <- ggplot(data = res.dat, aes(x = fc_start, y = sens, group = model, col = model)) + geom_line() + geom_point(aes(size = n_pos)) + theme_classic() +
-  labs(x = 'Calendar Week', y = 'Sensitivity', col = 'Model:', size = 'Total w/ Onset:') + scale_color_brewer(palette = 'Set1')
-p2 <- ggplot(data = res.dat, aes(x = fc_start, y = spec, group = model, col = model)) + geom_line() + geom_point(aes(size = n_neg)) + theme_classic() +
-  labs(x = 'Calendar Week', y = 'Specificity', col = 'Model:', size = 'Total w/o Onset') + scale_color_brewer(palette = 'Set1') +
-  scale_size_continuous(limits = c(0, 150), breaks = c(10, 50, 100, 150))
-grid.arrange(p1, p2)
-# false positives are incredibly rare
-
-p1 <- ggplot(data = res.dat, aes(x = fc_start, y = sens, group = model, col = model)) + geom_line() + geom_point(size = 2) + theme_classic() +
-  labs(x = 'Calendar Week', y = 'Sensitivity', col = 'Model:') + scale_color_brewer(palette = 'Set1') + scale_y_continuous(limits = c(0, 1))
-p2 <- ggplot(data = res.dat, aes(x = fc_start, y = spec, group = model, col = model)) + geom_line() + geom_point(size = 2) + theme_classic() +
-  labs(x = 'Calendar Week', y = 'Specificity', col = 'Model:') + scale_color_brewer(palette = 'Set1') + scale_y_continuous(limits = c(0, 1))
-grid.arrange(p1, p2)
-# note: this doesn't change specificity
-# sensitivity gets much lower, which makes sense; also stops at week 63, since that is the latest observed onset
-
-res.temp <- res.dat[res.dat$fc_start < 64, ]
-summary(res.temp$sens[res.temp$model == 'Isolated']) # 0 to 0.29412 (mean = 0.123) # include 63: max 0.80, mean = 0.16258, median = 0.1125
-summary(res.temp$sens[res.temp$model == 'Network']) # 0 to 0.2617 (mean = 0.151) # include 63: max 0.60, mean = 0.1775, median = 0.1356
-summary(res.temp$sens) # 0 to 0.2941; mean = 0.1369, median = 0.1209 # include 63: 0 to 0.8; mean = 0.1700, median = 0.1273
-# maybe mention these numbers as a qualification, but use other plot
+# # Or should we have removed anything once the actual onset does occur, b/c at that point the prediction's no longer relevant?:
+# m <- m[m$onsetObs5 >= m$fc_start | is.na(m$onsetObs5), ]
+# 
+# # Calculate sens and spec by fc_start (week):
+# res.dat <- NULL
+# for (model in levels(m$model)) {
+#   for (fc in unique(m$fc_start)) {
+#     m.temp <- m[m$model == model & m$fc_start == fc, ]
+#     
+#     true_pos <- length(m.temp$result[m.temp$result == 'True Pos'])
+#     true_neg <- length(m.temp$result[m.temp$result == 'True Neg'])
+#     false_pos <- length(m.temp$result[m.temp$result == 'False Pos'])
+#     false_neg <- length(m.temp$result[m.temp$result == 'False Neg'])
+#     
+#     # print(table(m.temp$result))
+#     
+#     sens <- true_pos / (true_pos + false_neg)
+#     spec <- true_neg / (true_neg + false_pos)
+#     
+#     num_pos <- true_pos + false_neg
+#     num_neg <- true_neg + false_pos
+#     
+#     res.dat <- rbind(res.dat, c(model, fc, sens, spec, num_pos, num_neg))
+#   }
+# }
+# rm(true_pos, true_neg, false_pos, false_neg, sens, spec, model, fc, num_pos, num_neg)
+# 
+# res.dat <- as.data.frame(res.dat)
+# names(res.dat) <- c('model', 'fc_start', 'sens', 'spec', 'n_pos', 'n_neg')
+# 
+# # Convert to numeric:
+# res.dat$sens <- as.numeric(as.character(res.dat$sens))
+# res.dat$spec <- as.numeric(as.character(res.dat$spec))
+# res.dat$n_pos <- as.numeric(as.character(res.dat$n_pos))
+# res.dat$n_neg <- as.numeric(as.character(res.dat$n_neg))
+# res.dat$fc_start <- as.numeric(as.character(res.dat$fc_start))
+# 
+# # Update levels:
+# res.dat$model <- factor(res.dat$model, levels = levels(res.dat$model)[2:1])
+# 
+# # Plot up sens/spec by model/country:
+# # p1 <- ggplot(data = res.dat, aes(x = fc_start, y = sens, group = model, col = model)) + geom_line() + geom_point(aes(size = n_pos)) + theme_classic() +
+# #   labs(x = 'Calendar Week', y = 'Sensitivity', col = 'Model:', size = 'Total w/ Onset:') + scale_color_brewer(palette = 'Set1')
+# # p2 <- ggplot(data = res.dat, aes(x = fc_start, y = spec, group = model, col = model)) + geom_line() + geom_point(aes(size = n_neg)) + theme_classic() +
+# #   labs(x = 'Calendar Week', y = 'Specificity', col = 'Model:', size = 'Total w/o Onset') + scale_color_brewer(palette = 'Set1') +
+# #   scale_size_continuous(limits = c(0, 150), breaks = c(10, 50, 100, 150))
+# # grid.arrange(p1, p2)
+# # false positives are incredibly rare
+# 
+# p1 <- ggplot(data = res.dat, aes(x = fc_start, y = sens, group = model, col = model)) + geom_line() + geom_point(size = 2) + theme_classic() +
+#   labs(x = 'Calendar Week', y = 'Sensitivity', col = 'Model:') + scale_color_brewer(palette = 'Set1') + scale_y_continuous(limits = c(0, 1))
+# p2 <- ggplot(data = res.dat, aes(x = fc_start, y = spec, group = model, col = model)) + geom_line() + geom_point(size = 2) + theme_classic() +
+#   labs(x = 'Calendar Week', y = 'Specificity', col = 'Model:') + scale_color_brewer(palette = 'Set1') + scale_y_continuous(limits = c(0, 1))
+# grid.arrange(p1, p2)
+# # note: this doesn't change specificity
+# # sensitivity gets much lower, which makes sense; also stops at week 63, since that is the latest observed onset
+# 
+# res.temp <- res.dat[res.dat$fc_start < 64, ]
+# summary(res.temp$sens[res.temp$model == 'Isolated']) # 0 to 0.29412 (mean = 0.123) # include 63: max 0.80, mean = 0.16258, median = 0.1125
+# summary(res.temp$sens[res.temp$model == 'Network']) # 0 to 0.2617 (mean = 0.151) # include 63: max 0.60, mean = 0.1775, median = 0.1356
+# summary(res.temp$sens) # 0 to 0.2941; mean = 0.1369, median = 0.1209 # include 63: 0 to 0.8; mean = 0.1700, median = 0.1273
+# # maybe mention these numbers as a qualification, but use other plot
 
 #########################################################################################################################################################
 #########################################################################################################################################################

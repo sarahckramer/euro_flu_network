@@ -1,6 +1,6 @@
 
-# In individual country models, forecasts are not performed if data is NA (b/c nothing to forecast on)
-# To make for a fair comparison, remove forecasts made for a country when these conditions were met
+### In individual country models, forecasts are not performed if data is NA (b/c nothing to forecast on) ###
+### To make for a fair comparison, remove forecasts made for a country when these conditions were met ###
 
 # Read in all results:
 m <- m.store #read.csv(list.files(pattern = 'Met_pro.csv'))

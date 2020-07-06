@@ -1,3 +1,4 @@
+### Assess results of 20-year synthetic multistrain runs ###
 
 # Load and compile 20-year runs:
 run.list1 = run.list2 = s.list1 = s.list2 = r.list1 = r.list2 = vector('list', 200)

@@ -1,3 +1,5 @@
+### Old code, but allows quick assessment of results of a grid search, exploring different oev_denom/lambda values ###
+# Results from all oev_denom/lambda combinations will first need to be compiles into one metrics file, one of each log score file, etc.
 
 # Read in libraries:
 library(reshape2); library(ggplot2); library(gridExtra)
@@ -25,7 +27,7 @@ source('code/comparisons/comp_netVsIndiv/plotting_functions.R')
 m <- read.csv(file = paste0(model.loc, list.files(path = model.loc, pattern = 'Met_pro')))
 m <- m[!is.na(m$onsetObs5), ]
 
-# Trick pre-existing code into giving me results?:
+# Allows use of existing quick-plot code:
 m$model <- m$oev_base
 
 # Continue formatting:
@@ -86,15 +88,6 @@ source('code/comparisons/comp_netVsIndiv/plot_logScores.R')
 byWeek <- 'Observed'
 source('code/comparisons/comp_netVsIndiv/plot_logScores.R')
 rm(d, e.pi, e, byWeek)
-
-# # Plot calibration for PT, PI, OT, and 1-4 weeks:
-# if (outputPlots) {
-#   pdf('code/comparisons/plots/comp_calib.pdf', width = 14, height = 9)
-#   source('code/comparisons/comp_netVsIndiv/plot_calibrationMethod2.R')
-#   dev.off()
-# } else {
-#   source('code/comparisons/comp_netVsIndiv/plot_calibrationMethod2.R')
-# }
 
 # # Plot inferred parameter values at each time step (network only - individual allows parameter values to differ by country):
 # o <- read.csv(paste0(model1, list.files(path = model1, pattern = 'OPParams')))

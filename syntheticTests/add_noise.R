@@ -1,5 +1,6 @@
 
-### Add normally-distributed noise using old OEV form as variance
+### Add normally-distributed noise using OEV form as variance ###
+
 set.seed(108946052)
 
 # Read in "realistic" synthetic runs:

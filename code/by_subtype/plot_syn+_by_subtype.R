@@ -44,8 +44,6 @@ iliiso$subtype <- factor(iliiso$subtype)
 iliiso$subtype <- factor(iliiso$subtype, levels = levels(iliiso$subtype)[c(2:3, 1)])
 
 # Main plot:
-# pdf('code/checks/analyzeDataRetro/outputs/plot_syndromic+_bySubtype2_wA_fullScalings.pdf', width = 15, height = 16)
-
 p1 <- ggplot(data = iliiso, aes(x = time, y = value, col = subtype)) + geom_line(size = 0.75) + facet_wrap(~ variable, ncol = 1, scales = 'free_y') +
   theme_bw() + theme(axis.text = element_text(size = 12), axis.title = element_text(size = 14), legend.title = element_text(size = 14),
                      legend.text = element_text(size = 12), strip.text = element_text(size = 12)) +
@@ -72,7 +70,7 @@ annotation_custom2 <- function (grob, xmin = -Inf, xmax = Inf, ymin = -Inf, ymax
                                           xmin = xmin, xmax = xmax, 
                                           ymin = ymin, ymax = ymax))
 }
-# https://www.blopig.com/blog/2019/08/combining-inset-plots-with-facets-using-ggplot2/
+# Source: https://www.blopig.com/blog/2019/08/combining-inset-plots-with-facets-using-ggplot2/
 
 p3 <- p1 + annotation_custom2(grob = g2, data = data.frame(variable = 'France', value = 1000, subtype = 'H1', time = 50), ymin = 0, ymax = 137000, xmin = 30, xmax = 95)
 # p3

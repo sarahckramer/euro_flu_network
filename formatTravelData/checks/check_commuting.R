@@ -1,3 +1,4 @@
+### Check that commuting data are consistent with other Eurostat data reporting total commuters to foreign countries ###
 
 # If these are just a sample of the population, do they need to be scaled up?
 # Check that commuters into LU matches the expected amount (~120,000 - 180,000) -
@@ -42,34 +43,4 @@ for (ix in 1:length(years)) {
   
   print('')
 }
-
-
-
-
-
-
-
-
-
-res.all <- NULL
-for (i in 1:length(comm.by.year)) {
-  # print(cbind(c.out, rowSums(comm.by.year[[i]])[-14] / 1000))
-  res.temp <- NULL
-  for (country in countries) {
-    res.temp <- rbind(res.temp, c(c.out$Xmean[c.out$country == country], sum(c1$VALUE[c1$YEAR == unique(c1$YEAR)[i] & c1$COUNTRY == country])))
-  }
-  rats <- res.temp[, 1] / res.temp[, 2]
-  print(summary(rats[rats != Inf]))
-  print(cbind(countries, rats))
-  print('')
-  
-  res.temp <- cbind(countries, res.temp, unique(c1$YEAR)[i])
-  res.all <- rbind(res.all, res.temp)
-}
-
-c.out <- cbind(c.out, rowSums(comm.by.year[[6]])[-14] / 1000)
-names(c.out) <- c('country', 'Xmean', 'rowSum')
-c.out$factor <- c.out$Xmean / c.out$rowSum
-c.out$factor[c.out$factor == Inf & !is.na(c.out$factor)] <- NA
-summary(c.out$factor) # ranges from 0.8 (so slightly smaller) to almost 5 times higher in outbound commuter data
-# but of course this will be different - doesn't include "other"
+# total number out is always larger (ratio 1-1.5) than number in commuting data
