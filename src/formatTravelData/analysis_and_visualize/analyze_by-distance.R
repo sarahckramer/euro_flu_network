@@ -1,6 +1,6 @@
 ### Assess how travel magnitude trends with distance ###
 
-pdf('../outputs/by_dist_5-28.pdf', width = 10, height = 5)
+pdf('src/formatTravelData/outputs/by_dist_5-28.pdf', width = 10, height = 5)
 
 library(maps)
 library(reshape2)
@@ -13,7 +13,7 @@ library(PMCMRplus)
 ### Load travel data
 a.by.month <- vector('list', 12)
 for (i in 1:12) {
-  load(paste0('formatTravelData/formattedData/air_', i, '_01-31.RData'))
+  load(paste0('src/formatTravelData/formattedData/air_', i, '_01-31.RData'))
   a.by.month[[i]] <- a.temp.sym
 }; rm(a.temp.sym, i)
 a.rand <- apply(simplify2array(a.by.month), 1:2, mean); rm(a.by.month)
@@ -22,23 +22,18 @@ a.rand <- apply(simplify2array(a.by.month), 1:2, mean); rm(a.by.month)
 countries <- rownames(a.rand)
 
 ### Load commuting data?
-load('../formattedData/comm_mat_by_season_01-27.RData')
+load('src/formatTravelData/formattedData/comm_mat_by_season_01-27.RData')
 c.avg <- apply(simplify2array(comm.by.seas), 1:2, mean, na.rm = T); rm(comm.by.seas)
 
 ### Load centroid data
-l <- read.csv('../../../../travel_data_info/flight_data/raw_data/country_centroids_az8.csv')
+l <- read.csv('data/country_centroids_az8.csv')
 l <- l[, c(47, 67:68)]
-# l <- l[l$iso_a2 %in% c(countries, 'GB'), ]
 l <- l[l$iso_a2 %in% countries, ]
-l$iso_a2 <- factor(l$iso_a2);# levels(l$iso_a2)[8] <- 'UK'; l$iso_a2 <- factor(l$iso_a2)
-# l <- l[c(1:7, 9:18, 21:19, 8), ]
+l$iso_a2 <- factor(l$iso_a2)
 
 # move: France, Croatia, UK
-# l$Longitude[c(7, 21)] <- c(2, -2)
-# l$Latitude[c(7:8)] <- c(46.5, 45.7)
 l$Longitude[6] <- 2
 l$Latitude[6] <- 46.5
-# l <- l[c(1:3, 6, 4, 7:12, 5), ]
 
 l <- l[, 2:3]
 colnames(l) <- NULL
@@ -46,10 +41,6 @@ l <- as.matrix(l)
 l <- cbind(countries, as.data.frame(l))
 
 ### Load capital data
-# countries.europe <- c('Austria', 'Belgium', 'Croatia', 'Czech Republic', 'Denmark', 'France',
-#                       'Germany', 'Hungary', 'Iceland', 'Ireland', 'Italy', 'Luxembourg',
-#                       'Netherlands', 'Poland', 'Portugal', 'Romania', 'Slovakia', 'Slovenia',
-#                       'Spain', 'Sweden', 'UK')
 countries.europe <- c('Austria', 'Belgium', 'Czech Republic', 'France', 'Germany', 'Hungary',
                       'Italy', 'Luxembourg', 'Netherlands', 'Poland', 'Slovakia', 'Spain')
 data(world.cities)
@@ -95,10 +86,6 @@ df.rand$dist.cap <- df.rand$dist.cap / 10000
 df.rand <- df.rand[, c(1:2, 11:14)]
 df.rand$w <- log(df.rand$w)
 df.rand$w2 <- log(df.rand$w2)
-
-# ### Remove IS!
-# df.rand <- df.rand[df.rand$source != 'IS' & df.rand$dest != 'IS', ]
-# df.rand$source <- factor(df.rand$source); df.rand$dest <- factor(df.rand$dest)
 
 ### How is air travel weight related to travel distance?
 
@@ -202,8 +189,4 @@ posthoc.kruskal.nemenyi.test(w2 ~ dist.disc, data = df.rand) # <50 higher than 1
 
 dev.off()
 
-
-
-
-
-
+rm(list = ls())

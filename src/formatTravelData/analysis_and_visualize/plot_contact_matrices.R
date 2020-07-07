@@ -16,13 +16,12 @@ library(gridExtra)
 library(dplyr)
 library(RColorBrewer)
 
-pdf('../outputs/travel_plots_05-28.pdf', width = 8, height = 7)
-# pdf('syntheticTests/outputs/explore/commuting_network_w-oLowReliability.pdf', width = 8, height = 7)
+pdf('src/formatTravelData/outputs/travel_plots_05-28.pdf', width = 8, height = 7)
 
 ### HEAT MAPS ###
 air.by.month <- vector('list', 12)
 for (i in 1:12) {
-  load(paste0('formatTravelData/formattedData/air_', i, '_01-31.RData'))
+  load(paste0('src/formatTravelData/formattedData/air_', i, '_01-31.RData'))
   air.by.month[[i]] <- a.temp.sym
 }; rm(a.temp.sym)
 a.mean <- apply(simplify2array(air.by.month), 1:2, mean);# rm(air.by.month)
@@ -35,13 +34,10 @@ a.temp <- melt(a.mean); names(a.temp) <- c('source', 'dest', 'w')
 a.temp$w[a.temp$w == 0] <- NA
 a.temp$w <- log(a.temp$w)
 
-# a.temp$source <- factor(a.temp$source, levels(a.temp$source)[(c(17, 20, 9, 8, 19, 12, 15, 3, 1, 18, 5, 4, 13, 2, 14, 10, 21, 7, 6, 16, 11))])
-# a.temp$dest <- factor(a.temp$dest, levels(a.temp$dest)[rev(c(17, 20, 9, 8, 19, 12, 15, 3, 1, 18, 5, 4, 13, 2, 14, 10, 21, 7, 6, 16, 11))])
-
 a.temp$source <- factor(a.temp$source, levels(a.temp$source)[rev(c(12, 4, 9, 2, 8, 5, 1, 3, 10, 7, 6, 11))])
 a.temp$dest <- factor(a.temp$dest, levels(a.temp$dest)[c(12, 4, 9, 2, 8, 5, 1, 3, 10, 7, 6, 11)])
 
-# pdf('formatTravelData/outputs/air_by_month.pdf', width = 8, height = 7)
+# pdf('src/formatTravelData/outputs/air_by_month.pdf', width = 8, height = 7)
 leg.labs <- c(0.01, 0.1, 1, 10, 100, 1000, 10000, 100000)
 p <- ggplot(a.temp, aes(x = dest, y = source)) + geom_tile(aes(fill = w), colour = 'white') +
   scale_fill_gradientn(colours = viridis(10), na.value = 'gray80', limits = c(-1.5, 10.8), breaks = log(leg.labs), labels = leg.labs) +
@@ -52,7 +48,7 @@ p <- ggplot(a.temp, aes(x = dest, y = source)) + geom_tile(aes(fill = w), colour
 print(p)
 
 # # by month:
-# pdf('formatTravelData/outputs/air_by_month.pdf', width = 8, height = 7)
+# pdf('src/formatTravelData/outputs/air_by_month.pdf', width = 8, height = 7)
 # countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
 # for (i in 1:12) {
 #   a.temp <- air.by.month[[i]]
@@ -81,27 +77,17 @@ print(p)
 
 ### NETWORKS ###
 # Read in data:
-# load('formatTravelData/formattedData/comm_mat_by_year_05-07.RData')
-# 
-# load('formatTravelData/formattedData/comm_mat_by_year_05-07_RELIABLE_ONLY.RData')
-# load('formatTravelData/formattedData/comm_mat_by_season_05-07_RELIABLE_ONLY.RData')
-# comm.by.year <- comm.by.year2; rm(comm.by.year2)
-load('../formattedData/comm_mat_by_season_01-27.RData')
+load('src/formatTravelData/formattedData/comm_mat_by_season_01-27.RData')
 
-# countries <- colnames(comm.by.year[[1]])
 countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
 
 # Set up latitude and longitude values:
-l <- read.csv('../../../../travel_data_info/flight_data/raw_data/country_centroids_az8.csv')
+l <- read.csv('data/country_centroids_az8.csv')
 l <- l[, c(47, 67:68)]
-# l <- l[l$iso_a2 %in% c(countries, 'GB'), ]
 l <- l[l$iso_a2 %in% countries, ]
-l$iso_a2 <- factor(l$iso_a2);# levels(l$iso_a2)[8] <- 'UK'; l$iso_a2 <- factor(l$iso_a2)
-# l <- l[c(1:7, 9:18, 21:19, 8), ]
+l$iso_a2 <- factor(l$iso_a2)
 
 # move: France, Croatia, UK
-# l$Longitude[c(7, 21)] <- c(2, -2)
-# l$Latitude[c(7:8)] <- c(46.5, 45.7)
 l$Longitude[6] <- 2
 l$Latitude[6] <- 46.5
 l <- l[c(1:3, 6, 4, 7:12, 5), ]
@@ -110,7 +96,6 @@ l <- l[, 2:3]
 colnames(l) <- NULL
 l <- as.matrix(l)
 l <- cbind(countries, as.data.frame(l))
-# l <- l[l$countries != 'IS', ]
 
 # Set up base map:
 countries.europe <- c('Austria', 'Belarus', 'Belgium', 'Bulgaria', 'Croatia', 'Czech Republic',
@@ -166,7 +151,7 @@ p <- ggplot() + geom_polygon(data = eur, aes(x=long, y = lat, group = group),
 print(p)
 
 # # By season:
-# pdf('formatTravelData/outputs/commuting_by_season.pdf', width = 8, height = 7)
+# pdf('src/formatTravelData/outputs/commuting_by_season.pdf', width = 8, height = 7)
 # for (i in 1:8) {
 #   comm.temp <- comm.by.seas[[i]]
 #   
@@ -247,10 +232,6 @@ in.flow <- colSums(comm.mean, na.rm = TRUE)
 out.flow <- rowSums(comm.mean, na.rm = TRUE)
 net.influx <- in.flow - out.flow
 
-# names(net.influx) <- c('Austria', 'Belgium', 'Czech Republic', 'Germany', 'Denmark',
-#                        'Spain', 'France', 'Croatia', 'Hungary', 'Ireland',
-#                        'Iceland', 'Italy', 'Luxembourg', 'Netherlands', 'Poland',
-#                        'Portugal', 'Romania', 'Sweden', 'Slovenia', 'Slovakia', 'UK')
 names(net.influx) <- c('Austria', 'Belgium', 'Czech Republic', 'France', 'Germany', 'Hungary',
                        'Italy', 'Luxembourg', 'Netherlands', 'Poland', 'Slovakia', 'Spain')
 net.influx <- as.data.frame(net.influx)
@@ -274,3 +255,4 @@ print(p)
 
 dev.off()
 
+rm(list = ls())

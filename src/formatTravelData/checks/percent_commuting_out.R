@@ -1,7 +1,7 @@
 ### Calculate the % of each country's population commuting to another country ###
 
 # based on additional data source from Eurostat
-c <- read.csv('../rawData/lfst_r_lfe2ecomm.tsv', sep = '\t', header = T)
+c <- read.csv('src/formatTravelData/rawData/lfst_r_lfe2ecomm.tsv', sep = '\t', header = T)
 # Employment and commuting by NUTS 2 regions (1 000) [lfst_r_lfe2ecomm]
 
 c[, 1] <- as.character(c[, 1])
@@ -66,7 +66,9 @@ c$Xmean <- sapply(1:length(c$country), function (ix) {
 })
 
 c <- c[, 13:15]
-write.csv(c, file = '../formattedData/commuting_number-out_05-07.csv', row.names = FALSE)
+write.csv(c, file = 'src/formatTravelData/formattedData/commuting_number-out_05-07.csv', row.names = FALSE)
 
 res.mat <- as.data.frame(cbind(levels(c$country), res.mat))
-write.csv(res.mat, file = '../formattedData/commuting_prop-foreign_05-07.csv', row.names = FALSE)
+write.csv(res.mat, file = 'src/formatTravelData/formattedData/commuting_prop-foreign_05-07.csv', row.names = FALSE)
+
+rm(list = ls())

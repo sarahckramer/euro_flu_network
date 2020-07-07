@@ -6,17 +6,15 @@
 # Also check that number commuting matches % of population commuting
 # Change over time simply due to changing sample sizes/populations?
 
-# load('formatTravelData/formattedData/comm_mat_by_year_05-07.RData')
-# countries <- colnames(comm.by.year[[1]])
 countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
 
-c1 <- read.csv('../rawData/ESTA45672_190215.csv')
+c1 <- read.csv('src/formatTravelData/rawData/ESTA45672_190215.csv')
 c1 <- c1[, c(1:2, 4, 6)] # remove unnecessary columns
 c1 <- c1[!is.na(c1$VALUE), ] # remove combinations where no commuting occurs
 c1 <- c1[c1$COUNTRYW != 'Reporting country' & c1$COUNTRYW != 'No answer', ]
 c1 <- c1[c1$COUNTRY %in% countries, ]; c1$COUNTRY <- factor(c1$COUNTRY)
 
-c.out <- read.csv('../formattedData/commuting_number-out_byYear_012420.csv')
+c.out <- read.csv('src/formatTravelData/formattedData/commuting_number-out_byYear_012420.csv')
 c.out <- c.out[c.out$to == 'FOR', ]; #c.out <- c.out[, 2:3]
 c.out <- c.out[c.out$country %in% countries, ]; c.out$country <- factor(c.out$country)
 
@@ -44,3 +42,5 @@ for (ix in 1:length(years)) {
   print('')
 }
 # total number out is always larger (ratio 1-1.5) than number in commuting data
+
+rm(list = ls())

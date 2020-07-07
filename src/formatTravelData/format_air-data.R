@@ -4,8 +4,8 @@ library(reshape2)
 
 ### AIR ###
 ### Format data: 2010 forward
-a2 <- read.table('rawData/avia_paocc.tsv', sep = '\t', header = T)
-a3 <- read.table('rawData/avia_paocc_1.tsv', sep = '\t', header = T)
+a2 <- read.table('src/formatTravelData/rawData/avia_paocc.tsv', sep = '\t', header = T)
+a3 <- read.table('src/formatTravelData/rawData/avia_paocc_1.tsv', sep = '\t', header = T)
 # Air passenger transport between reporting countries (avia_paocc)
 # Second (a3) downloaded on Jan 30, 2020
 # Source: https://ec.europa.eu/eurostat/web/products-datasets/-/avia_paocc
@@ -37,15 +37,7 @@ levels(a3$source) <- c('AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR
                        'ES', 'SE', 'CH', 'UK')
 levels(a3$dest) <- c('AT', 'BE', 'HR', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
 
-# # keep only countries that are represented in source AND dest
-# countries.to.keep <- intersect(levels(a2$source), levels(a2$dest))
-# a2 <- a2[a2$source %in% countries.to.keep & a2$dest %in% countries.to.keep, ]
-# a2$source <- factor(a2$source); a2$dest <- factor(a2$dest)
-
-# of course, we also only need those countries for which we did forecasting, right?
-# countries <- c('AT', 'BE', 'BG', 'HR', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'EL', 'HU',
-#                'IE', 'IT', 'LV', 'LT', 'LU', 'NL', 'NO', 'PL', 'PT', 'RO', 'SK', 'SI',
-#                'ES', 'SE', 'TR', 'UK', 'IS')
+# of course, we also only need those countries for which we did forecasting
 countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
 a2 <- a2[a2$source %in% countries & a2$dest %in% countries, ]
 a2$source <- factor(a2$source); a2$dest <- factor(a2$dest)
@@ -204,9 +196,8 @@ for (i in 1:12) {
   
   # print(isSymmetric(a.temp.sym))
   
-  save(a.temp.sym, file = paste0('formatTravelData/formattedData/air_', i, '_01-31.RData'))
+  save(a.temp.sym, file = paste0('src/formatTravelData/formattedData/air_', i, '_01-31.RData'))
   a.by.month[[i]] <- a.temp.sym
 }
 
-
-
+rm(list = ls())
