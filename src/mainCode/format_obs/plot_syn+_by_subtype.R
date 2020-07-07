@@ -1,13 +1,13 @@
 ### Plot all (sub)type-specific syndromic+ data (unscaled) ###
 
 # Read in data:
-iliiso.h1 <- read.csv('data/by_subtype/WHO_data_A(H1).csv')
-iliiso.h3 <- read.csv('data/by_subtype/WHO_data_A(H3).csv')
-iliiso.b <- read.csv('data/by_subtype/WHO_data_B.csv')
+iliiso.h1 <- read.csv('data/WHO_data_A(H1).csv')
+iliiso.h3 <- read.csv('data/WHO_data_A(H3).csv')
+iliiso.b <- read.csv('data/WHO_data_B.csv')
 
-# iliiso.h1 <- read.csv('data/by_subtype/WHO_data_A(H1)_SCALED.csv')
-# iliiso.h3 <- read.csv('data/by_subtype/WHO_data_A(H3)_SCALED.csv')
-# iliiso.b <- read.csv('data/by_subtype/WHO_data_B_SCALED.csv')
+# iliiso.h1 <- read.csv('data/WHO_data_A(H1)_SCALED.csv')
+# iliiso.h3 <- read.csv('data/WHO_data_A(H3)_SCALED.csv')
+# iliiso.b <- read.csv('data/WHO_data_B_SCALED.csv')
 
 # Limit to countries of interest:
 countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')

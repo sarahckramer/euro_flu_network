@@ -71,7 +71,7 @@ iliiso.H3[1:78, 2:13] <- NA
 iliiso.B[1:78, 2:13] <- NA
 
 # Save scaled data:
-write.csv(iliiso.H1, file = 'data/by_subtype/WHO_data_A(H1)_SCALED.csv', row.names = FALSE)
-write.csv(iliiso.H3, file = 'data/by_subtype/WHO_data_A(H3)_SCALED.csv', row.names = FALSE)
-write.csv(iliiso.B, file = 'data/by_subtype/WHO_data_B_SCALED.csv', row.names = FALSE)
+write.csv(iliiso.H1, file = 'data/WHO_data_A(H1)_SCALED.csv', row.names = FALSE)
+write.csv(iliiso.H3, file = 'data/WHO_data_A(H3)_SCALED.csv', row.names = FALSE)
+write.csv(iliiso.B, file = 'data/WHO_data_B_SCALED.csv', row.names = FALSE)
 rm(list = ls())
