@@ -5,7 +5,7 @@ north.ili <- c('AT', 'BE', 'HR', 'CZ', 'DK', 'HU', 'IE', 'IT', 'NL', 'PL', 'PT',
 north.ari <- c('LU', 'UK', 'DE', 'SI', 'FR')
 
 # Read in results
-setwd('python/results/PROCESS/')
+setwd('results/temp/PROCESS/')
 m <- read.csv(file = list.files(pattern = 'Met'))
 
 # Re-mainCode any magnitudes by scaling

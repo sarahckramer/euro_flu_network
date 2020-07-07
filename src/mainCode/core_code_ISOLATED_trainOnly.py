@@ -41,22 +41,22 @@ N = np.float64(1e5)
 # Read in data and set seasons:
 if strain == 'A(H1)':
     seasons = ('2010-11', '2012-13', '2013-14', '2014-15', '2015-16', '2017-18')  # H1
-    iliiso = pd.read_csv('../data/by_subtype/WHO_data_A(H1)_SCALED.csv')
+    iliiso = pd.read_csv('data/WHO_data_A(H1)_SCALED.csv')
 
 elif strain == 'A(H3)':
     seasons = ('2011-12', '2012-13', '2013-14', '2014-15', '2016-17')  # H3
-    iliiso = pd.read_csv('../data/by_subtype/WHO_data_A(H3)_SCALED.csv')
+    iliiso = pd.read_csv('data/WHO_data_A(H3)_SCALED.csv')
 
 elif strain == 'B':
     seasons = ('2010-11', '2012-13', '2014-15', '2015-16', '2016-17', '2017-18')  # B
-    iliiso = pd.read_csv('../data/by_subtype/WHO_data_B_SCALED.csv')
+    iliiso = pd.read_csv('data/WHO_data_B_SCALED.csv')
 
 else:
     print('Error: Subtype not recognized.')
     sys.exit()
 
 # Read in humidity data:
-ah = pd.read_csv('../data/ah_Europe_07142019.csv')
+ah = pd.read_csv('data/ah_Europe_07142019.csv')
 ah = ah[ah.columns[count_indices]]
 ah = ah.append(ah)
 ah = ah.to_numpy(dtype=np.float64)
@@ -122,8 +122,8 @@ for count_index in range(n):
                 # print(run)
 
                 # Get initial states/parameters for each ensemble member:
-                param_init = pd.read_csv(os.path.join('initial_parms/', 'parms' + str(run) + '_INDIV.txt'), header=None,
-                                         sep='\t')
+                param_init = pd.read_csv(os.path.join('data/python_init/initial_parms/', 'parms' + str(run) + '_INDIV.txt'),
+                                         header=None, sep='\t')
                 param_init = param_init.to_numpy(dtype=np.float64)
                 # print(param_init.shape)  # (6, 300)
 
@@ -158,7 +158,10 @@ print('Done.')
 timestamp_end = datetime.datetime.now()
 print('Time Elapsed: ' + str(timestamp_end - timestamp_start))
 
-outputOP.to_csv('results/outputOP_' + strain + '_fitsOnly_ISOLATED.csv', na_rep='NA', index=False)
-outputCorrCoefs.to_csv('results/outputCorrCoefs_' + strain + '_ISOLATED.csv', na_rep='NA', index=False)
-outputVarRatio.to_csv('results/outputVarRatio_' + strain + '_ISOLATED.csv', na_rep='NA', index=False)
+if not os.path.exists('results/fits/'):
+    os.makedirs('results/fits')
+
+outputOP.to_csv('results/fits/outputOP_' + strain + '_fitsOnly_ISOLATED.csv', na_rep='NA', index=False)
+outputCorrCoefs.to_csv('results/fits/outputCorrCoefs_' + strain + '_ISOLATED.csv', na_rep='NA', index=False)
+outputVarRatio.to_csv('results/fits/outputVarRatio_' + strain + '_ISOLATED.csv', na_rep='NA', index=False)
 print('Finished writing to file!')

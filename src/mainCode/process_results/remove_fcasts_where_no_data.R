@@ -22,12 +22,12 @@ o$country <- countries[o$country + 1]
 o$country <- factor(o$country)
 
 # # Get observations:
-iliiso <- read.csv(paste0('../../../data/by_subtype/WHO_data_', strain, '_SCALED.csv'))
+iliiso <- read.csv(paste0('../../../data/WHO_data_', strain, '_SCALED.csv'))
 
 # Load required functions:
-source('../../../code/functions/Fn_initializations.R')
-source('../../../code/functions/replaceLeadingLaggingNAs.R')
-source('../../../code/functions/calc_obsvars.R')
+source('../../../src/mainCode/functions/Fn_initializations.R')
+source('../../../src/mainCode/functions/replaceLeadingLaggingNAs.R')
+source('../../../src/mainCode/functions/calc_obsvars.R')
 
 # Get mini-dataset that can be matched with larger ones later:
 m.mini <- unique(m[, c(1:2, 32)]) # want: season, country, fc_start
@@ -64,7 +64,8 @@ for (season in seasons) {
 # Get metrics file for forecasts where no obs:
 m.temp <- merge(m, m.mini, by = c('season', 'country', 'fc_start'))
 m.temp <- m.temp[is.na(m.temp$obs), ]
-write.csv(m.temp, file = 'outputMet_obsNA.csv', row.names = FALSE)
+write.csv(m.temp, file = paste0('../../by_subtype/network_', strain, '/outputMet_obsNA.csv'), row.names = FALSE)
+# write.csv(m.temp, file = 'outputMet_obsNA.csv', row.names = FALSE)
 rm(m.temp)
 
 # Remove from m.mini where obs is NA, or oev NA or 0:

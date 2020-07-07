@@ -65,7 +65,11 @@ d <- rbind(d.pt, d.ot)
 d <- d[, c(1:2, 7, 3:6, 8:10, 14:17, 13)]
 
 # Save:
-write.csv(d, file = 'logScores_pt_ot.csv', row.names = FALSE)
+if (model.type == 'Network') {
+  write.csv(d, file = 'logScores_pt_ot.csv', row.names = FALSE)
+} else if (model.type == 'Individual') {
+  write.csv(d, file = paste0('../../by_subtype/isolated_', strain, '/logScores_pt_ot.csv'), row.names = FALSE)
+}
 
 # Clean up:
 rm(d, d.pt, d.ot, m)
@@ -112,7 +116,11 @@ d <- merge(d, m, by = c('season', 'country', 'run', 'fc_start', 'oev_base', 'oev
 d <- d[, c(1:2, 4, 3, 5:8, 11:12, 16:19, 15)]
 
 # Save:
-write.csv(d, file = 'logScores_pi_bin.csv', row.names = FALSE)
+if (model.type == 'Network') {
+  write.csv(d, file = 'logScores_pi_bin.csv', row.names = FALSE)
+} else if (model.type == 'Individual') {
+  write.csv(d, file = paste0('../../by_subtype/isolated_', strain, '/logScores_pi_bin.csv'), row.names = FALSE)
+}
 rm(d, m)
 
 #########################################################################################################################################################
@@ -192,7 +200,11 @@ d <- merge(d, m, by = c('season', 'country', 'run', 'fc_start', 'oev_base', 'oev
 d <- d[, c(1:2, 4, 3, 5:8, 11:12, 16:19, 15)]
 
 # Save:
-write.csv(d, file = 'logScores_1-4wks_bin.csv', row.names = FALSE)
+if (model.type == 'Network') {
+  write.csv(d, file = 'logScores_1-4wks_bin.csv', row.names = FALSE)
+} else if (model.type == 'Individual') {
+  write.csv(d, file = paste0('../../by_subtype/isolated_', strain, '/logScores_1-4wks_bin.csv'), row.names = FALSE)
+}
 rm(d.full, d, m, m1, m2, m3, m4)
 
 

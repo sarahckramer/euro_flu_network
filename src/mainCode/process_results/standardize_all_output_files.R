@@ -10,14 +10,19 @@ if (model.type == 'Network') {
 }
 
 # Save new results files:
-write.csv(m, file = 'outputMet_pro_PROC.csv', row.names = FALSE)
-write.csv(o, file = 'outputOP_PROC.csv', row.names = FALSE)
+# write.csv(m, file = 'outputMet_pro_PROC.csv', row.names = FALSE)
+# write.csv(o, file = 'outputOP_PROC.csv', row.names = FALSE)
 
 if (model.type == 'Network') {
+  write.csv(m, file = paste0('../../by_subtype/network_', strain, '/outputMet_pro_PROC.csv'), row.names = FALSE)
+  write.csv(o, file = paste0('../../by_subtype/network_', strain, '/outputOP_PROC.csv'), row.names = FALSE)
   for (i in 1:length(d)) {
     d.temp <- d[[i]]
-    write.csv(d.temp, file = paste0('PROC_', logScore.files[i]), row.names = FALSE)
+    write.csv(d.temp, file = paste0('../../by_subtype/network_', strain, '/PROC_', logScore.files[i]), row.names = FALSE)
   }
+} else if (model.type == 'Individual') {
+  write.csv(m, file = paste0('../../by_subtype/isolated_', strain, '/outputMet_pro_PROC.csv'), row.names = FALSE)
+  write.csv(o, file = paste0('../../by_subtype/isolated_', strain, '/outputOP_PROC.csv'), row.names = FALSE)
 }
 
 

@@ -38,22 +38,22 @@ n = len(countries)
 # Read in data and set seasons:
 if strain == 'A(H1)':
     seasons = ('2010-11', '2012-13', '2013-14', '2014-15', '2015-16', '2017-18')  # H1
-    iliiso = pd.read_csv('../data/by_subtype/WHO_data_A(H1)_SCALED.csv')
+    iliiso = pd.read_csv('data/WHO_data_A(H1)_SCALED.csv')
 
 elif strain == 'A(H3)':
     seasons = ('2011-12', '2012-13', '2013-14', '2014-15', '2016-17')  # H3
-    iliiso = pd.read_csv('../data/by_subtype/WHO_data_A(H3)_SCALED.csv')
+    iliiso = pd.read_csv('data/WHO_data_A(H3)_SCALED.csv')
 
 elif strain == 'B':
     seasons = ('2010-11', '2012-13', '2014-15', '2015-16', '2016-17', '2017-18')  # B
-    iliiso = pd.read_csv('../data/by_subtype/WHO_data_B_SCALED.csv')
+    iliiso = pd.read_csv('data/WHO_data_B_SCALED.csv')
 
 else:
     print('Error: Subtype not recognized.')
     sys.exit()
 
 # Read in humidity data:
-ah = pd.read_csv('../data/ah_Europe_07142019.csv')
+ah = pd.read_csv('data/ah_Europe_07142019.csv')
 ah = ah[ah.columns[count_indices]]
 ah = ah.append(ah)
 ah = ah.to_numpy(dtype=np.float64)
@@ -61,7 +61,7 @@ ah = ah.to_numpy(dtype=np.float64)
 # Read in air travel data:
 a_rand = np.zeros([12, n, n], dtype=np.float64)
 for i in range(n):
-    a_rand[i] = np.loadtxt('air_travel/aRand' + str(i + 1) + '.txt', unpack=True, dtype=np.float64)
+    a_rand[i] = np.loadtxt('data/python_init/air_travel/aRand' + str(i + 1) + '.txt', unpack=True, dtype=np.float64)
 
 # Season-specific start and end dates:
 clim_start_dict = {'2010-11': 276, '2011-12': 275, '2012-13': 274, '2013-14': 272, '2014-15': 271, '2015-16': 270,
@@ -97,7 +97,7 @@ for season_index in range(len(seasons)):
     print(season)
 
     # Get (sub)type- and season-specific scalings:
-    scalings = pd.read_csv('../data/by_subtype/scaling_frames/scalings_frame_' + strain + '_' + season + '.csv')
+    scalings = pd.read_csv('data/scaling_frames/scalings_frame_' + strain + '_' + season + '.csv')
     print(scalings)
 
     # # Get season-specific population matrix:
@@ -133,7 +133,7 @@ for season_index in range(len(seasons)):
         print(run)
 
         # Get initial states/parameters for each ensemble member:
-        param_init = pd.read_csv(os.path.join('initial_parms/', 'parms' + str(run) + '_NEW.txt'), header=None,
+        param_init = pd.read_csv(os.path.join('data/python_init/initial_parms/', 'parms' + str(run) + '.txt'), header=None,
                                  sep='\t')
         param_init = param_init.to_numpy(dtype=np.float64)
         # print(param_init.shape)
@@ -142,7 +142,7 @@ for season_index in range(len(seasons)):
         N = np.zeros([num_ens, n, n], dtype=np.float64)
         for ensmem in range(num_ens):
             # N_temp = pd.read_csv(os.path.join('compartment_sizes/', 'N' + season + '_NEW.txt'), header=None, sep='\t')
-            N_temp = pd.read_csv(os.path.join('compartment_sizes_NEW2/', 'N' + season + '_' + str(run + 1) + '_' + str(ensmem + 1) + '.txt'), header=None, sep='\t')
+            N_temp = pd.read_csv(os.path.join('data/python_init/compartment_sizes/', 'N' + season + '_' + str(run + 1) + '_' + str(ensmem + 1) + '.txt'), header=None, sep='\t')
             N[ensmem] = N_temp.to_numpy(dtype=np.float64)
         # print(N_temp)
         del N_temp
@@ -195,11 +195,11 @@ print('Done.')
 timestamp_end = datetime.datetime.now()
 print('Time Elapsed: ' + str(timestamp_end - timestamp_start))
 
-outputMetrics.to_csv('results/outputMet_' + strain + '.csv', na_rep='NA', index=False)
-outputOP.to_csv('results/outputOP_' + strain + '.csv', na_rep='NA', index=False)
-outputOPParams.to_csv('results/outputOPParams_' + strain + '.csv', na_rep='NA', index=False)
-outputDist.to_csv('results/outputDist_' + strain + '.csv', na_rep='NA', index=False)
-outputEns.to_csv('results/outputEns_' + strain + '.csv', na_rep='NA', index=False)
+outputMetrics.to_csv('results/temp/outputMet_' + strain + '.csv', na_rep='NA', index=False)
+outputOP.to_csv('results/temp/outputOP_' + strain + '.csv', na_rep='NA', index=False)
+outputOPParams.to_csv('results/temp/outputOPParams_' + strain + '.csv', na_rep='NA', index=False)
+outputDist.to_csv('results/temp/outputDist_' + strain + '.csv', na_rep='NA', index=False)
+outputEns.to_csv('results/temp/outputEns_' + strain + '.csv', na_rep='NA', index=False)
 print('Finished writing to file!')
 
 # error with correlations? i think it's okay to ignore - just passes nan when there's nothing to correlate I assume

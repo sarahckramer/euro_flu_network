@@ -23,6 +23,10 @@ for (i in 1:length(file.list.h1)) {
 rm(f, f1, f2, f3, i)
 
 # Write all combined files as csvs:
+if (!dir.exists('results/network/')) {
+  dir.create('results/network/')
+}
+
 for (i in 1:length(res.list)) {
   if (i != 4) {
     write.csv(res.list[[i]], file = paste0('results/network/', file.list.h1[i]), row.names = FALSE)
@@ -58,6 +62,10 @@ for (i in 1:length(file.list.h1)) {
 rm(f, f1, f2, f3, i)
 
 # Write all combined files as csvs:
+if (!dir.exists('results/isolated/')) {
+  dir.create('results/isolated/')
+}
+
 for (i in 1:length(res.list)) {
   write.csv(res.list[[i]], file = paste0('results/isolated/', file.list.h1[i]), row.names = FALSE)
 }
