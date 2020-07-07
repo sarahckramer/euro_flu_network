@@ -1,42 +1,28 @@
+### Assess patterns in observed data ###
 
-### Assess patterns in observed data
+strain <- 'A(H3)' # A(H1), A(H3), or B
 
 ### Save all plots:
-pdf('code/checks/analyzeDataRetro/outputs/data_patterns_RED_B_120219.pdf', width = 11, height = 10)
+pdf(paste0('results/plots/data_patterns_RED_', strain, '_070720.pdf'), width = 11, height = 10)
 
 ### Plot data for each season ###
 # Read in data:
-# iliiso <- read.csv('data/WHO_data_05-09-19.csv')
-iliiso <- read.csv('data/by_subtype/WHO_data_A(all)_SCALED.csv')
-
-# # Scale data:
-# scalings <- read.csv('data/scalings_frame_05-09-19.csv') # 1.3 for France in early seasons
-# for (i in 2:22) {
-#   if (names(iliiso)[i] == 'France') {
-#     iliiso[1:283, i] <- iliiso[1:283, i] * 1.3
-#     iliiso[284:495, i] <- iliiso[284:495, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
-#   } else {
-#     iliiso[, i] <- iliiso[, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
-#   }
-#   
-#   iliiso[, i][iliiso[, i] < 0] <- NA # replace negatives with NAs
-# }
-# 
-# # Limit to countries of interest:
-# iliiso <- iliiso[, c(1:3, 5, 7:9, 12:15, 18, 20)]
+iliiso <- read.csv(paste0('data//WHO_data_', strain, '_SCALED.csv'))
 
 # Plot data by season:
 season.names <- c('2010-11', '2011-12', '2012-13', '2013-14', '2014-15', '2015-16', '2016-17', '2017-18')
 season.breaks <- list(79:110, 131:162, 183:214, 235:266, 287:318, 339:371, 392:423, 444:475)
 
-par(mfrow = c(4, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+par(mfrow = c(3, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 for (i in 1:length(season.breaks)) {
-  matplot(iliiso[season.breaks[[i]], 2:13], type = 'b', pch = 20, lty = 1, col = viridis(12),
-          xlab = 'Weeks from Season Start', ylab = 'Syn+ Cases (Scaled)', main = season.names[i])
+  if (!all(is.na(iliiso[season.breaks[[i]], 2:13]))) {
+    matplot(iliiso[season.breaks[[i]], 2:13], type = 'b', pch = 20, lty = 1, col = viridis(12),
+            xlab = 'Weeks from Season Start', ylab = 'Syn+ Cases (Scaled)', main = season.names[i])
+  }
 }
 
 # Calculate peak and onset timing by season/country:
-source('cluster/functions/Util.R')
+source('src/mainCode/functions/Util.R')
 met.df <- NULL
 for (country in 2:13) {
   for (season in 1:8) {
@@ -58,12 +44,17 @@ met.df$pt[is.na(met.df$ot)] <- NA
 # met.df[met.df$pt == met.df$ot, ] # could remove these, but let's just use the peaks for these
 
 table(met.df[is.na(met.df$ot), 'season'])
-# NL 13-14 and SK 13-14
 met.df <- met.df[!is.na(met.df$ot), ]
 table(met.df$season)
-# met.df <- met.df[!(met.df$season %in% c('2011-12', '2016-17')), ]
-# met.df <- met.df[!(met.df$season %in% c('2010-11', '2015-16', '2017-18')), ]
-met.df <- met.df[!(met.df$season %in% c('2011-12', '2013-14', '2016-17')), ]
+
+if (strain == 'A(H1)') {
+  met.df <- met.df[!(met.df$season %in% c('2011-12', '2016-17')), ]
+} else if (strain == 'A(H3)') {
+  met.df <- met.df[!(met.df$season %in% c('2010-11', '2015-16', '2017-18')), ]
+} else if (strain == 'B') {
+  met.df <- met.df[!(met.df$season %in% c('2011-12', '2013-14', '2016-17')), ]
+  # also removes season w/ only 2 onsets
+}
 
 # Rename countries:
 countries <- names(iliiso)[2:13]
@@ -84,34 +75,25 @@ names(m)[3:4] <- c('obs_pkwk', 'onsetObs')
 m$onsetObs <- m$onsetObs + 40 - 1
 m$obs_pkwk <- m$obs_pkwk + 40 - 1
 
-# ar.med <- aggregate(totAttackObs ~ country, data = m, FUN = median)
-# ar.med <- ar.med[order(ar.med$totAttackObs, decreasing = TRUE), ]
-
 ot.med <- aggregate(onsetObs ~ country, data = m, FUN = median)
 ot.med <- ot.med[order(ot.med$onsetObs), ]
 
 pt.med <- aggregate(obs_pkwk ~ country, data = m, FUN = median)
 pt.med <- pt.med[order(pt.med$obs_pkwk), ]
 
-# m$country <- factor(m$country, levels = ar.med$country)
-# p1 <- ggplot(data = m) + geom_boxplot(aes(x = country, y = totAttackObs, fill = long)) +
-#   theme_classic() + theme(axis.text = element_text(size = 10)) +
-#   labs(x = '', y = 'Attack Rate (per 100,000)', fill = 'Long.') +
-#   scale_fill_gradientn(colors = viridis(100))
 m$country <- factor(m$country, levels = ot.med$country)
-p2 <- ggplot(data = m) + geom_boxplot(aes(x = country, y = onsetObs, fill = long)) +
+p1 <- ggplot(data = m) + geom_boxplot(aes(x = country, y = onsetObs, fill = long)) +
   theme_classic() + theme(axis.text = element_text(size = 10)) +
   labs(x = '', y = 'Onset Week', fill = 'Long.') +
   scale_y_continuous(breaks = seq(46, 68, by = 2)) +
   scale_fill_gradientn(colors = viridis(100))
 m$country <- factor(m$country, levels = pt.med$country)
-p3 <- ggplot(data = m) + geom_boxplot(aes(x = country, y = obs_pkwk, fill = long)) +
+p2 <- ggplot(data = m) + geom_boxplot(aes(x = country, y = obs_pkwk, fill = long)) +
   theme_classic() + theme(axis.text = element_text(size = 10)) +
   labs(x = '', y = 'Peak Week', fill = 'Long.') +
   scale_y_continuous(breaks = seq(46, 68, by = 2)) +
   scale_fill_gradientn(colors = viridis(100))
-grid.arrange(p2, p3, ncol = 1)
-# A(all): still a bit of a w-e pattern in transmission, but peak tends to actually be first in IT/DE (although CZ/PL/SK/HU late)
+grid.arrange(p1, p2, ncol = 1)
 
 # Also look at ORDER of OT/PT:
 m.new <- NULL
@@ -149,7 +131,6 @@ p2 <- ggplot(data = m.new) + geom_boxplot(aes(x = country, y = pt_order, fill = 
   scale_y_continuous(breaks = seq(0, 10, by = 2)) +
   scale_fill_gradientn(colors = viridis(100))
 grid.arrange(p1, p2, ncol = 1)
-# A(all): similar to above
 
 # note that OT seems a bit less reliable than PT, b/c missing data can throw off the "3 consecutive weeks" metric
 
@@ -157,29 +138,18 @@ grid.arrange(p1, p2, ncol = 1)
 par(mfrow = c(4, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 for (season in unique(m$season)) {
   print(season)
-  # print(cor.test(m$long[m$season == season], m$onsetObs[m$season == season], method = 'kendall'))
+  print(cor.test(m$long[m$season == season], m$onsetObs[m$season == season], method = 'kendall'))
   print(cor.test(m$long[m$season == season], m$obs_pkwk[m$season == season], method = 'kendall'))
   plot(m$long[m$season == season], m$onsetObs[m$season == season], xlab = 'Longitude', ylab = 'Onset Timing', main = season, pch = 20)
   plot(m$long[m$season == season], m$obs_pkwk[m$season == season], xlab = 'Longitude', ylab = 'Peak Timing', main = season, pch = 20)
   print(''); print('')
 }
-# 10-11: sig w-e
-# 11-12: not sig, but trend (esp. for PT)
-# 12-13: not sig, mostly flat (but very furthest east do still seem to be latest?) for PT, trend for OT
-# 13-14: sig w-e for OT, but not PT (trend)
-# 14-15: not sig, mostly flat
-# 15-16: not sig, flat; PT trending negative and almost sig (p=0.06411)
-# 16-17: not sig, flat
-# 17-18: not sig, flat
 # usually, but not always, w-e pattern stronger for OT, not PT
 
 # Test differences statistically?
 library(PMCMR); library(PMCMRplus)
-# kruskal.test(totAttackObs ~ country, data = m)
 kruskal.test(onsetObs ~ country, data = m)
 kruskal.test(obs_pkwk ~ country, data = m)
-# kruskal.test(obs_peak_int ~ country, data = m)
-# none sig
 
 ### Assess synchrony ###
 # For each season, what is the range of peak timings:
@@ -192,7 +162,6 @@ for (season in levels(m$season)) {
   # print(quantile(m.temp$obs_pkwk, prob = 0.95) - quantile(m.temp$obs_pkwk, prob = 0.05))
   print('')
 }
-# c(7, 10, 10, 8, 7, 7, 9, 10) # difference between max and min peak weeks
 
 # Calculate correlation coefficients between all pairs of countries, for each season:
     # Then average the values for all seasons and plot on a grid
@@ -218,24 +187,27 @@ for (season in 1:length(cor.synch)) {
   print(isSymmetric(cor.mat))
   cor.synch[[season]] <- cor.mat
 }
-# cor.synch <- cor.synch[c(1, 3:6, 8)]
-# cor.synch <- cor.synch[c(2:5, 7)]
-cor.synch <- cor.synch[c(1, 3, 5:6, 8)]
+
+
+if (strain == 'A(H1)') {
+  cor.synch <- cor.synch[c(1, 3:6, 8)]
+} else if (strain == 'A(H3)') {
+  cor.synch <- cor.synch[c(2:5, 7)]
+} else if (strain == 'B') {
+  cor.synch <- cor.synch[c(1, 3, 5:6, 8)]
+}
 
 # Average cor.synch across all seasons:
 cor.synch.AVG <- apply(simplify2array(cor.synch), 1:2, mean, na.rm = TRUE)
 print(isSymmetric(cor.synch.AVG))
 
 # Plot synchrony:
-# cor.synch.AVG <- cor.synch.AVG[c(1:8, 10:21), c(1:8, 10:21)]
 rownames(cor.synch.AVG) = colnames(cor.synch.AVG) = c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
 cor.synch.AVG[upper.tri(cor.synch.AVG)] <- NA
 cor.synch.plot <- melt(cor.synch.AVG)
 names(cor.synch.plot) <- c('c1', 'c2', 'corr')
 cor.synch.plot <- cor.synch.plot[!is.na(cor.synch.plot$corr), ]
 cor.synch.plot$corr[cor.synch.plot$corr == 1] <- NA
-# range from 0.4335 to 0.9487 (mean 0.7788); lowest are 0.434 and 0.528 (SK/IT and SK/ES)
-# lowest are 0.4216 in PT (w/ SK), 0.498 in PL (w/ PT), 0.5282 in SK (w/ ES)
 
 p3 <- ggplot(cor.synch.plot, aes(x = c1, y = c2)) + geom_tile(aes(fill = corr), colour = 'white') +
   scale_fill_gradientn(colours = cividis(100), na.value = 'gray80', limits = c(0.4, 0.95)) + theme_classic() +
@@ -269,13 +241,13 @@ print(isSymmetric(dist.mat))
 
 synch.dist <- 1 - cor.synch.AVG # make into distance matrix
 mantel(as.dist(synch.dist) ~ as.dist(dist.mat), nperm = 10000, mrank = TRUE)
-# synchrony and distance between capitals are not significantly associated; trends negative
 
 # Is synchrony related to commuting flows?:
 countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
 
-load('formatTravelData/formattedData/comm_mat_by_year_05-07.RData')
-t.comm <- apply(simplify2array(comm.by.year), 1:2, mean); rm(comm.by.year)
+# load('src/formatTravelData/formattedData/comm_mat_by_year_05-07.RData')
+load('src/formatTravelData/formattedData/comm_mat_by_season_01-27.RData')
+t.comm <- apply(simplify2array(comm.by.seas), 1:2, mean); rm(comm.by.seas)
 t.comm <- t.comm[countries, countries]
 
 t.comm.sym <- t.comm # have to be symmetric for Mantel test
@@ -294,12 +266,11 @@ t.comm.sym[t.comm.sym == 0] <- 1.0
 t.comm.sym <- 1 / t.comm.sym # convert to distance
 
 mantel(as.dist(synch.dist) ~ as.dist(t.comm.sym), nperm = 10000, mrank = TRUE)
-# sig positive - more commuting = more synchrony
 
 # Is synchrony related to air travel?:
 air.by.month <- vector('list', 12)
 for (i in 1:12) {
-  load(paste0('formatTravelData/formattedData/air_', i, '_05-07.RData'))
+  load(paste0('src/formatTravelData/formattedData/air_', i, '_01-31.RData'))
   air.by.month[[i]] <- a.temp.sym
 }; rm(a.temp.sym)
 a.mean <- apply(simplify2array(air.by.month), 1:2, mean); rm(air.by.month)
@@ -309,7 +280,6 @@ a.mean[a.mean == 0] <- 1.0
 a.mean <- 1 / a.mean # convert to distance
 
 mantel(as.dist(synch.dist) ~ as.dist(a.mean), nperm = 10000, mrank = TRUE)
-# not sig, but one-way is borderline (p=0.0789)
 
 # Plot relationships between synchrony and c(distance, air, commuting):
 cor.synch <- 1 - synch.dist
@@ -319,7 +289,7 @@ names(cor.synch.plot) <- c('c1', 'c2', 'corr')
 
 air.by.month <- vector('list', 12)
 for (i in 1:12) {
-  load(paste0('formatTravelData/formattedData/air_', i, '_05-07.RData'))
+  load(paste0('src/formatTravelData/formattedData/air_', i, '_01-31.RData'))
   air.by.month[[i]] <- a.temp.sym
 }; rm(a.temp.sym)
 a.mean <- apply(simplify2array(air.by.month), 1:2, mean); rm(air.by.month)
@@ -418,5 +388,3 @@ for (season in levels(m$season)) {
 dev.off()
 
 rm(list = ls())
-
-

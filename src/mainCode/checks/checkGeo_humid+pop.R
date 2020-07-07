@@ -1,6 +1,6 @@
+### Explore geographical patterns in humidity and population size ###
 
-# Look at whether there are longitudinal patterns in humidity and population size that
-# could be driving spatial patterns in synthetic runs
+# Specify countries of interest
 countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
 count.indices <- c(1:2, 4, 6:8, 11:14, 17, 19)
 
@@ -10,21 +10,16 @@ pop.size <- pop.size[pop.size$country %in% countries, ]; pop.size$country <- fac
 pop.size <- pop.size[match(countries, pop.size$country), ]
 
 # Read in humidity data:
-ah <- read.csv('../GLDAS_data/ah_Europe_07142019.csv')
+ah <- read.csv('data/ah_Europe_07142019.csv')
 ah <- ah[, count.indices]
 
-# First, a few countries w/ outlying AH patterns:
-# matplot(ah, pch = 20, col = viridis(21), cex = 0.5)
+# First, plot AH patterns:
 matplot(ah, pch = 20, col = 'gray', cex = 0.5)
-# lines(ah$Portugal, col = 'coral', lwd = 1.5)
-# lines(ah$Sweden, col = 'green4', lwd = 1.5)
-# lines(ah$Iceland, col = 'steelblue2', lwd = 1.5)
 
 # Get latitude and longitude of country centroids (since humidity for whole country):
 l <- read.csv('data/country_centroids_az8.csv')
 l <- l[, c(47, 67:68)]
 l <- l[l$iso_a2 %in% countries, ]
-# l$iso_a2 <- factor(l$iso_a2); levels(l$iso_a2)[8] <- 'UK'; l$iso_a2 <- factor(l$iso_a2)
 
 # Set time variable for AH and melt:
 ah$day <- 1:365
@@ -35,13 +30,15 @@ names(ah) <- c('day', 'country', 'sh')
 m <- merge(pop.size, l, by.x = 'country', by.y = 'iso_a2')
 names(m)[3:4] <- c('long', 'lat')
 
-# # Plot lat/long vs. popsize:
+# Plot lat/long vs. popsize:
+# par(mfrow = c(3, 1), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 # plot(m$lat, log(m$pop), pch = 20, xlab = 'Latitude', ylab = 'log(Population Size)')
 # plot(m$long, log(m$pop), pch = 20, xlab = 'Longitude', ylab = 'log(Population Size)')
 # plot(m$long, m$lat, pch = 20, xlab = 'Longitude', ylab = 'Latitude')
-# cor.test(m$lat, m$pop, method = 'spearman')
-# cor.test(m$long, m$pop, method = 'spearman')
-# cor.test(m$long, m$lat, method = 'spearman')
+cor.test(m$lat, m$pop, method = 'kendall')
+cor.test(m$long, m$pop, method = 'kendall')
+cor.test(m$long, m$lat, method = 'kendall')
+# none sig
 
 # Plot range of AH by country, colored by lat/long/popsize:
 levels(ah$country) <- countries
@@ -71,13 +68,14 @@ plot(ah.min$long, ah.min$sh, pch = 20, cex = 1.2, xlab = 'Longitude', ylab = 'Mi
 plot(log(ah.med$pop), ah.med$sh, pch = 20, cex = 1.2)
 plot(log(ah.min$pop), ah.min$sh, pch = 20, cex = 1.2)
 
-cor.test(ah.min$lat, ah.min$sh, method = 'kendall') # higher SH with lower lat (as expected), but barely sig; w/ kendall not sig
-cor.test(ah.min$long, ah.min$sh, method = 'kendall') # higher SH with lower long (west higher SH than east) - much stronger than lat
-cor.test(ah.min$pop, ah.min$sh, method = 'kendall') # barely sig pos
+cor.test(ah.min$lat, ah.min$sh, method = 'kendall') # trend toward higher AH with lower lat (as expected), but not sig
+cor.test(ah.min$long, ah.min$sh, method = 'kendall') # higher AH with lower long (west higher AH than east) - much stronger than lat
+cor.test(ah.min$pop, ah.min$sh, method = 'kendall') # barely sig pos - so larger countries (population size) also tend to have higher AH
 
-# lat seems to really just be 3 countries with lower latitude that also have higher sh (ES, IT, FR); otherwise AH values are clustered or even trend up with increasing lat. (NL almost as high as IT/FR)
-# but west have very clearly higher values than east
-# higher pop countries tend to have higher SH, but barely sig
+# Lat seems to really just be 3 countries with lower latitude that also have higher AH (ES, IT, FR); otherwise AH values are clustered or
+# even trend up with increasing lat. (NL almost as high as IT/FR)
+# But west have very clearly higher values than east
+# Higher pop countries tend to have higher AH, but barely sig
 
 a <- lm(sh ~ lat + long + pop, data = ah.min)
 summary(a) # only long is sig
@@ -104,15 +102,18 @@ plot(ah.df$lat, ah.df$range.med, pch = 20, cex = 1.2, xlab = 'Latitude', ylab = 
 plot(ah.df$long, ah.df$range.med, pch = 20, cex = 1.2, xlab = 'Longitude', ylab = 'AH Range')
 # ES has very small range, but others are all pretty similar; no clear pattern by geography
     # with ES as exception, range between median and minimum tend to get smaller as we move north, but not east
+    # as we move east, also tends to be wider range between max and min
+
+cor.test(ah.df$range, ah.df$lat, method = 'kendall')
+cor.test(ah.df$range, ah.df$long, method = 'kendall') # sig pos
+cor.test(ah.df$range.med, ah.df$lat, method = 'kendall') # sig neg
+cor.test(ah.df$range.med, ah.df$long, method = 'kendall')
 
 # Look only over season:
-ah <- read.csv('../GLDAS_data/ah_Europe_07142019.csv')
+ah <- read.csv('data/ah_Europe_07142019.csv')
 ah <- ah[, count.indices]
 
-# ah <- rbind(ah[273:365, ], ah[1:151, ]) # leaving out Jun-Sept
-# matplot(ah, pch = 20, col = 'gray', cex = 0.5)
-
-# When does AH "peak" (minimum) for each country?:
+# When does AH "peak" (minimum - so trough) for each country?:
 mins <- c()
 for (i in 1:length(countries)) {
   mins <- c(mins, which.min(ah[, i]))
@@ -122,30 +123,7 @@ min.df <- as.data.frame(cbind(countries, mins))
 # next are BE, FR, LU, NL, ES, ~4-5 weeks later; DE and IT last, about a week later
 
 # How does this compare to ILI+ peak timings?:
-# Obviously the peak timings show the opposite pattern; but the minimum AHs in general occur within the 52:12 weeks of peak (on the early side)
+# The peak timings tend to show the opposite pattern; but the minimum AHs in general occur within the 52:12 weeks of peak (on the early side)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+dev.off()
+rm(list = ls())
