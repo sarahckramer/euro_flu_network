@@ -4,6 +4,7 @@
 /python/__pycache__/
 /data/
 /results/
+/src/mainCode/explore_obs/not_public/
 *.Rproj
 *.RData
 *.Rdata
