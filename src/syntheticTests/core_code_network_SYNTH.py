@@ -32,10 +32,9 @@ n = len(countries)
 
 # Read in data and set outbreaks:
 seasons = ('1', '2', '3', '4', '5')  # not yet sure how to handle this - have 5 "outbreaks"
-# iliiso = pd.read_csv('../data/by_subtype/WHO_data_A(all)_SCALED.csv')  # synthetic data - no scaling required
 
 # Read in humidity data:
-ah = pd.read_csv('../data/ah_Europe_07142019.csv')
+ah = pd.read_csv('data/ah_Europe_07142019.csv')
 ah = ah[ah.columns[count_indices]]
 ah = ah.append(ah)
 ah = ah.to_numpy(dtype=np.float64)
@@ -43,7 +42,7 @@ ah = ah.to_numpy(dtype=np.float64)
 # Read in air travel data:
 a_rand = np.zeros([12, n, n], dtype=np.float64)
 for i in range(n):
-    a_rand[i] = np.loadtxt('air_travel/aRand' + str(i + 1) + '.txt', unpack=True, dtype=np.float64)
+    a_rand[i] = np.loadtxt('data/python_init/air_travel/aRand' + str(i + 1) + '.txt', unpack=True, dtype=np.float64)
 
 # ### Start main loop ###
 # Initiate results frames:
@@ -59,7 +58,7 @@ for season_index in range(len(seasons)):
     print(season)  # again, this is the synthetic outbreak, not a season
 
     # Get observations for current season:
-    obs_i = pd.read_csv(os.path.join('syntheticData/for_python/', 'synth_wError_' + season + '.csv'))
+    obs_i = pd.read_csv(os.path.join('src/syntheticTests/syntheticData/for_python/', 'synth_wError_' + season + '.csv'))
 
     # Get season duration:
     nsn = 52  # also can just be set at 52, or 43 or whatever
@@ -81,7 +80,7 @@ for season_index in range(len(seasons)):
         print(run)
 
         # Get initial states/parameters for each ensemble member:
-        param_init = pd.read_csv(os.path.join('initial_parms/', 'parms' + str(run) + '_NEW.txt'), header=None,
+        param_init = pd.read_csv(os.path.join('data/python_init/initial_parms/', 'parms' + str(run) + '.txt'), header=None,
                                  sep='\t')
         param_init = param_init.to_numpy(dtype=np.float64)
         # Here we use the same as used in forecasting and fitting of observed data
@@ -89,7 +88,7 @@ for season_index in range(len(seasons)):
         # Get season-specific population matrix:
         N = np.zeros([num_ens, n, n], dtype=np.float64)
         for ensmem in range(num_ens):
-            N_temp = pd.read_csv(os.path.join('compartment_sizes_SYNTH/',
+            N_temp = pd.read_csv(os.path.join('data/python_init/compartment_sizes_SYNTH/',
                                               'N_' + str(run + 1) + '_' + str(ensmem + 1) + '.txt'),
                                  header=None, sep='\t')
             N[ensmem] = N_temp.to_numpy(dtype=np.float64)
@@ -138,11 +137,11 @@ print('Done.')
 timestamp_end = datetime.datetime.now()
 print('Time Elapsed: ' + str(timestamp_end - timestamp_start))
 
-outputOP.to_csv('../python_init/results/outputOP_synth_070220.csv', na_rep='NA', index=False)
-outputOPParams.to_csv('results/outputOPParams_synth_070220.csv', na_rep='NA', index=False)
+outputOP.to_csv('src/syntheticTests/outputOP_synth_070220.csv', na_rep='NA', index=False)
+outputOPParams.to_csv('src/syntheticTests/outputOPParams_synth_070220.csv', na_rep='NA', index=False)
 
-# outputMetrics.to_csv('results/outputMet_synth_fcast.csv', na_rep='NA', index=False)
-# outputDist.to_csv('results/outputDist_synth_fcast.csv', na_rep='NA', index=False)
-# outputEns.to_csv('results/outputEns_synth_fcast.csv', na_rep='NA', index=False)
+# outputMetrics.to_csv('src/syntheticTests/outputMet_synth_fcast.csv', na_rep='NA', index=False)
+# outputDist.to_csv('src/syntheticTests/outputDist_synth_fcast.csv', na_rep='NA', index=False)
+# outputEns.to_csv('src/syntheticTests/outputEns_synth_fcast.csv', na_rep='NA', index=False)
 
 print('Finished writing to file!')

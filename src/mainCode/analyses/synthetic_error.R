@@ -5,15 +5,15 @@ library(ggplot2); library(gridExtra); library(viridis)
 ### Parameter error:
 
 # Read in results:
-o <- read.csv('syntheticTests/outputOPParams_synth_070220.csv')
-oStates <- read.csv('syntheticTests/outputOP_SYNTH_beta-R0-Re_070220.csv')
+o <- read.csv('src/syntheticTests/outputOPParams_synth_070220.csv')
+oStates <- read.csv('src/syntheticTests/outputOP_SYNTH_beta-R0-Re_070220.csv')
 
 # Plot observed data vs. fit obs:
 countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
 n <- length(countries)
 
 # Plot parameter fit over time vs. true params:
-load('syntheticTests/syntheticData/for_synthetic_testing/parms_toKeep_070220.RData')
+load('src/syntheticTests/syntheticData/for_synthetic_testing/parms_toKeep_070220.RData')
 select.parms <- as.data.frame(t(parms.outbreaks[25:29, ]))
 names(select.parms) <- c('L', 'D', 'R0max', 'R0diff', 'airScale')
 select.parms <- as.data.frame(cbind(rep(1:5, 5), melt(select.parms)))
@@ -61,22 +61,22 @@ rm(list = ls())
 ### Hists of beta/R0/Re error:
 
 # Read in results:
-o <- read.csv('syntheticTests/outputOPParams_synth_070220.csv')
-oStates <- read.csv('syntheticTests/outputOP_SYNTH_beta-R0-Re_070220.csv')
+o <- read.csv('src/syntheticTests/outputOPParams_synth_070220.csv')
+oStates <- read.csv('src/syntheticTests/outputOP_SYNTH_beta-R0-Re_070220.csv')
 
 # Plot observed data vs. fit obs:
 countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
 n <- length(countries)
 
 # Read in TRUE values of beta, R0, Re at each time point:
-load('syntheticTests/syntheticData/for_synthetic_testing/true_betaR0Re_070220.RData')
+load('src/syntheticTests/syntheticData/for_synthetic_testing/true_betaR0Re_070220.RData')
 true.betas <- true.list[[1]]
 true.R0 <- true.list[[2]]
 true.Re <- true.list[[3]]
 rm(true.list)
 
 # Read in true S:
-load('syntheticTests/syntheticData/for_synthetic_testing/synth_S_toKeep_070220.RData')
+load('src/syntheticTests/syntheticData/for_synthetic_testing/synth_S_toKeep_070220.RData')
 for (i in 1:5) {
   synth.s[[i]] <- t(synth.s[[i]])
 }

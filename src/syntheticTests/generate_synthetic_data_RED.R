@@ -11,7 +11,7 @@ set.seed(10489436)
 # set.seed(10489438)
 
 ### Read in model function
-source('cluster/SIRS_network.R')
+source('src/mainCode/functions/SIRS_network.R')
 
 ### Global variables
 dt <- 1 # time step for SIRS integration
@@ -39,12 +39,12 @@ countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK',
 count.indices <- c(1:2, 4, 6:8, 11:14, 17, 19)
 
 ### Set population sizes and # of countries used
-pop.size <- read.csv('../../data/popcounts_02-07.csv')
+pop.size <- read.csv('data/popcounts_02-07.csv')
 pop.size <- pop.size[pop.size$country %in% countries, ]; pop.size$country <- factor(pop.size$country)
 pop.size <- pop.size[match(countries, pop.size$country), ]
 
 ### Load commuting data
-load('formatTravelData/formattedData/comm_mat_1000.RData')
+load('src/formatTravelData/formattedData/comm_mat_1000.RData') # requires comm_mat of same size and number of desired runs
 t.comm <- lapply(comm.list1, function(ix) {
   apply(simplify2array(ix), 1:2, mean)
 })
@@ -69,7 +69,7 @@ for (i in 1:num_ens) {
 }
 
 ### Read in humidity data
-ah <- read.csv('../../data/ah_Europe_07142019.csv')
+ah <- read.csv('data/ah_Europe_07142019.csv')
 AH <- rbind(ah[, count.indices], ah[, count.indices])
 
 ### Set initial conditions based on input parameters
@@ -84,8 +84,8 @@ parms <- t(lhs(num_ens, param.bound))
 parms[, 28][parms[, 28] >= parms[, 27]] <- parms[, 27][parms[, 28] >= parms[, 27]] - 0.01
 
 ### Read in functions to run model/format results:
-source('cluster/functions/synth_functions.R')
-source('cluster/functions/Util.R')
+source('src/mainCode/functions/synth_functions.R')
+source('src/mainCode/functions/Util.R')
 
 ### Run model!
 init.states <- allocate_S0I0(parms, num_ens, n, N, s0.method = 'lhs')
@@ -190,7 +190,7 @@ for (run in unique(df.red$run)) {
 ggplot(data = df.red, aes(x = patternSig, y = S0.ind)) + geom_boxplot(fill = 'gray95') + theme_classic() + facet_wrap(~ country)
 ggplot(data = df.red[df.red$real, ], aes(x = patternSig, y = S0.ind)) + geom_boxplot(fill = 'gray95') + theme_classic() + facet_wrap(~ country)
 
-# # What do the strongly w-e ones look like? Why no "realistic"?
+# # What do the strongly w-e ones look like?
 # which.we <- unique(df.red$run[df.red$patternSig == 'westToEast_yes'])
 # par(mfrow = c(5, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 # for (i in which.we) {
@@ -199,75 +199,85 @@ ggplot(data = df.red[df.red$real, ], aes(x = patternSig, y = S0.ind)) + geom_box
 #   abline(v = c(13, 25))
 # }
 
-# Try to choose a few to use for fitting:
-par(mfrow = c(5, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-for (i in runs.realistic) {
-  i <- as.numeric(as.character(i))
-  matplot(t(res.rates[[i]]), pch = 20, type = 'b', lty = 1, col = viridis(n), main = i)
-  abline(v = c(13, 25))
-}
+# # Try to choose a few to use for fitting:
+# par(mfrow = c(5, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+# for (i in runs.realistic) {
+#   i <- as.numeric(as.character(i))
+#   matplot(t(res.rates[[i]]), pch = 20, type = 'b', lty = 1, col = viridis(n), main = i)
+#   abline(v = c(13, 25))
+# }
 
 df.real <- df.red[df.red$real, ]
 df.real <- df.real[, c(1:4, 7:14, 18:24)]
 
-par(mfrow = c(1, 1), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-for (i in sort(as.numeric(as.character(unique(df.real$run[df.real$patternSig == 'westToEast_yes']))))) {
-  i <- as.numeric(as.character(i))
-  matplot(t(res.rates[[i]]), pch = 20, type = 'b', lty = 1, col = viridis(n), main = i)
-  abline(v = c(13, 25))
-}
+# par(mfrow = c(1, 1), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+# for (i in sort(as.numeric(as.character(unique(df.real$run[df.real$patternSig == 'westToEast_yes']))))) {
+#   i <- as.numeric(as.character(i))
+#   matplot(t(res.rates[[i]]), pch = 20, type = 'b', lty = 1, col = viridis(n), main = i)
+#   abline(v = c(13, 25))
+# }
+# 
+# par(mfrow = c(5, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+# for (i in sort(as.numeric(as.character(unique(df.real$run[df.real$patternSig == 'westToEast_no']))))) {
+#   list.ot <- df.real$ot[df.real$run == i]
+#   if (length(list.ot[!is.na(list.ot)]) >= 11) {
+#     print(i)
+#   }
+#   i <- as.numeric(as.character(i))
+#   matplot(t(res.rates[[i]]), pch = 20, type = 'b', lty = 1, col = viridis(n), main = i)
+#   abline(v = c(13, 25))
+# }
+# 
+# par(mfrow = c(5, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+# for (i in sort(as.numeric(as.character(unique(df.real$run[df.real$patternSig == 'eastToWest_no']))))) {
+#   list.ot <- df.real$ot[df.real$run == i]
+#   if (length(list.ot[!is.na(list.ot)]) >= 10) {
+#     print(i)
+#   }
+#   i <- as.numeric(as.character(i))
+#   matplot(t(res.rates[[i]]), pch = 20, type = 'b', lty = 1, col = viridis(n), main = i)
+#   abline(v = c(13, 25))
+# }
 
-par(mfrow = c(5, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-for (i in sort(as.numeric(as.character(unique(df.real$run[df.real$patternSig == 'westToEast_no']))))) {
-  list.ot <- df.real$ot[df.real$run == i]
-  if (length(list.ot[!is.na(list.ot)]) >= 11) {
-    print(i)
-  }
-  i <- as.numeric(as.character(i))
-  matplot(t(res.rates[[i]]), pch = 20, type = 'b', lty = 1, col = viridis(n), main = i)
-  abline(v = c(13, 25))
-}
-
-par(mfrow = c(5, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-for (i in sort(as.numeric(as.character(unique(df.real$run[df.real$patternSig == 'eastToWest_no']))))) {
-  list.ot <- df.real$ot[df.real$run == i]
-  if (length(list.ot[!is.na(list.ot)]) >= 10) {
-    print(i)
-  }
-  i <- as.numeric(as.character(i))
-  matplot(t(res.rates[[i]]), pch = 20, type = 'b', lty = 1, col = viridis(n), main = i)
-  abline(v = c(13, 25))
-}
-
-pdf('outputs/synthetic_outbreaks_070220.pdf', height = 8, width = 28)
-par(mfrow = c(1, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-for (i in c(109, 3, 653, 694, 599)) {
-  matplot(t(res.rates[[i]]), pch = 20, type = 'b', lty = 1, col = viridis(n), main = i)
-  abline(v = c(13, 25))
-}
-dev.off()
+# if (!dir.exists('src/syntheticTests/outputs/')) {
+#   dir.create('src/syntheticTests/outputs/')
+# }
+# pdf('outputs/synthetic_outbreaks_070220.pdf', height = 8, width = 28)
+# par(mfrow = c(1, 5), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+# for (i in c(109, 3, 653, 694, 599)) {
+#   matplot(t(res.rates[[i]]), pch = 20, type = 'b', lty = 1, col = viridis(n), main = i)
+#   abline(v = c(13, 25))
+# }
+# dev.off()
 
 # Look at colinearity between parameters in onset/realistic/pattern:
 p1 <- ggplot(data = df.red, aes(x = R0mx, y = R0mn)) + geom_point() + theme_classic() + facet_wrap(~ patternSig, nrow = 1)
 p2 <- ggplot(data = df.red, aes(x = R0mx, y = R0diff)) + geom_point() + theme_classic() + facet_wrap(~ patternSig, nrow = 1)
-ggplot(data = df.red, aes(x = R0diff, y = R0mn)) + geom_point() + theme_classic() + facet_wrap(~ patternSig)
-ggplot(data = df.red, aes(x = R0mx, y = D)) + geom_point() + theme_classic() + facet_wrap(~ patternSig)
-ggplot(data = df.red, aes(x = R0mx, y = L)) + geom_point() + theme_classic() + facet_wrap(~ patternSig)
-ggplot(data = df.red, aes(x = R0mx, y = airScale)) + geom_point() + theme_classic() + facet_wrap(~ patternSig)
+# ggplot(data = df.red, aes(x = R0diff, y = R0mn)) + geom_point() + theme_classic() + facet_wrap(~ patternSig)
+# ggplot(data = df.red, aes(x = R0mx, y = D)) + geom_point() + theme_classic() + facet_wrap(~ patternSig)
+# ggplot(data = df.red, aes(x = R0mx, y = L)) + geom_point() + theme_classic() + facet_wrap(~ patternSig)
+# ggplot(data = df.red, aes(x = R0mx, y = airScale)) + geom_point() + theme_classic() + facet_wrap(~ patternSig)
 grid.arrange(p1, p2)
 
 plot(df.red[df.red$real, 18:23])
 
 ################################################################################################################
 # Save relevant outbreaks so we can look at patterns:
+if (!dir.exists('src/syntheticTests/syntheticData/')) {
+  dir.create('src/syntheticTests/syntheticData/')
+}
+if (!dir.exists('src/syntheticTests/syntheticData/for_synthetic_testing/')) {
+  dir.create('src/syntheticTests/syntheticData/for_synthetic_testing/')
+}
+
 synth.runs.RATES <- res.rates
-save(synth.runs.RATES, file = 'syntheticData/synth_rates_ALL_1000_070220.RData')
+save(synth.runs.RATES, file = 'src/syntheticTests/syntheticData/synth_rates_ALL_1000_070220.RData')
 
 synth.runs.RATES.onset <- synth.runs.RATES[runs.onset]
 synth.runs.RATES.realistic <- synth.runs.RATES[runs.realistic]
 
-save(synth.runs.RATES.onset, file = 'syntheticData/synth_rates_ONSET_1000_070220.RData')
-save(synth.runs.RATES.realistic, file = 'syntheticData/synth_rates_REALISTIC_1000_070220.RData')
+save(synth.runs.RATES.onset, file = 'src/syntheticTests/syntheticData/synth_rates_ONSET_1000_070220.RData')
+save(synth.runs.RATES.realistic, file = 'src/syntheticTests/syntheticData/synth_rates_REALISTIC_1000_070220.RData')
 
 # Save parameters and S0/I0, too:
 s0.list <- parms[1:12, ]
@@ -278,9 +288,9 @@ s0.list <- list(s0.list, s0.list[, runs.onset], s0.list[, runs.realistic])
 i0.list <- list(i0.list, i0.list[, runs.onset], i0.list[, runs.realistic])
 parms.list <- list(parms.list, parms.list[, runs.onset], parms.list[, runs.realistic])
 
-save(parms.list, file = 'syntheticData/params_1000_070220.RData')
-save(i0.list, file = 'syntheticData/I0_1000_070220.Rdata')
-save(s0.list, file = 'syntheticData/S0_1000_070220.Rdata')
+save(parms.list, file = 'src/syntheticTests/syntheticData/params_1000_070220.RData')
+save(i0.list, file = 'src/syntheticTests/syntheticData/I0_1000_070220.Rdata')
+save(s0.list, file = 'src/syntheticTests/syntheticData/S0_1000_070220.Rdata')
 
 # And save only the 5 to be used in synthetic testing:
 to.keep <- c(109, 3, 653, 694, 599)
@@ -288,9 +298,9 @@ synth.outbreaks <- synth.runs.RATES[to.keep]
 synth.s <- s.rates[to.keep]
 parms.outbreaks <- parms[, to.keep]
 
-save(synth.outbreaks, file = '/syntheticData/synth_rates_toKeep_070220.RData')
-save(synth.s, file = '/syntheticData/synth_S_toKeep_070220.RData')
-save(parms.outbreaks, file = '/syntheticData/parms_toKeep_070220.RData')
+save(synth.outbreaks, file = 'src/syntheticTests/syntheticData/for_synthetic_testing/synth_rates_toKeep_070220.RData')
+save(synth.s, file = 'src/syntheticTests/syntheticData/for_synthetic_testing/synth_S_toKeep_070220.RData')
+save(parms.outbreaks, file = 'src/syntheticTests/syntheticData/for_synthetic_testing/parms_toKeep_070220.RData')
 
 ################################################################################################################
 ################################################################################################################

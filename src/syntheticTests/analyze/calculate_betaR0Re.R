@@ -7,7 +7,7 @@ count.indices <- c(1:2, 4, 6:8, 11:14, 17, 19)
 n <- length(countries)
 
 # Get humidity data:
-ah <- read.csv('../../../data/ah_Europe_07142019.csv')
+ah <- read.csv('data/ah_Europe_07142019.csv')
 AH <- rbind(ah[, count.indices], ah[, count.indices])
 
 # Narrow to desired time frame:
@@ -21,8 +21,8 @@ beta.range <- beta.range[2:53] # since S is taken first at day 8, after one week
 AHpt <- AH[beta.range, ]; AHpt <- as.matrix(AHpt, length(AHpt), n)
 
 # Read in true parameters and S:
-load('syntheticTests/syntheticData/parms_toKeep_070220.RData')
-load('syntheticTests/syntheticData/synth_S_toKeep_070220.RData')
+load('src/syntheticTests/syntheticData/for_synthetic_testing/parms_toKeep_070220.RData')
+load('src/syntheticTests/syntheticData/for_synthetic_testing/synth_S_toKeep_070220.RData')
 
 # Transpose S:
 for (i in 1:length(synth.s)) {
@@ -54,7 +54,7 @@ for (i in 1:length(true.betas)) {
 
 # Save:
 true.list <- list(true.betas, true.R0, true.Re)
-save(true.list, file = 'syntheticTests/syntheticData/true_betaR0Re.RData')
+save(true.list, file = 'src/syntheticTests/syntheticData/for_synthetic_testing/true_betaR0Re.RData')
 
 rm(list = ls())
 
@@ -66,7 +66,7 @@ count.indices <- c(1:2, 4, 6:8, 11:14, 17, 19)
 n <- length(countries)
 
 # Get humidity data:
-ah <- read.csv('../../../data/ah_Europe_07142019.csv')
+ah <- read.csv('data/ah_Europe_07142019.csv')
 AH <- rbind(ah[, count.indices], ah[, count.indices])
 
 # Narrow to desired time frame:
@@ -80,8 +80,8 @@ beta.range <- beta.range[2:53] # since S is taken first at day 8, after one week
 AHpt <- AH[beta.range, ]; AHpt <- as.matrix(AHpt, length(AHpt), n)
 
 # Read in results:
-o <- read.csv('../outputOPParams_synth_070220.csv')
-oStates <- read.csv('../outputOP_synth_070220.csv')
+o <- read.csv('src/syntheticTests/outputOPParams_synth_070220.csv')
+oStates <- read.csv('src/syntheticTests/outputOP_synth_070220.csv')
 
 oStates$country <- countries[oStates$country + 1]
 oStates$country <- factor(oStates$country)
@@ -89,7 +89,7 @@ oStates$country <- factor(oStates$country)
 oStates$beta = oStates$R0 = oStates$Re = NA
 oStates$run <- factor(oStates$run)
 
-load('../syntheticData/for_synthetic_testing/synth_rates_toKeep_070220.RData')
+load('src/syntheticTests/syntheticData/for_synthetic_testing/synth_rates_toKeep_070220.RData')
 for (i in 1:length(synth.outbreaks)) {
   print(i)
   
@@ -107,7 +107,7 @@ for (i in 1:length(synth.outbreaks)) {
 }
 
 # Store these results:
-write.csv(oStates, file = '../outputOP_SYNTH_beta-R0-Re_070220.csv', row.names = FALSE)
+write.csv(oStates, file = 'src/syntheticTests/outputOP_SYNTH_beta-R0-Re_070220.csv', row.names = FALSE)
 
 rm(list = ls())
 

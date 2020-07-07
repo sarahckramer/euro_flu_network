@@ -1,22 +1,22 @@
 ### Plot error in S/beta/R0/Re over ALL timepoints ###
 
 # Read in results with most everything calculated:
-o <- read.csv('../outputOPParams_synth_070220.csv')
-oStates <- read.csv('../outputOP_SYNTH_beta-R0-Re_070220.csv')
+o <- read.csv('src/syntheticTests/outputOPParams_synth_070220.csv')
+oStates <- read.csv('src/syntheticTests/outputOP_SYNTH_beta-R0-Re_070220.csv')
 
 # Get countries:
 countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
 n <- length(countries)
 
 # Read in TRUE values of beta, R0, Re at each time point:
-load('../syntheticData/for_synthetic_testing/true_betaR0Re_070220.RData')
+load('src/syntheticTests/syntheticData/for_synthetic_testing/true_betaR0Re_070220.RData')
 true.betas <- true.list[[1]]
 true.R0 <- true.list[[2]]
 true.Re <- true.list[[3]]
 rm(true.list)
 
 # Read in true S:
-load('../syntheticData/for_synthetic_testing/synth_S_toKeep_070220.RData')
+load('src/syntheticTests/syntheticData/for_synthetic_testing/synth_S_toKeep_070220.RData')
 for (i in 1:5) {
   synth.s[[i]] <- t(synth.s[[i]])
 }
@@ -65,17 +65,9 @@ p3 <- ggplot(data = oStates.err, aes(x = week, y = R0.err, group = group)) + geo
 p4 <- ggplot(data = oStates.err, aes(x = week, y = Re.err, group = group)) + geom_abline(slope = 0, intercept = 0, lty = 2, lwd = 1.0) + geom_line(col = 'gray70', lwd = 0.2) + theme_classic() +
   facet_wrap(~ season, nrow = 1) + labs(x = 'Weeks Since Outbreak Start', y = 'Relative Error (Re)')
 
-# pdf('syntheticTests/outputs/errors_S_beta_R0_Re_070220.pdf', width = 14, height = 11)
+# pdf('src/syntheticTests/outputs/errors_S_beta_R0_Re_070220.pdf', width = 14, height = 11)
 grid.arrange(p1, p2, p3, p4, ncol = 1)
 # dev.off()
 
 # Clean up environment:
 rm(list=ls())
-
-
-
-
-
-
-
-

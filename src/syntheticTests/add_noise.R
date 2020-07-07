@@ -4,7 +4,7 @@
 set.seed(108946052)
 
 # Read in "realistic" synthetic runs:
-load('syntheticTests/syntheticData/synth_rates_toKeep_070220.RData')
+load('src/syntheticTests/syntheticData/for_synthetic_testing/synth_rates_toKeep_070220.RData')
 # use rates since these are what we'll input into the model anyway
 
 # Country names:
@@ -20,7 +20,7 @@ oev_base <- 1e5 # 1e4, 1e5, 1e6
 oev_denom <- 10.0 # 5, 10, 20
 
 # Calculate "old" OEV format:
-source('cluster/functions/calc_obsvars.R')
+source('src/mainCode/functions/calc_obsvars.R')
 
 obs_vars <- vector('list', length(synth.outbreaks))
 for (i in 1:length(synth.outbreaks)) {
@@ -67,7 +67,7 @@ for (j in 1:5) {
 }
 
 # Save results:
-# save(synth.outbreaks, file = 'syntheticTests/syntheticData/synth_rates_toKeep_070220_wError_1e5_10.RData')
+# save(synth.outbreaks, file = 'src/syntheticTests/syntheticData/for_synthetic_testing/synth_rates_toKeep_070220_wError_1e5_10.RData')
 
 
 

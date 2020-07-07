@@ -1,9 +1,9 @@
 ### Explore patterns in parameters that generated "realistic" synthetic outbreaks ###
 
 # Read in parameter ranges and initial S/I:
-load('syntheticTests/syntheticData/params_1000_021020.RData')
-load('syntheticTests/syntheticData/S0_1000_021020.Rdata')
-load('syntheticTests/syntheticData/I0_1000_021020.Rdata')
+load('src/syntheticTests/syntheticData/params_1000_070220.RData')
+load('src/syntheticTests/syntheticData/S0_1000_070220.Rdata')
+load('src/syntheticTests/syntheticData/I0_1000_070220.Rdata')
 
 parms.real <- parms.list[[3]]
 s0.real <- s0.list[[3]]
@@ -26,7 +26,7 @@ i0.df <- as.data.frame(i0.real)
 
 ### 1D ###
 
-pdf('../outputs/explore/param_explore_1D.pdf', width = 17, height = 12)
+pdf('src/syntheticTests/outputs/explore/param_explore_1D.pdf', width = 17, height = 12)
 
 # Plot histograms of each parameter value for: onset/real; onset/real/w-e; neither:
 p1 <- ggplot(data = parms.df) + geom_histogram(aes(x = value, y = ..ndensity..), fill = 'gray80', col = 'black', bins = 50) +
@@ -69,7 +69,7 @@ cbind(colnames(parms.real)[sig.corr[, 1]], colnames(parms.real)[sig.corr[, 2]])
 print(colnames(parms.real)[unique(sig.corr[, 1])])
 # same
 
-pdf('../outputs/explore/param_explore_2D.pdf', width = 20, height = 12)
+pdf('src/syntheticTests/outputs/explore/param_explore_2D.pdf', width = 20, height = 12)
 
 par(mfrow = c(5, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 for (ix in 1:4) {
@@ -142,7 +142,7 @@ grid.arrange(plots1, plots2, plots3, ncol = 2)
 dev.off()
 
 # 3D:
-pdf('../outputs/explore/param_explore_3D.pdf', width = 21, height = 7)
+pdf('src/syntheticTests/outputs/explore/param_explore_3D.pdf', width = 21, height = 7)
 
 plots1 <- calc_z_for_heatmap(parms.df, 'D', 'R0mx', 'R0diff')
 plots2 <- calc_z_for_heatmap(parms.df, 'D', 'R0diff', 'R0mx')
@@ -168,6 +168,4 @@ for (country in levels(s0.df$country)) {
   print('')
 }
 
-
-
-
+rm(list = ls())

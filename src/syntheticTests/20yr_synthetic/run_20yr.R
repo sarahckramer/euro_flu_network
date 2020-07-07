@@ -1,4 +1,6 @@
 ### Run synthetic mainCode for 20 years ###
+# Note: Meant to be run on Columbia's C2B2 cluster HPC (http://wiki.c2b2.columbia.edu/arcs/index.php/Cluster_Documentation)
+# Runtime is long, so will likely require some form of high performance computing
 
 ### Read in libraries
 library("truncnorm"); library("tgp"); library("MASS"); library(reshape2); library(plyr); #library(ggplot2); library(gridExtra); library(viridis); library(miceadds)
@@ -70,7 +72,7 @@ diag(N) <- unlist(lapply(1:n, function(ix) {
 # # print(head(AH))
 
 ### Get subtypes by season
-Vtype <- read.csv('../../../data/subtypes_seeding.csv')
+Vtype <- read.csv('../../../data/subtypes_seeding.csv') # can be generated in "SIRS_network_multistrain.R"
 
 ### Run model!
 print('Get initial states...')

@@ -4,12 +4,12 @@
 library(reshape2); library(ggplot2); library(gridExtra); library(viridis)
 
 ### Save all plots:
-pdf('../outputs/explore/patterns_synth_realisticOnly.pdf', width = 16, height = 10)
+pdf('src/syntheticTests/outputs/explore/patterns_synth_realisticOnly.pdf', width = 16, height = 10)
 # note: plot "realistic" only
 
 ### Read in synthetic "data" ###
 countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
-load('syntheticTests/syntheticData/synth_rates_REALISTIC_1000_021020.RData')
+load('src/syntheticTests/syntheticData/synth_rates_REALISTIC_1000_070220.RData')
 synth.runs.RATES <- synth.runs.RATES.realistic; rm(synth.runs.RATES.realistic)
 
 # ### Plot synthetic runs ###
@@ -21,7 +21,7 @@ synth.runs.RATES <- synth.runs.RATES.realistic; rm(synth.runs.RATES.realistic)
 # }
 
 ### Create df of AR/PT/OT by country and run ###
-source('cluster/functions/Util.R')
+source('src/mainCode/functions/Util.R')
 wk_start <- 1
 ar.dists = pt.dists = ot.dists = vector('list', length(synth.runs.RATES))
 for (ix in 1:length(synth.runs.RATES)) {
