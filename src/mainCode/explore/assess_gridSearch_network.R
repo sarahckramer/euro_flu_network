@@ -4,8 +4,7 @@
 # Read in libraries:
 library(reshape2); library(ggplot2); library(gridExtra)
 
-# Save plots?:
-outputPlots <- FALSE
+# Save plots:
 pdf('results/gridSearch/indiv_grid_OEVold_B.pdf', width = 14, height = 9)
 
 # Restrict the forecast start weeks for which results are shown?
@@ -21,7 +20,7 @@ gridSearch <- TRUE
 #########################################################################################################################################################
 
 # Read in all plotting mainCode:
-source('code/comparisons/comp_netVsIndiv/plotting_functions.R')
+source('src/mainCode/explore/quick_compare/plotting_functions.R')
 
 # Read in and format metrics file:
 m <- read.csv(file = paste0(model.loc, list.files(path = model.loc, pattern = 'Met_pro')))
@@ -53,17 +52,17 @@ m$abs_err_3wk_perc[m$abs_err_3wk_perc == Inf & !is.na(m$abs_err_3wk_perc)] <- NA
 m$abs_err_4wk_perc[m$abs_err_4wk_perc == Inf & !is.na(m$abs_err_4wk_perc)] <- NA
 
 # Plot overall PT, PI, and OT by PREDICTED lead week:
-source('code/comparisons/comp_netVsIndiv/by_pred.R')
+source('src/mainCode/explore/quick_compare/by_pred.R')
 print(plots.by.pred)
 rm(plots.by.pred)
 
 # Plot overall PT, PI, and OT by OBSERVED lead week:
-source('code/comparisons/comp_netVsIndiv/by_obs.R')
+source('src/mainCode/explore/quick_compare/by_obs.R')
 print(plots.by.obs)
 rm(plots.by.obs)
 
 # Plot MAEs:
-source('code/comparisons/comp_netVsIndiv/plot_MAE.R')
+source('src/mainCode/explore/quick_compare/plot_MAE.R')
 
 # Read in all log scores files:
 d <- read.csv(paste0(model.loc, list.files(path = model.loc, pattern = '_pt_ot')))
@@ -84,9 +83,9 @@ e$model <- factor(e$model)
 # Question: Remove where obs are 0 for 1-4 weeks? Or where obs below some value?
 # Question: Remove where no onset predicted before calculating these?
 byWeek <- 'Predicted'
-source('code/comparisons/comp_netVsIndiv/plot_logScores.R')
+source('src/mainCode/explore/quick_compare/plot_logScores.R')
 byWeek <- 'Observed'
-source('code/comparisons/comp_netVsIndiv/plot_logScores.R')
+source('src/mainCode/explore/quick_compare/plot_logScores.R')
 rm(d, e.pi, e, byWeek)
 
 # # Plot inferred parameter values at each time step (network only - individual allows parameter values to differ by country):
@@ -110,14 +109,7 @@ rm(d, e.pi, e, byWeek)
 # p5 <- ggplot(data = o) + geom_line(aes(x = week, y = airScale, group = group, col = oev_base), alpha = 0.2) +
 #   theme_classic() + labs(x = 'Week', y = 'airScale', col = 'OEV Base') + facet_wrap(~ lambda) +
 #   scale_color_brewer(palette = 'Set1')
-# 
-# if (outputPlots) {
-#   pdf('mainCode/comparisons/plots/param_ests.pdf', width = 14, height = 14)
-#   grid.arrange(p1, p2, p3, p4, p5, ncol = 1)
-#   dev.off()
-# } else {
-#   grid.arrange(p1, p2, p3, p4, p5, ncol = 1)
-# }
+# grid.arrange(p1, p2, p3, p4, p5, ncol = 1)
 
 dev.off()
 

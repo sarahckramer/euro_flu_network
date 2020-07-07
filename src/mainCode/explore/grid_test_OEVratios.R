@@ -16,7 +16,7 @@ count.indices <- c(1:2, 4, 6:8, 11:14, 17, 19)
 strain <- 'B'
 
 # Read in data:
-iliiso <- read.csv(paste0('data/by_subtype/WHO_data_', strain, '_SCALED.csv'))
+iliiso <- read.csv(paste0('data/WHO_data_', strain, '_SCALED.csv'))
 
 # Get relevant seasons:
 if (strain == 'A(H1)') {
@@ -30,12 +30,12 @@ if (strain == 'A(H1)') {
 }
 
 # Read in necessary functions:
-source('cluster/functions/Fn_initializations.R')
-source('cluster/functions/calc_obsvars.R')
-source('cluster/functions/replaceLeadingLaggingNAs.R')
+source('src/mainCode/functions/Fn_initializations.R')
+source('src/mainCode/functions/calc_obsvars.R')
+source('src/mainCode/functions/replaceLeadingLaggingNAs.R')
 
 # Save to pdf:
-# pdf(paste0('results/explore_oev/OEV_rat_', strain, '_gridSearch.pdf'), width = 12, height = 7)
+# pdf(paste0('results/plots/OEV_rat_', strain, '_gridSearch.pdf'), width = 12, height = 7)
 
 # Plot out data:
 obs.list <- vector('list', length(seasons))

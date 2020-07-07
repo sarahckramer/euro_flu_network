@@ -25,17 +25,13 @@ pdf(paste0('results/plots/comp_', fileSuffix, '.pdf'), width = 14, height = 9)
 #########################################################################################################################################################
 #########################################################################################################################################################
 
-# Read in all plotting mainCode:
-source('code/comparisons/comp_netVsIndiv/plotting_functions.R')
+# Read in all plotting code:
+source('src/mainCode/explore/quick_compare/plotting_functions.R')
 
 # Read in and format metrics files:
 m1 <- read.csv(file = paste0(model1, list.files(path = model1, pattern = 'Met_pro_P')))
 m2 <- read.csv(file = paste0(model2, list.files(path = model2, pattern = 'Met_pro_P')))
 m3 <- read.csv(file = paste0(model3, list.files(path = model3, pattern = 'Met_pro_P')))
-
-# m1 <- m1[, c(1:9, 12:13, 15, 17:19, 25:32, 39, 43, 47, 60:63, 65, 67:69, 78)]
-# m2 <- m2[, c(1:9, 12:13, 15, 17:19, 25:32, 39, 43, 47, 60:63, 65, 67:69, 78)]
-# m3 <- m3[, c(1:9, 12:13, 15, 17:19, 25:32, 39, 43, 47, 60:63, 65, 67:69, 78)]
 
 m1$model <- m1.lab; m2$model <- m2.lab; m3$model <- m3.lab
 
@@ -45,10 +41,14 @@ rm(m1, m2, m3)
 
 m <- m[!is.na(m$onsetObs5), ]
 
-### Equalize oev_base/oev_denom, just to avoid plotting errors ###
-m$oev_base <- 0
-m$oev_denom <- 2.0
-##################################################################
+# ### Equalize oev_base/oev_denom, just to avoid plotting errors ###
+# m$oev_base <- 0
+# m$oev_denom <- 2.0
+# ##################################################################
+# The way the code is set up, plots are faceted by oev_denom; to
+# compare model runs that differ by oev_denom, may want to set "model"
+# equal to the oev_denom values, and equalize oev_denom variable
+# in the dataframes, as a rough workaround
 
 m$oev_base <- factor(m$oev_base)
 m$oev_denom <- factor(m$oev_denom)
@@ -72,17 +72,17 @@ m$abs_err_3wk_perc[m$abs_err_3wk_perc == Inf & !is.na(m$abs_err_3wk_perc)] <- NA
 m$abs_err_4wk_perc[m$abs_err_4wk_perc == Inf & !is.na(m$abs_err_4wk_perc)] <- NA
 
 # Plot overall PT, PI, and OT by PREDICTED lead week:
-source('code/comparisons/comp_netVsIndiv/by_pred.R')
+source('src/mainCode/explore/quick_compare/by_pred.R')
 print(plots.by.pred)
 rm(plots.by.pred)
 
 # Plot overall PT, PI, and OT by OBSERVED lead week:
-source('code/comparisons/comp_netVsIndiv/by_obs.R')
+source('src/mainCode/explore/quick_compare/by_obs.R')
 print(plots.by.obs)
 rm(plots.by.obs)
 
 # Plot MAEs:
-source('code/comparisons/comp_netVsIndiv/plot_MAE.R')
+source('src/mainCode/explore/quick_compare/plot_MAE.R')
 
 # Read in all log scores files:
 d1 <- read.csv(paste0(model1, list.files(path = model1, pattern = '_pt_ot')))
@@ -110,8 +110,6 @@ for (i in 1:3) {# 5) {
 d <- rbind(logs1[[1]], logs2[[1]], logs3[[1]])
 e.pi <- rbind(logs1[[2]], logs2[[2]], logs3[[2]])
 e <- rbind(logs1[[3]], logs2[[3]], logs3[[3]])
-# e.pi.alt <- rbind(logs1[[4]], logs2[[4]], logs3[[4]])
-# e.alt <- rbind(logs1[[5]], logs2[[5]], logs3[[5]])
 
 ##########################################
 d$oev_base = 1.0; d$oev_denom = 1.0
@@ -126,51 +124,12 @@ rm(d1, d2, d3, e.pi1, e.pi2, e.pi3, e1, e2, e3, logs1, logs2, logs3)
 # Question: Remove where obs are 0 for 1-4 weeks? Or where obs below some value?
 # Question: Remove where no onset predicted before calculating these?
 byWeek <- 'Predicted'
-source('code/comparisons/comp_netVsIndiv/plot_logScores.R')
+source('src/mainCode/explore/quick_compare/plot_logScores.R')
 byWeek <- 'Observed'
-source('code/comparisons/comp_netVsIndiv/plot_logScores.R')
+source('src/mainCode/explore/quick_compare/plot_logScores.R')
 # byWeek <- 'Observed_All'
-# source('mainCode/comparisons/comp_netVsIndiv/plot_logScores.R')
+# source('mainCode/comparisons/plot_logScores.R')
 rm(d, e.pi, e, byWeek)
-
-# # Plot calibration for PT, PI, OT, and 1-4 weeks:
-# if (outputPlots) {
-#   pdf('mainCode/comparisons/plots/comp_calib.pdf', width = 14, height = 9)
-#   source('mainCode/comparisons/comp_netVsIndiv/plot_calibrationMethod2.R')
-#   dev.off()
-# } else {
-#   source('mainCode/comparisons/comp_netVsIndiv/plot_calibrationMethod2.R')
-# }
-
-# # Plot inferred parameter values at each time step (network only - individual allows parameter values to differ by country):
-# o <- read.csv(paste0(model1, list.files(path = model1, pattern = 'OPParams')))
-# o$group <- paste(o$oev_base, o$oev_denom, o$lambda, o$season, o$run, o$fc_start, sep = '_')
-# o$group <- factor(o$group)
-# o$oev_base <- factor(o$oev_base)
-# 
-# p1 <- ggplot(data = o) + geom_line(aes(x = week, y = L, group = group, col = oev_base), alpha = 0.2) +
-#   theme_classic() + labs(x = 'Week', y = 'L', col = 'OEV Base') + facet_wrap(~ lambda) +
-#   scale_color_brewer(palette = 'Set1')
-# p2 <- ggplot(data = o) + geom_line(aes(x = week, y = D, group = group, col = oev_base), alpha = 0.2) +
-#   theme_classic() + labs(x = 'Week', y = 'D', col = 'OEV Base') + facet_wrap(~ lambda) +
-#   scale_color_brewer(palette = 'Set1')
-# p3 <- ggplot(data = o) + geom_line(aes(x = week, y = R0mx, group = group, col = oev_base), alpha = 0.2) +
-#   theme_classic() + labs(x = 'Week', y = 'R0max', col = 'OEV Base') + facet_wrap(~ lambda) +
-#   scale_color_brewer(palette = 'Set1')
-# p4 <- ggplot(data = o) + geom_line(aes(x = week, y = R0diff, group = group, col = oev_base), alpha = 0.2) +
-#   theme_classic() + labs(x = 'Week', y = 'R0diff', col = 'OEV Base') + facet_wrap(~ lambda) +
-#   scale_color_brewer(palette = 'Set1')
-# p5 <- ggplot(data = o) + geom_line(aes(x = week, y = airScale, group = group, col = oev_base), alpha = 0.2) +
-#   theme_classic() + labs(x = 'Week', y = 'airScale', col = 'OEV Base') + facet_wrap(~ lambda) +
-#   scale_color_brewer(palette = 'Set1')
-# 
-# if (outputPlots) {
-#   pdf('mainCode/comparisons/plots/param_ests.pdf', width = 14, height = 14)
-#   grid.arrange(p1, p2, p3, p4, p5, ncol = 1)
-#   dev.off()
-# } else {
-#   grid.arrange(p1, p2, p3, p4, p5, ncol = 1)
-# }
 
 dev.off()
 
