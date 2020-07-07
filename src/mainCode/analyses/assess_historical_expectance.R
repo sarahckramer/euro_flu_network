@@ -89,3 +89,4 @@ posthoc.kruskal.nemenyi.test(score ~ country, data = dat[dat$metric == 'ot', ]) 
 
 # Do we allow in some way for predictions of no onset? Here, no - allow all forecasts to "predict an onset;" if no onset occurs, forecasts are removed from consideration anyway
 
+rm(list = ls())

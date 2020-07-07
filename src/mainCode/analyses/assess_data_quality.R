@@ -4,9 +4,9 @@
 library(PMCMR)
 
 # Read in unscaled data:
-iliiso.h1 <- read.csv('data/by_subtype/WHO_data_A(H1).csv')
-iliiso.h3 <- read.csv('data/by_subtype/WHO_data_A(H3).csv')
-iliiso.b <- read.csv('data/by_subtype/WHO_data_B.csv')
+iliiso.h1 <- read.csv('data/WHO_data_A(H1).csv')
+iliiso.h3 <- read.csv('data/WHO_data_A(H3).csv')
+iliiso.b <- read.csv('data/WHO_data_B.csv')
 
 # Reduce and rename:
 countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
@@ -110,7 +110,7 @@ met2.dat$smoothness <- as.numeric(as.character(met2.dat$smoothness))
 
 # Save metrics:
 met.dat <- merge(met1.dat, met2.dat, by = c('country', 'season', 'subtype'))
-# write.csv(met.dat, file = 'results/supplemental/data_quality.csv', row.names = FALSE)
+# write.csv(met.dat, file = 'results/data_quality.csv', row.names = FALSE)
 rm(met1.dat, met2.dat)
 
 # Assess metrics by country/subtype:
@@ -255,3 +255,4 @@ cor.test(res.dat$smoothness, res.dat$score.PT.pre.isol, data = res.dat, method =
 cor.test(res.dat$smoothness, res.dat$score.PI.isol, data = res.dat, method = 'kendall')
 cor.test(res.dat$smoothness, res.dat$score.PI.pre.isol, data = res.dat, method = 'kendall')
 
+rm(list = ls())

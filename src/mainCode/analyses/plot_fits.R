@@ -16,17 +16,17 @@ op$country <- factor(op$country)
 op <- op[, c(3, 5, 8, 11:13)]
 
 # Read in observed data:
-iliiso <- read.csv(paste0('data/by_subtype/WHO_data_', strain, '_SCALED.csv'))
+iliiso <- read.csv(paste0('data/WHO_data_', strain, '_SCALED.csv'))
 # note: when merging, we should automatically remove where no observed data for a given fit
 
 # Form new data frame of observed by season/week/country
-source('code/functions/Fn_initializations.R')
+source('src/mainCode/functions/Fn_initializations.R')
 names(iliiso)[2:13] <- countries
 
 obs_new <- data.frame()
 seasons <- levels(op$season)
 
-source('code/functions/replaceLeadingLaggingNAs.R')
+source('src/mainCode/functions/replaceLeadingLaggingNAs.R')
 for (season in seasons) {
   tmp <- Fn_dates(season)
   weeks <- tmp$weeks + 3
@@ -119,8 +119,8 @@ p1 <- p1 + geom_text(data = dat.text, mapping = aes(x = 42, y = max(max(op.temp$
 # 
 # op <- op[, c(3, 5, 8, 11:13)]
 # 
-# iliiso <- read.csv(paste0('data/by_subtype/WHO_data_', strain, '_SCALED.csv'))
-# source('mainCode/functions/Fn_initializations.R')
+# iliiso <- read.csv(paste0('data/WHO_data_', strain, '_SCALED.csv'))
+# source('src/mainCode/functions/Fn_initializations.R')
 # names(iliiso)[2:13] <- countries
 # 
 # obs_new <- data.frame()

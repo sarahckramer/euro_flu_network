@@ -36,7 +36,7 @@ AH <- rbind(ah[, count.indices], ah[, count.indices])
 rm(ah)
 
 # Get season-specific starts:
-source('code/functions/Fn_initializations.R')
+source('src/mainCode/functions/Fn_initializations.R')
 
 # Format and prepare oStates:
 oStates$country <- countries[oStates$country + 1]
