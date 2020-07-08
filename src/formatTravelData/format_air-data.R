@@ -2,7 +2,11 @@
 
 library(reshape2)
 
-### AIR ###
+# Ensure folder for formatted data exists:
+if (!dir.exists('src/formatTravelData/formattedData/')) {
+  dir.create('src/formatTravelData/formattedData/')
+}
+
 ### Format data: 2010 forward
 a2 <- read.table('src/formatTravelData/rawData/avia_paocc.tsv', sep = '\t', header = T)
 a3 <- read.table('src/formatTravelData/rawData/avia_paocc_1.tsv', sep = '\t', header = T)
