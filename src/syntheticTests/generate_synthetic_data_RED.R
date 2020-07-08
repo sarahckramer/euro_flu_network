@@ -84,7 +84,7 @@ parms <- t(lhs(num_ens, param.bound))
 parms[, 28][parms[, 28] >= parms[, 27]] <- parms[, 27][parms[, 28] >= parms[, 27]] - 0.01
 
 ### Read in functions to run model/format results:
-source('src/mainCode/functions/synth_functions.R')
+source('src/syntheticTests/analyze/synth_functions.R')
 source('src/mainCode/functions/Util.R')
 
 ### Run model!
