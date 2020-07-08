@@ -48,7 +48,7 @@ p3 <- ggplot(data = o.plot, aes(x = week, y = R0diff, group = run)) + geom_line(
                           strip.text = element_blank(),
                           axis.title = element_text(size = 13),
                           strip.background = element_blank()) +
-  labs(x = 'Week', y = 'R0diff') + facet_wrap(~ outbreak, nrow = 1) + #scale_y_continuous(breaks = 2:7) +
+  labs(x = 'Week Number', y = 'R0diff') + facet_wrap(~ outbreak, nrow = 1) + #scale_y_continuous(breaks = 2:7) +
   geom_text(data = data.frame(label = 'C', outbreak = 1, run = 0), aes(label = label, x = 42, y = 1.429), size = 8)
 
 # grid.arrange(p1, p2, p3, ncol = 1)

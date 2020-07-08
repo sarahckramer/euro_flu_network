@@ -29,8 +29,7 @@ source('src/mainCode/analyses/plot_calibration.R')
 
 ### Supplement:
 # S1 Fig:
-# source('src/mainCode/format_obs/plot_syn+_by_subtype.R')
-# requires unscaled data - request from author if interested
+source('src/mainCode/format_obs/plot_syn+_by_subtype.R')
 
 # S2 Fig:
 source('src/mainCode/analyses/assess_covariance_and_divergence.R')

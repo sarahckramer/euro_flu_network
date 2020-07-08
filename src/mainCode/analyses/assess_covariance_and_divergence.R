@@ -93,7 +93,7 @@ p1 <- ggplot(data = dat.plot) + geom_ribbon(aes(x = week, ymin = b95, ymax = t95
                                                             strip.text = element_blank(),
                                                             axis.title = element_text(size = 16),
                                                             strip.background = element_blank()) +
-  facet_wrap(~ metric, ncol = 2) + labs(x = 'Week', y = 'Pearson Correlation Coef.') + scale_y_continuous(limits = c(-1, 1), breaks = seq(-1, 1, by = 0.25)) +
+  facet_wrap(~ metric, ncol = 2) + labs(x = 'Week Number', y = 'Pearson Correlation Coef.') + scale_y_continuous(limits = c(-1, 1), breaks = seq(-1, 1, by = 0.25)) +
   scale_x_continuous(breaks = seq(40, 72, by = 5))
 dat.text <- data.frame(label = c('A', 'B', 'C', 'D', 'E', 'F', 'G', 'I'), metric = c('S', 'I', 'newI', 'L', 'D', 'R0max', 'R0diff', 'airAdj'),
                        y = c(0.92, 0.6, 0.6, 0.92, 0.92, 0.92, 0.92, 0.92))

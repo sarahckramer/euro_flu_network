@@ -36,7 +36,7 @@ p1 <- ggplot(data = m.temp, aes(x = delta_pkwk_mean, y = ..density.., group = mo
                      strip.text = element_text(size = 13),
                      axis.title = element_text(size = 13),
                      plot.title = element_text(size = 16)) +
-  labs(title = 'A     (Peak Timing)', x = 'Error (Fcast - Obs)', y = 'Proportion of Fcasts', fill = 'Model', col = 'Model') +
+  labs(title = 'A     (Peak Timing)', x = 'Error (Fcast - Obs)', y = 'Proportion of Fcasts', fill = 'Model:', col = 'Model:') +
   facet_grid(~ leadpkwk_bin) + scale_fill_brewer(palette = 'Set1') + scale_color_brewer(palette = 'Set1')
 
 p2 <- ggplot(data = m.temp, aes(x = delta_int, y = 0.1 * ..density.., group = model, fill = model)) +
@@ -46,7 +46,7 @@ p2 <- ggplot(data = m.temp, aes(x = delta_int, y = 0.1 * ..density.., group = mo
                      strip.text = element_text(size = 13),
                      axis.title = element_text(size = 13),
                      plot.title = element_text(size = 16)) +
-  labs(title = 'B     (Peak Intensity)', x = 'Error ((Fcast - Obs) / Obs)', y = 'Proportion of Fcasts', fill = 'Model', col = 'Model') +
+  labs(title = 'B     (Peak Intensity)', x = 'Error ((Fcast - Obs) / Obs)', y = 'Proportion of Fcasts', fill = 'Model:', col = 'Model:') +
   facet_grid(~ leadpkwk_bin) + scale_fill_brewer(palette = 'Set1') + scale_color_brewer(palette = 'Set1')
 
 # grid.arrange(p1, p2)

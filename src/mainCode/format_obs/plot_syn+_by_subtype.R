@@ -47,7 +47,7 @@ iliiso$subtype <- factor(iliiso$subtype, levels = levels(iliiso$subtype)[c(2:3, 
 p1 <- ggplot(data = iliiso, aes(x = time, y = value, col = subtype)) + geom_line(size = 0.75) + facet_wrap(~ variable, ncol = 1, scales = 'free_y') +
   theme_bw() + theme(axis.text = element_text(size = 12), axis.title = element_text(size = 14), legend.title = element_text(size = 14),
                      legend.text = element_text(size = 12), strip.text = element_text(size = 12)) +
-  labs(x = '', y = 'Syndromic+', col = 'Subtype') + scale_color_brewer(palette = 'Set1') +
+  labs(x = '', y = 'Syndromic+', col = '(Sub)type:') + scale_color_brewer(palette = 'Set1') +
   scale_x_continuous(breaks = c(1, 53, 105, 157, 209, 261, 314, 366), labels = c('10-11', '11-12', '12-13', '13-14', '14-15', '15-16', '16-17', '17-18'))
 # p1
 
@@ -75,7 +75,7 @@ annotation_custom2 <- function (grob, xmin = -Inf, xmax = Inf, ymin = -Inf, ymax
 p3 <- p1 + annotation_custom2(grob = g2, data = data.frame(variable = 'France', value = 1000, subtype = 'H1', time = 50), ymin = 0, ymax = 137000, xmin = 30, xmax = 95)
 # p3
 
-ggsave(filename = 'results/plots/FigS1.svg', plot = p3, width = 12, height = 13)
+ggsave(filename = 'results/plots/FigS1.svg', plot = p3, width = 12.25, height = 13)
 
 rm(list = ls())
 

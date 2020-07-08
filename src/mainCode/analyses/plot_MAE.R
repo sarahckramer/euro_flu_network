@@ -56,7 +56,7 @@ p1 <- ggplot() + geom_line(data = m.agg, aes(x = leadweek, y = abs_err, col = mo
   facet_wrap(~ metric, scales = 'free') + scale_x_continuous(breaks = -8:4) + scale_color_brewer(palette = 'Set1') +
   scale_size_continuous(breaks = c(10, 100, 300, 900), labels = c(10, 100, 300, 900),
                         limits = c(0, 900), range = c(1,6)) +
-  labs(x = 'Predicted Lead Week', y = 'MAE/MAPE', col = 'Model', size = '# of Fcasts') +
+  labs(x = 'Predicted Lead Week', y = 'MAE/MAPE', col = 'Model:', size = '# of Fcasts:') +
   guides(colour = guide_legend(order = 1), size = guide_legend(order = 2))
 dat.text <- data.frame(label = c('A', 'B', 'C'),
                        metric = c('Peak Timing', 'Peak Intensity', 'Onset Timing'),
@@ -173,7 +173,7 @@ p3 <- ggplot() + geom_line(data = m.agg, aes(x = leadweek, y = abs_err, col = mo
   facet_grid(metric ~ subtype, scales = 'free') + scale_x_continuous(breaks = -8:4) + scale_color_brewer(palette = 'Set1') +
   scale_size_continuous(breaks = c(10, 100, 300), labels = c(10, 100, 300),
                         limits = c(0, 400), range = c(1,6)) +
-  labs(x = 'Predicted Lead Week', y = 'MAE/MAPE', col = 'Model', size = '# of Fcasts') +
+  labs(x = 'Predicted Lead Week', y = 'MAE/MAPE', col = 'Model:', size = '# of Fcasts:') +
   guides(colour = guide_legend(order = 1), size = guide_legend(order = 2))
 dat.text <- data.frame(label = c('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'),
                        subtype = c('A(H1)', 'A(H3)', 'B', 'A(H1)', 'A(H3)', 'B', 'A(H1)', 'A(H3)', 'B'),

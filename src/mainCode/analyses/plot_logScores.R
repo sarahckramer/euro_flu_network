@@ -310,7 +310,7 @@ p1 <- ggplot() + geom_line(data = d.agg, aes(x = lead_mean, y = score, col = mod
   scale_y_continuous(limits = c(-8, 0), breaks = -10:0) +
   scale_size_continuous(breaks = c(10, 100, 300), labels = c(10, 100, 300),
                         limits = c(1, 400), range = c(1,6)) +
-  labs(x = 'Predicted Lead Week', y = 'Mean Log Score', col = 'Model', size = '# of Fcasts') +
+  labs(x = 'Predicted Lead Week', y = 'Mean Log Score', col = 'Model:', size = '# of Fcasts:') +
   guides(colour = guide_legend(order = 1), size = guide_legend(order = 2))
 dat.text <- data.frame(label = c('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'),
                        subtype = c('A(H1)', 'A(H3)', 'B', 'A(H1)', 'A(H3)', 'B', 'A(H1)', 'A(H3)', 'B'),
@@ -480,7 +480,7 @@ p1 <- ggplot(data = d.agg[d.agg$metric != 'Onset Timing', ], aes(x = lead_mean, 
   scale_y_continuous(limits = c(-8.5, 0), breaks = -10:0) +
   scale_size_continuous(breaks = c(10, 100, 300), labels = c(10, 100, 300),
                         limits = c(1, 400), range = c(1,6)) +
-  labs(x = 'Predicted Lead Week', y = 'Mean Log Score', col = 'Model', size = '# of Fcasts') +
+  labs(x = 'Predicted Lead Week', y = 'Mean Log Score', col = 'Model:', size = '# of Fcasts:') +
   guides(colour = guide_legend(order = 1), size = guide_legend(order = 2))
 print(p1)
 
