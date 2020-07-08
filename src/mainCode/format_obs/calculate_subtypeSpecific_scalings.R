@@ -392,7 +392,6 @@ write.csv(scale.b.1718, file = 'data/by_subtype/scaling_frames/scalings_frame_B_
 
 rm(list = ls())
 
-
 # Two quick notes:
 # 1: I didn't fix particularly small (> 1/1.5x next smallest) outbreaks (one outbreak each for DE/H3 and LU/B), but the issue with the larger outbreaks was that they
 #    usually went over 100,000/100,000 cases, which makes no real sense; small outbreaks don't have this issue

@@ -2,9 +2,9 @@
 ### Determine which seasons to be forecasted for each of the three (sub)types ###
 
 # Read in virological data by subtype:
-pos.dat.h1 <- read.csv('data/by_subtype/posprop_A(H1).csv')
-pos.dat.h3 <- read.csv('data/by_subtype/posprop_A(H3).csv')
-pos.dat.b <- read.csv('data/by_subtype/posprop_B.csv')
+pos.dat.h1 <- read.csv('data/WHO_posprop_A(H1).csv')
+pos.dat.h3 <- read.csv('data/WHO_posprop_A(H3).csv')
+pos.dat.b <- read.csv('data/WHO_posprop_B.csv')
 
 pos.dat <- list(pos.dat.h1, pos.dat.h3, pos.dat.b)
 rm(pos.dat.h1, pos.dat.h3, pos.dat.b)
@@ -58,7 +58,7 @@ for (i in 1:3) {
 
 # Now find, for each subtype, the seasons positivity ever exceeds some baseline:
     # May need to say - for at least three weeks
-source('cluster/functions/Util.R')
+source('src/mainCode/functions/Util.R')
 
 baseline <- 0.1
 # for H1:
