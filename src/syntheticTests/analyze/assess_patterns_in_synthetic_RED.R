@@ -76,7 +76,7 @@ rev(sort(table(m.noOnset$country))) # HU and FR most likely, but even then rarel
 # obs: NL and SK in 13-14
 # IT PL ES SK HU NL FR CZ DE BE AT 
 # 30 28 26 25 25 24 24 24 21 21 16
-# either way, never LU?
+# never LU
 
 # Now remove those w/o onset for further analyses:
 m <- m[!is.na(m$ot), ]
@@ -163,29 +163,6 @@ hist(onset.corrs, breaks = 20)
 hist(peak.corrs, breaks = 20)
 # look pretty evenly distributed around zero; a few more positive for onset; 50% > 0 for OT, 47.7% for PT
 
-# Test correlation between median values in observed and simulated data:
-ot.med <- aggregate(ot ~ country, data = m, FUN = median)
-ot.med <- ot.med[order(ot.med$ot), ]
-
-pt.med <- aggregate(pt ~ country, data = m, FUN = median)
-pt.med <- pt.med[order(pt.med$pt), ]
-
-load('code/checks/analyzeDataRetro/outputs/median_metrics.RData')
-med.m <- merge(ar.med, pt.med, by = 'country')
-med.m <- merge(med.m, ot.med, by = 'country')
-
-names(obs.dist[[1]])[2] <- 'ar_obs'
-names(obs.dist[[2]])[2] <- 'ot_obs'
-names(obs.dist[[3]])[2] <- 'pt_obs'
-
-med.m <- merge(med.m, obs.dist[[1]], by = 'country')
-med.m <- merge(med.m, obs.dist[[2]], by = 'country')
-med.m <- merge(med.m, obs.dist[[3]], by = 'country')
-
-cor.test(med.m$ar, med.m$ar_obs, method = 'spearman') # slightly negative, but AR can be scaled; I guess could have just scaled these to have the right relationships?
-cor.test(med.m$ot, med.m$ot_obs, method = 'spearman') # not sig, but trends positive
-cor.test(med.m$pt, med.m$pt_obs, method = 'spearman') # not sig, but trends negative
-
 ### Assess synchrony ###
 # # For each run, what is the range of peak timings?
 # m$country <- factor(m$country, levels = countries)
@@ -197,7 +174,6 @@ cor.test(med.m$pt, med.m$pt_obs, method = 'spearman') # not sig, but trends nega
 #   # print(as.vector(quantile(m.temp$pt, prob = 0.975) - quantile(m.temp$pt, prob = 0.025)))
 #   # print('')
 # }
-# # hard to tell with these, but I don't think they look bad
 
 # Calculate correlation coefficients between all pairs of countries for each run:
 cor.synch <- vector('list', length(levels(m$run)))
@@ -255,7 +231,7 @@ mantel(as.dist(synch.dist) ~ as.dist(dist.mat), nperm = 10000, mrank = TRUE)
 # trends negative, but not sig; countries further away actually trend towards being more in synch
 
 # Is synchrony related to commuting flows?:
-load('formatTravelData/formattedData/comm_mat_by_season_01-27.RData')
+load('src/formatTravelData/formattedData/comm_mat_by_season_01-27.RData')
 t.comm <- apply(simplify2array(comm.by.seas), 1:2, mean, na.rm = TRUE); rm(comm.by.seas)
 t.comm <- t.comm[countries, countries]
 
@@ -293,7 +269,7 @@ mantel(as.dist(synch.dist) ~ as.dist(t.comm.sym), nperm = 10000, mrank = TRUE)
 # Is synchrony related to air travel?:
 air.by.month <- vector('list', 12)
 for (i in 1:12) {
-  load(paste0('formatTravelData/formattedData/air_', i, '_01-31.RData'))
+  load(paste0('src/formatTravelData/formattedData/air_', i, '_01-31.RData'))
   air.by.month[[i]] <- a.temp.sym
 }; rm(a.temp.sym)
 a.mean <- apply(simplify2array(air.by.month), 1:2, mean); rm(air.by.month)
@@ -314,8 +290,8 @@ names(cor.synch.plot) <- c('c1', 'c2', 'corr')
 cor.synch.plot <- cor.synch.plot[!is.na(cor.synch.plot$corr), ]
 cor.synch.plot$corr[cor.synch.plot$corr == 1] <- NA
 
-# onset: ranges from 0.6373 to 0.8641 (mean 0.7471) - so too synchronous at lower end, but not synchronous enough for higher
-# lowest are 0.6373 (HU/IT)
+# onset: ranges from 0.6411 to 0.8637 (mean 0.7458) - so too synchronous at lower end, but not synchronous enough for higher
+# lowest are 0.6411 (HU/IT)
 p1 <- ggplot(cor.synch.plot, aes(x = c1, y = c2)) + geom_tile(aes(fill = corr), colour = 'white') +
   scale_fill_gradientn(colours = cividis(100), na.value = 'gray80', limits = c(0.4, 0.95)) + theme_classic() +
   theme(axis.ticks = element_blank(), text = element_text(size = 16), axis.text.x = element_text(angle = 90, hjust = 1)) +
@@ -331,7 +307,7 @@ names(cor.synch.plot) <- c('c1', 'c2', 'corr')
 
 air.by.month <- vector('list', 12)
 for (i in 1:12) {
-  load(paste0('formatTravelData/formattedData/air_', i, '_01-31.RData'))
+  load(paste0('src/formatTravelData/formattedData/air_', i, '_01-31.RData'))
   air.by.month[[i]] <- a.temp.sym
 }; rm(a.temp.sym)
 a.mean <- apply(simplify2array(air.by.month), 1:2, mean); rm(air.by.month)
@@ -371,45 +347,47 @@ m2 <- lm(corr ~ comm + dist, data = cor.synch.plot)
 ####################################################################################################
 ####################################################################################################
 
-# ### Plot parameter ranges:
-# load('syntheticTests/syntheticData/params_1000_fullS1.RData')
-# load('syntheticTests/syntheticData/S0_1000_fullS1.Rdata')
-# load('syntheticTests/syntheticData/I0_1000_fullS1.Rdata')
-# 
-# # select.parms <- select.parms[c(2:3, 5:7, 11:14, 18:19, 21:22, 24, 26:27), ]
-# # init.states.SEL <- init.states.SEL[, c(2:3, 5:7, 11:14, 18:19, 21:22, 24, 26:27)]
-# 
-# par(mfrow = c(3, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-# hist(select.parms$D, xlab = 'D', main = '', breaks = 15)
-# hist(select.parms$L, xlab = 'L', main = '', breaks = 15)
-# hist(select.parms$R0mx, xlab = 'R0mx', main = '', breaks = 15)
-# hist(select.parms$R0mn, xlab = 'R0mn', main = '', breaks = 15)
-# hist(select.parms$R0mx - select.parms$R0mn, xlab = 'R0diff', main = '', breaks = 15)
-# hist(select.parms$airScale, xlab = 'airScale', main = '', breaks = 15)
-# # also look at difference between R0mx and R0mn - determines how much impact humidity has
-# 
-# # for init.states.SEL, rows are countries and columns are runs
-# init.S <- init.states.SEL[1:20, ]; init.I <- init.states.SEL[21:40, ]
-# rownames(init.S) = rownames(init.I) = countries
-# 
-# init.S.df <- melt(init.S); init.I.df <- melt(init.I)
-# kruskal.test(value ~ Var1, data = init.S.df) # sig (p = 0.02633)
-# kruskal.test(value ~ Var1, data = init.I.df) # not sig
-# which(posthoc.kruskal.nemenyi.test(value ~ Var1, data = init.S.df)$p.value < 0.05, arr.ind = TRUE) # none
-# countries[c(9, 6, 12, 15, 21)] # sig between IS and: FR, LU, PT, UK
-# 
-# par(mfrow = c(2, 1), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-# boxplot(init.S.df$value ~ init.S.df$Var1, col = 'lightblue2')
-# boxplot(init.I.df$value ~ init.I.df$Var1, col = 'lightblue2')
+### Plot parameter ranges:
+load('src/syntheticTests/syntheticData/params_1000_070220.RData')
+load('src/syntheticTests/syntheticData/S0_1000_070220.Rdata')
+load('src/syntheticTests/syntheticData/I0_1000_070220.Rdata')
+
+parms.list <- parms.list[[3]] # "realistic" only
+s0.list <- s0.list[[3]]
+i0.list <- i0.list[[3]]
+
+select.parms <- as.data.frame(t(parms.list))
+names(select.parms) <- c('L', 'D', 'R0mx', 'R0diff', 'airScale')
+select.parms$R0mn <- select.parms$R0mx - select.parms$R0diff
+
+par(mfrow = c(3, 2), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+hist(select.parms$D, xlab = 'D', main = '', breaks = 15)
+hist(select.parms$L, xlab = 'L', main = '', breaks = 15)
+hist(select.parms$R0mx, xlab = 'R0mx', main = '', breaks = 15)
+hist(select.parms$R0mn, xlab = 'R0mn', main = '', breaks = 15)
+hist(select.parms$R0mx - select.parms$R0mn, xlab = 'R0diff', main = '', breaks = 15)
+hist(select.parms$airScale, xlab = 'airScale', main = '', breaks = 15)
+
+init.S <- as.data.frame(t(s0.list))
+init.I <- as.data.frame(t(i0.list))
+names(init.S) = names(init.I) = countries
+
+init.S.df <- melt(init.S); init.I.df <- melt(init.I)
+kruskal.test(value ~ variable, data = init.S.df) # not sig
+kruskal.test(value ~ variable, data = init.I.df) # not sig
+
+par(mfrow = c(2, 1), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+boxplot(init.S.df$value ~ init.S.df$variable, col = 'lightblue2')
+boxplot(init.I.df$value ~ init.I.df$variable, col = 'lightblue2')
 
 ####################################################################################################
 ####################################################################################################
 ####################################################################################################
 
-# ### Look at distribution of onsets/peaks by run ###
-# par(mfrow = c(2, 1), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
-# boxplot(ot ~ run, data = m, col = 'lightblue2', xlab = 'Run', ylab = 'Onset Week')
-# boxplot(pt ~ run, data = m, col = 'lightblue2', xlab = 'Run', ylab = 'Peak Week')
+### Look at distribution of onsets/peaks by run ###
+par(mfrow = c(2, 1), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
+boxplot(ot ~ run, data = m, col = 'lightblue2', xlab = 'Run', ylab = 'Onset Week')
+boxplot(pt ~ run, data = m, col = 'lightblue2', xlab = 'Run', ylab = 'Peak Week')
 
 # ### Map out spatial patterns ###
 # # List of countries:
@@ -453,12 +431,12 @@ m2 <- lm(corr ~ comm + dist, data = cor.synch.plot)
 # for (run in levels(m$run)) {
 #   on.min <- min(eur[, names(eur) == run], na.rm = TRUE)
 #   on.max <- max(eur[, names(eur) == run], na.rm = TRUE)
-#   
+# 
 #   p = vector('list', length(on.min:on.max))
 #   for (wk in on.min:on.max) {
 #     eur.curr <- eur[eur[, names(eur) == run] == wk & !is.na(eur[, names(eur) == run]), ]
 #     eur.past <- eur[eur[, names(eur) == run] < wk & !is.na(eur[, names(eur) == run]), ]
-#     
+# 
 #     p[[wk - on.min + 1]] <- ggplot() + geom_polygon(data = eur, aes(x = long, y = lat, group = group),
 #                                                     fill = 'gray95', colour = 'black', size = 1.0) +
 #       geom_polygon(data = eur.past, aes(x = long, y = lat, group = group),
