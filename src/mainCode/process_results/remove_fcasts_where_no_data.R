@@ -73,7 +73,9 @@ m.mini <- m.mini[!is.na(m.mini$obs) & !is.na(m.mini$oev) & m.mini$oev != 0, ]
 
 # Merge m.mini with all important data frames:
 m <- merge(m, m.mini, by = c('season', 'country', 'fc_start')) # 9304
-o <- merge(o, m.mini, by = c('season', 'country', 'fc_start'))
+o <- merge(o, m.mini, by = c('season', 'country', 'fc_start')) # note: may remove where result=="train" if no data at week 69
+# however, since the output files produced here aren't used in any of the analyses (results from "trainOnly" are favored), this
+# is not high priority for fixing
 for (i in 1:length(d)) {
   d[[i]] <- merge(d[[i]], m.mini, c('season', 'country', 'fc_start'))
 }
