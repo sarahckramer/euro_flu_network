@@ -1,6 +1,6 @@
 
 ### Add normally-distributed noise using OEV form as variance ###
-
+library(viridis)
 set.seed(108946052)
 
 # Read in "realistic" synthetic runs:

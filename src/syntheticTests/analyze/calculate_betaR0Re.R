@@ -80,8 +80,8 @@ beta.range <- beta.range[2:53] # since S is taken first at day 8, after one week
 AHpt <- AH[beta.range, ]; AHpt <- as.matrix(AHpt, length(AHpt), n)
 
 # Read in results:
-o <- read.csv('src/syntheticTests/outputOPParams_synth_070220.csv')
-oStates <- read.csv('src/syntheticTests/outputOP_synth_070220.csv')
+o <- read.csv('src/syntheticTests/outputs/outputOPParams_synth_070220.csv')
+oStates <- read.csv('src/syntheticTests/outputs/outputOP_synth_070220.csv')
 
 oStates$country <- countries[oStates$country + 1]
 oStates$country <- factor(oStates$country)
@@ -107,7 +107,7 @@ for (i in 1:length(synth.outbreaks)) {
 }
 
 # Store these results:
-write.csv(oStates, file = 'src/syntheticTests/outputOP_SYNTH_beta-R0-Re_070220.csv', row.names = FALSE)
+write.csv(oStates, file = 'src/syntheticTests/outputs/outputOP_SYNTH_beta-R0-Re_070220.csv', row.names = FALSE)
 
 rm(list = ls())
 

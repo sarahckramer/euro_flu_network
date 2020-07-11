@@ -1,4 +1,5 @@
 ### Assess results of 20-year synthetic multistrain runs ###
+library(viridis)
 
 # # Process Raw Results
 # # Load and compile 20-year runs:

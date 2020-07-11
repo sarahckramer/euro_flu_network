@@ -1,10 +1,9 @@
 ### Plot several assessments of synthetic fit ###
-
-library(ggplot2); library(gridExtra); library(viridis)
+library(ggplot2); library(gridExtra); library(viridis); library(reshape2)
 
 # Read in results:
-o <- read.csv('src/syntheticTests/outputOPParams_synth_070220.csv')
-oStates <- read.csv('src/syntheticTests/outputOP_SYNTH_beta-R0-Re_070220.csv')
+o <- read.csv('src/syntheticTests/outputs/outputOPParams_synth_070220.csv')
+oStates <- read.csv('src/syntheticTests/outputs/outputOP_SYNTH_beta-R0-Re_070220.csv')
 
 # Plot observed data vs. fit obs:
 countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
@@ -181,8 +180,8 @@ for (outbreak in 1:5) {
 # Plot distribution of relative param error at t=15 and t=20:
 # pdf('src/syntheticTests/outputs/synthFit_errorHist_070220.pdf', width = 16, height = 12)
 
-o.err <- read.csv('src/syntheticTests/outputOPParams_SYNTH_errors_070220.csv')
-oStates.err <- read.csv('src/syntheticTests/outputOP_SYNTH_errors_070220.csv')
+o.err <- read.csv('src/syntheticTests/outputs/outputOPParams_SYNTH_errors_070220.csv')
+oStates.err <- read.csv('src/syntheticTests/outputs/outputOP_SYNTH_errors_070220.csv')
 
 o.err15 <- o.err[o.err$week == 54, ]
 o.err20 <- o.err[o.err$week == 59, ]
@@ -249,8 +248,3 @@ grid.arrange(p1, p2, p3, p4)
 # dev.off()
 
 rm(list=ls())
-
-
-
-
-

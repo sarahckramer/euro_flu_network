@@ -137,11 +137,11 @@ print('Done.')
 timestamp_end = datetime.datetime.now()
 print('Time Elapsed: ' + str(timestamp_end - timestamp_start))
 
-outputOP.to_csv('src/syntheticTests/outputOP_synth_070220.csv', na_rep='NA', index=False)
-outputOPParams.to_csv('src/syntheticTests/outputOPParams_synth_070220.csv', na_rep='NA', index=False)
+outputOP.to_csv('src/syntheticTests/outputs/outputOP_synth_070220.csv', na_rep='NA', index=False)
+outputOPParams.to_csv('src/syntheticTests/outputs/outputOPParams_synth_070220.csv', na_rep='NA', index=False)
 
-# outputMetrics.to_csv('src/syntheticTests/outputMet_synth_fcast.csv', na_rep='NA', index=False)
-# outputDist.to_csv('src/syntheticTests/outputDist_synth_fcast.csv', na_rep='NA', index=False)
-# outputEns.to_csv('src/syntheticTests/outputEns_synth_fcast.csv', na_rep='NA', index=False)
+# outputMetrics.to_csv('src/syntheticTests/output/outputMet_synth_fcast.csv', na_rep='NA', index=False)
+# outputDist.to_csv('src/syntheticTests/outputs/outputDist_synth_fcast.csv', na_rep='NA', index=False)
+# outputEns.to_csv('src/syntheticTests/outputs/outputEns_synth_fcast.csv', na_rep='NA', index=False)
 
 print('Finished writing to file!')

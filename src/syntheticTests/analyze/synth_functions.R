@@ -1,4 +1,4 @@
-
+### Functions for use in generating and evaluating synthetic "data" ###
 format_model_results <- function(m.res, num.ens, tmstep, tm.strt, tm.end, n, pop.dat) {
   
   # Calculate weekly incidence by compartment:
@@ -529,28 +529,3 @@ sumpreserving.rounding <- function (data, digits=0, preserve=TRUE )
   return(data.r)
   
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

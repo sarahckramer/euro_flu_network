@@ -1,6 +1,5 @@
 ### Plot results of synthetic testing ###
-
-library(ggplot2); library(gridExtra); library(viridis)
+library(ggplot2); library(gridExtra); library(viridis); library(reshape2)
 
 ### Parameter error:
 

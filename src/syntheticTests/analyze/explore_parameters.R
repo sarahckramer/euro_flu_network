@@ -1,4 +1,5 @@
 ### Explore patterns in parameters that generated "realistic" synthetic outbreaks ###
+library(ggplot2); library(gridExtra); library(viridis); (reshape2)
 
 # Read in parameter ranges and initial S/I:
 load('src/syntheticTests/syntheticData/params_1000_070220.RData')

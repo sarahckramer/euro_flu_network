@@ -1,6 +1,5 @@
 
 ### Assess patterns in synthetic "data" and compare to observed data ###
-
 library(reshape2); library(ggplot2); library(gridExtra); library(viridis)
 
 ### Save all plots:

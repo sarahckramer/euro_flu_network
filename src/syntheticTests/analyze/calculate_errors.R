@@ -1,10 +1,9 @@
 ### Calculate errors in state/parameter fits for synthetic "observations" ###
-
 library(reshape2)
 
 # Read in results:
-o <- read.csv('src/syntheticTests/outputOPParams_synth_070220.csv')
-oStates <- read.csv('src/syntheticTests/outputOP_SYNTH_beta-R0-Re_070220.csv')
+o <- read.csv('src/syntheticTests/outputs/outputOPParams_synth_070220.csv')
+oStates <- read.csv('src/syntheticTests/outputs/outputOP_SYNTH_beta-R0-Re_070220.csv')
 
 # Get countries:
 countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
@@ -80,8 +79,8 @@ for (outbreak in 1:5) {
 }
 
 # Write results to file:
-write.csv(o.err, file = 'src/syntheticTests/outputOPParams_SYNTH_errors_070220.csv', row.names = FALSE)
-write.csv(oStates.err, file = 'src/syntheticTests/outputOP_SYNTH_errors_070220.csv', row.names = FALSE)
+write.csv(o.err, file = 'src/syntheticTests/outputs/outputOPParams_SYNTH_errors_070220.csv', row.names = FALSE)
+write.csv(oStates.err, file = 'src/syntheticTests/outputs/outputOP_SYNTH_errors_070220.csv', row.names = FALSE)
 
 rm(list=ls())
 

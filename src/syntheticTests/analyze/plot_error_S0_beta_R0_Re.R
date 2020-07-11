@@ -1,8 +1,9 @@
 ### Plot error in S/beta/R0/Re over ALL timepoints ###
+library(ggplot2); library(gridExtra)
 
 # Read in results with most everything calculated:
-o <- read.csv('src/syntheticTests/outputOPParams_synth_070220.csv')
-oStates <- read.csv('src/syntheticTests/outputOP_SYNTH_beta-R0-Re_070220.csv')
+o <- read.csv('src/syntheticTests/outputs/outputOPParams_synth_070220.csv')
+oStates <- read.csv('src/syntheticTests/outputs/outputOP_SYNTH_beta-R0-Re_070220.csv')
 
 # Get countries:
 countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
