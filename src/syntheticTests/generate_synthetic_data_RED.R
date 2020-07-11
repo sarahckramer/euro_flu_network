@@ -1,7 +1,7 @@
 ### Run model to generate synthetic data for model testing ###
 
 ### Read in libraries
-library("truncnorm"); library("tgp"); library("MASS"); library(reshape2); library(plyr); library(ggplot2); library(gridExtra); library(viridis)
+library(truncnorm); library(tgp); library(MASS); library(reshape2); library(plyr); library(ggplot2); library(gridExtra); library(viridis)
 
 ##########################################################################################
 

@@ -1,6 +1,5 @@
 ### Assess inferred states/parameters from network model fits, and compare across (sub)types, etc. ###
-
-library(PMCMR)
+library(PMCMR); library(ggplot2); library(reshape2)
 
 ### Read in fitting results:
 oStates1 <- read.csv('results/fits/outputOP_A(H1)_fitsOnly.csv')

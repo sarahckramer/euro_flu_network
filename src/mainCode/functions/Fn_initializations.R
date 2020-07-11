@@ -68,6 +68,7 @@ Fn_dates=function(season){
 }
 
 # function to calculation the mode
+library(dplyr)
 MODE <- function(x) {
   md=count(x)
   mode=md$x[which.max(md$freq)];

@@ -1,4 +1,5 @@
 ### Plot all (sub)type-specific syndromic+ data (unscaled) ###
+library(reshape2)
 
 # Read in data:
 iliiso.h1 <- read.csv('data/WHO_data_A(H1).csv')

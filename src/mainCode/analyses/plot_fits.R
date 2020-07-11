@@ -1,5 +1,7 @@
 
 ### Plot model fits to observations ###
+library(reshape2)
+library(ggplot2)
 
 # Set strain:
 # strain <- 'A(H1)'
@@ -92,13 +94,15 @@ p1 <- ggplot(data = op.temp, aes(x = week, y = Est, group = run)) +
   theme_classic() + theme(aspect.ratio = 0.75, axis.text = element_text(size = 12), axis.title = element_text(size = 14),
                           strip.background = element_blank(), strip.text = element_blank(), title = element_text(size = 18)) +
   scale_x_continuous(breaks = seq(40, 75, by = 5)) +
-  labs(title = plot_title, x = 'Week Number', y = 'Observed/Fitted Incidence (Scaled)')
+  labs(title = plot_title, x = 'Week Number', y = 'Observed/Inferred Incidence (Scaled)')
 dat.text <- data.frame(label = countries, country = countries, run = 0)
 p1 <- p1 + geom_text(data = dat.text, mapping = aes(x = 42, y = max(max(op.temp$Obs, na.rm = TRUE), max(op.temp$Est)) + 1000, label = label), size = 5)
 # print(p1 + geom_text(data = dat.text, mapping = aes(x = 42, y = max(max(op.temp$Obs, na.rm = TRUE), max(op.temp$Est)) + 1000, label = label), size = 5))
 # print(p1)
 # ggsave(file = 'results/plots/Fig2.svg', plot = p1, width = 13, height = 8)
-# # dev.off()
+# pdf(file = 'results/plots/Fig2.pdf', width = 13, height = 8)
+# print(p1)
+# dev.off()
 # rm(op.temp, dat.text, season, p1)
 
 # rm(list = ls())
@@ -130,7 +134,7 @@ p1 <- p1 + geom_text(data = dat.text, mapping = aes(x = 42, y = max(max(op.temp$
 #   tmp <- Fn_dates(season)
 #   weeks <- tmp$weeks + 3
 #   nsn <- tmp$nsn
-#   
+# 
 #   obs_i <- iliiso[weeks, (1:length(countries) + 1)] # extract relevant data for all countries
 #   obs_i$season <- season
 #   obs_i$week <- seq(40, length.out = nsn)

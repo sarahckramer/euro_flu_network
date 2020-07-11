@@ -132,6 +132,7 @@ get_calibration_Dist_int <- function(d, met, denom, lead,  model) {
 
 # Read in libraries:
 library(Hmisc)
+library(reshape2)
 
 # Set probability values:
 p <- c(0.005, 0.025, 0.05, 0.1, 0.15, 0.20, 0.25, 0.375, 0.625, 0.75, 0.8, 0.85, 0.9, 0.95, 0.975, 0.995)
@@ -329,6 +330,10 @@ dat.text <- data.frame(label = c('A', 'B', 'C', 'D', 'E', 'F'), model = c(rep('N
 p1 <- p.full + geom_text(data = dat.text, mapping = aes(x = 22.25, y = y, label = label), size = 11, color = 'black')
 # p1
 ggsave(filename = 'results/plots/Fig4.svg', plot = p1, width = 12, height = 7)
+
+# pdf(file = 'results/plots/Fig4.pdf', width = 12, height = 7)
+# print(p1)
+# dev.off()
 
 # Clean up:
 rm(list = ls())

@@ -1,5 +1,4 @@
 ### Some assessment of how well forecasts based purely on historical expectance perform ###
-
 # Look at historical PT/PI/OT and simply assign probabilities that way (by country and subtype); then calculate log scores
 library(PMCMR)
 

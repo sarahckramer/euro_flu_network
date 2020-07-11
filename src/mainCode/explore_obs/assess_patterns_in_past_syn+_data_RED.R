@@ -1,4 +1,5 @@
 ### Assess patterns in observed data ###
+library(ggplot2); library(gridExtra); library(viridis); library(reshape2)
 
 strain <- 'A(H3)' # A(H1), A(H3), or B
 

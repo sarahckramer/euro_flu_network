@@ -1,4 +1,5 @@
 ### Functions for quick comparison plots ###
+library(reshape2); library(Hmisc)
 
 ### Function for basic "accuracy" plotting:
 format_for_plot <- function(df, xvar, yvar) {

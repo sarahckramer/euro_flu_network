@@ -1,4 +1,5 @@
 ### Assess filter performance (specifically, cross-ensemble correlation coefficients, and filter divergence) ###
+library(ggplot2); library(gridExtra)
 
 ### Assess Cross-Ensemble Covariability ###
 # Here we're just looking at fit, so whether forecasts predict onset or not is not relevant here

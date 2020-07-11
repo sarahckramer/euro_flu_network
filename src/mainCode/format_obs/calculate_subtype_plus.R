@@ -1,4 +1,5 @@
 ### Format raw virologic and syndromic data, and calculate (sub)type-specific syndromic+ data ###
+library(reshape2); library(stringr)
 
 ########################################################################################################################################################################
 # Read in syndromic data:
@@ -164,9 +165,6 @@ vir.dat$INF_B[is.na(vir.dat$ALL_INF)] <- NA
 ########################################################################################################################################################################
 # Format for multiplying:
 # A, B, H1N1, H3N2; all (as check)
-
-library(reshape2)
-library(stringr)
 
 vir.dat$Week <- as.factor(vir.dat$Week)
 levels(vir.dat$Week) <- str_pad(levels(vir.dat$Week), 2, pad = '0')

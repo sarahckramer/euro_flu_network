@@ -1,4 +1,5 @@
 ### Explore geographical patterns in humidity and population size ###
+library(ggplot2); library(gridExtra); library(viridis); library(reshape2)
 
 # Specify countries of interest
 countries <- c('AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')

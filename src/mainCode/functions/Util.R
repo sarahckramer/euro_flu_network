@@ -39,7 +39,7 @@ buildOutputNew<-function(res_sub, format='long'){
   if(format == 'long'){
     required_order = c("fc_start","country","time","week","Est","Est_sd","S","S_sd","I","I_sd","L","L_sd","D","D_sd","R0max","R0max_sd","R0min","R0min_sd");
   }else{
-    required_order = c("fc_start","time","week","Est","Est_sd");
+    required_order = c("fc_start","time","week","Est","Est_sd")
   }
   
   out=subset(res_sub, select=required_order[1]);#init with fc_start which all result sets have

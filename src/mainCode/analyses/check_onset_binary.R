@@ -1,4 +1,5 @@
 ### Assess sensitivity/specificity of binary onset predictions once European outbreak has started (by calendar week) ###
+library(ggplot2); library(gridExtra)
 
 # Read in metrics files:
 m <- read.csv('results/network/outputMet_pro_PROC.csv')

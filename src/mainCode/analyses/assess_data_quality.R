@@ -1,4 +1,3 @@
-
 ### Look at syndromic+ data quality by various metrices ###
 # And compare with accuracy by country/subtype
 library(PMCMR)

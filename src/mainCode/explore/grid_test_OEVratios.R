@@ -2,7 +2,7 @@
 # Want ratio of sqrt(OEV) (i.e., standard deviation) to scaled observations to be ~0.1-0.5 during outbreak period
 
 # Load packages:
-library(ggplot2)
+library(ggplot2); library(reshape2)
 
 # Set ranges to explore:
 oev_bases <- c(1e4, 5e4, 1e5)

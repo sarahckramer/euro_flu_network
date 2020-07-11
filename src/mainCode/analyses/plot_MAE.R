@@ -1,3 +1,5 @@
+### Assess results by mean absolute (percentage) error ###
+library(ggplot2)
 
 # Read in metrics files:
 m1 <- read.csv('results/network/outputMet_pro_PROC.csv')
