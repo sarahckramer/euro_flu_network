@@ -1,3 +1,5 @@
+### Plot and assess results by log scores ###
+library(ggplot2); library(PMCMRplus)
 
 # Read in log scores:
 d1 <- read.csv('results/network/PROC_logScores_pt_ot.csv')
@@ -58,6 +60,10 @@ p1 <- p1 + geom_text(data = dat.text, mapping = aes(x = -5.6, y = -0.25, label =
 # print(p1)
 
 ggsave('results/plots/Fig3.svg', plot = p1, width = 11, height = 7.5)
+
+# pdf(file = 'results/plots/Fig3.pdf', width = 11, height = 7.5)
+# print(p1)
+# dev.off()
 
 # # Info for Table 1:
 # d.agg[d.agg$model == 'Network' & d.agg$metric == 'Peak Timing', ]
@@ -228,65 +234,96 @@ ggsave(file = 'results/plots/FigS5.svg', plot = p2, width = 12, height = 10)
 # # Now perform Friedman tests:
 # set.seed(1089437584)
 # p.vals <- c()
-# for (i in 1:100) {
-#   if (i%%10 == 0) {
+# net.rat <- c() # ratio of pairs where network vs. isolated better; network better more often if >1
+# for (i in 1:1000) {
+#   if (i%%50 == 0) {
 #     print(i)
 #   }
 #   d.pt.red <- permute.by.run(d.pt)
 #   d.pt.red$group <- factor(d.pt.red$group)
 #   p.vals <- c(p.vals, friedmanTest(d.pt.red$score, d.pt.red$model, d.pt.red$group, dist = 'FDist')$p.value)
+#   
+#   # which more consistently better?
+#   a <- split(d.pt.red[d.pt.red$model == 'Network', ], d.pt.red[d.pt.red$model == 'Network', 'group'])
+#   b <- split(d.pt.red[d.pt.red$model == 'Isolated', ], d.pt.red[d.pt.red$model == 'Isolated', 'group'])
+#   
+#   # a2 <- lapply(a, function(ix){ix[, 9]})
+#   # b2 <- lapply(b, function(ix){ix[, 9]})
+#   # all.equal(unlist(a2), unlist(b2))
+#   
+#   vec.a <- unlist(lapply(a, function(ix) {ix[, 'score']}))
+#   vec.b <- unlist(lapply(b, function(ix) {ix[, 'score']}))
+#   
+#   network.better <- length(vec.a[vec.a > vec.b])
+#   isol.better <- length(vec.b[vec.b > vec.a])
+#   
+#   net.rat <- c(net.rat, network.better / isol.better)
 # }
 # print(median(p.vals)) # 0.0482865; 0.247285 if no -10s; 0.007969452 if all included
 # # Old: 0.04070164; 0.2610895 if no -10s; 0.003365633 if all included
+# print(summary(net.rat)) # all less than 1 - meaning isolated always is more often better, even when not significant
+# # try with 1000 runs: median p-val = 0.0713011; net.rat: 999 of 1000 are <1; if all included: p = 0.005846352; 0 of 1000 >1
 # 
 # set.seed(1089437584)
 # p.vals <- c()
-# for (i in 1:100) {
-#   if (i%%10 == 0) {
+# net.rat <- c()
+# for (i in 1:1000) {
+#   if (i%%50 == 0) {
 #     print(i)
 #   }
 #   d.pi.red <- permute.by.run(d.pi)
 #   d.pi.red$group <- factor(d.pi.red$group)
 #   p.vals <- c(p.vals, friedmanTest(d.pi.red$score, d.pi.red$model, d.pi.red$group, dist = 'FDist')$p.value)
+#   
+#   # which more consistently better?
+#   a <- split(d.pi.red[d.pi.red$model == 'Network', ], d.pi.red[d.pi.red$model == 'Network', 'group'])
+#   b <- split(d.pi.red[d.pi.red$model == 'Isolated', ], d.pi.red[d.pi.red$model == 'Isolated', 'group'])
+#   
+#   vec.a <- unlist(lapply(a, function(ix) {ix[, 'score']}))
+#   vec.b <- unlist(lapply(b, function(ix) {ix[, 'score']}))
+#   
+#   network.better <- length(vec.a[vec.a > vec.b])
+#   isol.better <- length(vec.b[vec.b > vec.a])
+#   
+#   net.rat <- c(net.rat, network.better / isol.better)
 # }
 # print(median(p.vals)) # 0.2954887; 0.2779738 if no -10s; 0.00337134 if all included
 # # Old: 0.02154314; 0.07148775 if no -10s; 5.053524e-05 if all included
+# print(summary(net.rat))
+# print(length(net.rat[net.rat == 1]))
+# print(length(net.rat[net.rat > 1]))
+# p.vals.pi <- p.vals; net.rat.pi <- net.rat
+# # with 1000 runs: median p-val = 0.2816637; net.rat: 940 of 1000 are <1, 5 = 1, 55 > 1; if all included: p = 0.002884548; 0 of 1000 >1
 # 
 # set.seed(1089437584)
 # p.vals <- c()
-# for (i in 1:100) {
-#   if (i%%10 == 0) {
+# net.rat <- c()
+# for (i in 1:1000) {
+#   if (i%%50 == 0) {
 #     print(i)
 #   }
 #   d.ot.red <- permute.by.run(d.ot)
 #   d.ot.red$group <- factor(d.ot.red$group)
 #   p.vals <- c(p.vals, friedmanTest(d.ot.red$score, d.ot.red$model, d.ot.red$group, dist = 'FDist')$p.value)
+#   
+#   # which more consistently better?
+#   a <- split(d.ot.red[d.ot.red$model == 'Network', ], d.ot.red[d.ot.red$model == 'Network', 'group'])
+#   b <- split(d.ot.red[d.ot.red$model == 'Isolated', ], d.ot.red[d.ot.red$model == 'Isolated', 'group'])
+#   
+#   vec.a <- unlist(lapply(a, function(ix) {ix[, 'score']}))
+#   vec.b <- unlist(lapply(b, function(ix) {ix[, 'score']}))
+#   
+#   network.better <- length(vec.a[vec.a > vec.b])
+#   isol.better <- length(vec.b[vec.b > vec.a])
+#   
+#   net.rat <- c(net.rat, network.better / isol.better)
 # }
 # print(median(p.vals)) # 0.1608506; 0.2674348 if no -10s; 0.1631202 if all included
 # # Old: 0.1247537; 0.1636237 if no -10s; 0.1012045 if all included
-# 
-# 
-# # Check direction of relationship (which is better?):
-# network.better = isol.better = 0
-# for (block in levels(d.pt$group)) {
-#   if (mean(d.pt[d.pt$group == block & d.pt$model == 'Network', 'score']) > mean(d.pt[d.pt$group == block & d.pt$model == 'Isolated', 'score'])) {
-#     network.better <- network.better + 1
-#   } else if (mean(d.pt[d.pt$group == block & d.pt$model == 'Network', 'score']) < mean(d.pt[d.pt$group == block & d.pt$model == 'Isolated', 'score'])) {
-#     isol.better <- isol.better + 1
-#   }
-# }
-# # network 609, isolated 721
-# 
-# network.better = isol.better = 0
-# for (block in levels(d.pi$group)) {
-#   if (mean(d.pi[d.pi$group == block & d.pi$model == 'Network', 'score']) > mean(d.pi[d.pi$group == block & d.pi$model == 'Isolated', 'score'])) {
-#     network.better <- network.better + 1
-#   } else if (mean(d.pi[d.pi$group == block & d.pi$model == 'Network', 'score']) < mean(d.pi[d.pi$group == block & d.pi$model == 'Isolated', 'score'])) {
-#     isol.better <- isol.better + 1
-#   }
-# }
-# # network 632, isolated 670
-# # so isolated better for both
+# print(summary(net.rat))
+# print(length(net.rat[net.rat == 1]))
+# print(length(net.rat[net.rat > 1]))
+# # With 1000 runs: median p-val = 0.2094372; net.rat: 16 of 1000 are < 1, 2 = 1, 982 > 1; if all included: p = 0.1695104; 16 of 1000 >1
 
 ########################################################################################################################################################################
 ########################################################################################################################################################################
@@ -316,8 +353,7 @@ dat.text <- data.frame(label = c('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'),
                        subtype = c('A(H1)', 'A(H3)', 'B', 'A(H1)', 'A(H3)', 'B', 'A(H1)', 'A(H3)', 'B'),
                        metric = c(rep('Peak Timing', 3), rep('Peak Intensity', 3), rep('Onset Timing', 3)))
 p1 <- p1 + geom_text(data = dat.text, mapping = aes(x = -5.6, y = -0.25, label = label), size = 8)
-print(p1)
-
+# print(p1)
 ggsave(file = 'results/plots/FigS6.svg', plot = p1, width = 12, height = 8)
 
 # # If we remove no forecasts:
@@ -399,6 +435,7 @@ ggsave(file = 'results/plots/FigS6.svg', plot = p1, width = 12, height = 8)
 # }
 # 
 # # calculate scores:
+# p.list <- vector('list', 9); counter <- 1
 # par(mfrow = c(3, 3), cex = 0.8, mar = c(3, 3, 2, 1), mgp = c(1.5, 0.5, 0))
 # for (metric in levels(d.temp$metric)) {
 #   for (subtype in levels(d.temp$subtype)) {
@@ -412,26 +449,31 @@ ggsave(file = 'results/plots/FigS6.svg', plot = p1, width = 12, height = 8)
 # 
 #     set.seed(1089437584)
 #     p.vals <- c()
-#     for (i in 1:100) {
+#     for (i in 1:1000) {
+#       if (i%%100 == 0) {
+#         print(i)
+#       }
 #       d.red2 <- permute.by.run(d.red)
 #       d.red2$group <- factor(d.red2$group)
 #       p.vals <- c(p.vals, friedmanTest(d.red2$score, d.red2$model, d.red2$group, dist = 'FDist')$p.value)
 #     }
-#     hist(p.vals)
+#     hist(p.vals, breaks = 25)
 #     print(median(p.vals))
+#     p.list[[counter]] <- p.vals
+#     counter <- counter + 1
 #   }
 # }
 # # PT/H1: 0.523
-# # PT/H3: 0.443
-# # PT/B: 0.036
-# # PI/H1: 0.074
-# # PI/H3: 0.612
+# # PT/H3: 0.473
+# # PT/B: 0.055
+# # PI/H1: 0.086
+# # PI/H3: 0.594
 # # PI/B: 0.625
-# # OT/H1: 0.551
-# # OT/H3: 0.109
-# # OT/B: 0.733
+# # OT/H1: 0.550
+# # OT/H3: 0.135
+# # OT/B: 0.710
 
-# sig: PT/B
+# with 100 runs: sig: PT/B
 # if we remove where scores==-10, not longer sig (p>0.1)
 # 
 # d.red <- d.temp[d.temp$metric == 'Peak Timing' & d.temp$subtype == 'B', ]
@@ -482,8 +524,7 @@ p1 <- ggplot(data = d.agg[d.agg$metric != 'Onset Timing', ], aes(x = lead_mean, 
                         limits = c(1, 400), range = c(1,6)) +
   labs(x = 'Predicted Lead Week', y = 'Mean Log Score', col = 'Model:', size = '# of Fcasts:') +
   guides(colour = guide_legend(order = 1), size = guide_legend(order = 2))
-print(p1)
-
+# print(p1)
 ggsave(file = 'results/plots/FigS7.svg', plot = p1, width = 22, height = 4.5)
 
 # ggplot(data = d.agg[d.agg$metric == 'Onset Timing', ], aes(x = lead_mean, y = score, col = model)) + geom_line() + geom_point(aes(size = count)) +
@@ -491,8 +532,3 @@ ggsave(file = 'results/plots/FigS7.svg', plot = p1, width = 22, height = 4.5)
 
 dev.off()
 rm(list = ls())
-
-
-
-
-
