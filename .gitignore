@@ -10,8 +10,8 @@
 /src/syntheticTests/outputs/
 /notes/
 __pycache__/
-/.Rproj.user/
 /.idea/
 /.Rhistory
 /*.Rproj
 /*.iml
+.Rproj.user
