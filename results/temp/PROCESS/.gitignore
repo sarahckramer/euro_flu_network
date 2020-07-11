@@ -1,1 +1,2 @@
-# This file acts as a placeholder so that the PROCESS folder exists in the repository.
+# This file ensures that the PROCESS folder exists in the repository, while also making sure that none of the results
+# files in PROCESS are committed.
