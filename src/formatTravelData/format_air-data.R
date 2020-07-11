@@ -1,5 +1,4 @@
 ### Format air data (downloaded from Eurostat) ###
-
 library(reshape2)
 
 # Ensure folder for formatted data exists:
