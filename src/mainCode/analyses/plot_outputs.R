@@ -1,18 +1,25 @@
 
 ### Produce plots to show fit/forecasts over time ###
 
-library(ggplot2); library(data.table); library(magrittr); library(plyr); library(plot3D); library(gmodels);
-library(gtable); library(gridExtra); library(reshape2); library(stringr)
+library(reshape2); library(stringr); library(ggplot2); library(gridExtra)
 
-#ggsave <- ggplot2::ggsave; body(ggsave) <- body(ggplot2::ggsave)[-2]
-#need the edited ggsave function to generate PDF files properly
+# Specify (sub)type:
+strain <- 'A(H3)'
+
+# Specify model:
+model.type <- 'network'
 
 # Specify output folder:
+if (!dir.exists('results/plots/outputs/')) {
+  dir.create('results/plots/outputs/')
+}
 dir.save <- 'results/plots/outputs/'
 
 # Read in results:
-output <- read.csv('results/isolated/outputOP_PROC.csv')
-output <- output[output$subtype == 'A(H3)', ]
+output <- read.csv(paste0('results/', model.type, '/outputOP_PROC.csv'))
+output <- output[output$subtype == strain, ]
+
+output.fits <- read.csv(paste0('results/fits/outputOP_', strain, '_fitsOnly.csv'))
 
 output$year <- as.numeric(as.character(substr(output$season, start = 1, stop = 4)))
 output$year[output$week > 53] <- output$year[output$week > 53] + 1
@@ -27,32 +34,12 @@ output$week2 <- str_pad(output$week2, width = 2, pad = '0')
 output$time2 <- paste(output$year, output$week2, sep = '_')
 
 # First need to add observed to output data frame:
-# iliiso <- read.csv('data/WHO_data_05-09-19.csv')
-# iliiso <- iliiso[, c(1:3, 5, 7:9, 12:15, 18, 20)]
-# 
-# scalings <- read.csv('data/scalings_frame_05-09-19.csv') # 1.3 for France in early seasons
-# scalings <- scalings[c(1:2, 4, 6:8, 11:14, 17, 19), ]
-# for (i in 2:13) {
-#   if (names(iliiso)[i] == 'France') {
-#     iliiso[1:286, i] <- iliiso[1:286, i] * 1.3
-#     iliiso[287:495, i] <- iliiso[287:495, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
-#   } else {
-#     iliiso[, i] <- iliiso[, i] * scalings$gamma[scalings$country == names(iliiso)[i]]
-#   }
-#   
-#   iliiso[, i][iliiso[, i] < 0] <- NA # replace negatives with NAs
-# }
-
-iliiso <- read.csv('data/by_subtype/WHO_data_A(H3)_SCALED.csv')
+iliiso <- read.csv(paste0('data/WHO_data_', strain, '_SCALED.csv'))
 names(iliiso) <- c('time', 'AT', 'BE', 'CZ', 'FR', 'DE', 'HU', 'IT', 'LU', 'NL', 'PL', 'SK', 'ES')
 iliiso <- melt(iliiso)
 names(iliiso)[3] <- 'observed'
 
 output <- merge(output, iliiso, by.x = c('country', 'time2'), by.y = c('variable', 'time'))
-
-# # Choose oev_base:
-# output.full <- output
-# output <- output[output$oev_base == 1e4, ]
 
 #### OUTPUT ####
 # Create output graphs, saved as PDF file:
@@ -70,7 +57,8 @@ for (season in seasons) {
   
   num.graphs <- 1
   for (wk in fc_starts) {
-    sub <- temp[temp$fc_start == wk, ]
+    # sub <- temp[temp$fc_start == wk, ]
+    sub <- temp[temp$fc_start == wk | (temp$result == 'train' & temp$week <= wk), ]
     
     if (length(sub$country) > 0) {
       
@@ -91,7 +79,7 @@ for (season in seasons) {
   
   print('Graph list completed.')
   glist <- marrangeGrob(grobs = graphs, nrow = 1, ncol = 1)
-  ggsave(paste(dir.save, 'output_', season, '_H3_isolated.pdf', sep = ''), glist, width = 25, height = 9, dpi = 600)
+  ggsave(paste(dir.save, 'output_', season, '_H3_network.pdf', sep = ''), glist, width = 25, height = 9, dpi = 600)
   print('Done.')
 }
 
