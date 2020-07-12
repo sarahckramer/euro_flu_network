@@ -1,4 +1,4 @@
-#European Network
+# Network model of influenza transmission in Europe 
 Copyright &copy; 2020 Sarah Corinne Kramer
 
 Directory Structure
